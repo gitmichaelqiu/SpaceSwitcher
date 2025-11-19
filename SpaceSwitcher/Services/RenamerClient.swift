@@ -13,6 +13,7 @@ class RenamerClient: ObservableObject {
     // Responses
     private lazy var returnActiveSpace = Notification.Name("\(apiPrefix).ReturnActiveSpace")
     private lazy var returnSpaceList = Notification.Name("\(apiPrefix).ReturnSpaceList")
+    private lazy var apiToggleState = Notification.Name("\(apiPrefix).APIToggleState")
     
     @Published var currentSpaceID: String?
     @Published var currentSpaceName: String = "Unknown"
@@ -21,7 +22,6 @@ class RenamerClient: ObservableObject {
     private var cancellables = Set<AnyCancellable>()
     
     init() {
-        // FIXED: Start listening immediately upon creation
         startListening()
     }
     
@@ -48,7 +48,16 @@ class RenamerClient: ObservableObject {
             suspensionBehavior: .deliverImmediately
         )
         
-        // 3. Trigger a refresh immediately
+        // 3. Listen for API Lifecycle (Toggle/Quit)
+        dnc.addObserver(
+            self,
+            selector: #selector(handleAPIToggle(_:)),
+            name: apiToggleState,
+            object: nil,
+            suspensionBehavior: .deliverImmediately
+        )
+        
+        // 4. Trigger a refresh immediately
         refreshSpaceList()
     }
     
@@ -61,13 +70,33 @@ class RenamerClient: ObservableObject {
             deliverImmediately: true
         )
         
-        // Refresh active space as well
         DistributedNotificationCenter.default().postNotificationName(
             getActiveSpace,
             object: nil,
             userInfo: nil,
             deliverImmediately: true
         )
+    }
+    
+    // MARK: - Handlers
+    
+    @objc private func handleAPIToggle(_ note: Notification) {
+        guard let info = note.userInfo,
+              let isEnabled = info["isEnabled"] as? Bool else { return }
+        
+        print("CLIENT: API Toggle Received -> \(isEnabled)")
+        
+        DispatchQueue.main.async {
+            if isEnabled {
+                // API came back online: Refresh data
+                self.refreshSpaceList()
+            } else {
+                // API went offline: Clear data to show disconnected state
+                self.availableSpaces.removeAll()
+                self.currentSpaceName = "Disconnected"
+                self.currentSpaceID = nil
+            }
+        }
     }
     
     @objc private func handleActiveSpace(_ note: Notification) {
