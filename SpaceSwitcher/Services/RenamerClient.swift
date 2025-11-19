@@ -3,14 +3,14 @@ import Combine
 import AppKit
 
 class RenamerClient: ObservableObject {
-    // MARK: - Final API Constants (Must match DesktopRenamer)
+    // MARK: - Final API Constants
     private let apiPrefix = "com.michaelqiu.DesktopRenamer"
     
-    // Requests (Send these)
+    // Requests
     private lazy var getActiveSpace = Notification.Name("\(apiPrefix).GetActiveSpace")
     private lazy var getSpaceList = Notification.Name("\(apiPrefix).GetSpaceList")
     
-    // Responses (Listen for these)
+    // Responses
     private lazy var returnActiveSpace = Notification.Name("\(apiPrefix).ReturnActiveSpace")
     private lazy var returnSpaceList = Notification.Name("\(apiPrefix).ReturnSpaceList")
     
@@ -21,12 +21,12 @@ class RenamerClient: ObservableObject {
     private var cancellables = Set<AnyCancellable>()
     
     init() {
-        // Intentionally empty
+        // FIXED: Start listening immediately upon creation
+        startListening()
     }
     
     func startListening() {
         print("CLIENT: Initializing Listener...")
-        print("CLIENT: Listening for -> \(returnSpaceList.rawValue)")
         
         let dnc = DistributedNotificationCenter.default()
         
@@ -61,7 +61,7 @@ class RenamerClient: ObservableObject {
             deliverImmediately: true
         )
         
-        // Also refresh active space just in case
+        // Refresh active space as well
         DistributedNotificationCenter.default().postNotificationName(
             getActiveSpace,
             object: nil,
@@ -71,7 +71,6 @@ class RenamerClient: ObservableObject {
     }
     
     @objc private func handleActiveSpace(_ note: Notification) {
-        print("CLIENT: Success! Received Active Space.")
         guard let info = note.userInfo else { return }
         
         DispatchQueue.main.async {
@@ -80,12 +79,12 @@ class RenamerClient: ObservableObject {
             }
             if let name = info["spaceName"] as? String {
                 self.currentSpaceName = name
+                print("CLIENT: Space changed to \(name)")
             }
         }
     }
     
     @objc private func handleSpaceList(_ note: Notification) {
-        print("CLIENT: Success! Received Space List.")
         guard let info = note.userInfo,
               let rawSpaces = info["spaces"] as? [[String: Any]] else { return }
         

@@ -1,9 +1,28 @@
 import SwiftUI
+import Combine
+
+// This class ensures services are running before UI is shown
+class AppState: ObservableObject {
+    let renamerClient: RenamerClient
+    let ruleEngine: RuleEngine
+    
+    init() {
+        print("APP: Launching Services...")
+        // 1. Create services
+        self.renamerClient = RenamerClient()
+        self.ruleEngine = RuleEngine()
+        
+        // 2. Wire them together immediately
+        self.ruleEngine.renamerClient = self.renamerClient
+        
+        print("APP: Services Linked and Running.")
+    }
+}
 
 @main
 struct SpaceSwitcherApp: App {
-    @StateObject var renamerClient = RenamerClient()
-    @StateObject var ruleEngine = RuleEngine()
+    // Initialize AppState once on launch
+    @StateObject var appState = AppState()
     
     var body: some Scene {
         MenuBarExtra {
@@ -19,13 +38,8 @@ struct SpaceSwitcherApp: App {
         }
         
         Settings {
-            SettingsView(renamerClient: renamerClient, ruleEngine: ruleEngine)
-                .onAppear {
-                    // Connect the engine to the client
-                    ruleEngine.renamerClient = renamerClient
-                    // Start listening
-                    renamerClient.startListening()
-                }
+            // Pass the pre-initialized objects to the view
+            SettingsView(renamerClient: appState.renamerClient, ruleEngine: appState.ruleEngine)
         }
     }
 }

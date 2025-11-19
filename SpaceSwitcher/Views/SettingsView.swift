@@ -1,27 +1,39 @@
 import SwiftUI
 
+let defaultSettingsWindowWidth = 417
+let defaultSettingsWindowHeight = 480
+
+enum SettingsTab: String {
+    case general, rules, about
+}
+
 struct SettingsView: View {
     @ObservedObject var renamerClient: RenamerClient
     @ObservedObject var ruleEngine: RuleEngine
     
+    @AppStorage("selectedSettingsTab") private var selectedTab: SettingsTab = .general
+    
     var body: some View {
-        TabView {
+        TabView(selection: $selectedTab) {
             GeneralView(renamerClient: renamerClient)
                 .tabItem {
-                    Label("General", systemImage: "gear")
+                    Text("General")
                 }
+                .tag(SettingsTab.general)
             
             RulesView(ruleEngine: ruleEngine, renamerClient: renamerClient)
                 .tabItem {
-                    Label("Rules", systemImage: "list.bullet.rectangle.portrait")
+                    Text("Rules")
                 }
+                .tag(SettingsTab.general)
             
             AboutView()
                 .tabItem {
-                    Label("About", systemImage: "info.circle")
+                    Text("About")
                 }
+                .tag(SettingsTab.about)
         }
-        .frame(width: 600, height: 400)
+        .frame(width: CGFloat(defaultSettingsWindowWidth), height: CGFloat(defaultSettingsWindowHeight))
         .padding()
     }
 }
