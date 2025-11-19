@@ -25,7 +25,7 @@ struct SettingsView: View {
                 .tabItem {
                     Text("Rules")
                 }
-                .tag(SettingsTab.general)
+                .tag(SettingsTab.rules)
             
             AboutView()
                 .tabItem {
