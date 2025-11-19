@@ -10,10 +10,10 @@ class RenamerClient: ObservableObject {
     private lazy var getActiveSpace = Notification.Name("\(apiPrefix).GetActiveSpace")
     private lazy var getSpaceList = Notification.Name("\(apiPrefix).GetSpaceList")
     
-    // Responses
+    // Returns
     private lazy var returnActiveSpace = Notification.Name("\(apiPrefix).ReturnActiveSpace")
     private lazy var returnSpaceList = Notification.Name("\(apiPrefix).ReturnSpaceList")
-    private lazy var apiToggleState = Notification.Name("\(apiPrefix).APIToggleState")
+    private lazy var apiToggleState = Notification.Name("\(apiPrefix).ReturnAPIState")
     
     @Published var currentSpaceID: String?
     @Published var currentSpaceName: String = "Unknown"
