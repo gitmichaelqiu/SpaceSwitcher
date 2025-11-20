@@ -1,18 +1,23 @@
 import SwiftUI
 
 struct SettingsRow<Content: View>: View {
-    let title: LocalizedStringKey
+    let title: LocalizedStringKey?
     let content: Content
 
-    init(_ title: LocalizedStringKey, @ViewBuilder content: () -> Content) {
+    init(_ title: LocalizedStringKey?, @ViewBuilder content: () -> Content) {
         self.title = title
         self.content = content()
     }
 
     var body: some View {
         HStack {
-            Text(title)
-                .frame(maxWidth: .infinity, alignment: .leading)
+            if let _title = title {
+                Text(_title)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            } else {
+                Spacer()
+            }
+            
             content
                 .frame(alignment: .trailing)
         }

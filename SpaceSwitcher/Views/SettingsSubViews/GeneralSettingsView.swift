@@ -18,13 +18,24 @@ struct GeneralSettingsView: View {
                         }
                     }
                     
-                    Divider()
+                    if !renamerClient.availableSpaces.isEmpty {
+                        Divider()
+                        
+                        SettingsRow("Current Space") {
+                            Text(renamerClient.currentSpaceName)
+                                .foregroundColor(.primary)
+                                .padding(4)
+                        }
+                    }
                     
-                    SettingsRow("Current Space") {
-                        Text(renamerClient.currentSpaceName)
-                            .padding(4)
-                            .foregroundColor(.primary)
-                            .font(.body)
+                    if renamerClient.availableSpaces.isEmpty {
+                        Divider()
+                        
+                        SettingsRow(nil) {
+                            Text("Open DesktopRenamer and enable API")
+                                .foregroundStyle(.secondary)
+                                .padding(4)
+                        }
                     }
                 }
                 
@@ -32,6 +43,7 @@ struct GeneralSettingsView: View {
             }
             .padding()
             .frame(maxWidth: .infinity, alignment: .topLeading)
+            .animation(.easeInOut(duration: 0.2), value: renamerClient.availableSpaces.isEmpty)
         }
     }
 }
