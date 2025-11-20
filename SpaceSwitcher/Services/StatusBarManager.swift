@@ -20,17 +20,12 @@ class StatusBarManager: NSObject {
         // Use Combine observation
         setupCombineObservation()
     }
-    
-    // --- Setup and Observation ---
 
     private func setupStatusBar() {
         statusBarItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
 
         if let button = statusBarItem.button {
-            button.image = NSApplication.shared.applicationIconImage
-            button.action = nil
-            button.target = nil
-            // Initial status check
+            button.image = NSImage(named: "status")
             updateStatusToolTip(isConnected: renamerClient?.availableSpaces.isEmpty == false)
         }
 
