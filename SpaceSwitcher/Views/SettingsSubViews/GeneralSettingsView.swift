@@ -1,6 +1,6 @@
 import SwiftUI
 
-struct GeneralView: View {
+struct GeneralSettingsView: View {
     @ObservedObject var renamerClient: RenamerClient
     
     var body: some View {

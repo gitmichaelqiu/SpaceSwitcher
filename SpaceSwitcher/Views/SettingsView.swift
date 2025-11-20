@@ -14,7 +14,7 @@ struct SettingsView: View {
         if #available(macOS 15.0, *) {
             TabView(selection: $selectedTab) {
                 Tab("General", systemImage: "gearshape.fill", value: .general) {
-                    GeneralView(renamerClient: renamerClient)
+                    GeneralSettingsView(renamerClient: renamerClient)
                 }
                 Tab("Rules", systemImage: "list.bullet.rectangle.portrait.fill", value: .rules) {
                     RulesView(ruleEngine: ruleEngine, renamerClient: renamerClient)
@@ -26,7 +26,7 @@ struct SettingsView: View {
             .scenePadding()
         } else {
             TabView(selection: $selectedTab) {
-                GeneralView(renamerClient: renamerClient)
+                GeneralSettingsView(renamerClient: renamerClient)
                    .tabItem {
                        Label(
                            "General",
