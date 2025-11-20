@@ -15,6 +15,7 @@ struct GeneralSettingsView: View {
                                 .frame(width: 8, height: 8)
                             Text(renamerClient.availableSpaces.isEmpty ? "Not Connected" : "Connected")
                                 .foregroundColor(.secondary)
+                                .padding(4)
                         }
                     }
                     
