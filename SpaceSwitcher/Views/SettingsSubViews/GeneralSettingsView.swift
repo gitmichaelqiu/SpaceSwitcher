@@ -13,7 +13,7 @@ struct GeneralSettingsView: View {
                                 .fill(renamerClient.availableSpaces.isEmpty ? Color.red : Color.green)
                                 .frame(width: 8, height: 8)
                             Text(renamerClient.availableSpaces.isEmpty ? "Not Connected" : "Connected")
-                                .foregroundColor(.secondary)
+                                .foregroundColor(.primary)
                                 .padding(4)
                         }
                     }
@@ -23,7 +23,7 @@ struct GeneralSettingsView: View {
                     SettingsRow("Current Space") {
                         Text(renamerClient.currentSpaceName)
                             .padding(4)
-                            .foregroundColor(.secondary)
+                            .foregroundColor(.primary)
                             .font(.body)
                     }
                 }
