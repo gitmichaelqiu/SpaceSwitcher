@@ -48,5 +48,3 @@ struct GeneralView: View {
         }
     }
 }
-
-// The old embedded AboutView struct has been removed.

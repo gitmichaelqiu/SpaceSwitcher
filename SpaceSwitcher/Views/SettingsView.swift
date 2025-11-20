@@ -1,7 +1,5 @@
 import SwiftUI
 
-// Window size constants are now in SettingsViewController.swift
-
 enum SettingsTab: String {
     case general, rules, about
 }
