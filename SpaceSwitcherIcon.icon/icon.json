@@ -1,0 +1,175 @@
+{
+  "fill" : {
+    "automatic-gradient" : "extended-srgb:0.00000,0.53333,1.00000,1.00000"
+  },
+  "groups" : [
+    {
+      "layers" : [
+        {
+          "fill" : {
+            "automatic-gradient" : "extended-srgb:1.00000,0.21961,0.23529,1.00000"
+          },
+          "glass" : false,
+          "image-name" : "WB.png",
+          "name" : "Button_Red",
+          "position" : {
+            "scale" : 0.08,
+            "translation-in-points" : [
+              -230,
+              -155.5410899271192
+            ]
+          }
+        },
+        {
+          "fill" : {
+            "automatic-gradient" : "extended-srgb:1.00000,0.80000,0.00000,1.00000"
+          },
+          "glass" : false,
+          "image-name" : "WB.png",
+          "name" : "Button_Yellow",
+          "position" : {
+            "scale" : 0.08,
+            "translation-in-points" : [
+              -160,
+              -155.5410899271192
+            ]
+          }
+        },
+        {
+          "fill" : {
+            "automatic-gradient" : "extended-srgb:0.20392,0.78039,0.34902,1.00000"
+          },
+          "glass" : false,
+          "image-name" : "WB.png",
+          "name" : "Button_Green",
+          "position" : {
+            "scale" : 0.08,
+            "translation-in-points" : [
+              -90,
+              -155.5410899271192
+            ]
+          }
+        },
+        {
+          "fill" : {
+            "automatic-gradient" : "extended-gray:1.00000,1.00000"
+          },
+          "glass" : true,
+          "image-name" : "WW.png",
+          "name" : "Window",
+          "position" : {
+            "scale" : 0.1,
+            "translation-in-points" : [
+              0,
+              0
+            ]
+          }
+        }
+      ],
+      "lighting" : "individual",
+      "name" : "Window",
+      "position" : {
+        "scale" : 1,
+        "translation-in-points" : [
+          -139,
+          0
+        ]
+      },
+      "shadow" : {
+        "kind" : "neutral",
+        "opacity" : 0.5
+      },
+      "translucency" : {
+        "enabled" : true,
+        "value" : 0.5
+      }
+    },
+    {
+      "layers" : [
+        {
+          "fill" : {
+            "automatic-gradient" : "extended-srgb:1.00000,0.21961,0.23529,1.00000"
+          },
+          "glass" : false,
+          "image-name" : "WB.png",
+          "name" : "Button_Red",
+          "position" : {
+            "scale" : 0.08,
+            "translation-in-points" : [
+              -230,
+              -155.5410899271192
+            ]
+          }
+        },
+        {
+          "fill" : {
+            "automatic-gradient" : "extended-srgb:1.00000,0.80000,0.00000,1.00000"
+          },
+          "glass" : false,
+          "image-name" : "WB.png",
+          "name" : "Button_Yellow",
+          "position" : {
+            "scale" : 0.08,
+            "translation-in-points" : [
+              -160,
+              -155.5410899271192
+            ]
+          }
+        },
+        {
+          "fill" : {
+            "automatic-gradient" : "extended-srgb:0.20392,0.78039,0.34902,1.00000"
+          },
+          "glass" : false,
+          "image-name" : "WB.png",
+          "name" : "Button_Green",
+          "position" : {
+            "scale" : 0.08,
+            "translation-in-points" : [
+              -90,
+              -155.5410899271192
+            ]
+          }
+        },
+        {
+          "fill" : {
+            "automatic-gradient" : "extended-gray:1.00000,1.00000"
+          },
+          "glass" : true,
+          "image-name" : "WW.png",
+          "name" : "Window",
+          "position" : {
+            "scale" : 0.1,
+            "translation-in-points" : [
+              0,
+              0
+            ]
+          }
+        }
+      ],
+      "lighting" : "individual",
+      "name" : "Window",
+      "position" : {
+        "scale" : 1,
+        "translation-in-points" : [
+          564,
+          0
+        ]
+      },
+      "shadow" : {
+        "kind" : "neutral",
+        "opacity" : 0.5
+      },
+      "translucency" : {
+        "enabled" : true,
+        "value" : 0.5
+      }
+    }
+  ],
+  "supported-platforms" : {
+    "circles" : [
+      "watchOS"
+    ],
+    "squares" : "shared"
+  }
+}
