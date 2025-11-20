@@ -13,7 +13,7 @@ struct GeneralSettingsView: View {
                             Circle()
                                 .fill(renamerClient.availableSpaces.isEmpty ? Color.red : Color.green)
                                 .frame(width: 8, height: 8)
-                            Text(renamerClient.availableSpaces.isEmpty ? "Not Connected / No Spaces" : "Connected")
+                            Text(renamerClient.availableSpaces.isEmpty ? "Not Connected" : "Connected")
                                 .foregroundColor(.secondary)
                         }
                     }
