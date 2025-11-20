@@ -20,7 +20,6 @@ class AppState: ObservableObject {
     }
 }
 
-// Based on OptClicker's AppDelegate for window management
 class AppDelegate: NSObject, NSApplicationDelegate {
     // AppState is created here, as dependencies are needed for the window controller
     let appState = AppState()
@@ -37,7 +36,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         )
     }
     
-    // OptClicker's behavior for re-opening the window
     func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
         openSettingsWindow()
         return true
@@ -72,7 +70,6 @@ struct SpaceSwitcherApp: App {
         // Settings scene is replaced with an empty one, as the window is managed by the controller
         Settings { EmptyView() }
         .commands {
-            // OptClicker's command structure
             CommandGroup(replacing: .appInfo) {
                 Button("About SpaceSwitcher") {
                     // Set selected tab to about, then open the window

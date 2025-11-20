@@ -13,7 +13,6 @@ struct SettingsView: View {
     @AppStorage("selectedSettingsTab") private var selectedTab: SettingsTab = .general
     
     var body: some View {
-        // Adopt OptClicker's TabView style
         if #available(macOS 15.0, *) {
             TabView(selection: $selectedTab) {
                 Tab("General", systemImage: "gearshape.fill", value: .general) {
@@ -28,7 +27,6 @@ struct SettingsView: View {
             }
             .scenePadding()
         } else {
-            // macOS 14.0 and earlier compatibility, as in OptClicker
             TabView(selection: $selectedTab) {
                 GeneralView(renamerClient: renamerClient)
                    .tabItem {

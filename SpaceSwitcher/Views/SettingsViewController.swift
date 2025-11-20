@@ -1,7 +1,6 @@
 import SwiftUI
 import AppKit
 
-// Matching OptClicker's window size
 let defaultSettingsWindowWidth = 450
 let defaultSettingsWindowHeight = 480
 
@@ -45,7 +44,7 @@ class SettingsWindowController: NSObject {
         win.setFrameAutosaveName("Settings")
         win.isReleasedWhenClosed = false
         win.minSize = size
-        win.maxSize = size // Fixed size to match OptClicker
+        win.maxSize = size
         win.level = .normal
         win.collectionBehavior = [.participatesInCycle]
 

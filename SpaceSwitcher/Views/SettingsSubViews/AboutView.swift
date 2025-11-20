@@ -15,7 +15,6 @@ struct AboutView: View {
         return String(year)
     }
     
-    // Placeholder text following OptClicker's pattern (replace with actual localized string/description)
     var descriptionPlaceholder: String {
         "SpaceSwitcher is a macOS utility that automatically show/hide/minize apps when switching to a specific desktop."
     }
