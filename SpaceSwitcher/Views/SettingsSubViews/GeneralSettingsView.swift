@@ -6,7 +6,6 @@ struct GeneralSettingsView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
-                
                 SettingsSection("API Connection") {
                     SettingsRow("Renamer API Status") {
                         HStack {
@@ -24,22 +23,9 @@ struct GeneralSettingsView: View {
                     SettingsRow("Current Space") {
                         Text(renamerClient.currentSpaceName)
                             .padding(4)
-                            .background(
-                                RoundedRectangle(cornerRadius: 4)
-                                    .fill(Color.gray.opacity(0.2))
-                            )
-                            .foregroundColor(.primary)
+                            .foregroundColor(.secondary)
                             .font(.body)
                     }
-                }
-                
-                SettingsSection("Information") {
-                    Text("SpaceSwitcher works by listening to DesktopRenamer. Ensure DesktopRenamer is running and the API is enabled.")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                        .fixedSize(horizontal: false, vertical: true)
-                        .padding(.vertical, 8)
-                        .padding(.horizontal, 10)
                 }
                 
                 Spacer()
