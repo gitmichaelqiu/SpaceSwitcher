@@ -44,7 +44,7 @@ struct SettingsSection<Content: View>: View {
                     .fill(backgroundColor.opacity(0.6))
                     .overlay(
                         RoundedRectangle(cornerRadius: 12, style: .continuous)
-                            .fill(.regularMaterial)
+                            .fill(.regularMaterial) // blur overlay
                     )
             )
         }
