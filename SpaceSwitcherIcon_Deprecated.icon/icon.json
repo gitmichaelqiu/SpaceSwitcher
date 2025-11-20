@@ -6,7 +6,6 @@
     {
       "blend-mode" : "normal",
       "blur-material" : null,
-      "hidden" : true,
       "layers" : [
         {
           "fill-specializations" : [
@@ -109,7 +108,7 @@
           "blend-mode-specializations" : [
             {
               "appearance" : "dark",
-              "value" : "normal"
+              "value" : "hard-light"
             }
           ],
           "fill-specializations" : [
@@ -126,12 +125,27 @@
             }
           ],
           "image-name" : "Ar.png",
+          "name" : "Ar",
+          "position" : {
+            "scale" : 0.15,
+            "translation-in-points" : [
+              231.29808396465646,
+              243.89795768686548
+            ]
+          }
+        },
+        {
+          "fill" : {
+            "automatic-gradient" : "extended-gray:0.00000,1.00000"
+          },
+          "hidden" : true,
+          "image-name" : "Arrow.png",
           "name" : "Arrow",
           "position" : {
-            "scale" : 0.12,
+            "scale" : 0.15,
             "translation-in-points" : [
-              -112.38941603534354,
-              -125.59422981313452
+              205.09375,
+              235.0390625
             ]
           }
         }
@@ -160,6 +174,33 @@
       "hidden" : false,
       "layers" : [
         {
+          "blend-mode" : "normal",
+          "fill-specializations" : [
+            {
+              "value" : {
+                "automatic-gradient" : "extended-srgb:0.00000,0.53333,1.00000,1.00000"
+              }
+            },
+            {
+              "appearance" : "dark",
+              "value" : {
+                "automatic-gradient" : "extended-gray:0.00000,1.00000"
+              }
+            }
+          ],
+          "glass" : false,
+          "hidden" : false,
+          "image-name" : "WinOV.png",
+          "name" : "WinOV",
+          "position" : {
+            "scale" : 0.09,
+            "translation-in-points" : [
+              0,
+              57
+            ]
+          }
+        },
+        {
           "fill-specializations" : [
             {
               "value" : {
@@ -197,8 +238,8 @@
       "position" : {
         "scale" : 1.05,
         "translation-in-points" : [
-          -53,
-          -29
+          -59,
+          -48
         ]
       },
       "shadow" : {
@@ -211,32 +252,58 @@
       }
     },
     {
-      "blend-mode" : "normal",
-      "blur-material" : null,
+      "blend-mode-specializations" : [
+        {
+          "value" : "hard-light"
+        },
+        {
+          "appearance" : "dark",
+          "value" : "hard-light"
+        }
+      ],
       "hidden" : false,
       "layers" : [
         {
+          "blend-mode" : "normal",
           "fill-specializations" : [
             {
               "value" : {
-                "linear-gradient" : [
-                  "srgb:0.95743,0.98014,1.00000,1.00000",
-                  "srgb:0.52641,0.77899,1.00000,1.00000"
-                ]
+                "automatic-gradient" : "extended-srgb:0.38039,0.33333,0.96078,1.00000"
               }
             },
             {
               "appearance" : "dark",
               "value" : {
-                "linear-gradient" : [
-                  "display-p3:0.88597,0.88597,0.88597,1.00000",
-                  "extended-gray:0.75000,1.00000"
-                ]
+                "automatic-gradient" : "extended-gray:0.00000,1.00000"
+              }
+            }
+          ],
+          "hidden" : true,
+          "image-name" : "WinOV.png",
+          "name" : "WinOV",
+          "position" : {
+            "scale" : 0.095,
+            "translation-in-points" : [
+              0,
+              57
+            ]
+          }
+        },
+        {
+          "fill-specializations" : [
+            {
+              "value" : {
+                "automatic-gradient" : "extended-gray:1.00000,1.00000"
+              }
+            },
+            {
+              "appearance" : "dark",
+              "value" : {
+                "automatic-gradient" : "extended-gray:0.75000,1.00000"
               }
             }
           ],
           "glass" : true,
-          "hidden" : false,
           "image-name" : "WW.png",
           "name" : "Window",
           "position" : {
@@ -249,117 +316,21 @@
         }
       ],
       "lighting" : "individual",
-      "name" : "V2_Front",
+      "name" : "V2_Back",
       "position" : {
         "scale" : 1.05,
         "translation-in-points" : [
-          -53,
-          -29
-        ]
-      },
-      "shadow" : {
-        "kind" : "layer-color",
-        "opacity" : 1
-      },
-      "translucency" : {
-        "enabled" : true,
-        "value" : 0
-      }
-    },
-    {
-      "layers" : [
-        {
-          "fill-specializations" : [
-            {
-              "appearance" : "dark",
-              "value" : {
-                "automatic-gradient" : "extended-gray:0.50000,1.00000"
-              }
-            }
-          ],
-          "image-name" : "ArL 2.png",
-          "name" : "Arrow",
-          "position" : {
-            "scale" : 0.12,
-            "translation-in-points" : [
-              264.0078125,
-              286.8359375
-            ]
-          }
-        }
-      ],
-      "name" : "Arrow",
-      "position" : {
-        "scale" : 1.2,
-        "translation-in-points" : [
-          -92.43189756240648,
-          -93.9367195244272
-        ]
-      },
-      "shadow" : {
-        "kind" : "layer-color",
-        "opacity" : 0.2
-      },
-      "specular" : true,
-      "translucency" : {
-        "enabled" : true,
-        "value" : 0
-      }
-    },
-    {
-      "blend-mode" : "normal",
-      "blur-material" : null,
-      "hidden" : false,
-      "layers" : [
-        {
-          "fill-specializations" : [
-            {
-              "value" : {
-                "linear-gradient" : [
-                  "srgb:0.95743,0.98014,1.00000,1.00000",
-                  "srgb:0.52641,0.77899,1.00000,1.00000"
-                ]
-              }
-            },
-            {
-              "appearance" : "dark",
-              "value" : {
-                "linear-gradient" : [
-                  "display-p3:0.88597,0.88597,0.88597,1.00000",
-                  "extended-gray:0.75000,1.00000"
-                ]
-              }
-            }
-          ],
-          "glass" : true,
-          "hidden" : false,
-          "image-name" : "WW.png",
-          "name" : "Window",
-          "position" : {
-            "scale" : 0.1,
-            "translation-in-points" : [
-              0,
-              0
-            ]
-          }
-        }
-      ],
-      "lighting" : "individual",
-      "name" : "V2_Front",
-      "position" : {
-        "scale" : 1.05,
-        "translation-in-points" : [
-          53,
+          51,
           44
         ]
       },
       "shadow" : {
-        "kind" : "layer-color",
+        "kind" : "neutral",
         "opacity" : 1
       },
       "translucency" : {
         "enabled" : true,
-        "value" : 0
+        "value" : 0.6
       }
     }
   ],
