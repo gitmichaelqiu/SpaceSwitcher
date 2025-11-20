@@ -74,7 +74,6 @@ class StatusBarManager: NSObject {
     }
     
     deinit {
-        // Invalidate the Combine subscription
         connectionCancellable?.cancel()
     }
 }

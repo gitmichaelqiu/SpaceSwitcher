@@ -69,7 +69,7 @@ struct AboutView: View {
                     .font(.body)
                     .foregroundColor(.blue)
 
-                    Text("© \(currentYear) Michael Y. Qiu")
+                    Text("© \(currentYear) Michael Yicheng Qiu")
                         .font(.footnote)
                         .foregroundColor(.secondary)
                 }
