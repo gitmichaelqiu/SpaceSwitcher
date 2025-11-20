@@ -25,7 +25,7 @@ class StatusBarManager: NSObject {
         statusBarItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
 
         if let button = statusBarItem.button {
-            button.image = NSImage(named: "status")
+            button.image = NSImage(named: "StatusIcon")
             updateStatusToolTip(isConnected: renamerClient?.availableSpaces.isEmpty == false)
         }
 
