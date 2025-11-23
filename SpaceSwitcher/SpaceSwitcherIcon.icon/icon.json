@@ -21,7 +21,7 @@
             {
               "appearance" : "dark",
               "value" : {
-                "automatic-gradient" : "extended-gray:0.50000,1.00000"
+                "automatic-gradient" : "srgb:0.18806,0.33692,1.00000,1.00000"
               }
             }
           ],
@@ -117,7 +117,7 @@
             {
               "appearance" : "dark",
               "value" : {
-                "automatic-gradient" : "extended-gray:0.50000,1.00000"
+                "automatic-gradient" : "srgb:0.18806,0.33692,1.00000,1.00000"
               }
             }
           ],
