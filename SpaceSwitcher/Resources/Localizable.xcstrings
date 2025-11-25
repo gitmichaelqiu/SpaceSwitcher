@@ -206,16 +206,6 @@
         }
       }
     },
-    "GitHub Repository" : {
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "GitHub 仓库"
-          }
-        }
-      }
-    },
     "Hide" : {
       "localizations" : {
         "zh-Hans" : {
@@ -382,6 +372,40 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "设置…"
+          }
+        }
+      }
+    },
+    "Settings.About.Description" : {
+      "comment" : "Description",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "SpaceSwitcher is an app that lets you furthur customize app behaviors in different spaces."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "SpaceSwitcher 让你进一步自定义 App 在每个桌面的行为。"
+          }
+        }
+      }
+    },
+    "Settings.About.Repo" : {
+      "comment" : "GitHub Repo",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "GitHub Repository"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "GitHub 仓库"
           }
         }
       }

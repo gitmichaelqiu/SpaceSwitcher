@@ -1,5 +1,4 @@
 import SwiftUI
-import AppKit
 
 struct AboutView: View {
     var appName: String {
@@ -13,10 +12,6 @@ struct AboutView: View {
     var currentYear: String {
         let year = Calendar.current.component(.year, from: Date())
         return String(year)
-    }
-    
-    var descriptionPlaceholder: String {
-        "SpaceSwitcher is a macOS utility that automatically show/hide/minize apps when switching to a specific desktop."
     }
 
     var body: some View {
@@ -50,7 +45,7 @@ struct AboutView: View {
                 Divider()
                     .padding(.vertical, 8)
                 
-                Text(descriptionPlaceholder)
+                Text(NSLocalizedString("Settings.About.Description", comment: "Description"))
                     .multilineTextAlignment(.center)
                     .font(.body)
                     .lineSpacing(4)
@@ -63,8 +58,7 @@ struct AboutView: View {
                 Spacer()
 
                 VStack(spacing: 8) {
-                    // Update the destination URL
-                    Link("GitHub Repository",
+                    Link(NSLocalizedString("Settings.About.Repo", comment: "GitHub Repo"),
                          destination: URL(string: "https://github.com/gitmichaelqiu/SpaceSwitcher")!)
                     .font(.body)
                     .foregroundColor(.blue)
