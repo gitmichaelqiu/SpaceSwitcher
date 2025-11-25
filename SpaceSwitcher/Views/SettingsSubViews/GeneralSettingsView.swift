@@ -2,6 +2,7 @@ import SwiftUI
 
 struct GeneralSettingsView: View {
     @ObservedObject var renamerClient: RenamerClient
+    @State private var launchAtLogin = LaunchManager.isEnabled
     
     var body: some View {
         ScrollView {
@@ -39,11 +40,14 @@ struct GeneralSettingsView: View {
                     }
                 }
                 
-                Divider()
-                
                 SettingsSection("Launch") {
                     SettingsRow("Launch At Login") {
-                        
+                        Toggle("Launch At Login", isOn: $launchAtLogin)
+                            .labelsHidden()
+                            .toggleStyle(.switch)
+                            .onChange(of: launchAtLogin) { _ in
+                                LaunchManager.setEnabled(launchAtLogin)
+                            }
                     }
                 }
                 
