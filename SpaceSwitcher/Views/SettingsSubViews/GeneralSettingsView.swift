@@ -3,6 +3,7 @@ import SwiftUI
 struct GeneralSettingsView: View {
     @ObservedObject var renamerClient: RenamerClient
     @State private var launchAtLogin = LaunchManager.isEnabled
+    @State private var autoCheckForUpdates = UpdateManager.isAutoCheckEnabled
     
     var body: some View {
         ScrollView {
@@ -48,6 +49,25 @@ struct GeneralSettingsView: View {
                             .onChange(of: launchAtLogin) { _ in
                                 LaunchManager.setEnabled(launchAtLogin)
                             }
+                    }
+                }
+                
+                SettingsSection("Settings.General.Update") {
+                    SettingsRow("Settings.General.Update.AutoCheck") {
+                        Toggle("", isOn: $autoCheckForUpdates)
+                            .labelsHidden()
+                            .toggleStyle(.switch)
+                            .onChange(of: autoCheckForUpdates) { _ in
+                                UpdateManager.isAutoCheckEnabled = autoCheckForUpdates
+                            }
+                    }
+                    Divider()
+                    SettingsRow("Settings.General.Update.ManualCheck") {
+                        Button(NSLocalizedString("Settings.General.Update.ManualCheck", comment: "")) {
+                            Task {
+                                await UpdateManager.shared.checkForUpdate(from: NSApp.keyWindow)
+                            }
+                        }
                     }
                 }
                 

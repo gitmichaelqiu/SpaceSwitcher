@@ -66,6 +66,19 @@ class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCenterDele
             }
         }
     }
+    
+    func userNotificationCenter(
+        _ center: UNUserNotificationCenter,
+        didReceive response: UNNotificationResponse,
+        withCompletionHandler completionHandler: @escaping () -> Void
+    ) {
+        defer { completionHandler() }
+        if response.actionIdentifier == "openRelease",
+           let url = URL(string: UpdateManager.shared.latestReleaseURL.trimmingCharacters(in: .whitespacesAndNewlines)) {
+            NSWorkspace.shared.open(url)
+            NSApp.perform(#selector(NSApp.terminate), with: nil, afterDelay: 0.5)
+        }
+    }
 }
 
 
