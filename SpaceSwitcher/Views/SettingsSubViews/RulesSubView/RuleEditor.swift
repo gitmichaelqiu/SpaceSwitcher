@@ -10,7 +10,7 @@ struct RuleEditor: View {
     @State private var runningApps: [(name: String, id: String, icon: NSImage)] = []
     
     init(rule: AppRule?, availableSpaces: [RenamerSpace], onSave: @escaping (AppRule) -> Void, onCancel: @escaping () -> Void) {
-        _workingRule = State(initialValue: rule ?? AppRule(appBundleID: "", appName: "Select App", targetSpaceIDs: [], matchAction: .hide, elseAction: .show))
+        _workingRule = State(initialValue: rule ?? AppRule(appBundleID: "", appName: NSLocalizedString("SelectApp", comment:""), targetSpaceIDs: [], matchAction: .hide, elseAction: .show))
         self.availableSpaces = availableSpaces
         self.onSave = onSave
         self.onCancel = onCancel

@@ -90,13 +90,13 @@ struct RuleRow: View {
                     Text("In")
                     Text(formatSpaces(rule.targetSpaceIDs))
                         .fontWeight(.medium)
-                    Text(rule.matchAction.rawValue.lowercased())
+                    Text(rule.matchAction.localizedString.lowercased())
                         .foregroundColor(colorForAction(rule.matchAction))
                     
                     Text("• else")
                         .foregroundColor(.secondary)
                     
-                    Text(rule.elseAction.rawValue.lowercased())
+                    Text(rule.elseAction.localizedString.lowercased())
                         .foregroundColor(colorForAction(rule.elseAction))
                 }
                 .font(.caption)
