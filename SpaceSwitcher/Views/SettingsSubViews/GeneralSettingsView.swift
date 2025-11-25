@@ -39,6 +39,14 @@ struct GeneralSettingsView: View {
                     }
                 }
                 
+                Divider()
+                
+                SettingsSection("Launch") {
+                    SettingsRow("Launch At Login") {
+                        
+                    }
+                }
+                
                 Spacer()
             }
             .padding()
