@@ -162,10 +162,16 @@
     },
     "DesktopRenamer API Status" : {
       "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Space API Status"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "DesktopRenamer API 状态"
+            "value" : "Space API 状态"
           }
         }
       }
