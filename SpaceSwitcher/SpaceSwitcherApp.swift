@@ -1,4 +1,5 @@
 import SwiftUI
+import UserNotifications
 import Combine
 import AppKit
 
@@ -18,7 +19,7 @@ class AppState: ObservableObject {
 }
 
 // Based on OptClicker's AppDelegate for window management
-class AppDelegate: NSObject, NSApplicationDelegate {
+class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCenterDelegate {
     
     let appState = AppState()
     var statusBarManager: StatusBarManager? // New property for the manager
@@ -55,6 +56,15 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             appDelegate: self,
             renamerClient: appState.renamerClient
         )
+        
+        UNUserNotificationCenter.current().delegate = self
+        if UpdateManager.isAutoCheckEnabled {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
+                Task {
+                    await UpdateManager.shared.checkForUpdate(from: nil, suppressUpToDateAlert: true)
+                }
+            }
+        }
     }
 }
 
