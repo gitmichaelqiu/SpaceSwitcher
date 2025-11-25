@@ -11,6 +11,12 @@
             "state" : "new",
             "value" : "%1$lld. %2$@"
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$lld. %2$@"
+          }
         }
       }
     },
@@ -25,7 +31,14 @@
       }
     },
     "© %@ Michael Yicheng Qiu" : {
-
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "© %@ Michael Yicheng Qiu"
+          }
+        }
+      }
     },
     "+ Add Rule" : {
       "localizations" : {
@@ -537,8 +550,83 @@
         }
       }
     },
+    "SpaceCount" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%d spaces"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%d 个桌面"
+          }
+        }
+      }
+    },
     "v%@" : {
-
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "v %@"
+          }
+        }
+      }
+    },
+    "WindowAction.DoNothing" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "DoNothing"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "无操作"
+          }
+        }
+      }
+    },
+    "WindowAction.Hide" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hide"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "隐藏"
+          }
+        }
+      }
+    },
+    "WindowAction.Show" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Show"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "显示"
+          }
+        }
+      }
     }
   },
   "version" : "1.1"

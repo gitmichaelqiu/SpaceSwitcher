@@ -110,7 +110,7 @@ struct RuleRow: View {
     func formatSpaces(_ ids: Set<String>) -> String {
         if ids.isEmpty { return "None" }
         let names = ids.compactMap { id in spaces.first(where: { $0.id == id })?.name }
-        if names.isEmpty { return "\(ids.count) spaces" }
+        if names.isEmpty { return String(format: NSLocalizedString("SpaceCount", comment: ""), ids.count) }
         return names.joined(separator: ", ")
     }
     

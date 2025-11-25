@@ -1,7 +1,7 @@
 import Foundation
 
 enum WindowAction: String, Codable, CaseIterable, Identifiable {
-    case doNothing = "Do Nothing"
+    case doNothing = "DoNothing"
     case show = "Show"
     case hide = "Hide"
     // case minimize = "Minimize" // Requires Accessibility Permissions, keeping simple for now or add later
