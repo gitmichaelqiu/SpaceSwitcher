@@ -9,7 +9,7 @@ struct GeneralSettingsView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
                 SettingsSection("API Connection") {
-                    SettingsRow("Renamer API Status") {
+                    SettingsRow("DesktopRenamer API Status") {
                         HStack {
                             Circle()
                                 .fill(renamerClient.availableSpaces.isEmpty ? Color.red : Color.green)
