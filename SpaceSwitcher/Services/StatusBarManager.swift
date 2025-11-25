@@ -51,7 +51,7 @@ class StatusBarManager: NSObject {
     private func createMenu() -> NSMenu {
         let menu = NSMenu()
 
-        let settingsItem = NSMenuItem(title: "Settings...",
+        let settingsItem = NSMenuItem(title: NSLocalizedString("Settings", comment: ""),
                                       action: #selector(AppDelegate.openSettingsWindow),
                                       keyEquivalent: ",")
         settingsItem.target = appDelegate
@@ -59,7 +59,7 @@ class StatusBarManager: NSObject {
 
         menu.addItem(NSMenuItem.separator())
 
-        let quitItem = NSMenuItem(title: "Quit",
+        let quitItem = NSMenuItem(title: NSLocalizedString("Quit", comment: ""),
                                   action: #selector(AppDelegate.quitApp),
                                   keyEquivalent: "q")
         quitItem.target = appDelegate

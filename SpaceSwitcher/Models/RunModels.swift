@@ -7,6 +7,17 @@ enum WindowAction: String, Codable, CaseIterable, Identifiable {
     // case minimize = "Minimize" // Requires Accessibility Permissions, keeping simple for now or add later
     
     var id: String { self.rawValue }
+    
+    var localizedString: String {
+        switch self {
+        case .doNothing:
+            return NSLocalizedString("DoNothing", comment: "")
+        case .show:
+            return NSLocalizedString("Show", comment: "")
+        case .hide:
+            return NSLocalizedString("Hide", comment: "")
+        }
+    }
 }
 
 struct AppRule: Identifiable, Codable {

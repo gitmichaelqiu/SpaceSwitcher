@@ -92,7 +92,7 @@ struct RuleEditor: View {
                                 .foregroundColor(.secondary)
                             Picker("", selection: $workingRule.matchAction) {
                                 ForEach(WindowAction.allCases) { action in
-                                    Text(NSLocalizedString("WindowAction.\(action.rawValue)", comment: "")).tag(action)
+                                    Text(action.localizedString).tag(action)
                                 }
                             }
                             .labelsHidden()
@@ -106,7 +106,7 @@ struct RuleEditor: View {
                                 .foregroundColor(.secondary)
                             Picker("", selection: $workingRule.elseAction) {
                                 ForEach(WindowAction.allCases) { action in
-                                    Text(NSLocalizedString("WindowAction.\(action.rawValue)", comment: "")).tag(action)
+                                    Text(action.localizedString).tag(action)
                                 }
                             }
                             .labelsHidden()
