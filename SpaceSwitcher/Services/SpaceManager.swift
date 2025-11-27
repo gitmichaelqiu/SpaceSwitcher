@@ -17,7 +17,7 @@ class SpaceManager: ObservableObject {
     
     @Published var currentSpaceID: String?
     @Published var currentSpaceName: String = "Unknown"
-    @Published var availableSpaces: [RenamerSpace] = []
+    @Published var availableSpaces: [SpaceInfo] = []
     
     private var cancellables = Set<AnyCancellable>()
     
@@ -118,11 +118,11 @@ class SpaceManager: ObservableObject {
               let rawSpaces = info["spaces"] as? [[String: Any]] else { return }
         
         DispatchQueue.main.async {
-            self.availableSpaces = rawSpaces.compactMap { dict -> RenamerSpace? in
+            self.availableSpaces = rawSpaces.compactMap { dict -> SpaceInfo? in
                 guard let id = dict["spaceUUID"] as? String,
                       let name = dict["spaceName"] as? String,
                       let num = dict["spaceNumber"] as? NSNumber else { return nil }
-                return RenamerSpace(id: id, name: name, number: num.intValue)
+                return SpaceInfo(id: id, name: name, number: num.intValue)
             }.sorted { $0.number < $1.number }
         }
     }

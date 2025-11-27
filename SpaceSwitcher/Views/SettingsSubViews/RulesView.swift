@@ -74,7 +74,7 @@ struct RulesView: View {
 
 struct RuleRow: View {
     let rule: AppRule
-    let spaces: [RenamerSpace]
+    let spaces: [SpaceInfo]
     
     var body: some View {
         HStack {

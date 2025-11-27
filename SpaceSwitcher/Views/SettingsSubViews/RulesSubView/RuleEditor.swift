@@ -2,14 +2,14 @@ import SwiftUI
 
 struct RuleEditor: View {
     @State private var workingRule: AppRule
-    let availableSpaces: [RenamerSpace]
+    let availableSpaces: [SpaceInfo]
     let onSave: (AppRule) -> Void
     let onCancel: () -> Void
     
     // Running Apps List
     @State private var runningApps: [(name: String, id: String, icon: NSImage)] = []
     
-    init(rule: AppRule?, availableSpaces: [RenamerSpace], onSave: @escaping (AppRule) -> Void, onCancel: @escaping () -> Void) {
+    init(rule: AppRule?, availableSpaces: [SpaceInfo], onSave: @escaping (AppRule) -> Void, onCancel: @escaping () -> Void) {
         _workingRule = State(initialValue: rule ?? AppRule(appBundleID: "", appName: NSLocalizedString("SelectApp", comment:""), targetSpaceIDs: [], matchAction: .hide, elseAction: .show))
         self.availableSpaces = availableSpaces
         self.onSave = onSave

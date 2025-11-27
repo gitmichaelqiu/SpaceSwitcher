@@ -32,13 +32,13 @@ struct AppRule: Identifiable, Codable {
     var isEnabled: Bool = true
 }
 
-struct RenamerSpace: Identifiable, Codable, Hashable {
+struct SpaceInfo: Identifiable, Codable, Hashable {
     let id: String // UUID
     let name: String
     let number: Int
     
     // Conform to Hashable/Equatable for selection sets
-    static func == (lhs: RenamerSpace, rhs: RenamerSpace) -> Bool {
+    static func == (lhs: SpaceInfo, rhs: SpaceInfo) -> Bool {
         lhs.id == rhs.id
     }
     
