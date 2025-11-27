@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct GeneralSettingsView: View {
-    @ObservedObject var renamerClient: RenamerClient
+    @ObservedObject var spaceManager: SpaceManager
     @State private var launchAtLogin = LaunchManager.isEnabled
     @State private var autoCheckForUpdates = UpdateManager.isAutoCheckEnabled
     
@@ -12,25 +12,25 @@ struct GeneralSettingsView: View {
                     SettingsRow("DesktopRenamer API Status") {
                         HStack {
                             Circle()
-                                .fill(renamerClient.availableSpaces.isEmpty ? Color.red : Color.green)
+                                .fill(spaceManager.availableSpaces.isEmpty ? Color.red : Color.green)
                                 .frame(width: 8, height: 8)
-                            Text(renamerClient.availableSpaces.isEmpty ? "Not Connected" : "Connected")
+                            Text(spaceManager.availableSpaces.isEmpty ? "Not Connected" : "Connected")
                                 .foregroundColor(.primary)
                                 .padding(4)
                         }
                     }
                     
-                    if !renamerClient.availableSpaces.isEmpty {
+                    if !spaceManager.availableSpaces.isEmpty {
                         Divider()
                         
                         SettingsRow("Current Space") {
-                            Text(renamerClient.currentSpaceName)
+                            Text(spaceManager.currentSpaceName)
                                 .foregroundColor(.primary)
                                 .padding(4)
                         }
                     }
                     
-                    if renamerClient.availableSpaces.isEmpty {
+                    if spaceManager.availableSpaces.isEmpty {
                         Divider()
                         
                         SettingsRow(nil) {
@@ -75,7 +75,7 @@ struct GeneralSettingsView: View {
             }
             .padding()
             .frame(maxWidth: .infinity, alignment: .topLeading)
-            .animation(.easeInOut(duration: 0.2), value: renamerClient.availableSpaces.isEmpty)
+            .animation(.easeInOut(duration: 0.2), value: spaceManager.availableSpaces.isEmpty)
         }
     }
 }

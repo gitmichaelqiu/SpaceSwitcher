@@ -2,7 +2,7 @@ import SwiftUI
 
 struct RulesView: View {
     @ObservedObject var ruleManager: RuleManager
-    @ObservedObject var renamerClient: RenamerClient
+    @ObservedObject var spaceManager: SpaceManager
     @State private var showingEditor = false
     @State private var selectedRuleID: UUID?
     
@@ -22,7 +22,7 @@ struct RulesView: View {
             } else {
                 List {
                     ForEach($ruleManager.rules) { $rule in
-                        RuleRow(rule: rule, spaces: renamerClient.availableSpaces)
+                        RuleRow(rule: rule, spaces: spaceManager.availableSpaces)
                             .contentShape(Rectangle())
                             .onTapGesture {
                                 selectedRuleID = rule.id
@@ -37,7 +37,7 @@ struct RulesView: View {
             
             HStack {
                 Button {
-                    renamerClient.refreshSpaceList()
+                    spaceManager.refreshSpaceList()
                 } label: {
                     Image(systemName: "arrow.clockwise")
                 }
@@ -55,7 +55,7 @@ struct RulesView: View {
         .sheet(isPresented: $showingEditor) {
             RuleEditor(
                 rule: selectedRuleID == nil ? nil : ruleManager.rules.first(where: { $0.id == selectedRuleID }),
-                availableSpaces: renamerClient.availableSpaces,
+                availableSpaces: spaceManager.availableSpaces,
                 onSave: { newRule in
                     if let index = ruleManager.rules.firstIndex(where: { $0.id == newRule.id }) {
                         ruleManager.rules[index] = newRule

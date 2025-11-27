@@ -5,7 +5,7 @@ enum SettingsTab: String {
 }
 
 struct SettingsView: View {
-    @ObservedObject var renamerClient: RenamerClient
+    @ObservedObject var spaceManager: SpaceManager
     @ObservedObject var ruleManager: RuleManager
     
     @AppStorage("selectedSettingsTab") private var selectedTab: SettingsTab = .general
@@ -14,10 +14,10 @@ struct SettingsView: View {
         if #available(macOS 15.0, *) {
             TabView(selection: $selectedTab) {
                 Tab("General", systemImage: "gearshape.fill", value: .general) {
-                    GeneralSettingsView(renamerClient: renamerClient)
+                    GeneralSettingsView(spaceManager: spaceManager)
                 }
                 Tab("Rules", systemImage: "list.bullet.rectangle.portrait.fill", value: .rules) {
-                    RulesView(ruleManager: ruleManager, renamerClient: renamerClient)
+                    RulesView(ruleManager: ruleManager, spaceManager: spaceManager)
                 }
                 Tab("About", systemImage: "info.circle.fill", value: .about) {
                     AboutView()
@@ -26,7 +26,7 @@ struct SettingsView: View {
             .scenePadding()
         } else {
             TabView(selection: $selectedTab) {
-                GeneralSettingsView(renamerClient: renamerClient)
+                GeneralSettingsView(spaceManager: spaceManager)
                    .tabItem {
                        Label(
                            "General",
@@ -35,7 +35,7 @@ struct SettingsView: View {
                    }
                    .tag(SettingsTab.general)
 
-                RulesView(ruleManager: ruleManager, renamerClient: renamerClient)
+                RulesView(ruleManager: ruleManager, spaceManager: spaceManager)
                    .tabItem {
                        Label(
                            "Rules",

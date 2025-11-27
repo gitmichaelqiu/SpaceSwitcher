@@ -7,7 +7,7 @@ class RuleManager: ObservableObject {
         didSet { saveRules() }
     }
     
-    weak var renamerClient: RenamerClient? {
+    weak var spaceManager: SpaceManager? {
         didSet {
             setupBindings()
         }
@@ -21,7 +21,7 @@ class RuleManager: ObservableObject {
     }
     
     private func setupBindings() {
-        renamerClient?.$currentSpaceID
+        spaceManager?.$currentSpaceID
             .dropFirst() // Skip initial load to avoid jarring changes on launch
             .removeDuplicates()
             .sink { [weak self] spaceID in

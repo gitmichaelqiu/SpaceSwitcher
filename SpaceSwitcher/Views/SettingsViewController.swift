@@ -8,15 +8,15 @@ class SettingsWindowController: NSObject {
     static let shared = SettingsWindowController()
 
     private var window: NSWindow?
-    private var renamerClient: RenamerClient?
+    private var spaceManager: SpaceManager?
     private var ruleManager: RuleManager?
     
     private override init() {
         super.init()
     }
 
-    func open(renamerClient: RenamerClient, ruleManager: RuleManager) {
-        self.renamerClient = renamerClient
+    func open(spaceManager: SpaceManager, ruleManager: RuleManager) {
+        self.spaceManager = spaceManager
         self.ruleManager = ruleManager
 
         if window == nil {
@@ -49,12 +49,12 @@ class SettingsWindowController: NSObject {
         win.collectionBehavior = [.participatesInCycle]
 
         // Inject dependencies
-        guard let renamerClient = self.renamerClient,
+        guard let spaceManager = self.spaceManager,
               let ruleManager = self.ruleManager else {
             fatalError("SettingsWindowController: dependencies not set")
         }
 
-        let rootView = SettingsView(renamerClient: renamerClient, ruleManager: ruleManager)
+        let rootView = SettingsView(spaceManager: spaceManager, ruleManager: ruleManager)
         win.contentView = NSHostingView(rootView: rootView)
 
         // Observe close

@@ -6,14 +6,14 @@ import AppKit
 // This class ensures services are running before UI is shown
 class AppState: ObservableObject {
     // KVO requires properties to be dynamic/ObjC compatible for observation
-    dynamic let renamerClient: RenamerClient // Make dynamic for KVO
+    dynamic let spaceManager: SpaceManager // Make dynamic for KVO
     let ruleManager: RuleManager
     
     init() {
         print("APP: Launching Services...")
-        self.renamerClient = RenamerClient()
+        self.spaceManager = SpaceManager()
         self.ruleManager = RuleManager()
-        self.ruleManager.renamerClient = self.renamerClient
+        self.ruleManager.spaceManager = self.spaceManager
         print("APP: Services Linked and Running.")
     }
 }
@@ -30,7 +30,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCenterDele
 
     @objc func openSettingsWindow() {
         SettingsWindowController.shared.open(
-            renamerClient: appState.renamerClient,
+            spaceManager: appState.spaceManager,
             ruleManager: appState.ruleManager
         )
     }
@@ -54,7 +54,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCenterDele
         // Initialize the Status Bar Manager here
         statusBarManager = StatusBarManager(
             appDelegate: self,
-            renamerClient: appState.renamerClient
+            spaceManager: appState.spaceManager
         )
         
         UNUserNotificationCenter.current().delegate = self

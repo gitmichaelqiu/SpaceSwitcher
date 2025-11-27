@@ -2,7 +2,7 @@ import Foundation
 import Combine
 import AppKit
 
-class RenamerClient: ObservableObject {
+class SpaceManager: ObservableObject {
     // MARK: - Final API Constants
     private let apiPrefix = "com.michaelqiu.DesktopRenamer"
     

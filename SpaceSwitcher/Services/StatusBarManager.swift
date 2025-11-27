@@ -7,13 +7,13 @@ class StatusBarManager: NSObject {
     private weak var appDelegate: AppDelegate?
     
     // SpaceSwitcher specific dependencies
-    private var renamerClient: RenamerClient?
+    private var spaceManager: SpaceManager?
     // Store the Combine subscription to keep it active
     private var connectionCancellable: AnyCancellable?
 
-    init(appDelegate: AppDelegate, renamerClient: RenamerClient) {
+    init(appDelegate: AppDelegate, spaceManager: SpaceManager) {
         self.appDelegate = appDelegate
-        self.renamerClient = renamerClient
+        self.spaceManager = spaceManager
         super.init()
         
         setupStatusBar()
@@ -26,7 +26,7 @@ class StatusBarManager: NSObject {
 
         if let button = statusBarItem.button {
             button.image = NSImage(named: "StatusIcon")
-            updateStatusToolTip(isConnected: renamerClient?.availableSpaces.isEmpty == false)
+            updateStatusToolTip(isConnected: spaceManager?.availableSpaces.isEmpty == false)
         }
 
         statusBarItem.menu = createMenu()
@@ -34,7 +34,7 @@ class StatusBarManager: NSObject {
     
     private func setupCombineObservation() {
         // FIX: Use Combine to monitor changes to the @Published property
-        connectionCancellable = renamerClient?.$availableSpaces
+        connectionCancellable = spaceManager?.$availableSpaces
             .receive(on: DispatchQueue.main) // Ensure updates are on the main thread
             .sink { [weak self] spaces in
                 // Check if availableSpaces array is non-empty to determine connection status
