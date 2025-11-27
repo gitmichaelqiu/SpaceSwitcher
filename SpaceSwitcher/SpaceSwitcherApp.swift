@@ -7,13 +7,13 @@ import AppKit
 class AppState: ObservableObject {
     // KVO requires properties to be dynamic/ObjC compatible for observation
     dynamic let renamerClient: RenamerClient // Make dynamic for KVO
-    let ruleEngine: RuleEngine
+    let ruleManager: RuleManager
     
     init() {
         print("APP: Launching Services...")
         self.renamerClient = RenamerClient()
-        self.ruleEngine = RuleEngine()
-        self.ruleEngine.renamerClient = self.renamerClient
+        self.ruleManager = RuleManager()
+        self.ruleManager.renamerClient = self.renamerClient
         print("APP: Services Linked and Running.")
     }
 }
@@ -31,7 +31,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCenterDele
     @objc func openSettingsWindow() {
         SettingsWindowController.shared.open(
             renamerClient: appState.renamerClient,
-            ruleEngine: appState.ruleEngine
+            ruleManager: appState.ruleManager
         )
     }
     

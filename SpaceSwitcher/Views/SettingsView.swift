@@ -6,7 +6,7 @@ enum SettingsTab: String {
 
 struct SettingsView: View {
     @ObservedObject var renamerClient: RenamerClient
-    @ObservedObject var ruleEngine: RuleEngine
+    @ObservedObject var ruleManager: RuleManager
     
     @AppStorage("selectedSettingsTab") private var selectedTab: SettingsTab = .general
     
@@ -17,7 +17,7 @@ struct SettingsView: View {
                     GeneralSettingsView(renamerClient: renamerClient)
                 }
                 Tab("Rules", systemImage: "list.bullet.rectangle.portrait.fill", value: .rules) {
-                    RulesView(ruleEngine: ruleEngine, renamerClient: renamerClient)
+                    RulesView(ruleManager: ruleManager, renamerClient: renamerClient)
                 }
                 Tab("About", systemImage: "info.circle.fill", value: .about) {
                     AboutView()
@@ -35,7 +35,7 @@ struct SettingsView: View {
                    }
                    .tag(SettingsTab.general)
 
-                RulesView(ruleEngine: ruleEngine, renamerClient: renamerClient)
+                RulesView(ruleManager: ruleManager, renamerClient: renamerClient)
                    .tabItem {
                        Label(
                            "Rules",

@@ -2,7 +2,7 @@ import Foundation
 import AppKit
 import Combine
 
-class RuleEngine: ObservableObject {
+class RuleManager: ObservableObject {
     @Published var rules: [AppRule] = [] {
         didSet { saveRules() }
     }

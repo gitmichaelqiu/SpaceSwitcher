@@ -9,15 +9,15 @@ class SettingsWindowController: NSObject {
 
     private var window: NSWindow?
     private var renamerClient: RenamerClient?
-    private var ruleEngine: RuleEngine?
+    private var ruleManager: RuleManager?
     
     private override init() {
         super.init()
     }
 
-    func open(renamerClient: RenamerClient, ruleEngine: RuleEngine) {
+    func open(renamerClient: RenamerClient, ruleManager: RuleManager) {
         self.renamerClient = renamerClient
-        self.ruleEngine = ruleEngine
+        self.ruleManager = ruleManager
 
         if window == nil {
             createWindow()
@@ -50,11 +50,11 @@ class SettingsWindowController: NSObject {
 
         // Inject dependencies
         guard let renamerClient = self.renamerClient,
-              let ruleEngine = self.ruleEngine else {
+              let ruleManager = self.ruleManager else {
             fatalError("SettingsWindowController: dependencies not set")
         }
 
-        let rootView = SettingsView(renamerClient: renamerClient, ruleEngine: ruleEngine)
+        let rootView = SettingsView(renamerClient: renamerClient, ruleManager: ruleManager)
         win.contentView = NSHostingView(rootView: rootView)
 
         // Observe close

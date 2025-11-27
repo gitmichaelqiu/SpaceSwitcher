@@ -1,14 +1,14 @@
 import SwiftUI
 
 struct RulesView: View {
-    @ObservedObject var ruleEngine: RuleEngine
+    @ObservedObject var ruleManager: RuleManager
     @ObservedObject var renamerClient: RenamerClient
     @State private var showingEditor = false
     @State private var selectedRuleID: UUID?
     
     var body: some View {
         VStack(alignment: .leading) {
-            if ruleEngine.rules.isEmpty {
+            if ruleManager.rules.isEmpty {
                 VStack {
                     Spacer()
                     Text("No Rules Configured")
@@ -21,7 +21,7 @@ struct RulesView: View {
                 .frame(maxWidth: .infinity)
             } else {
                 List {
-                    ForEach($ruleEngine.rules) { $rule in
+                    ForEach($ruleManager.rules) { $rule in
                         RuleRow(rule: rule, spaces: renamerClient.availableSpaces)
                             .contentShape(Rectangle())
                             .onTapGesture {
@@ -30,7 +30,7 @@ struct RulesView: View {
                             }
                     }
                     .onDelete { indexSet in
-                        ruleEngine.rules.remove(atOffsets: indexSet)
+                        ruleManager.rules.remove(atOffsets: indexSet)
                     }
                 }
             }
@@ -54,13 +54,13 @@ struct RulesView: View {
         }
         .sheet(isPresented: $showingEditor) {
             RuleEditor(
-                rule: selectedRuleID == nil ? nil : ruleEngine.rules.first(where: { $0.id == selectedRuleID }),
+                rule: selectedRuleID == nil ? nil : ruleManager.rules.first(where: { $0.id == selectedRuleID }),
                 availableSpaces: renamerClient.availableSpaces,
                 onSave: { newRule in
-                    if let index = ruleEngine.rules.firstIndex(where: { $0.id == newRule.id }) {
-                        ruleEngine.rules[index] = newRule
+                    if let index = ruleManager.rules.firstIndex(where: { $0.id == newRule.id }) {
+                        ruleManager.rules[index] = newRule
                     } else {
-                        ruleEngine.rules.append(newRule)
+                        ruleManager.rules.append(newRule)
                     }
                     showingEditor = false
                 },
