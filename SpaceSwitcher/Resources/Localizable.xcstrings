@@ -691,10 +691,16 @@
     },
     "v%@" : {
       "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "v%@"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "v %@"
+            "value" : "v%@"
           }
         }
       }
