@@ -2,10 +2,19 @@ import Foundation
 import AppKit
 import Combine
 
+enum RuleSortOption: String, CaseIterable, Identifiable {
+    case name = "Name"
+    case space = "Space" // Groups by the lowest space number assigned
+    
+    var id: String { rawValue }
+}
+
 class RuleManager: ObservableObject {
     @Published var rules: [AppRule] = [] {
         didSet { saveRules() }
     }
+    
+    @Published var sortOption: RuleSortOption = .name
     
     weak var spaceManager: SpaceManager? {
         didSet {
@@ -20,9 +29,49 @@ class RuleManager: ObservableObject {
         loadRules()
     }
     
+    // MARK: - Sorting Logic
+    
+    var sortedRules: [AppRule] {
+        switch sortOption {
+        case .name:
+            return rules.sorted {
+                $0.appName.localizedCaseInsensitiveCompare($1.appName) == .orderedAscending
+            }
+        case .space:
+            return rules.sorted { r1, r2 in
+                let s1 = getLowestSpaceNumber(for: r1)
+                let s2 = getLowestSpaceNumber(for: r2)
+                
+                if s1 != s2 {
+                    return s1 < s2
+                }
+                // Secondary sort by name
+                return r1.appName.localizedCaseInsensitiveCompare(r2.appName) == .orderedAscending
+            }
+        }
+    }
+    
+    private func getLowestSpaceNumber(for rule: AppRule) -> Int {
+        guard let sm = spaceManager, !rule.targetSpaceIDs.isEmpty else { return 999 }
+        
+        // Filter available spaces to find matches for this rule
+        let matchedSpaces = sm.availableSpaces.filter { rule.targetSpaceIDs.contains($0.id) }
+        
+        // Return the lowest number found, or 999 if the space ID isn't currently valid/connected
+        return matchedSpaces.map { $0.number }.min() ?? 999
+    }
+    
+    // MARK: - Actions
+    
+    func deleteRule(withID id: UUID) {
+        rules.removeAll { $0.id == id }
+    }
+    
+    // MARK: - Rule Execution (Existing)
+    
     private func setupBindings() {
         spaceManager?.$currentSpaceID
-            .dropFirst() // Skip initial load to avoid jarring changes on launch
+            .dropFirst()
             .removeDuplicates()
             .sink { [weak self] spaceID in
                 guard let self = self, let spaceID = spaceID else { return }
@@ -48,8 +97,6 @@ class RuleManager: ObservableObject {
             app.hide()
         case .show:
             app.unhide()
-            // Optional: Bring to front?
-            // app.activate(options: .activateIgnoringOtherApps)
         case .doNothing:
             break
         }
