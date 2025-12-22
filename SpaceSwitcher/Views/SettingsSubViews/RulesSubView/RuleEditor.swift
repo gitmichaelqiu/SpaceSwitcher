@@ -121,10 +121,10 @@ struct RuleEditor: View {
             }
             .menuStyle(.borderlessButton)
             .padding(.horizontal, 24)
-            .padding(.vertical, 20)
+            .padding(.vertical, 12)
             .frame(maxWidth: .infinity, alignment: .leading) // FIX: Ensure frame fills width and aligns leading
         }
-        .frame(height: 90)
+        .frame(height: 72)
     }
     
     // MARK: - 2. Left Column: Spaces
