@@ -3,8 +3,9 @@ import SwiftUI
 struct RulesView: View {
     @ObservedObject var ruleManager: RuleManager
     @ObservedObject var spaceManager: SpaceManager
-    @State private var showingEditor = false
-    @State private var selectedRuleID: UUID?
+    
+    // Use 'item' presentation to ensure data persistence and correct initialization
+    @State private var editingRule: AppRule?
     
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
@@ -47,7 +48,6 @@ struct RulesView: View {
                 )
             } else {
                 List {
-                    // Use sortedRules instead of raw rules binding
                     ForEach(ruleManager.sortedRules) { rule in
                         RuleRow(
                             rule: rule,
@@ -60,8 +60,8 @@ struct RulesView: View {
                         )
                         .contentShape(Rectangle())
                         .onTapGesture {
-                            selectedRuleID = rule.id
-                            showingEditor = true
+                            // strictly pass a copy to the editor
+                            editingRule = rule
                         }
                     }
                 }
@@ -89,8 +89,14 @@ struct RulesView: View {
                 Spacer()
                 
                 Button {
-                    selectedRuleID = nil
-                    showingEditor = true
+                    // Create a fresh rule
+                    editingRule = AppRule(
+                        appBundleID: "",
+                        appName: NSLocalizedString("Select Target App", comment: ""),
+                        targetSpaceIDs: [],
+                        matchAction: .show,
+                        elseAction: .hide
+                    )
                 } label: {
                     Text("+ Add Rule")
                         .frame(minWidth: 80)
@@ -99,9 +105,10 @@ struct RulesView: View {
             }
             .padding(.top, 4)
         }
-        .sheet(isPresented: $showingEditor) {
+        // Sheet driven by the Identifiable item 'editingRule'
+        .sheet(item: $editingRule) { rule in
             RuleEditor(
-                rule: selectedRuleID == nil ? nil : ruleManager.rules.first(where: { $0.id == selectedRuleID }),
+                rule: rule,
                 availableSpaces: spaceManager.availableSpaces,
                 onSave: { newRule in
                     if let index = ruleManager.rules.firstIndex(where: { $0.id == newRule.id }) {
@@ -109,16 +116,17 @@ struct RulesView: View {
                     } else {
                         ruleManager.rules.append(newRule)
                     }
-                    showingEditor = false
+                    editingRule = nil
                 },
                 onCancel: {
-                    showingEditor = false
+                    editingRule = nil
                 }
             )
         }
     }
 }
 
+// (RuleRow remains the same as previous step)
 struct RuleRow: View {
     let rule: AppRule
     let spaces: [SpaceInfo]
@@ -179,7 +187,7 @@ struct RuleRow: View {
                     .font(.system(size: 14))
             }
             .buttonStyle(.plain)
-            .opacity(isHovering ? 1 : 0) // Only visible on hover (cleaner look)
+            .opacity(isHovering ? 1 : 0)
         }
         .padding(.vertical, 8)
         .padding(.horizontal, 8)
@@ -194,15 +202,8 @@ struct RuleRow: View {
     
     func formatSpaces(_ ids: Set<String>) -> String {
         if ids.isEmpty { return "None" }
-        
-        // Match IDs to SpaceInfo to get proper Names/Numbers
         let matched = spaces.filter { ids.contains($0.id) }.sorted { $0.number < $1.number }
-        
-        if matched.isEmpty {
-            // IDs exist but not currently connected
-            return "\(ids.count) Space(s)"
-        }
-        
+        if matched.isEmpty { return "\(ids.count) Space(s)" }
         let names = matched.map { $0.name }
         return names.joined(separator: ", ")
     }
@@ -211,8 +212,8 @@ struct RuleRow: View {
         switch action {
         case .show: return .green
         case .hide: return .red
-        case .doNothing: return .secondary
         case .minimize: return .orange
+        case .doNothing: return .secondary
         }
     }
 }

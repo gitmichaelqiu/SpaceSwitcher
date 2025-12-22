@@ -4,7 +4,11 @@
     "" : {
 
     },
+    "%lld." : {
+
+    },
     "%lld. %@" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -64,9 +68,6 @@
         }
       }
     },
-    "1. Target Application" : {
-
-    },
     "2. Logic" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -77,9 +78,6 @@
           }
         }
       }
-    },
-    "2. Target Spaces" : {
-
     },
     "About" : {
       "localizations" : {
@@ -112,6 +110,9 @@
         }
       }
     },
+    "Active Spaces" : {
+
+    },
     "Add a rule to control app visibility across spaces." : {
 
     },
@@ -129,7 +130,6 @@
 
     },
     "Application" : {
-      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -148,6 +148,9 @@
           }
         }
       }
+    },
+    "Change Application" : {
+
     },
     "Click + to add a new switching rule." : {
       "extractionState" : "stale",
@@ -214,6 +217,7 @@
       }
     },
     "Edit Rule" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -254,7 +258,10 @@
         }
       }
     },
-    "In Other Spaces:" : {
+    "In Other Spaces" : {
+
+    },
+    "In Target Spaces" : {
 
     },
     "In these spaces:" : {
@@ -291,7 +298,7 @@
     "Minimize" : {
       "comment" : "Action: Minimize Window"
     },
-    "New Rule" : {
+    "No application selected" : {
 
     },
     "No Rules Configured" : {
@@ -304,7 +311,7 @@
         }
       }
     },
-    "No spaces detected." : {
+    "No spaces detected via DesktopRenamer." : {
 
     },
     "Not Connected" : {
@@ -337,9 +344,6 @@
           }
         }
       }
-    },
-    "Please select an application to continue." : {
-
     },
     "Quit" : {
       "extractionState" : "manual",
@@ -398,10 +402,13 @@
     "Select a category" : {
 
     },
+    "Select a running application..." : {
+
+    },
     "Select Target App" : {
 
     },
-    "Select the spaces where this app belongs." : {
+    "Select the spaces where this app should be visible." : {
 
     },
     "SelectApp" : {
@@ -752,13 +759,13 @@
         }
       }
     },
-    "Standard behavior: Hide or Minimize" : {
-
-    },
-    "Standard behavior: Show" : {
-
-    },
     "Switcher" : {
+
+    },
+    "Usually 'Hide' or 'Minimize'" : {
+
+    },
+    "Usually 'Show'" : {
 
     },
     "v%@" : {
@@ -776,9 +783,6 @@
           }
         }
       }
-    },
-    "When in Target Space:" : {
-
     }
   },
   "version" : "1.1"
