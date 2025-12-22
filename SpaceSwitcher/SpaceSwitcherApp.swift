@@ -2,11 +2,47 @@ import SwiftUI
 import UserNotifications
 import Combine
 import AppKit
+import ServiceManagement
 
-// This class ensures services are running before UI is shown
+// MARK: - Sidebar Fix
+extension NSSplitViewItem {
+    @nonobjc private static let swizzler: () = {
+        let originalSelector = #selector(getter: canCollapse)
+        let swizzledSelector = #selector(getter: swizzledCanCollapse)
+
+        guard
+            let originalMethod = class_getInstanceMethod(NSSplitViewItem.self, originalSelector),
+            let swizzledMethod = class_getInstanceMethod(NSSplitViewItem.self, swizzledSelector)
+        else { return }
+
+        method_exchangeImplementations(originalMethod, swizzledMethod)
+    }()
+
+    @objc private var swizzledCanCollapse: Bool {
+        // If this split view item belongs to our specific Settings Window, return false
+        if let window = viewController.view.window,
+           window.identifier?.rawValue == "SettingsWindow" {
+            return false
+        }
+        return self.swizzledCanCollapse
+    }
+
+    static func swizzle() {
+        _ = swizzler
+    }
+}
+
+@available(macOS 14.0, *)
+extension View {
+    func removeSidebarToggle() -> some View {
+        toolbar(removing: .sidebarToggle)
+            .toolbar { Color.clear }
+    }
+}
+
+// MARK: - App State
 class AppState: ObservableObject {
-    // KVO requires properties to be dynamic/ObjC compatible for observation
-    dynamic let spaceManager: SpaceManager // Make dynamic for KVO
+    dynamic let spaceManager: SpaceManager
     let ruleManager: RuleManager
     
     init() {
@@ -18,11 +54,11 @@ class AppState: ObservableObject {
     }
 }
 
-// Based on OptClicker's AppDelegate for window management
+// MARK: - App Delegate
 class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCenterDelegate {
     
     let appState = AppState()
-    var statusBarManager: StatusBarManager? // New property for the manager
+    var statusBarManager: StatusBarManager?
 
     @objc func quitApp() {
         NSApp.terminate(self)
@@ -35,11 +71,15 @@ class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCenterDele
         )
     }
     
-    // New function to handle the "About" menu item, matching OptClicker logic
     @objc func openAboutWindow() {
-        // Set selected tab to about, then open the window
-        UserDefaults.standard.set(SettingsTab.about.rawValue, forKey: "selectedSettingsTab")
-        openSettingsWindow()
+        // Pre-select About tab if desired, though NavigationSplitView handles state differently
+        // We can handle this via a notification or singleton state if strictly needed,
+        // but opening the window is the primary action.
+        SettingsWindowController.shared.open(
+            spaceManager: appState.spaceManager,
+            ruleManager: appState.ruleManager,
+            targetTab: .about
+        )
     }
     
     func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
@@ -48,10 +88,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCenterDele
     }
 
     func applicationDidFinishLaunching(_ notification: Notification) {
-        // Initially set activation policy to accessory since we are a menubar app
         NSApp.setActivationPolicy(.accessory)
         
-        // Initialize the Status Bar Manager here
         statusBarManager = StatusBarManager(
             appDelegate: self,
             spaceManager: appState.spaceManager
@@ -81,25 +119,23 @@ class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCenterDele
     }
 }
 
-
 @main
 struct SpaceSwitcherApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
     
+    init() {
+        NSSplitViewItem.swizzle()
+    }
+    
     var body: some Scene {
-        // 1. Remove MenuBarExtra completely. The StatusBarManager handles the menu bar item.
-        
-        // 2. Keep Settings and Commands for standard macOS menu support
         Settings { EmptyView() }
         .commands {
-            // OptClicker's command structure
             CommandGroup(replacing: .appInfo) {
-                // Route to the new openAboutWindow
                 Button("About SpaceSwitcher") {
                     appDelegate.openAboutWindow()
                 }
             }
-            CommandGroup(replacing: .appSettings) { } // Empty to hide Settings menu item
+            CommandGroup(replacing: .appSettings) { }
         }
     }
 }

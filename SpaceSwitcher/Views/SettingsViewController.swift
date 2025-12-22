@@ -1,70 +1,81 @@
 import SwiftUI
 import AppKit
 
-let defaultSettingsWindowWidth = 450
-let defaultSettingsWindowHeight = 480
-
-class SettingsWindowController: NSObject {
+class SettingsWindowController: NSObject, NSWindowDelegate {
     static let shared = SettingsWindowController()
 
     private var window: NSWindow?
-    private var spaceManager: SpaceManager?
-    private var ruleManager: RuleManager?
+    private var windowController: NSWindowController?
     
     private override init() {
         super.init()
     }
 
-    func open(spaceManager: SpaceManager, ruleManager: RuleManager) {
-        self.spaceManager = spaceManager
-        self.ruleManager = ruleManager
+    func open(spaceManager: SpaceManager, ruleManager: RuleManager, targetTab: SettingsTab? = nil) {
+        NSApp.setActivationPolicy(.regular)
 
-        if window == nil {
-            createWindow()
+        // If window exists, just bring to front (and optionally switch tab if we implemented binding update logic)
+        if let win = self.window {
+            win.makeKeyAndOrderFront(nil)
+            NSApp.activate(ignoringOtherApps: true)
+            return
         }
 
-        window?.makeKeyAndOrderFront(nil)
-        NSApp.activate(ignoringOtherApps: true)
-        NSApp.setActivationPolicy(.regular)
+        createWindow(spaceManager: spaceManager, ruleManager: ruleManager, startTab: targetTab)
     }
 
-    @objc private func windowWillClose(_ notification: Notification) {
-        NSApp.setActivationPolicy(.accessory)
-    }
-
-    private func createWindow() {
-        let size = NSSize(width: defaultSettingsWindowWidth, height: defaultSettingsWindowHeight)
+    private func createWindow(spaceManager: SpaceManager, ruleManager: RuleManager, startTab: SettingsTab?) {
+        // 1. STYLE: .fullSizeContentView is critical for the "Ice" style (content goes behind title bar)
+        let styleMask: NSWindow.StyleMask = [.titled, .closable, .miniaturizable, .fullSizeContentView]
+        
         let win = NSWindow(
-            contentRect: NSRect(origin: .zero, size: size),
-            styleMask: [.titled, .closable, .miniaturizable],
+            contentRect: NSRect(x: 0, y: 0, width: defaultSettingsWindowWidth, height: defaultSettingsWindowHeight),
+            styleMask: styleMask,
             backing: .buffered,
             defer: false
         )
+        
+        win.identifier = NSUserInterfaceItemIdentifier("SettingsWindow")
+        
+        // 2. CONFIG: Hide the native title bar elements
+        win.titleVisibility = .hidden
+        win.titlebarAppearsTransparent = true
+        win.titlebarSeparatorStyle = .none
+        
+        // 3. REMOVE TOOLBAR: Ensures no extra space is reserved at the top
+        win.toolbar = nil
+        
         win.center()
         win.setFrameAutosaveName("Settings")
         win.isReleasedWhenClosed = false
-        win.minSize = size
-        win.maxSize = size
-        win.level = .normal
+        win.minSize = NSSize(width: defaultSettingsWindowWidth, height: defaultSettingsWindowHeight)
         win.collectionBehavior = [.participatesInCycle]
-
-        // Inject dependencies
-        guard let spaceManager = self.spaceManager,
-              let ruleManager = self.ruleManager else {
-            fatalError("SettingsWindowController: dependencies not set")
-        }
-
-        let rootView = SettingsView(spaceManager: spaceManager, ruleManager: ruleManager)
-        win.contentView = NSHostingView(rootView: rootView)
-
-        // Observe close
-        NotificationCenter.default.addObserver(
-            self,
-            selector: #selector(windowWillClose),
-            name: NSWindow.willCloseNotification,
-            object: win
+        win.level = .normal
+        
+        // 4. CONTENT: Use the custom HostingController
+        let settingsVC = SettingsHostingController(
+            spaceManager: spaceManager,
+            ruleManager: ruleManager,
+            startTab: startTab
         )
+        win.contentViewController = settingsVC
 
+        // 5. WINDOW CONTROLLER
+        let wc = NSWindowController(window: win)
+        wc.window?.delegate = self
+        self.windowController = wc
         self.window = win
+        
+        wc.showWindow(nil)
+        NSApp.activate(ignoringOtherApps: true)
+    }
+
+    func windowWillClose(_ notification: Notification) {
+        // Switch back to accessory (menu bar only) mode when settings close
+        DispatchQueue.main.async {
+            NSApp.setActivationPolicy(.accessory)
+        }
+        self.window = nil
+        self.windowController = nil
     }
 }

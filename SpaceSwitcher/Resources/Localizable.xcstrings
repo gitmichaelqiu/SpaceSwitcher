@@ -349,6 +349,9 @@
         }
       }
     },
+    "Select a category" : {
+
+    },
     "SelectApp" : {
       "localizations" : {
         "en" : {
@@ -672,6 +675,9 @@
         }
       }
     },
+    "Space" : {
+
+    },
     "SpaceCount" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -688,6 +694,9 @@
           }
         }
       }
+    },
+    "Switcher" : {
+
     },
     "v%@" : {
       "localizations" : {
