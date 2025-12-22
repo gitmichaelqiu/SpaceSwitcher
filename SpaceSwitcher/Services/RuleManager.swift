@@ -14,7 +14,8 @@ class RuleManager: ObservableObject {
     @Published var rules: [AppRule] = [] {
         didSet {
             saveRules()
-            refreshRules()
+            // UPDATED: Removed refreshRules() from here.
+            // Changes are saved, but not applied until the user closes settings.
         }
     }
     
@@ -37,7 +38,8 @@ class RuleManager: ObservableObject {
             .store(in: &cancellables)
     }
     
-    private func refreshRules() {
+    // UPDATED: Renamed/Made Public to be called by SettingsWindowController
+    func forceRefresh() {
         guard let spaceID = spaceManager?.currentSpaceID else { return }
         if Thread.isMainThread { self.applyRules(for: spaceID) }
         else { DispatchQueue.main.async { self.applyRules(for: spaceID) } }
@@ -88,7 +90,6 @@ class RuleManager: ObservableObject {
     }
 
     // ... (Accessibility helpers & Sorting same as before) ...
-    // Note: getLowestSpaceNumber needs update for sorting
     
     private func getLowestSpaceNumber(for rule: AppRule) -> Int {
         guard let sm = spaceManager else { return 999 }
@@ -99,8 +100,6 @@ class RuleManager: ObservableObject {
         let matched = sm.availableSpaces.filter { allIDs.contains($0.id) }
         return matched.map { $0.number }.min() ?? 999
     }
-    
-    // (Omitted standard save/load/helpers for brevity - they are unchanged except for getLowestSpaceNumber)
     
     private func unhideAppWithoutActivation(_ app: NSRunningApplication) {
          let pid = app.processIdentifier

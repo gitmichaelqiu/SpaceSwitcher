@@ -57,7 +57,8 @@ struct RuleEditor: View {
             // 2. Add Group Button
             Button {
                 withAnimation {
-                    workingRule.groups.append(RuleGroup(targetSpaceIDs: [], actions: [.show]))
+                    // Default to empty actions
+                    workingRule.groups.append(RuleGroup(targetSpaceIDs: [], actions: []))
                 }
             } label: {
                 HStack {
@@ -239,32 +240,27 @@ struct ActionSequenceEditor: View {
     @Binding var actions: [WindowAction]
     var placeholder: String
     @State private var recordingIndex: Int? = nil
+    @State private var draggedItem: WindowAction?
     
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             if actions.isEmpty {
                 Text(placeholder).font(.caption).italic().foregroundColor(.secondary).padding(.vertical, 8)
             } else {
-                ForEach(Array(actions.enumerated()), id: \.offset) { index, action in
-                    HStack {
-                        Text("\(index + 1).").font(.caption).monospacedDigit().foregroundColor(.secondary).frame(width: 20, alignment: .trailing)
-                        if case .hotkey(let code, let mods) = action {
-                            Button { startRecording(at: index) } label: {
-                                if recordingIndex == index { Text("Recording...").foregroundColor(.red).fontWeight(.bold) }
-                                else { HStack { Image(systemName: "keyboard"); Text(code == -1 ? "Click to Record" : ShortcutHelper.format(code: code, modifiers: mods)) }.font(.subheadline) }
-                            }
-                            .buttonStyle(.plain).padding(.horizontal, 4).padding(.vertical, 2)
-                            .background(recordingIndex == index ? Color.red.opacity(0.1) : Color.clear).cornerRadius(4)
-                        } else {
-                            Text(action.localizedString).font(.subheadline)
-                        }
-                        Spacer()
-                        Button { actions.remove(at: index) } label: { Image(systemName: "xmark").font(.caption2) }.buttonStyle(.plain).foregroundColor(.secondary)
-                    }
-                    .padding(6).background(RoundedRectangle(cornerRadius: 6).fill(Color.secondary.opacity(0.08)))
-                    if index < actions.count - 1 { Image(systemName: "arrow.down").font(.caption2).foregroundColor(.secondary.opacity(0.3)).padding(.leading, 15) }
+                ForEach(Array(actions.enumerated()), id: \.element) { index, action in
+                    // FIX: Extracted row into separate View to prevent compiler timeout
+                    ActionRowView(
+                        index: index,
+                        action: action,
+                        actions: $actions,
+                        draggedItem: $draggedItem,
+                        isRecording: recordingIndex == index,
+                        onRecord: { startRecording(at: index) },
+                        onDelete: { actions.remove(at: index) }
+                    )
                 }
             }
+            
             Menu {
                 Button("Show") { actions.append(.show) }
                 Button("Bring to Front") { actions.append(.bringToFront) }
@@ -275,6 +271,7 @@ struct ActionSequenceEditor: View {
             } label: { HStack { Image(systemName: "plus"); Text("Add Action") }.font(.caption).fontWeight(.medium) }
             .menuStyle(.borderlessButton).foregroundColor(.blue).padding(.top, 4)
         }
+        .animation(.default, value: actions)
     }
     
     private func startRecording(at index: Int) {
@@ -288,6 +285,85 @@ struct ActionSequenceEditor: View {
                 return nil
             }
             return event
+        }
+    }
+}
+
+// MARK: - Action Row View (Extracted to fix Compiler Error)
+struct ActionRowView: View {
+    let index: Int
+    let action: WindowAction
+    @Binding var actions: [WindowAction]
+    @Binding var draggedItem: WindowAction?
+    let isRecording: Bool
+    let onRecord: () -> Void
+    let onDelete: () -> Void
+    
+    var body: some View {
+        HStack {
+            // Drag Handle
+            Image(systemName: "line.3.horizontal")
+                .foregroundColor(.secondary.opacity(0.3))
+//                .cursor(.openHand)
+            
+            Text("\(index + 1).").font(.caption).monospacedDigit().foregroundColor(.secondary).frame(width: 20, alignment: .trailing)
+            
+            if case .hotkey(let code, let mods) = action {
+                Button(action: onRecord) {
+                    if isRecording {
+                        Text("Recording...").foregroundColor(.red).fontWeight(.bold)
+                    } else {
+                        HStack {
+                            Image(systemName: "keyboard")
+                            Text(code == -1 ? "Click to Record" : ShortcutHelper.format(code: code, modifiers: mods))
+                        }
+                        .font(.subheadline)
+                    }
+                }
+                .buttonStyle(.plain).padding(.horizontal, 4).padding(.vertical, 2)
+                .background(isRecording ? Color.red.opacity(0.1) : Color.clear).cornerRadius(4)
+            } else {
+                Text(action.localizedString).font(.subheadline)
+            }
+            
+            Spacer()
+            
+            Button(action: onDelete) {
+                Image(systemName: "xmark").font(.caption2)
+            }
+            .buttonStyle(.plain).foregroundColor(.secondary)
+        }
+        .padding(6).background(RoundedRectangle(cornerRadius: 6).fill(Color.secondary.opacity(0.08)))
+        // Drag and Drop Logic
+        .onDrag {
+            self.draggedItem = action
+            return NSItemProvider(object: action.id as NSString)
+        }
+        .onDrop(of: [.text], delegate: ActionDropDelegate(item: action, items: $actions, draggedItem: $draggedItem))
+    }
+}
+
+// MARK: - Drop Delegate for Reordering
+struct ActionDropDelegate: DropDelegate {
+    let item: WindowAction
+    @Binding var items: [WindowAction]
+    @Binding var draggedItem: WindowAction?
+    
+    func performDrop(info: DropInfo) -> Bool {
+        draggedItem = nil
+        return true
+    }
+    
+    func dropEntered(info: DropInfo) {
+        guard let draggedItem = draggedItem else { return }
+        
+        if draggedItem != item {
+            if let from = items.firstIndex(of: draggedItem),
+               let to = items.firstIndex(of: item) {
+                withAnimation {
+                    items.move(fromOffsets: IndexSet(integer: from), toOffset: to > from ? to + 1 : to)
+                }
+            }
         }
     }
 }

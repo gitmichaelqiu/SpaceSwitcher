@@ -7,12 +7,18 @@ class SettingsWindowController: NSObject, NSWindowDelegate {
     private var window: NSWindow?
     private var windowController: NSWindowController?
     
+    // UPDATED: Hold a weak reference to RuleManager to trigger updates on close
+    private weak var ruleManager: RuleManager?
+    
     private override init() {
         super.init()
     }
 
     func open(spaceManager: SpaceManager, ruleManager: RuleManager, targetTab: SettingsTab? = nil) {
         NSApp.setActivationPolicy(.regular)
+
+        // UPDATED: Store reference
+        self.ruleManager = ruleManager
 
         // If window exists, just bring to front (and optionally switch tab if we implemented binding update logic)
         if let win = self.window {
@@ -74,6 +80,8 @@ class SettingsWindowController: NSObject, NSWindowDelegate {
         // Switch back to accessory (menu bar only) mode when settings close
         DispatchQueue.main.async {
             NSApp.setActivationPolicy(.accessory)
+            // UPDATED: Force rule refresh when settings window closes
+            self.ruleManager?.forceRefresh()
         }
         self.window = nil
         self.windowController = nil
