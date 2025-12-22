@@ -19,19 +19,12 @@ struct RuleEditor: View {
     
     var body: some View {
         VStack(spacing: 0) {
-            // 1. Header (App Selector)
-            appSelectorHeader
-                .zIndex(1)
-            
+            appSelectorHeader.zIndex(1)
             Divider()
             
-            // 2. Main Content (Two Equal Columns)
             HStack(alignment: .top, spacing: 16) {
-                // LEFT: Spaces
                 spacesColumn
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
-                
-                // RIGHT: Actions
                 actionsColumn
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
@@ -39,107 +32,68 @@ struct RuleEditor: View {
             .background(Color(NSColor.windowBackgroundColor))
             
             Divider()
-            
-            // 3. Footer
             footerView
         }
-        .frame(width: 700, height: 500)
-        .onAppear {
-            loadRunningApps()
-        }
+        .frame(width: 750, height: 550) // Slightly wider for workflows
+        .onAppear { loadRunningApps() }
     }
     
     // MARK: - 1. App Selector Header
-    
     private var appSelectorHeader: some View {
-        ZStack(alignment: .leading) { // FIX: Align ZStack content to leading
-            Color(NSColor.controlBackgroundColor)
-                .ignoresSafeArea()
-            
+        ZStack(alignment: .leading) {
+            Color(NSColor.controlBackgroundColor).ignoresSafeArea()
             Menu {
                 if !runningApps.isEmpty {
                     Section("Running Applications") {
                         ForEach(runningApps, id: \.id) { app in
-                            Button {
-                                selectApp(name: app.name, id: app.id)
-                            } label: {
-                                HStack {
-                                    Image(nsImage: app.icon)
-                                    Text(app.name)
-                                }
+                            Button { selectApp(name: app.name, id: app.id) } label: {
+                                HStack { Image(nsImage: app.icon); Text(app.name) }
                             }
                         }
                     }
                 }
-                
                 Divider()
-                
-                Button("Choose other app...") {
-                    pickOtherApp()
-                }
-                
+                Button("Choose other app...") { pickOtherApp() }
             } label: {
                 HStack(alignment: .center, spacing: 16) {
-                    // App Icon
                     if !workingRule.appBundleID.isEmpty,
                        let path = NSWorkspace.shared.urlForApplication(withBundleIdentifier: workingRule.appBundleID)?.path {
                         Image(nsImage: NSWorkspace.shared.icon(forFile: path))
-                            .resizable()
-                            .frame(width: 48, height: 48)
-                            .shadow(radius: 1)
+                            .resizable().frame(width: 48, height: 48).shadow(radius: 1)
                     } else {
                         Image(systemName: "app.dashed")
-                            .resizable()
-                            .frame(width: 48, height: 48)
-                            .foregroundColor(.secondary.opacity(0.5))
+                            .resizable().frame(width: 48, height: 48).foregroundColor(.secondary.opacity(0.5))
                     }
-                    
-                    // App Name & Bundle ID
                     VStack(alignment: .leading, spacing: 2) {
                         HStack(spacing: 6) {
                             Text(workingRule.appBundleID.isEmpty ? "Select Application" : workingRule.appName)
-                                .font(.title2)
-                                .fontWeight(.bold)
-                                .foregroundColor(.primary)
-                            
+                                .font(.title2).fontWeight(.bold).foregroundColor(.primary)
                             Image(systemName: "chevron.down.circle.fill")
-                                .font(.subheadline)
-                                .foregroundColor(.secondary.opacity(0.5))
+                                .font(.subheadline).foregroundColor(.secondary.opacity(0.5))
                         }
-                        
                         Text(workingRule.appBundleID.isEmpty ? "Click here to choose target" : workingRule.appBundleID)
-                            .font(.caption)
-                            .foregroundColor(.secondary)
-                            .monospaced()
-                            .lineLimit(1)
-                            .truncationMode(.middle)
+                            .font(.caption).foregroundColor(.secondary).monospaced().lineLimit(1).truncationMode(.middle)
                     }
-                    
-                    Spacer() // Forces internal content to the left
+                    Spacer()
                 }
                 .contentShape(Rectangle())
             }
             .menuStyle(.borderlessButton)
-            .padding(.horizontal, 24)
-            .padding(.vertical, 12)
-            .frame(maxWidth: .infinity, alignment: .leading) // FIX: Ensure frame fills width and aligns leading
+            .padding(.horizontal, 24).padding(.vertical, 12)
+            .frame(maxWidth: .infinity, alignment: .leading)
         }
         .frame(height: 72)
     }
     
     // MARK: - 2. Left Column: Spaces
-    
     private var spacesColumn: some View {
         GroupBox(label: Label("Target Spaces", systemImage: "macwindow")) {
             VStack(alignment: .leading, spacing: 0) {
                 if availableSpaces.isEmpty {
                     VStack {
                         Spacer()
-                        Text("No spaces detected.")
-                            .foregroundColor(.secondary)
-                        Text("Is DesktopRenamer running?")
-                            .font(.caption)
-                            .foregroundColor(.secondary)
+                        Text("No spaces detected.").foregroundColor(.secondary)
+                        Text("Is DesktopRenamer running?").font(.caption).foregroundColor(.secondary)
                         Spacer()
                     }
                     .frame(maxWidth: .infinity)
@@ -156,15 +110,9 @@ struct RuleEditor: View {
                                 )) {
                                     HStack {
                                         Text("\(space.number)")
-                                            .font(.system(.body, design: .monospaced))
-                                            .foregroundColor(.secondary)
+                                            .font(.system(.body, design: .monospaced)).foregroundColor(.secondary)
                                             .frame(width: 25, alignment: .trailing)
-                                        
-                                        Text(space.name)
-                                            .font(.body)
-                                            .fontWeight(.medium)
-                                            .lineLimit(1)
-                                        
+                                        Text(space.name).font(.body).fontWeight(.medium).lineLimit(1)
                                         Spacer()
                                     }
                                 }
@@ -173,8 +121,7 @@ struct RuleEditor: View {
                             .padding(.vertical, 3)
                         }
                     }
-                    .listStyle(.plain)
-                    .scrollContentBackground(.hidden)
+                    .listStyle(.plain).scrollContentBackground(.hidden)
                 }
             }
             .padding(.top, 4)
@@ -182,135 +129,139 @@ struct RuleEditor: View {
     }
     
     // MARK: - 3. Right Column: Actions
-    
     private var actionsColumn: some View {
         GroupBox(label: Label("Window Actions", systemImage: "slider.horizontal.3")) {
             VStack {
-//                Spacer() // Pushes block to vertical center
-                Color.clear.frame(height: 4)
-                
-                // Block of controls
-                VStack(alignment: .leading, spacing: 24) { // FIX: Alignment leading for the block itself
+                Spacer()
+                VStack(alignment: .leading, spacing: 24) {
                     
-                    // Block A: Match Action
-                    VStack(alignment: .leading, spacing: 8) {
-                        HStack(spacing: 6) {
-                            Image(systemName: "checkmark.circle.fill")
-                                .foregroundColor(.green)
-                            Text("In Target Spaces")
-                                .font(.headline)
-                        }
-                        
-                        Picker("", selection: $workingRule.matchAction) {
-                            ForEach(WindowAction.allCases) { action in
-                                Text(action.localizedString).tag(action)
-                            }
-                        }
-                        .labelsHidden()
-                        .frame(maxWidth: .infinity, alignment: .leading) // Ensure picker aligns leading
-                        
-                        Text("Standard behavior: Show")
-                            .font(.caption)
-                            .foregroundColor(.secondary)
-                    }
+                    // Sequence A: Match
+                    ActionSequenceEditor(
+                        title: "In Target Spaces",
+                        icon: "checkmark.circle.fill",
+                        iconColor: .green,
+                        actions: $workingRule.matchActions
+                    )
                     
                     Divider()
                     
-                    // Block B: Else Action
-                    VStack(alignment: .leading, spacing: 8) {
-                        HStack(spacing: 6) {
-                            Image(systemName: "xmark.circle.fill")
-                                .foregroundColor(.red)
-                            Text("In Other Spaces")
-                                .font(.headline)
-                        }
-                        
-                        Picker("", selection: $workingRule.elseAction) {
-                            ForEach(WindowAction.allCases) { action in
-                                Text(action.localizedString).tag(action)
-                            }
-                        }
-                        .labelsHidden()
-                        .frame(maxWidth: .infinity, alignment: .leading) // Ensure picker aligns leading
-                        
-                        Text("Standard behavior: Hide or Minimize")
-                            .font(.caption)
-                            .foregroundColor(.secondary)
-                    }
+                    // Sequence B: Else
+                    ActionSequenceEditor(
+                        title: "In Other Spaces",
+                        icon: "xmark.circle.fill",
+                        iconColor: .red,
+                        actions: $workingRule.elseActions
+                    )
                 }
                 .padding(.horizontal, 12)
-                .frame(maxWidth: .infinity, alignment: .leading) // Ensure the inner block aligns to leading edge of GroupBox
-                
-                Spacer() // Pushes block to vertical center
+                .frame(maxWidth: .infinity, alignment: .leading)
+                Spacer()
             }
         }
     }
     
     // MARK: - 4. Footer
-    
     private var footerView: some View {
         HStack {
-            Button("Cancel", action: onCancel)
-                .keyboardShortcut(.escape, modifiers: [])
-            
+            Button("Cancel", action: onCancel).keyboardShortcut(.escape, modifiers: [])
             Spacer()
-            
-            Button("Save Rule") {
-                onSave(workingRule)
-            }
-            .buttonStyle(.borderedProminent)
-            .disabled(workingRule.appBundleID.isEmpty)
-            .keyboardShortcut(.return, modifiers: [])
+            Button("Save Rule") { onSave(workingRule) }
+                .buttonStyle(.borderedProminent)
+                .disabled(workingRule.appBundleID.isEmpty)
+                .keyboardShortcut(.return, modifiers: [])
         }
-        .padding(16)
-        .background(Color(NSColor.controlBackgroundColor))
+        .padding(16).background(Color(NSColor.controlBackgroundColor))
     }
     
-    // MARK: - Logic Helpers
-    
+    // MARK: - Helpers
     private func selectApp(name: String, id: String) {
-        withAnimation {
-            workingRule.appName = name
-            workingRule.appBundleID = id
-        }
+        withAnimation { workingRule.appName = name; workingRule.appBundleID = id }
     }
-    
     private func pickOtherApp() {
         let panel = NSOpenPanel()
         panel.allowedContentTypes = [.application]
         panel.directoryURL = URL(fileURLWithPath: "/Applications")
-        panel.canChooseDirectories = false
-        panel.canChooseFiles = true
-        panel.allowsMultipleSelection = false
+        panel.canChooseDirectories = false; panel.canChooseFiles = true; panel.allowsMultipleSelection = false
         panel.message = "Select an application to control"
-        
         panel.begin { response in
             if response == .OK, let url = panel.url {
                 let bundle = Bundle(url: url)
                 let id = bundle?.bundleIdentifier ?? ""
-                
                 var name = bundle?.infoDictionary?["CFBundleName"] as? String
-                if name == nil {
-                     name = url.deletingPathExtension().lastPathComponent
-                }
-                
-                if !id.isEmpty {
-                    DispatchQueue.main.async {
-                        self.selectApp(name: name ?? "Unknown", id: id)
-                    }
-                }
+                if name == nil { name = url.deletingPathExtension().lastPathComponent }
+                if !id.isEmpty { DispatchQueue.main.async { self.selectApp(name: name ?? "Unknown", id: id) } }
             }
         }
     }
-    
     func loadRunningApps() {
-        let apps = NSWorkspace.shared.runningApplications
-            .filter { $0.activationPolicy == .regular }
-        
-        self.runningApps = apps.map { app in
-            (name: app.localizedName ?? "Unknown",
-             id: app.bundleIdentifier ?? "",
-             icon: app.icon ?? NSImage())
-        }.sorted { $0.name < $1.name }
+        let apps = NSWorkspace.shared.runningApplications.filter { $0.activationPolicy == .regular }
+        self.runningApps = apps.map { (name: $0.localizedName ?? "Unknown", id: $0.bundleIdentifier ?? "", icon: $0.icon ?? NSImage()) }.sorted { $0.name < $1.name }
+    }
+}
+
+// MARK: - Action Sequence Editor Helper
+struct ActionSequenceEditor: View {
+    let title: String
+    let icon: String
+    let iconColor: Color
+    @Binding var actions: [WindowAction]
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(spacing: 6) {
+                Image(systemName: icon).foregroundColor(iconColor)
+                Text(title).font(.headline)
+            }
+            
+            if actions.isEmpty {
+                Text("No actions (Do Nothing)")
+                    .font(.caption).italic().foregroundColor(.secondary)
+                    .padding(.vertical, 4)
+            } else {
+                ForEach(Array(actions.enumerated()), id: \.offset) { index, action in
+                    HStack {
+                        Text("\(index + 1).")
+                            .font(.caption).monospacedDigit().foregroundColor(.secondary)
+                        Text(action.localizedString)
+                            .font(.subheadline)
+                        
+                        Spacer()
+                        
+                        // Remove Button
+                        Button {
+                            actions.remove(at: index)
+                        } label: {
+                            Image(systemName: "xmark").font(.caption2)
+                        }
+                        .buttonStyle(.plain)
+                        .foregroundColor(.secondary)
+                        .padding(.leading, 4)
+                    }
+                    .padding(6)
+                    .background(RoundedRectangle(cornerRadius: 6).fill(Color.secondary.opacity(0.08)))
+                    
+                    if index < actions.count - 1 {
+                        Image(systemName: "arrow.down")
+                            .font(.caption2).foregroundColor(.secondary.opacity(0.5))
+                            .padding(.leading, 12)
+                    }
+                }
+            }
+            
+            // Add Action Menu
+            Menu {
+                ForEach(WindowAction.allCases) { action in
+                    Button(action.localizedString) {
+                        actions.append(action)
+                    }
+                }
+            } label: {
+                Label("Add Step", systemImage: "plus")
+                    .font(.caption)
+            }
+            .menuStyle(.borderlessButton)
+            .padding(.top, 4)
+            .foregroundColor(.blue)
+        }
     }
 }

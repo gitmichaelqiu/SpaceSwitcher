@@ -7,6 +7,9 @@
     "%lld" : {
 
     },
+    "%lld." : {
+
+    },
     "%lld. %@" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -113,6 +116,9 @@
     "Add a rule to control app visibility across spaces." : {
 
     },
+    "Add Step" : {
+
+    },
     "API Connection" : {
       "localizations" : {
         "zh-Hans" : {
@@ -136,6 +142,9 @@
           }
         }
       }
+    },
+    "Bring to Front" : {
+
     },
     "Cancel" : {
       "localizations" : {
@@ -256,12 +265,6 @@
         }
       }
     },
-    "In Other Spaces" : {
-
-    },
-    "In Target Spaces" : {
-
-    },
     "In these spaces:" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -298,6 +301,9 @@
     },
     "Minimize" : {
       "comment" : "Action: Minimize Window"
+    },
+    "No actions (Do Nothing)" : {
+
     },
     "No Rules Configured" : {
       "localizations" : {
@@ -372,9 +378,6 @@
       }
     },
     "Refresh Spaces" : {
-
-    },
-    "Reload space list from DesktopRenamer" : {
 
     },
     "Rules" : {
@@ -753,12 +756,6 @@
           }
         }
       }
-    },
-    "Standard behavior: Hide or Minimize" : {
-
-    },
-    "Standard behavior: Show" : {
-
     },
     "Switcher" : {
 
