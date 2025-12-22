@@ -12,7 +12,10 @@ enum RuleSortOption: String, CaseIterable, Identifiable {
 
 class RuleManager: ObservableObject {
     @Published var rules: [AppRule] = [] {
-        didSet { saveRules() }
+        didSet {
+            saveRules()
+            refreshRules()
+        }
     }
     
     @Published var sortOption: RuleSortOption = .name
@@ -41,6 +44,19 @@ class RuleManager: ObservableObject {
             .store(in: &cancellables)
     }
     
+    /// Helper to manually trigger a refresh based on current state
+    private func refreshRules() {
+        guard let spaceID = spaceManager?.currentSpaceID else { return }
+        // Ensure UI updates happen on main thread if triggered from background
+        if Thread.isMainThread {
+            self.applyRules(for: spaceID)
+        } else {
+            DispatchQueue.main.async {
+                self.applyRules(for: spaceID)
+            }
+        }
+    }
+    
     private func applyRules(for spaceID: String) {
         for rule in rules where rule.isEnabled {
             let isMatch = rule.targetSpaceIDs.contains(spaceID)
@@ -51,6 +67,7 @@ class RuleManager: ObservableObject {
     }
     
     private func perform(action: WindowAction, on bundleID: String) {
+        // Find the running app
         guard let app = NSRunningApplication.runningApplications(withBundleIdentifier: bundleID).first else { return }
         
         switch action {
@@ -58,9 +75,9 @@ class RuleManager: ObservableObject {
             app.hide()
             
         case .show:
-            // 1. Unhide (if it was Cmd+H hidden)
+            // 1. Unhide (Cmd+H reversal)
             app.unhide()
-            // 2. Un-minimize (if it was Cmd+M minimized or minimized via rule)
+            // 2. Un-minimize (Cmd+M reversal)
             unminimizeAppWindows(app)
             
         case .minimize:
@@ -82,7 +99,6 @@ class RuleManager: ObservableObject {
         
         if result == .success, let windows = windowsRef as? [AXUIElement] {
             for window in windows {
-                // Set minimized = true
                 AXUIElementSetAttributeValue(window, kAXMinimizedAttribute as CFString, kCFBooleanTrue)
             }
         }
@@ -93,24 +109,16 @@ class RuleManager: ObservableObject {
         let appElement = AXUIElementCreateApplication(pid)
         
         var windowsRef: AnyObject?
-        // Note: kAXWindowsAttribute usually only returns visible (non-minimized) windows.
-        // To get minimized windows, we often need to check the application's entire list or standard window role.
-        // However, for many apps, checking kAXWindowsAttribute is sufficient if the OS considers them "windows belonging to the app".
-        // If that fails, using kAXVisibleChildrenAttribute or iterating standard Accessibility hierarchy might be needed,
-        // but often the issue is simply setting the attribute.
-        
-        // Strategy: Iterate windows and set minimized to false.
         let result = AXUIElementCopyAttributeValue(appElement, kAXWindowsAttribute as CFString, &windowsRef)
         
         if result == .success, let windows = windowsRef as? [AXUIElement] {
             for window in windows {
-                // Check if minimized first to avoid redundant calls (optional but good practice)
+                // Check if minimized first
                 var isMinimizedRef: AnyObject?
                 if AXUIElementCopyAttributeValue(window, kAXMinimizedAttribute as CFString, &isMinimizedRef) == .success,
                    let isMinimized = isMinimizedRef as? Bool,
                    isMinimized {
                     
-                    // Set minimized = false
                     AXUIElementSetAttributeValue(window, kAXMinimizedAttribute as CFString, kCFBooleanFalse)
                 }
             }
