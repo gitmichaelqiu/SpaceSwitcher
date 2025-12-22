@@ -173,16 +173,55 @@ struct RuleEditor: View {
     private func selectApp(name: String, id: String) {
         withAnimation { workingRule.appName = name; workingRule.appBundleID = id }
     }
-    private func pickOtherApp() { /* same as before */ }
-    func loadRunningApps() { /* same as before */ }
+    private func pickOtherApp() {
+        let panel = NSOpenPanel()
+        panel.allowedContentTypes = [.application]
+        panel.directoryURL = URL(fileURLWithPath: "/Applications")
+        panel.canChooseDirectories = false
+        panel.canChooseFiles = true
+        panel.allowsMultipleSelection = false
+        panel.message = "Select an application to control"
+        
+        panel.begin { response in
+            if response == .OK, let url = panel.url {
+                let bundle = Bundle(url: url)
+                let id = bundle?.bundleIdentifier ?? ""
+                
+                // Fallback name logic
+                var name = bundle?.infoDictionary?["CFBundleName"] as? String
+                if name == nil {
+                     name = url.deletingPathExtension().lastPathComponent
+                }
+                
+                if !id.isEmpty {
+                    DispatchQueue.main.async {
+                        self.selectApp(name: name ?? "Unknown", id: id)
+                    }
+                }
+            }
+        }
+    }
+    
+    func loadRunningApps() {
+        let apps = NSWorkspace.shared.runningApplications
+            .filter { $0.activationPolicy == .regular }
+        
+        self.runningApps = apps.map { app in
+            (name: app.localizedName ?? "Unknown",
+             id: app.bundleIdentifier ?? "",
+             icon: app.icon ?? NSImage())
+        }.sorted { $0.name < $1.name }
+    }
 }
 
-// MARK: - Action Sequence Editor
 struct ActionSequenceEditor: View {
     let title: String
     let icon: String
     let iconColor: Color
     @Binding var actions: [WindowAction]
+    
+    // State to track which row is currently recording
+    @State private var recordingIndex: Int? = nil
     
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -200,10 +239,46 @@ struct ActionSequenceEditor: View {
                     HStack {
                         Text("\(index + 1).")
                             .font(.caption).monospacedDigit().foregroundColor(.secondary)
-                        Text(action.localizedString)
-                            .font(.subheadline)
+                        
+                        // Custom View for each action type
+                        if case .hotkey(let code, let mods) = action {
+                            // Hotkey Recording View
+                            Button {
+                                startRecording(at: index)
+                            } label: {
+                                if recordingIndex == index {
+                                    Text("Recording... (Press keys)")
+                                        .foregroundColor(.red)
+                                        .fontWeight(.bold)
+                                } else {
+                                    if code == -1 {
+                                        HStack {
+                                            Image(systemName: "keyboard")
+                                            Text("Click to Record Shortcut")
+                                        }
+                                        .foregroundColor(.blue)
+                                    } else {
+                                        HStack {
+                                            Image(systemName: "keyboard.fill")
+                                            Text(ShortcutHelper.format(code: code, modifiers: mods))
+                                                .monospaced()
+                                                .fontWeight(.semibold)
+                                        }
+                                    }
+                                }
+                            }
+                            .buttonStyle(.plain)
+                            .background(recordingIndex == index ? Color.red.opacity(0.1) : Color.clear)
+                            .cornerRadius(4)
+                            
+                        } else {
+                            // Standard Label
+                            Text(action.localizedString)
+                                .font(.subheadline)
+                        }
                         
                         Spacer()
+                        
                         Button { actions.remove(at: index) } label: {
                             Image(systemName: "xmark").font(.caption2)
                         }
@@ -220,13 +295,44 @@ struct ActionSequenceEditor: View {
             }
             
             Menu {
-                ForEach(WindowAction.allCases) { action in
-                    Button(action.localizedString) { actions.append(action) }
+                // Standard Actions
+                Button("Show") { actions.append(.show) }
+                Button("Bring to Front") { actions.append(.bringToFront) }
+                Button("Hide") { actions.append(.hide) }
+                Button("Minimize") { actions.append(.minimize) }
+                
+                Divider()
+                
+                // Hotkey Action
+                Button("Simulate Hotkey...") {
+                    // Add a blank hotkey placeholder
+                    actions.append(.hotkey(keyCode: -1, modifiers: 0))
                 }
             } label: {
                 Label("Add Step", systemImage: "plus").font(.caption)
             }
             .menuStyle(.borderlessButton).padding(.top, 4).foregroundColor(.blue)
+        }
+    }
+    
+    private func startRecording(at index: Int) {
+        recordingIndex = index
+        
+        // Local Monitor to capture the very next keypress
+        NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
+            if self.recordingIndex == index {
+                // Capture
+                let mods = event.modifierFlags.intersection(.deviceIndependentFlagsMask).rawValue
+                let code = Int(event.keyCode)
+                
+                // Update Action
+                self.actions[index] = .hotkey(keyCode: code, modifiers: UInt(mods))
+                
+                // Stop Recording
+                self.recordingIndex = nil
+                return nil // Consume event so it doesn't type in the window
+            }
+            return event
         }
     }
 }

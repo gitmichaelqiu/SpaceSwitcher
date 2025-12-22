@@ -170,6 +170,9 @@
         }
       }
     },
+    "Click to Record Shortcut" : {
+
+    },
     "Connected" : {
       "localizations" : {
         "zh-Hans" : {
@@ -366,6 +369,9 @@
           }
         }
       }
+    },
+    "Recording... (Press keys)" : {
+
     },
     "Refresh Space List" : {
       "extractionState" : "stale",
@@ -734,6 +740,9 @@
           }
         }
       }
+    },
+    "Simulate Hotkey..." : {
+
     },
     "Sort by %@" : {
 

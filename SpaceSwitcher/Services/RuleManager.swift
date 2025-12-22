@@ -19,24 +19,15 @@ class RuleManager: ObservableObject {
     }
     
     @Published var sortOption: RuleSortOption = .name
-    
-    weak var spaceManager: SpaceManager? {
-        didSet { setupBindings() }
-    }
-    
+    weak var spaceManager: SpaceManager? { didSet { setupBindings() } }
     private var cancellables = Set<AnyCancellable>()
     private let rulesKey = "SpaceSwitcherRules"
     
-    init() {
-        loadRules()
-    }
-    
-    // MARK: - Logic & Execution
+    init() { loadRules() }
     
     private func setupBindings() {
         spaceManager?.$currentSpaceID
-            .dropFirst()
-            .removeDuplicates()
+            .dropFirst().removeDuplicates()
             .sink { [weak self] spaceID in
                 guard let self = self, let spaceID = spaceID else { return }
                 self.applyRules(for: spaceID)
@@ -46,11 +37,8 @@ class RuleManager: ObservableObject {
     
     private func refreshRules() {
         guard let spaceID = spaceManager?.currentSpaceID else { return }
-        if Thread.isMainThread {
-            self.applyRules(for: spaceID)
-        } else {
-            DispatchQueue.main.async { self.applyRules(for: spaceID) }
-        }
+        if Thread.isMainThread { self.applyRules(for: spaceID) }
+        else { DispatchQueue.main.async { self.applyRules(for: spaceID) } }
     }
     
     private func applyRules(for spaceID: String) {
@@ -64,31 +52,59 @@ class RuleManager: ObservableObject {
     private func perform(actions: [WindowAction], on bundleID: String) {
         guard let app = NSRunningApplication.runningApplications(withBundleIdentifier: bundleID).first else { return }
         
-        for action in actions {
-            switch action {
-            case .hide:
-                app.hide()
-                
-            case .show:
-                // FIX: Use AX to unhide without activating (preserves layer)
-                unhideAppWithoutActivation(app)
-                // Also ensure individual windows are not minimized
-                unminimizeAppWindows(app)
-                
-            case .minimize:
-                minimizeAppWindows(app)
-                
-            case .bringToFront:
-                app.activate(options: .activateIgnoringOtherApps)
+        // Execute sequentially
+        // Note: For hotkeys, we might need a tiny delay if the previous action was "Show"
+        Task { @MainActor in
+            for action in actions {
+                switch action {
+                case .hide:
+                    app.hide()
+                    
+                case .show:
+                    unhideAppWithoutActivation(app)
+                    unminimizeAppWindows(app)
+                    
+                case .minimize:
+                    minimizeAppWindows(app)
+                    
+                case .bringToFront:
+                    app.activate(options: .activateIgnoringOtherApps)
+                    
+                case .hotkey(let keyCode, let modifiers):
+                    // Ensure app is frontmost before typing
+                    // (Unless the user wants global shortcuts, but usually it's for the target app)
+                    if !app.isActive {
+                        app.activate(options: .activateIgnoringOtherApps)
+                        // Give it a moment to take focus
+                        try? await Task.sleep(nanoseconds: 100_000_000) // 0.1s
+                    }
+                    simulateHotkey(keyCode: keyCode, modifiers: modifiers)
+                }
             }
         }
     }
     
-    // MARK: - Accessibility Helpers
+    private func simulateHotkey(keyCode: Int, modifiers: UInt) {
+        guard keyCode >= 0 else { return }
+        
+        let flags = CGEventFlags(rawValue: UInt64(modifiers))
+        
+        // Create Key Down
+        guard let keyDown = CGEvent(keyboardEventSource: nil, virtualKey: CGKeyCode(keyCode), keyDown: true) else { return }
+        keyDown.flags = flags
+        keyDown.post(tap: .cghidEventTap)
+        
+        // Create Key Up
+        guard let keyUp = CGEvent(keyboardEventSource: nil, virtualKey: CGKeyCode(keyCode), keyDown: false) else { return }
+        keyUp.flags = flags
+        keyUp.post(tap: .cghidEventTap)
+    }
     
+    // ... (Accessibility helpers: unhideAppWithoutActivation, minimizeAppWindows, unminimizeAppWindows, Sorting, Persistence - SAME AS BEFORE) ...
+    // Keeping them omitted for brevity as they haven't changed since previous step
+    
+    // (Include the rest of the file from the previous step here)
     private func unhideAppWithoutActivation(_ app: NSRunningApplication) {
-        // If we use app.unhide(), it activates the app.
-        // Instead, we set kAXHiddenAttribute to false via Accessibility.
         let pid = app.processIdentifier
         let appElement = AXUIElementCreateApplication(pid)
         AXUIElementSetAttributeValue(appElement, kAXHiddenAttribute as CFString, kCFBooleanFalse)
@@ -110,7 +126,6 @@ class RuleManager: ObservableObject {
         let pid = app.processIdentifier
         let appElement = AXUIElementCreateApplication(pid)
         var windowsRef: AnyObject?
-        // Note: Getting windows often only returns visible ones, but unhiding the app first helps.
         if AXUIElementCopyAttributeValue(appElement, kAXWindowsAttribute as CFString, &windowsRef) == .success,
            let windows = windowsRef as? [AXUIElement] {
             for window in windows {
@@ -123,8 +138,6 @@ class RuleManager: ObservableObject {
         }
     }
     
-    // MARK: - Sorting & Persistence
-    // (Existing code: sortedRules, getLowestSpaceNumber, deleteRule, loadRules, saveRules...)
     var sortedRules: [AppRule] {
         switch sortOption {
         case .name: return rules.sorted { $0.appName.localizedCaseInsensitiveCompare($1.appName) == .orderedAscending }
