@@ -21,7 +21,7 @@ struct RuleEditor: View {
         VStack(spacing: 0) {
             // 1. Header (App Selector)
             appSelectorHeader
-                .zIndex(1) // Keep menu on top if it overlaps
+                .zIndex(1)
             
             Divider()
             
@@ -57,7 +57,6 @@ struct RuleEditor: View {
                 .ignoresSafeArea()
             
             Menu {
-                // Section A: Running Apps
                 if !runningApps.isEmpty {
                     Section("Running Applications") {
                         ForEach(runningApps, id: \.id) { app in
@@ -75,55 +74,56 @@ struct RuleEditor: View {
                 
                 Divider()
                 
-                // Section B: File Picker
                 Button("Choose other app...") {
                     pickOtherApp()
                 }
                 
             } label: {
-                HStack(spacing: 16) {
-                    // App Icon (Large)
+                HStack(alignment: .center, spacing: 16) {
+                    // App Icon
                     if !workingRule.appBundleID.isEmpty,
                        let path = NSWorkspace.shared.urlForApplication(withBundleIdentifier: workingRule.appBundleID)?.path {
                         Image(nsImage: NSWorkspace.shared.icon(forFile: path))
                             .resizable()
-                            .frame(width: 54, height: 54)
+                            .frame(width: 48, height: 48) // Optimized size
                             .shadow(radius: 1)
                     } else {
                         Image(systemName: "app.dashed")
                             .resizable()
-                            .frame(width: 54, height: 54)
+                            .frame(width: 48, height: 48)
                             .foregroundColor(.secondary.opacity(0.5))
                     }
                     
-                    // App Name & Bundle ID (Clickable)
-                    VStack(alignment: .leading, spacing: 4) {
-                        HStack {
+                    // App Name & Bundle ID
+                    VStack(alignment: .leading, spacing: 2) {
+                        HStack(spacing: 6) {
                             Text(workingRule.appBundleID.isEmpty ? "Select Application" : workingRule.appName)
-                                .font(.title)
+                                .font(.title2) // Optimized font size
                                 .fontWeight(.bold)
                                 .foregroundColor(.primary)
                             
                             Image(systemName: "chevron.down.circle.fill")
-                                .font(.title3)
+                                .font(.subheadline)
                                 .foregroundColor(.secondary.opacity(0.5))
-                                .padding(.leading, 4)
                         }
                         
                         Text(workingRule.appBundleID.isEmpty ? "Click here to choose target" : workingRule.appBundleID)
                             .font(.caption)
                             .foregroundColor(.secondary)
                             .monospaced()
+                            .lineLimit(1)
+                            .truncationMode(.middle)
                     }
                     
-                    Spacer()
+                    Spacer() // Forces alignment to the left
                 }
-                .contentShape(Rectangle()) // Make the whole area clickable
+                .contentShape(Rectangle())
             }
-            .menuStyle(.borderlessButton) // Makes the menu button invisible, using our custom label
-            .padding(24)
+            .menuStyle(.borderlessButton)
+            .padding(.horizontal, 24)
+            .padding(.vertical, 20)
         }
-        .frame(height: 100)
+        .frame(height: 90)
     }
     
     // MARK: - 2. Left Column: Spaces
@@ -157,9 +157,10 @@ struct RuleEditor: View {
                                         Text("\(space.number)")
                                             .font(.system(.body, design: .monospaced))
                                             .foregroundColor(.secondary)
-                                            .frame(width: 20, alignment: .trailing)
+                                            .frame(width: 25, alignment: .trailing)
                                         
                                         Text(space.name)
+                                            .font(.body) // Standard body size
                                             .fontWeight(.medium)
                                             .lineLimit(1)
                                         
@@ -168,15 +169,14 @@ struct RuleEditor: View {
                                 }
                                 .toggleStyle(.checkbox)
                             }
-                            .padding(.vertical, 4)
+                            .padding(.vertical, 3)
                         }
                     }
                     .listStyle(.plain)
-                    // Remove default list background to blend with GroupBox
                     .scrollContentBackground(.hidden)
                 }
             }
-            .padding(.top, 8)
+            .padding(.top, 4)
         }
     }
     
@@ -184,59 +184,60 @@ struct RuleEditor: View {
     
     private var actionsColumn: some View {
         GroupBox(label: Label("Window Actions", systemImage: "slider.horizontal.3")) {
-            VStack(spacing: 0) {
-                // Section A: Match
-                VStack(alignment: .leading, spacing: 8) {
-                    HStack {
-                        Image(systemName: "checkmark.circle.fill")
-                            .foregroundColor(.green)
-                        Text("In Target Spaces")
-                            .font(.headline)
-                            .foregroundColor(.primary)
-                    }
-                    .padding(.top, 16)
+            VStack {
+                Spacer() // Pushes content to vertical center
+                
+                VStack(alignment: .leading, spacing: 24) { // Increased spacing between blocks
                     
-                    Picker("", selection: $workingRule.matchAction) {
-                        ForEach(WindowAction.allCases) { action in
-                            Text(action.localizedString).tag(action)
+                    // Block A: Match Action
+                    VStack(alignment: .leading, spacing: 8) {
+                        HStack(spacing: 6) {
+                            Image(systemName: "checkmark.circle.fill")
+                                .foregroundColor(.green)
+                            Text("In Target Spaces")
+                                .font(.headline)
                         }
+                        
+                        Picker("", selection: $workingRule.matchAction) {
+                            ForEach(WindowAction.allCases) { action in
+                                Text(action.localizedString).tag(action)
+                            }
+                        }
+                        .labelsHidden()
+                        .frame(maxWidth: .infinity, alignment: .leading) // Align picker left
+                        
+                        Text("Standard behavior: Show")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
                     }
-                    .labelsHidden()
-                    .frame(maxWidth: .infinity)
                     
-                    Text("Standard: Show")
-                        .font(.caption2)
-                        .foregroundColor(.secondary)
+                    Divider()
+                    
+                    // Block B: Else Action
+                    VStack(alignment: .leading, spacing: 8) {
+                        HStack(spacing: 6) {
+                            Image(systemName: "xmark.circle.fill")
+                                .foregroundColor(.red)
+                            Text("In Other Spaces")
+                                .font(.headline)
+                        }
+                        
+                        Picker("", selection: $workingRule.elseAction) {
+                            ForEach(WindowAction.allCases) { action in
+                                Text(action.localizedString).tag(action)
+                            }
+                        }
+                        .labelsHidden()
+                        .frame(maxWidth: .infinity, alignment: .leading) // Align picker left
+                        
+                        Text("Standard behavior: Hide or Minimize")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                    }
                 }
                 .padding(.horizontal, 12)
                 
-                Divider().padding(.vertical, 20)
-                
-                // Section B: Else
-                VStack(alignment: .leading, spacing: 8) {
-                    HStack {
-                        Image(systemName: "xmark.circle.fill")
-                            .foregroundColor(.red)
-                        Text("In Other Spaces")
-                            .font(.headline)
-                            .foregroundColor(.primary)
-                    }
-                    
-                    Picker("", selection: $workingRule.elseAction) {
-                        ForEach(WindowAction.allCases) { action in
-                            Text(action.localizedString).tag(action)
-                        }
-                    }
-                    .labelsHidden()
-                    .frame(maxWidth: .infinity)
-                    
-                    Text("Standard: Hide or Minimize")
-                        .font(.caption2)
-                        .foregroundColor(.secondary)
-                }
-                .padding(.horizontal, 12)
-                
-                Spacer()
+                Spacer() // Pushes content to vertical center
             }
         }
     }
@@ -284,7 +285,6 @@ struct RuleEditor: View {
                 let bundle = Bundle(url: url)
                 let id = bundle?.bundleIdentifier ?? ""
                 
-                // Fallback name logic
                 var name = bundle?.infoDictionary?["CFBundleName"] as? String
                 if name == nil {
                      name = url.deletingPathExtension().lastPathComponent
