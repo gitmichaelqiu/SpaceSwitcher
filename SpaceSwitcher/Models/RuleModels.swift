@@ -156,7 +156,7 @@ struct AppRule: Identifiable, Codable {
         } else if let s = try? container.decode(WindowAction.self, forKey: .elseAction) {
             elseActions = [s]
         } else {
-            elseActions = [.hide]
+            elseActions = []
         }
     }
     

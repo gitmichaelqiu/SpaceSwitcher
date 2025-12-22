@@ -48,8 +48,8 @@ struct RulesView: View {
                     editingRule = AppRule(
                         appBundleID: "",
                         appName: NSLocalizedString("Select Target App", comment: ""),
-                        groups: [RuleGroup(targetSpaceIDs: [], actions: [.show])],
-                        elseActions: [.hide]
+                        groups: [RuleGroup(targetSpaceIDs: [], actions: [])],
+                        elseActions: []
                     )
                 } label: { Text("+ Add Rule").frame(minWidth: 80) }
                 .buttonStyle(.borderedProminent)
