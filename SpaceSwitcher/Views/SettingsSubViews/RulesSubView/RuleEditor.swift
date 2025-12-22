@@ -245,10 +245,15 @@ struct ActionSequenceEditor: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             if actions.isEmpty {
-                Text(placeholder).font(.caption).italic().foregroundColor(.secondary).padding(.vertical, 8)
+                // UPDATED: Added frame alignment to ensure text stays on the left
+                Text(placeholder)
+                    .font(.caption)
+                    .italic()
+                    .foregroundColor(.secondary)
+                    .padding(.vertical, 8)
+                    .frame(maxWidth: .infinity, alignment: .leading)
             } else {
                 ForEach(Array(actions.enumerated()), id: \.element) { index, action in
-                    // FIX: Extracted row into separate View to prevent compiler timeout
                     ActionRowView(
                         index: index,
                         action: action,
@@ -289,7 +294,7 @@ struct ActionSequenceEditor: View {
     }
 }
 
-// MARK: - Action Row View (Extracted to fix Compiler Error)
+// MARK: - Action Row View
 struct ActionRowView: View {
     let index: Int
     let action: WindowAction
@@ -304,7 +309,6 @@ struct ActionRowView: View {
             // Drag Handle
             Image(systemName: "line.3.horizontal")
                 .foregroundColor(.secondary.opacity(0.3))
-//                .cursor(.openHand)
             
             Text("\(index + 1).").font(.caption).monospacedDigit().foregroundColor(.secondary).frame(width: 20, alignment: .trailing)
             
