@@ -9,7 +9,6 @@ struct RuleEditor: View {
     @State private var runningApps: [(name: String, id: String, icon: NSImage)] = []
     
     init(rule: AppRule, availableSpaces: [SpaceInfo], onSave: @escaping (AppRule) -> Void, onCancel: @escaping () -> Void) {
-        // Correct initialization of State
         self._workingRule = State(wrappedValue: rule)
         self.availableSpaces = availableSpaces
         self.onSave = onSave
@@ -21,8 +20,7 @@ struct RuleEditor: View {
             appSelectorHeader.zIndex(1)
             Divider()
             
-            // Fix: Main Scrollable Area
-            // By extracting the content to 'scrollContent', we simplify the ScrollView init for the compiler
+            // Main Scrollable Area
             ScrollView {
                 scrollContent
                     .padding(20)
@@ -37,7 +35,6 @@ struct RuleEditor: View {
     }
     
     // MARK: - Extracted Scroll Content
-    // Breaking this out solves the "Ambiguous use of init" / "Expression too complex" error
     @ViewBuilder
     private var scrollContent: some View {
         VStack(spacing: 24) {
@@ -50,7 +47,9 @@ struct RuleEditor: View {
                     allGroups: workingRule.groups,
                     availableSpaces: availableSpaces,
                     onRemove: {
-//                        withAnimation { workingRule.groups.remove(at: index) }
+                        withAnimation {
+                            _ = workingRule.groups.remove(at: index)
+                        }
                     }
                 )
             }
