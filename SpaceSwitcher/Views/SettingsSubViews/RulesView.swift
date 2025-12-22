@@ -44,14 +44,12 @@ struct RulesView: View {
             HStack {
                 Button { spaceManager.refreshSpaceList() } label: { Label("Refresh Spaces", systemImage: "arrow.clockwise") }
                 Spacer()
-                // FIX: Initialize new rule with empty actions (Do Nothing by default)
                 Button {
                     editingRule = AppRule(
                         appBundleID: "",
                         appName: NSLocalizedString("Select Target App", comment: ""),
-                        targetSpaceIDs: [],
-                        matchActions: [],
-                        elseActions: []
+                        groups: [RuleGroup(targetSpaceIDs: [], actions: [.show])],
+                        elseActions: [.hide]
                     )
                 } label: { Text("+ Add Rule").frame(minWidth: 80) }
                 .buttonStyle(.borderedProminent)
@@ -68,7 +66,7 @@ struct RulesView: View {
     }
 }
 
-// RuleRow remains largely the same, logic works for empty arrays too
+// MARK: - Updated RuleRow
 struct RuleRow: View {
     let rule: AppRule
     let spaces: [SpaceInfo]
@@ -76,26 +74,43 @@ struct RuleRow: View {
     @State private var isHovering = false
     
     var body: some View {
-        HStack(spacing: 12) {
+        HStack(alignment: .center, spacing: 12) {
+            // Icon
             if let path = NSWorkspace.shared.urlForApplication(withBundleIdentifier: rule.appBundleID)?.path {
                 Image(nsImage: NSWorkspace.shared.icon(forFile: path)).resizable().frame(width: 32, height: 32)
             } else {
                 Image(systemName: "app.dashed").resizable().frame(width: 32, height: 32).foregroundColor(.secondary)
             }
             
-            VStack(alignment: .leading, spacing: 2) {
+            VStack(alignment: .leading, spacing: 4) {
+                // Title
                 Text(rule.appName).font(.headline).foregroundColor(.primary)
-                HStack(spacing: 4) {
-                    Text("In").foregroundColor(.secondary)
-                    Text(formatSpaces(rule.targetSpaceIDs)).fontWeight(.medium).foregroundColor(.primary)
-                    Text("→").foregroundColor(.secondary).font(.caption)
-                    Text(formatActions(rule.matchActions)).foregroundColor(.green).fontWeight(.semibold)
-                    Text("• else").foregroundColor(.secondary)
-                    Text(formatActions(rule.elseActions)).foregroundColor(.red)
+                
+                // Logic Flow: Iterate Groups
+                VStack(alignment: .leading, spacing: 2) {
+                    ForEach(rule.groups.indices, id: \.self) { idx in
+                        let group = rule.groups[idx]
+                        HStack(spacing: 4) {
+                            Text("In").foregroundColor(.secondary)
+                            Text(formatSpaces(group.targetSpaceIDs)).fontWeight(.medium).foregroundColor(.primary)
+                            Text("→").foregroundColor(.secondary)
+                            Text(formatActions(group.actions)).foregroundColor(.green).fontWeight(.semibold)
+                        }
+                        .font(.caption)
+                    }
+                    
+                    // Else
+                    HStack(spacing: 4) {
+                        Text("Else").foregroundColor(.secondary)
+                        Text("→").foregroundColor(.secondary)
+                        Text(formatActions(rule.elseActions)).foregroundColor(.red)
+                    }
+                    .font(.caption)
                 }
-                .font(.caption)
             }
+            
             Spacer()
+            
             Button(action: onDelete) {
                 Image(systemName: "trash").foregroundColor(isHovering ? .red : .secondary.opacity(0.5)).font(.system(size: 14))
             }
@@ -116,6 +131,6 @@ struct RuleRow: View {
     
     func formatActions(_ actions: [WindowAction]) -> String {
         if actions.isEmpty { return "Nothing" }
-        return actions.map { $0.localizedString.lowercased() }.joined(separator: " + ")
+        return actions.map { $0.localizedString }.joined(separator: " + ")
     }
 }

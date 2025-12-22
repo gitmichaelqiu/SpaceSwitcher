@@ -4,14 +4,13 @@
     "" : {
 
     },
-    "%lld" : {
+    "(Used)" : {
 
     },
     "%lld." : {
 
     },
     "%lld. %@" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -28,6 +27,7 @@
       }
     },
     "• else" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -116,7 +116,10 @@
     "Add a rule to control app visibility across spaces." : {
 
     },
-    "Add Step" : {
+    "Add Action" : {
+
+    },
+    "Add Space Group" : {
 
     },
     "API Connection" : {
@@ -170,9 +173,6 @@
         }
       }
     },
-    "Click to Record Shortcut" : {
-
-    },
     "Connected" : {
       "localizations" : {
         "zh-Hans" : {
@@ -209,6 +209,9 @@
         }
       }
     },
+    "Do Actions:" : {
+
+    },
     "DoNothing" : {
       "comment" : "Action: Do Nothing",
       "extractionState" : "stale",
@@ -238,6 +241,9 @@
         }
       }
     },
+    "Else" : {
+
+    },
     "General" : {
       "localizations" : {
         "zh-Hans" : {
@@ -259,6 +265,9 @@
         }
       }
     },
+    "If in Spaces:" : {
+
+    },
     "In" : {
       "localizations" : {
         "zh-Hans" : {
@@ -268,6 +277,9 @@
           }
         }
       }
+    },
+    "In All Other Spaces" : {
+
     },
     "In these spaces:" : {
       "extractionState" : "stale",
@@ -279,9 +291,6 @@
           }
         }
       }
-    },
-    "Is DesktopRenamer running?" : {
-
     },
     "Launch" : {
       "localizations" : {
@@ -306,9 +315,6 @@
     "Minimize" : {
       "comment" : "Action: Minimize Window"
     },
-    "No actions (Do Nothing)" : {
-
-    },
     "No Rules Configured" : {
       "localizations" : {
         "zh-Hans" : {
@@ -319,7 +325,7 @@
         }
       }
     },
-    "No spaces detected." : {
+    "No spaces" : {
 
     },
     "Not Connected" : {
@@ -370,7 +376,7 @@
         }
       }
     },
-    "Recording... (Press keys)" : {
+    "Recording..." : {
 
     },
     "Refresh Space List" : {
@@ -770,9 +776,6 @@
     "Switcher" : {
 
     },
-    "Target Spaces" : {
-
-    },
     "v%@" : {
       "localizations" : {
         "en" : {
@@ -789,7 +792,7 @@
         }
       }
     },
-    "Window Actions" : {
+    "Workflow Group %lld" : {
 
     }
   },

@@ -25,6 +25,8 @@ class RuleManager: ObservableObject {
     
     init() { loadRules() }
     
+    // MARK: - Logic
+    
     private func setupBindings() {
         spaceManager?.$currentSpaceID
             .dropFirst().removeDuplicates()
@@ -43,42 +45,34 @@ class RuleManager: ObservableObject {
     
     private func applyRules(for spaceID: String) {
         for rule in rules where rule.isEnabled {
-            let isMatch = rule.targetSpaceIDs.contains(spaceID)
-            let actions = isMatch ? rule.matchActions : rule.elseActions
-            perform(actions: actions, on: rule.appBundleID)
+            // 1. Check Groups
+            if let matchingGroup = rule.groups.first(where: { $0.targetSpaceIDs.contains(spaceID) }) {
+                perform(actions: matchingGroup.actions, on: rule.appBundleID)
+            } else {
+                // 2. Fallback
+                perform(actions: rule.elseActions, on: rule.appBundleID)
+            }
         }
     }
     
     private func perform(actions: [WindowAction], on bundleID: String) {
         guard let app = NSRunningApplication.runningApplications(withBundleIdentifier: bundleID).first else { return }
         
-        // Execute sequentially
-        // Note: For hotkeys, we might need a tiny delay if the previous action was "Show"
         Task { @MainActor in
             for action in actions {
                 switch action {
-                case .hide:
-                    app.hide()
-                    
+                case .hide: app.hide()
                 case .show:
                     unhideAppWithoutActivation(app)
                     unminimizeAppWindows(app)
-                    
-                case .minimize:
-                    minimizeAppWindows(app)
-                    
-                case .bringToFront:
-                    app.activate(options: .activateIgnoringOtherApps)
-                    
-                case .hotkey(let keyCode, let modifiers):
-                    // Ensure app is frontmost before typing
-                    // (Unless the user wants global shortcuts, but usually it's for the target app)
+                case .minimize: minimizeAppWindows(app)
+                case .bringToFront: app.activate(options: .activateIgnoringOtherApps)
+                case .hotkey(let k, let m):
                     if !app.isActive {
                         app.activate(options: .activateIgnoringOtherApps)
-                        // Give it a moment to take focus
-                        try? await Task.sleep(nanoseconds: 100_000_000) // 0.1s
+                        try? await Task.sleep(nanoseconds: 100_000_000)
                     }
-                    simulateHotkey(keyCode: keyCode, modifiers: modifiers)
+                    simulateHotkey(keyCode: k, modifiers: m)
                 }
             }
         }
@@ -86,28 +80,32 @@ class RuleManager: ObservableObject {
     
     private func simulateHotkey(keyCode: Int, modifiers: UInt) {
         guard keyCode >= 0 else { return }
-        
         let flags = CGEventFlags(rawValue: UInt64(modifiers))
+        guard let d = CGEvent(keyboardEventSource: nil, virtualKey: CGKeyCode(keyCode), keyDown: true) else { return }
+        d.flags = flags; d.post(tap: .cghidEventTap)
+        guard let u = CGEvent(keyboardEventSource: nil, virtualKey: CGKeyCode(keyCode), keyDown: false) else { return }
+        u.flags = flags; u.post(tap: .cghidEventTap)
+    }
+
+    // ... (Accessibility helpers & Sorting same as before) ...
+    // Note: getLowestSpaceNumber needs update for sorting
+    
+    private func getLowestSpaceNumber(for rule: AppRule) -> Int {
+        guard let sm = spaceManager else { return 999 }
+        // Flatten all spaces in all groups
+        let allIDs = rule.groups.flatMap { $0.targetSpaceIDs }
+        if allIDs.isEmpty { return 999 }
         
-        // Create Key Down
-        guard let keyDown = CGEvent(keyboardEventSource: nil, virtualKey: CGKeyCode(keyCode), keyDown: true) else { return }
-        keyDown.flags = flags
-        keyDown.post(tap: .cghidEventTap)
-        
-        // Create Key Up
-        guard let keyUp = CGEvent(keyboardEventSource: nil, virtualKey: CGKeyCode(keyCode), keyDown: false) else { return }
-        keyUp.flags = flags
-        keyUp.post(tap: .cghidEventTap)
+        let matched = sm.availableSpaces.filter { allIDs.contains($0.id) }
+        return matched.map { $0.number }.min() ?? 999
     }
     
-    // ... (Accessibility helpers: unhideAppWithoutActivation, minimizeAppWindows, unminimizeAppWindows, Sorting, Persistence - SAME AS BEFORE) ...
-    // Keeping them omitted for brevity as they haven't changed since previous step
+    // (Omitted standard save/load/helpers for brevity - they are unchanged except for getLowestSpaceNumber)
     
-    // (Include the rest of the file from the previous step here)
     private func unhideAppWithoutActivation(_ app: NSRunningApplication) {
-        let pid = app.processIdentifier
-        let appElement = AXUIElementCreateApplication(pid)
-        AXUIElementSetAttributeValue(appElement, kAXHiddenAttribute as CFString, kCFBooleanFalse)
+         let pid = app.processIdentifier
+         let appElement = AXUIElementCreateApplication(pid)
+         AXUIElementSetAttributeValue(appElement, kAXHiddenAttribute as CFString, kCFBooleanFalse)
     }
     
     private func minimizeAppWindows(_ app: NSRunningApplication) {
@@ -148,12 +146,6 @@ class RuleManager: ObservableObject {
                 return s1 != s2 ? s1 < s2 : r1.appName.localizedCaseInsensitiveCompare(r2.appName) == .orderedAscending
             }
         }
-    }
-    
-    private func getLowestSpaceNumber(for rule: AppRule) -> Int {
-        guard let sm = spaceManager, !rule.targetSpaceIDs.isEmpty else { return 999 }
-        let matchedSpaces = sm.availableSpaces.filter { rule.targetSpaceIDs.contains($0.id) }
-        return matchedSpaces.map { $0.number }.min() ?? 999
     }
     
     func deleteRule(withID id: UUID) { rules.removeAll { $0.id == id } }

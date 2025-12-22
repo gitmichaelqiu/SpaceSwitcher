@@ -9,7 +9,8 @@ struct RuleEditor: View {
     @State private var runningApps: [(name: String, id: String, icon: NSImage)] = []
     
     init(rule: AppRule, availableSpaces: [SpaceInfo], onSave: @escaping (AppRule) -> Void, onCancel: @escaping () -> Void) {
-        self._workingRule = State<AppRule>(initialValue: rule)
+        // Correct initialization of State
+        self._workingRule = State(wrappedValue: rule)
         self.availableSpaces = availableSpaces
         self.onSave = onSave
         self.onCancel = onCancel
@@ -19,21 +20,89 @@ struct RuleEditor: View {
         VStack(spacing: 0) {
             appSelectorHeader.zIndex(1)
             Divider()
-            HStack(alignment: .top, spacing: 16) {
-                spacesColumn.frame(maxWidth: .infinity, maxHeight: .infinity)
-                actionsColumn.frame(maxWidth: .infinity, maxHeight: .infinity)
+            
+            // Fix: Main Scrollable Area
+            // By extracting the content to 'scrollContent', we simplify the ScrollView init for the compiler
+            ScrollView {
+                scrollContent
+                    .padding(20)
             }
-            .padding(20)
             .background(Color(NSColor.windowBackgroundColor))
+            
             Divider()
             footerView
         }
-        .frame(width: 750, height: 550)
+        .frame(width: 800, height: 600)
         .onAppear { loadRunningApps() }
     }
     
-    // MARK: - 1. App Selector Header
-    // (Same as before)
+    // MARK: - Extracted Scroll Content
+    // Breaking this out solves the "Ambiguous use of init" / "Expression too complex" error
+    @ViewBuilder
+    private var scrollContent: some View {
+        VStack(spacing: 24) {
+            
+            // 1. Groups
+            ForEach(Array(workingRule.groups.enumerated()), id: \.element.id) { index, group in
+                GroupEditorCard(
+                    groupIndex: index,
+                    group: $workingRule.groups[index],
+                    allGroups: workingRule.groups,
+                    availableSpaces: availableSpaces,
+                    onRemove: {
+//                        withAnimation { workingRule.groups.remove(at: index) }
+                    }
+                )
+            }
+            
+            // 2. Add Group Button
+            Button {
+                withAnimation {
+                    workingRule.groups.append(RuleGroup(targetSpaceIDs: [], actions: [.show]))
+                }
+            } label: {
+                HStack {
+                    Image(systemName: "plus.circle.fill")
+                    Text("Add Space Group")
+                }
+                .font(.headline)
+                .foregroundColor(.blue)
+                .padding()
+                .frame(maxWidth: .infinity)
+                .background(
+                    RoundedRectangle(cornerRadius: 8)
+                        .stroke(style: StrokeStyle(lineWidth: 1, dash: [5]))
+                        .foregroundColor(.blue.opacity(0.5))
+                )
+            }
+            .buttonStyle(.plain)
+            
+            Divider()
+            
+            // 3. Else / Fallback
+            VStack(alignment: .leading, spacing: 0) {
+                HStack {
+                    Image(systemName: "asterisk.circle.fill")
+                        .foregroundColor(.secondary)
+                    Text("In All Other Spaces")
+                        .font(.headline)
+                        .foregroundColor(.secondary)
+                    Spacer()
+                }
+                .padding(.bottom, 12)
+                
+                ActionSequenceEditor(
+                    actions: $workingRule.elseActions,
+                    placeholder: "Do Nothing"
+                )
+            }
+            .padding()
+            .background(RoundedRectangle(cornerRadius: 12).fill(Color(NSColor.controlBackgroundColor)))
+            .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.gray.opacity(0.1)))
+        }
+    }
+    
+    // MARK: - Subviews
     private var appSelectorHeader: some View {
         ZStack(alignment: .leading) {
             Color(NSColor.controlBackgroundColor).ignoresSafeArea()
@@ -41,9 +110,7 @@ struct RuleEditor: View {
                 if !runningApps.isEmpty {
                     Section("Running Applications") {
                         ForEach(runningApps, id: \.id) { app in
-                            Button { selectApp(name: app.name, id: app.id) } label: {
-                                HStack { Image(nsImage: app.icon); Text(app.name) }
-                            }
+                            Button { selectApp(name: app.name, id: app.id) } label: { HStack { Image(nsImage: app.icon); Text(app.name) } }
                         }
                     }
                 }
@@ -51,25 +118,15 @@ struct RuleEditor: View {
                 Button("Choose other app...") { pickOtherApp() }
             } label: {
                 HStack(alignment: .center, spacing: 16) {
-                    if !workingRule.appBundleID.isEmpty,
-                       let path = NSWorkspace.shared.urlForApplication(withBundleIdentifier: workingRule.appBundleID)?.path {
-                        Image(nsImage: NSWorkspace.shared.icon(forFile: path))
-                            .resizable().frame(width: 48, height: 48).shadow(radius: 1)
+                    if !workingRule.appBundleID.isEmpty, let path = NSWorkspace.shared.urlForApplication(withBundleIdentifier: workingRule.appBundleID)?.path {
+                        Image(nsImage: NSWorkspace.shared.icon(forFile: path)).resizable().frame(width: 48, height: 48)
                     } else {
-                        Image(systemName: "app.dashed")
-                            .resizable().frame(width: 48, height: 48).foregroundColor(.secondary.opacity(0.5))
+                        Image(systemName: "app.dashed").resizable().frame(width: 48, height: 48).foregroundColor(.secondary)
                     }
                     VStack(alignment: .leading, spacing: 2) {
-                        HStack(spacing: 6) {
-                            Text(workingRule.appBundleID.isEmpty ? "Select Application" : workingRule.appName)
-                                .font(.title2).fontWeight(.bold).foregroundColor(.primary)
-                            Image(systemName: "chevron.down.circle.fill")
-                                .font(.subheadline).foregroundColor(.secondary.opacity(0.5))
-                        }
-                        Text(workingRule.appBundleID.isEmpty ? "Click here to choose target" : workingRule.appBundleID)
-                            .font(.caption).foregroundColor(.secondary).monospaced().lineLimit(1).truncationMode(.middle)
+                        Text(workingRule.appBundleID.isEmpty ? "Select Application" : workingRule.appName).font(.title2).fontWeight(.bold)
+                        Text(workingRule.appBundleID.isEmpty ? "Click to choose" : workingRule.appBundleID).font(.caption).foregroundColor(.secondary)
                     }
-                    Spacer()
                 }
                 .contentShape(Rectangle())
             }
@@ -80,84 +137,6 @@ struct RuleEditor: View {
         .frame(height: 72)
     }
     
-    // MARK: - 2. Left Column
-    // (Same as before)
-    private var spacesColumn: some View {
-        GroupBox(label: Label("Target Spaces", systemImage: "macwindow")) {
-            VStack(alignment: .leading, spacing: 0) {
-                if availableSpaces.isEmpty {
-                    VStack {
-                        Spacer()
-                        Text("No spaces detected.").foregroundColor(.secondary)
-                        Text("Is DesktopRenamer running?").font(.caption).foregroundColor(.secondary)
-                        Spacer()
-                    }
-                    .frame(maxWidth: .infinity)
-                } else {
-                    List {
-                        ForEach(availableSpaces) { space in
-                            HStack {
-                                Toggle(isOn: Binding(
-                                    get: { workingRule.targetSpaceIDs.contains(space.id) },
-                                    set: { isSelected in
-                                        if isSelected { workingRule.targetSpaceIDs.insert(space.id) }
-                                        else { workingRule.targetSpaceIDs.remove(space.id) }
-                                    }
-                                )) {
-                                    HStack {
-                                        Text("\(space.number)")
-                                            .font(.system(.body, design: .monospaced)).foregroundColor(.secondary)
-                                            .frame(width: 25, alignment: .trailing)
-                                        Text(space.name).font(.body).fontWeight(.medium).lineLimit(1)
-                                        Spacer()
-                                    }
-                                }
-                                .toggleStyle(.checkbox)
-                            }
-                            .padding(.vertical, 3)
-                        }
-                    }
-                    .listStyle(.plain).scrollContentBackground(.hidden)
-                }
-            }
-            .padding(.top, 4)
-        }
-    }
-    
-    // MARK: - 3. Right Column: Actions (UPDATED)
-    private var actionsColumn: some View {
-        GroupBox(label: Label("Window Actions", systemImage: "slider.horizontal.3")) {
-            // FIX: Use ScrollView + Top Alignment
-            ScrollView {
-                VStack(alignment: .leading, spacing: 24) {
-                    
-                    // Sequence A: Match
-                    ActionSequenceEditor(
-                        title: "In Target Spaces",
-                        icon: "checkmark.circle.fill",
-                        iconColor: .green,
-                        actions: $workingRule.matchActions
-                    )
-                    
-                    Divider()
-                    
-                    // Sequence B: Else
-                    ActionSequenceEditor(
-                        title: "In Other Spaces",
-                        icon: "xmark.circle.fill",
-                        iconColor: .red,
-                        actions: $workingRule.elseActions
-                    )
-                }
-                .padding(.horizontal, 12)
-                .padding(.top, 16) // Add some top padding inside the scroll
-                .frame(maxWidth: .infinity, alignment: .leading)
-            }
-        }
-    }
-    
-    // MARK: - 4. Footer & Helpers
-    // (Same as before)
     private var footerView: some View {
         HStack {
             Button("Cancel", action: onCancel).keyboardShortcut(.escape, modifiers: [])
@@ -170,167 +149,144 @@ struct RuleEditor: View {
         .padding(16).background(Color(NSColor.controlBackgroundColor))
     }
     
-    private func selectApp(name: String, id: String) {
-        withAnimation { workingRule.appName = name; workingRule.appBundleID = id }
-    }
+    private func selectApp(name: String, id: String) { withAnimation { workingRule.appName = name; workingRule.appBundleID = id } }
     private func pickOtherApp() {
         let panel = NSOpenPanel()
         panel.allowedContentTypes = [.application]
         panel.directoryURL = URL(fileURLWithPath: "/Applications")
-        panel.canChooseDirectories = false
-        panel.canChooseFiles = true
-        panel.allowsMultipleSelection = false
-        panel.message = "Select an application to control"
-        
-        panel.begin { response in
-            if response == .OK, let url = panel.url {
-                let bundle = Bundle(url: url)
-                let id = bundle?.bundleIdentifier ?? ""
-                
-                // Fallback name logic
-                var name = bundle?.infoDictionary?["CFBundleName"] as? String
-                if name == nil {
-                     name = url.deletingPathExtension().lastPathComponent
-                }
-                
-                if !id.isEmpty {
-                    DispatchQueue.main.async {
-                        self.selectApp(name: name ?? "Unknown", id: id)
-                    }
-                }
-            }
-        }
+        panel.canChooseFiles = true; panel.allowsMultipleSelection = false
+        panel.begin { if $0 == .OK, let url = panel.url {
+            let b = Bundle(url: url)
+            let id = b?.bundleIdentifier ?? ""
+            let name = (b?.infoDictionary?["CFBundleName"] as? String) ?? url.deletingPathExtension().lastPathComponent
+            if !id.isEmpty { DispatchQueue.main.async { self.selectApp(name: name, id: id) } }
+        }}
     }
-    
     func loadRunningApps() {
-        let apps = NSWorkspace.shared.runningApplications
-            .filter { $0.activationPolicy == .regular }
-        
-        self.runningApps = apps.map { app in
-            (name: app.localizedName ?? "Unknown",
-             id: app.bundleIdentifier ?? "",
-             icon: app.icon ?? NSImage())
-        }.sorted { $0.name < $1.name }
+        let apps = NSWorkspace.shared.runningApplications.filter { $0.activationPolicy == .regular }
+        self.runningApps = apps.map { (name: $0.localizedName ?? "Unknown", id: $0.bundleIdentifier ?? "", icon: $0.icon ?? NSImage()) }.sorted { $0.name < $1.name }
     }
 }
 
-struct ActionSequenceEditor: View {
-    let title: String
-    let icon: String
-    let iconColor: Color
-    @Binding var actions: [WindowAction]
+// MARK: - Group Card Editor
+struct GroupEditorCard: View {
+    let groupIndex: Int
+    @Binding var group: RuleGroup
+    let allGroups: [RuleGroup]
+    let availableSpaces: [SpaceInfo]
+    let onRemove: () -> Void
     
-    // State to track which row is currently recording
+    var body: some View {
+        VStack(spacing: 0) {
+            HStack {
+                Text("Workflow Group \(groupIndex + 1)").font(.headline).foregroundColor(.primary)
+                Spacer()
+                Button(action: onRemove) { Image(systemName: "trash").foregroundColor(.red.opacity(0.8)) }.buttonStyle(.plain)
+            }
+            .padding(12).background(Color.secondary.opacity(0.05))
+            
+            HStack(alignment: .top, spacing: 0) {
+                // Spaces
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("If in Spaces:").font(.caption).fontWeight(.bold).foregroundColor(.secondary)
+                    ScrollView {
+                        VStack(alignment: .leading, spacing: 4) {
+                            if availableSpaces.isEmpty { Text("No spaces").font(.caption).foregroundColor(.secondary) }
+                            ForEach(availableSpaces) { space in
+                                let isUsedElsewhere = isSpaceUsedElsewhere(space.id)
+                                let isSelectedHere = group.targetSpaceIDs.contains(space.id)
+                                HStack {
+                                    Toggle(isOn: Binding(
+                                        get: { isSelectedHere },
+                                        set: { val in if val { group.targetSpaceIDs.insert(space.id) } else { group.targetSpaceIDs.remove(space.id) } }
+                                    )) {
+                                        Text("\(space.number). \(space.name)").font(.body).lineLimit(1)
+                                            .foregroundColor(isUsedElsewhere && !isSelectedHere ? .secondary.opacity(0.5) : .primary)
+                                    }
+                                    .toggleStyle(.checkbox).disabled(isUsedElsewhere && !isSelectedHere)
+                                    Spacer()
+                                    if isUsedElsewhere && !isSelectedHere { Text("(Used)").font(.caption2).foregroundColor(.secondary) }
+                                }
+                            }
+                        }
+                    }
+                    .frame(height: 120)
+                }
+                .padding(12).frame(width: 250)
+                Divider()
+                // Actions
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Do Actions:").font(.caption).fontWeight(.bold).foregroundColor(.secondary)
+                    ActionSequenceEditor(actions: $group.actions, placeholder: "No actions defined")
+                }
+                .padding(12).frame(maxWidth: .infinity)
+            }
+        }
+        .background(Color(NSColor.controlBackgroundColor))
+        .cornerRadius(12).overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.gray.opacity(0.15), lineWidth: 1))
+        .shadow(color: .black.opacity(0.02), radius: 2, x: 0, y: 1)
+    }
+    
+    private func isSpaceUsedElsewhere(_ spaceID: String) -> Bool {
+        for (idx, g) in allGroups.enumerated() {
+            if idx != groupIndex && g.targetSpaceIDs.contains(spaceID) { return true }
+        }
+        return false
+    }
+}
+
+// MARK: - Action Sequence Editor
+struct ActionSequenceEditor: View {
+    @Binding var actions: [WindowAction]
+    var placeholder: String
     @State private var recordingIndex: Int? = nil
     
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            HStack(spacing: 6) {
-                Image(systemName: icon).foregroundColor(iconColor)
-                Text(title).font(.headline)
-            }
-            
             if actions.isEmpty {
-                Text("No actions (Do Nothing)")
-                    .font(.caption).italic().foregroundColor(.secondary)
-                    .padding(.vertical, 4)
+                Text(placeholder).font(.caption).italic().foregroundColor(.secondary).padding(.vertical, 8)
             } else {
                 ForEach(Array(actions.enumerated()), id: \.offset) { index, action in
                     HStack {
-                        Text("\(index + 1).")
-                            .font(.caption).monospacedDigit().foregroundColor(.secondary)
-                        
-                        // Custom View for each action type
+                        Text("\(index + 1).").font(.caption).monospacedDigit().foregroundColor(.secondary).frame(width: 20, alignment: .trailing)
                         if case .hotkey(let code, let mods) = action {
-                            // Hotkey Recording View
-                            Button {
-                                startRecording(at: index)
-                            } label: {
-                                if recordingIndex == index {
-                                    Text("Recording... (Press keys)")
-                                        .foregroundColor(.red)
-                                        .fontWeight(.bold)
-                                } else {
-                                    if code == -1 {
-                                        HStack {
-                                            Image(systemName: "keyboard")
-                                            Text("Click to Record Shortcut")
-                                        }
-                                        .foregroundColor(.blue)
-                                    } else {
-                                        HStack {
-                                            Image(systemName: "keyboard.fill")
-                                            Text(ShortcutHelper.format(code: code, modifiers: mods))
-                                                .monospaced()
-                                                .fontWeight(.semibold)
-                                        }
-                                    }
-                                }
+                            Button { startRecording(at: index) } label: {
+                                if recordingIndex == index { Text("Recording...").foregroundColor(.red).fontWeight(.bold) }
+                                else { HStack { Image(systemName: "keyboard"); Text(code == -1 ? "Click to Record" : ShortcutHelper.format(code: code, modifiers: mods)) }.font(.subheadline) }
                             }
-                            .buttonStyle(.plain)
-                            .background(recordingIndex == index ? Color.red.opacity(0.1) : Color.clear)
-                            .cornerRadius(4)
-                            
+                            .buttonStyle(.plain).padding(.horizontal, 4).padding(.vertical, 2)
+                            .background(recordingIndex == index ? Color.red.opacity(0.1) : Color.clear).cornerRadius(4)
                         } else {
-                            // Standard Label
-                            Text(action.localizedString)
-                                .font(.subheadline)
+                            Text(action.localizedString).font(.subheadline)
                         }
-                        
                         Spacer()
-                        
-                        Button { actions.remove(at: index) } label: {
-                            Image(systemName: "xmark").font(.caption2)
-                        }
-                        .buttonStyle(.plain).foregroundColor(.secondary).padding(.leading, 4)
+                        Button { actions.remove(at: index) } label: { Image(systemName: "xmark").font(.caption2) }.buttonStyle(.plain).foregroundColor(.secondary)
                     }
-                    .padding(6)
-                    .background(RoundedRectangle(cornerRadius: 6).fill(Color.secondary.opacity(0.08)))
-                    
-                    if index < actions.count - 1 {
-                        Image(systemName: "arrow.down")
-                            .font(.caption2).foregroundColor(.secondary.opacity(0.5)).padding(.leading, 12)
-                    }
+                    .padding(6).background(RoundedRectangle(cornerRadius: 6).fill(Color.secondary.opacity(0.08)))
+                    if index < actions.count - 1 { Image(systemName: "arrow.down").font(.caption2).foregroundColor(.secondary.opacity(0.3)).padding(.leading, 15) }
                 }
             }
-            
             Menu {
-                // Standard Actions
                 Button("Show") { actions.append(.show) }
                 Button("Bring to Front") { actions.append(.bringToFront) }
                 Button("Hide") { actions.append(.hide) }
                 Button("Minimize") { actions.append(.minimize) }
-                
                 Divider()
-                
-                // Hotkey Action
-                Button("Simulate Hotkey...") {
-                    // Add a blank hotkey placeholder
-                    actions.append(.hotkey(keyCode: -1, modifiers: 0))
-                }
-            } label: {
-                Label("Add Step", systemImage: "plus").font(.caption)
-            }
-            .menuStyle(.borderlessButton).padding(.top, 4).foregroundColor(.blue)
+                Button("Simulate Hotkey...") { actions.append(.hotkey(keyCode: -1, modifiers: 0)) }
+            } label: { HStack { Image(systemName: "plus"); Text("Add Action") }.font(.caption).fontWeight(.medium) }
+            .menuStyle(.borderlessButton).foregroundColor(.blue).padding(.top, 4)
         }
     }
     
     private func startRecording(at index: Int) {
         recordingIndex = index
-        
-        // Local Monitor to capture the very next keypress
         NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
             if self.recordingIndex == index {
-                // Capture
                 let mods = event.modifierFlags.intersection(.deviceIndependentFlagsMask).rawValue
                 let code = Int(event.keyCode)
-                
-                // Update Action
                 self.actions[index] = .hotkey(keyCode: code, modifiers: UInt(mods))
-                
-                // Stop Recording
                 self.recordingIndex = nil
-                return nil // Consume event so it doesn't type in the window
+                return nil
             }
             return event
         }
