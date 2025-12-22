@@ -37,7 +37,7 @@ struct RuleEditor: View {
     // MARK: - Extracted Scroll Content
     @ViewBuilder
     private var scrollContent: some View {
-        VStack(spacing: 24) {
+        VStack(alignment: .leading, spacing: 24) {
             
             // 1. Groups
             ForEach(Array(workingRule.groups.enumerated()), id: \.element.id) { index, group in
@@ -213,13 +213,16 @@ struct GroupEditorCard: View {
                     .frame(height: 120)
                 }
                 .padding(12).frame(width: 250)
+                
                 Divider()
+                
                 // Actions
                 VStack(alignment: .leading, spacing: 8) {
                     Text("Do Actions:").font(.caption).fontWeight(.bold).foregroundColor(.secondary)
                     ActionSequenceEditor(actions: $group.actions, placeholder: "No actions defined")
                 }
-                .padding(12).frame(maxWidth: .infinity)
+                .padding(12)
+                .frame(maxWidth: .infinity, alignment: .leading)
             }
         }
         .background(Color(NSColor.controlBackgroundColor))
@@ -245,7 +248,6 @@ struct ActionSequenceEditor: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             if actions.isEmpty {
-                // UPDATED: Added frame alignment to ensure text stays on the left
                 Text(placeholder)
                     .font(.caption)
                     .italic()
@@ -276,6 +278,7 @@ struct ActionSequenceEditor: View {
             } label: { HStack { Image(systemName: "plus"); Text("Add Action") }.font(.caption).fontWeight(.medium) }
             .menuStyle(.borderlessButton).foregroundColor(.blue).padding(.top, 4)
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
         .animation(.default, value: actions)
     }
     
@@ -338,6 +341,8 @@ struct ActionRowView: View {
             .buttonStyle(.plain).foregroundColor(.secondary)
         }
         .padding(6).background(RoundedRectangle(cornerRadius: 6).fill(Color.secondary.opacity(0.08)))
+        // UPDATED: Hide the original row while it is being draggedf
+        .opacity(draggedItem == action ? 0.0 : 1.0)
         // Drag and Drop Logic
         .onDrag {
             self.draggedItem = action
