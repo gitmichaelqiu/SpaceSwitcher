@@ -186,7 +186,8 @@ struct RuleEditor: View {
     private var actionsColumn: some View {
         GroupBox(label: Label("Window Actions", systemImage: "slider.horizontal.3")) {
             VStack {
-                Spacer() // Pushes block to vertical center
+//                Spacer() // Pushes block to vertical center
+                Color.clear.frame(height: 4)
                 
                 // Block of controls
                 VStack(alignment: .leading, spacing: 24) { // FIX: Alignment leading for the block itself
