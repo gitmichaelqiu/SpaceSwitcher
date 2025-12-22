@@ -4,7 +4,7 @@
     "" : {
 
     },
-    "%lld." : {
+    "%lld" : {
 
     },
     "%lld. %@" : {
@@ -130,6 +130,7 @@
 
     },
     "Application" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -138,6 +139,9 @@
           }
         }
       }
+    },
+    "Bundle ID: %@" : {
+
     },
     "Cancel" : {
       "localizations" : {
@@ -149,7 +153,10 @@
         }
       }
     },
-    "Change Application" : {
+    "Change" : {
+
+    },
+    "Check the spaces where this app belongs." : {
 
     },
     "Click + to add a new switching rule." : {
@@ -162,6 +169,9 @@
           }
         }
       }
+    },
+    "Configure a new switching rule" : {
+
     },
     "Connected" : {
       "localizations" : {
@@ -227,6 +237,9 @@
         }
       }
     },
+    "Else Action" : {
+
+    },
     "General" : {
       "localizations" : {
         "zh-Hans" : {
@@ -257,12 +270,6 @@
           }
         }
       }
-    },
-    "In Other Spaces" : {
-
-    },
-    "In Target Spaces" : {
-
     },
     "In these spaces:" : {
       "extractionState" : "stale",
@@ -295,11 +302,11 @@
         }
       }
     },
+    "Match Action" : {
+
+    },
     "Minimize" : {
       "comment" : "Action: Minimize Window"
-    },
-    "No application selected" : {
-
     },
     "No Rules Configured" : {
       "localizations" : {
@@ -311,7 +318,7 @@
         }
       }
     },
-    "No spaces detected via DesktopRenamer." : {
+    "No spaces detected." : {
 
     },
     "Not Connected" : {
@@ -389,6 +396,9 @@
         }
       }
     },
+    "Running Applications" : {
+
+    },
     "Save Rule" : {
       "localizations" : {
         "zh-Hans" : {
@@ -402,13 +412,10 @@
     "Select a category" : {
 
     },
-    "Select a running application..." : {
+    "Select an application..." : {
 
     },
     "Select Target App" : {
-
-    },
-    "Select the spaces where this app should be visible." : {
 
     },
     "SelectApp" : {
@@ -762,10 +769,7 @@
     "Switcher" : {
 
     },
-    "Usually 'Hide' or 'Minimize'" : {
-
-    },
-    "Usually 'Show'" : {
+    "Target Application" : {
 
     },
     "v%@" : {
@@ -783,6 +787,12 @@
           }
         }
       }
+    },
+    "When in other spaces" : {
+
+    },
+    "When in selected spaces" : {
+
     }
   },
   "version" : "1.1"
