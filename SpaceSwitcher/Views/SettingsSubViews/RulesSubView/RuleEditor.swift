@@ -52,7 +52,7 @@ struct RuleEditor: View {
     // MARK: - 1. App Selector Header
     
     private var appSelectorHeader: some View {
-        ZStack {
+        ZStack(alignment: .leading) { // FIX: Align ZStack content to leading
             Color(NSColor.controlBackgroundColor)
                 .ignoresSafeArea()
             
@@ -85,7 +85,7 @@ struct RuleEditor: View {
                        let path = NSWorkspace.shared.urlForApplication(withBundleIdentifier: workingRule.appBundleID)?.path {
                         Image(nsImage: NSWorkspace.shared.icon(forFile: path))
                             .resizable()
-                            .frame(width: 48, height: 48) // Optimized size
+                            .frame(width: 48, height: 48)
                             .shadow(radius: 1)
                     } else {
                         Image(systemName: "app.dashed")
@@ -98,7 +98,7 @@ struct RuleEditor: View {
                     VStack(alignment: .leading, spacing: 2) {
                         HStack(spacing: 6) {
                             Text(workingRule.appBundleID.isEmpty ? "Select Application" : workingRule.appName)
-                                .font(.title2) // Optimized font size
+                                .font(.title2)
                                 .fontWeight(.bold)
                                 .foregroundColor(.primary)
                             
@@ -115,13 +115,14 @@ struct RuleEditor: View {
                             .truncationMode(.middle)
                     }
                     
-                    Spacer() // Forces alignment to the left
+                    Spacer() // Forces internal content to the left
                 }
                 .contentShape(Rectangle())
             }
             .menuStyle(.borderlessButton)
             .padding(.horizontal, 24)
             .padding(.vertical, 20)
+            .frame(maxWidth: .infinity, alignment: .leading) // FIX: Ensure frame fills width and aligns leading
         }
         .frame(height: 90)
     }
@@ -160,7 +161,7 @@ struct RuleEditor: View {
                                             .frame(width: 25, alignment: .trailing)
                                         
                                         Text(space.name)
-                                            .font(.body) // Standard body size
+                                            .font(.body)
                                             .fontWeight(.medium)
                                             .lineLimit(1)
                                         
@@ -185,9 +186,10 @@ struct RuleEditor: View {
     private var actionsColumn: some View {
         GroupBox(label: Label("Window Actions", systemImage: "slider.horizontal.3")) {
             VStack {
-                Spacer() // Pushes content to vertical center
+                Spacer() // Pushes block to vertical center
                 
-                VStack(alignment: .leading, spacing: 24) { // Increased spacing between blocks
+                // Block of controls
+                VStack(alignment: .leading, spacing: 24) { // FIX: Alignment leading for the block itself
                     
                     // Block A: Match Action
                     VStack(alignment: .leading, spacing: 8) {
@@ -204,7 +206,7 @@ struct RuleEditor: View {
                             }
                         }
                         .labelsHidden()
-                        .frame(maxWidth: .infinity, alignment: .leading) // Align picker left
+                        .frame(maxWidth: .infinity, alignment: .leading) // Ensure picker aligns leading
                         
                         Text("Standard behavior: Show")
                             .font(.caption)
@@ -228,7 +230,7 @@ struct RuleEditor: View {
                             }
                         }
                         .labelsHidden()
-                        .frame(maxWidth: .infinity, alignment: .leading) // Align picker left
+                        .frame(maxWidth: .infinity, alignment: .leading) // Ensure picker aligns leading
                         
                         Text("Standard behavior: Hide or Minimize")
                             .font(.caption)
@@ -236,8 +238,9 @@ struct RuleEditor: View {
                     }
                 }
                 .padding(.horizontal, 12)
+                .frame(maxWidth: .infinity, alignment: .leading) // Ensure the inner block aligns to leading edge of GroupBox
                 
-                Spacer() // Pushes content to vertical center
+                Spacer() // Pushes block to vertical center
             }
         }
     }
