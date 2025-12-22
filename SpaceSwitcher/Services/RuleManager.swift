@@ -1,6 +1,7 @@
 import Foundation
 import AppKit
 import Combine
+import ApplicationServices
 
 enum RuleSortOption: String, CaseIterable, Identifiable {
     case name = "Name"
@@ -8,6 +9,10 @@ enum RuleSortOption: String, CaseIterable, Identifiable {
     
     var id: String { rawValue }
 }
+
+import Foundation
+import AppKit
+import Combine
 
 class RuleManager: ObservableObject {
     @Published var rules: [AppRule] = [] {
@@ -17,9 +22,7 @@ class RuleManager: ObservableObject {
     @Published var sortOption: RuleSortOption = .name
     
     weak var spaceManager: SpaceManager? {
-        didSet {
-            setupBindings()
-        }
+        didSet { setupBindings() }
     }
     
     private var cancellables = Set<AnyCancellable>()
@@ -29,45 +32,7 @@ class RuleManager: ObservableObject {
         loadRules()
     }
     
-    // MARK: - Sorting Logic
-    
-    var sortedRules: [AppRule] {
-        switch sortOption {
-        case .name:
-            return rules.sorted {
-                $0.appName.localizedCaseInsensitiveCompare($1.appName) == .orderedAscending
-            }
-        case .space:
-            return rules.sorted { r1, r2 in
-                let s1 = getLowestSpaceNumber(for: r1)
-                let s2 = getLowestSpaceNumber(for: r2)
-                
-                if s1 != s2 {
-                    return s1 < s2
-                }
-                // Secondary sort by name
-                return r1.appName.localizedCaseInsensitiveCompare(r2.appName) == .orderedAscending
-            }
-        }
-    }
-    
-    private func getLowestSpaceNumber(for rule: AppRule) -> Int {
-        guard let sm = spaceManager, !rule.targetSpaceIDs.isEmpty else { return 999 }
-        
-        // Filter available spaces to find matches for this rule
-        let matchedSpaces = sm.availableSpaces.filter { rule.targetSpaceIDs.contains($0.id) }
-        
-        // Return the lowest number found, or 999 if the space ID isn't currently valid/connected
-        return matchedSpaces.map { $0.number }.min() ?? 999
-    }
-    
-    // MARK: - Actions
-    
-    func deleteRule(withID id: UUID) {
-        rules.removeAll { $0.id == id }
-    }
-    
-    // MARK: - Rule Execution (Existing)
+    // MARK: - Logic & Execution
     
     private func setupBindings() {
         spaceManager?.$currentSpaceID
@@ -97,12 +62,55 @@ class RuleManager: ObservableObject {
             app.hide()
         case .show:
             app.unhide()
+            // Optional: app.activate(options: .activateIgnoringOtherApps) to force front
+        case .minimize:
+            minimizeAppWindows(app)
         case .doNothing:
             break
         }
     }
     
-    // MARK: - Persistence
+    private func minimizeAppWindows(_ app: NSRunningApplication) {
+        // Accessibility API Logic
+        let pid = app.processIdentifier
+        let appElement = AXUIElementCreateApplication(pid)
+        
+        var windowsRef: AnyObject?
+        let result = AXUIElementCopyAttributeValue(appElement, kAXWindowsAttribute as CFString, &windowsRef)
+        
+        if result == .success, let windows = windowsRef as? [AXUIElement] {
+            for window in windows {
+                // Set kAXMinimizedAttribute to true
+                AXUIElementSetAttributeValue(window, kAXMinimizedAttribute as CFString, kCFBooleanTrue)
+            }
+        }
+    }
+    
+    // MARK: - Sorting & Persistence
+    
+    var sortedRules: [AppRule] {
+        switch sortOption {
+        case .name:
+            return rules.sorted { $0.appName.localizedCaseInsensitiveCompare($1.appName) == .orderedAscending }
+        case .space:
+            return rules.sorted { r1, r2 in
+                let s1 = getLowestSpaceNumber(for: r1)
+                let s2 = getLowestSpaceNumber(for: r2)
+                return s1 != s2 ? s1 < s2 : r1.appName.localizedCaseInsensitiveCompare(r2.appName) == .orderedAscending
+            }
+        }
+    }
+    
+    private func getLowestSpaceNumber(for rule: AppRule) -> Int {
+        guard let sm = spaceManager, !rule.targetSpaceIDs.isEmpty else { return 999 }
+        let matchedSpaces = sm.availableSpaces.filter { rule.targetSpaceIDs.contains($0.id) }
+        return matchedSpaces.map { $0.number }.min() ?? 999
+    }
+    
+    func deleteRule(withID id: UUID) {
+        rules.removeAll { $0.id == id }
+    }
+    
     private func loadRules() {
         if let data = UserDefaults.standard.data(forKey: rulesKey),
            let decoded = try? JSONDecoder().decode([AppRule].self, from: data) {

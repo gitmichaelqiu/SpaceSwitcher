@@ -54,6 +54,7 @@
       }
     },
     "1. Target App" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -63,7 +64,11 @@
         }
       }
     },
+    "1. Target Application" : {
+
+    },
     "2. Logic" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -72,6 +77,9 @@
           }
         }
       }
+    },
+    "2. Target Spaces" : {
+
     },
     "About" : {
       "localizations" : {
@@ -94,6 +102,7 @@
       }
     },
     "Action:" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -120,6 +129,7 @@
 
     },
     "Application" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -187,6 +197,7 @@
       }
     },
     "DoNothing" : {
+      "comment" : "Action: Do Nothing",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -223,6 +234,7 @@
       }
     },
     "Hide" : {
+      "comment" : "Action: Hide Window",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -242,7 +254,11 @@
         }
       }
     },
+    "In Other Spaces:" : {
+
+    },
     "In these spaces:" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -272,6 +288,12 @@
         }
       }
     },
+    "Minimize" : {
+      "comment" : "Action: Minimize Window"
+    },
+    "New Rule" : {
+
+    },
     "No Rules Configured" : {
       "localizations" : {
         "zh-Hans" : {
@@ -281,6 +303,9 @@
           }
         }
       }
+    },
+    "No spaces detected." : {
+
     },
     "Not Connected" : {
       "localizations" : {
@@ -303,6 +328,7 @@
       }
     },
     "Otherwise:" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -311,6 +337,9 @@
           }
         }
       }
+    },
+    "Please select an application to continue." : {
+
     },
     "Quit" : {
       "extractionState" : "manual",
@@ -369,7 +398,14 @@
     "Select a category" : {
 
     },
+    "Select Target App" : {
+
+    },
+    "Select the spaces where this app belongs." : {
+
+    },
     "SelectApp" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -677,6 +713,7 @@
       }
     },
     "Show" : {
+      "comment" : "Action: Show Window",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -715,6 +752,12 @@
         }
       }
     },
+    "Standard behavior: Hide or Minimize" : {
+
+    },
+    "Standard behavior: Show" : {
+
+    },
     "Switcher" : {
 
     },
@@ -733,6 +776,9 @@
           }
         }
       }
+    },
+    "When in Target Space:" : {
+
     }
   },
   "version" : "1.1"

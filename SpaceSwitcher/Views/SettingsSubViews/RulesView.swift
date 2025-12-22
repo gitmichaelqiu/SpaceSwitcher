@@ -212,6 +212,7 @@ struct RuleRow: View {
         case .show: return .green
         case .hide: return .red
         case .doNothing: return .secondary
+        case .minimize: return .orange
         }
     }
 }

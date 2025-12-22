@@ -6,132 +6,235 @@ struct RuleEditor: View {
     let onSave: (AppRule) -> Void
     let onCancel: () -> Void
     
-    // Running Apps List
     @State private var runningApps: [(name: String, id: String, icon: NSImage)] = []
     
     init(rule: AppRule?, availableSpaces: [SpaceInfo], onSave: @escaping (AppRule) -> Void, onCancel: @escaping () -> Void) {
-        _workingRule = State(initialValue: rule ?? AppRule(appBundleID: "", appName: NSLocalizedString("SelectApp", comment:""), targetSpaceIDs: [], matchAction: .hide, elseAction: .show))
+        _workingRule = State(initialValue: rule ?? AppRule(
+            appBundleID: "",
+            appName: NSLocalizedString("Select Target App", comment: ""),
+            targetSpaceIDs: [],
+            matchAction: .show,
+            elseAction: .hide
+        ))
         self.availableSpaces = availableSpaces
         self.onSave = onSave
         self.onCancel = onCancel
     }
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 20) {
-            Text("Edit Rule")
-                .font(.title2)
-            
-            SettingsSection("1. Target App") {
-                SettingsRow("Application") {
-                    Menu {
-                        ForEach(runningApps, id: \.id) { app in
-                            Button {
-                                workingRule.appBundleID = app.id
-                                workingRule.appName = app.name
-                            } label: {
-                                HStack {
-                                    Image(nsImage: app.icon)
-                                    Text(app.name)
-                                }
-                            }
-                        }
-                    } label: {
-                        HStack {
-                            if !workingRule.appBundleID.isEmpty,
-                               let path = NSWorkspace.shared.urlForApplication(withBundleIdentifier: workingRule.appBundleID)?.path {
-                                Image(nsImage: NSWorkspace.shared.icon(forFile: path))
-                                    .resizable()
-                                    .frame(width: 16, height: 16)
-                            }
-                            Text(workingRule.appName)
-                        }
-                    }
-                }
+        VStack(spacing: 0) {
+            // MARK: - Header
+            HStack {
+                Text(workingRule.appBundleID.isEmpty ? "New Rule" : "Edit Rule")
+                    .font(.headline)
+                Spacer()
             }
+            .padding()
+            .background(Color(NSColor.controlBackgroundColor))
             
-            SettingsSection("2. Logic") {
-                HStack(alignment: .top, spacing: 0) {
-                    // Part A: In Spaces...
-                    VStack(alignment: .leading) {
-                        Text("In these spaces:")
-                            .font(.caption)
-                            .foregroundColor(.secondary)
-                        
-                        List {
-                            ForEach(availableSpaces) { space in
-                                HStack {
-                                    Toggle("", isOn: Binding(
-                                        get: { workingRule.targetSpaceIDs.contains(space.id) },
-                                        set: { isSelected in
-                                            if isSelected {
-                                                workingRule.targetSpaceIDs.insert(space.id)
-                                            } else {
-                                                workingRule.targetSpaceIDs.remove(space.id)
-                                            }
-                                        }
-                                    ))
-                                    .labelsHidden()
-                                    
-                                    Text("\(space.number). \(space.name)")
-                                }
-                            }
-                        }
-                        .frame(height: 100)
-                        .background(Color(nsColor: .controlBackgroundColor))
-                        .cornerRadius(6)
-                    }
-                    .frame(width: 180)
+            Divider()
+            
+            ScrollView {
+                VStack(alignment: .leading, spacing: 24) {
                     
-                    Spacer()
+                    // SECTION 1: TARGET APP
+                    appSelectionSection
                     
-                    // Part B: Action
-                    VStack(alignment: .leading, spacing: 16) {
-                        VStack(alignment: .leading) {
-                            Text("Action:")
-                                .font(.caption)
-                                .foregroundColor(.secondary)
-                            Picker("", selection: $workingRule.matchAction) {
-                                ForEach(WindowAction.allCases) { action in
-                                    Text(action.localizedString).tag(action)
-                                }
-                            }
-                            .labelsHidden()
-                        }
-                        
+                    if !workingRule.appBundleID.isEmpty {
                         Divider()
                         
-                        VStack(alignment: .leading) {
-                            Text("Otherwise:")
-                                .font(.caption)
-                                .foregroundColor(.secondary)
-                            Picker("", selection: $workingRule.elseAction) {
-                                ForEach(WindowAction.allCases) { action in
-                                    Text(action.localizedString).tag(action)
-                                }
-                            }
-                            .labelsHidden()
+                        HStack(alignment: .top, spacing: 24) {
+                            // SECTION 2: SPACE SELECTION (Left Column)
+                            spaceSelectionSection
+                                .frame(maxWidth: .infinity)
+                            
+                            // SECTION 3: ACTIONS (Right Column)
+                            actionConfigurationSection
+                                .frame(maxWidth: 200)
                         }
+                    } else {
+                        Text("Please select an application to continue.")
+                            .foregroundColor(.secondary)
+                            .italic()
+                            .frame(maxWidth: .infinity, alignment: .center)
+                            .padding(.top, 20)
                     }
-                    .frame(maxWidth: 150)
                 }
-                .padding(10)
+                .padding(24)
             }
             
+            Divider()
+            
+            // MARK: - Footer
             HStack {
                 Button("Cancel", action: onCancel)
+                    .keyboardShortcut(.escape, modifiers: [])
+                
                 Spacer()
+                
                 Button("Save Rule") {
                     onSave(workingRule)
                 }
                 .buttonStyle(.borderedProminent)
                 .disabled(workingRule.appBundleID.isEmpty)
+                .keyboardShortcut(.return, modifiers: [])
             }
+            .padding()
+            .background(Color(NSColor.controlBackgroundColor))
         }
-        .padding()
-        .frame(width: 500)
+        .frame(width: 600, height: 500)
         .onAppear {
             loadRunningApps()
         }
+    }
+    
+    // MARK: - Subviews
+    
+    private var appSelectionSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("1. Target Application")
+                .font(.headline)
+                .foregroundColor(.secondary)
+            
+            Menu {
+                ForEach(runningApps, id: \.id) { app in
+                    Button {
+                        workingRule.appBundleID = app.id
+                        workingRule.appName = app.name
+                    } label: {
+                        HStack {
+                            Image(nsImage: app.icon)
+                            Text(app.name)
+                        }
+                    }
+                }
+            } label: {
+                HStack(spacing: 12) {
+                    if !workingRule.appBundleID.isEmpty,
+                       let path = NSWorkspace.shared.urlForApplication(withBundleIdentifier: workingRule.appBundleID)?.path {
+                        Image(nsImage: NSWorkspace.shared.icon(forFile: path))
+                            .resizable()
+                            .frame(width: 24, height: 24)
+                    } else {
+                        Image(systemName: "app.dashed")
+                            .resizable()
+                            .frame(width: 24, height: 24)
+                            .foregroundColor(.secondary)
+                    }
+                    
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(workingRule.appName)
+                            .fontWeight(.medium)
+                        if !workingRule.appBundleID.isEmpty {
+                            Text(workingRule.appBundleID)
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                        }
+                    }
+                    Spacer()
+                }
+                .padding(4)
+            }
+            .menuStyle(.borderedButton)
+            .frame(maxWidth: 300)
+        }
+    }
+    
+    private var spaceSelectionSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("2. Target Spaces")
+                .font(.headline)
+                .foregroundColor(.secondary)
+            
+            VStack(spacing: 0) {
+                if availableSpaces.isEmpty {
+                    Text("No spaces detected.")
+                        .foregroundColor(.secondary)
+                        .padding()
+                } else {
+                    List {
+                        ForEach(availableSpaces) { space in
+                            HStack {
+                                Toggle("", isOn: Binding(
+                                    get: { workingRule.targetSpaceIDs.contains(space.id) },
+                                    set: { isSelected in
+                                        if isSelected {
+                                            workingRule.targetSpaceIDs.insert(space.id)
+                                        } else {
+                                            workingRule.targetSpaceIDs.remove(space.id)
+                                        }
+                                    }
+                                ))
+                                .toggleStyle(.checkbox)
+                                
+                                Text("\(space.number). \(space.name)")
+                                    .padding(.leading, 4)
+                                
+                                Spacer()
+                            }
+                            .padding(.vertical, 2)
+                        }
+                    }
+                    .frame(height: 180)
+                    .listStyle(.bordered(alternatesRowBackgrounds: true))
+                }
+            }
+            
+            Text("Select the spaces where this app belongs.")
+                .font(.caption)
+                .foregroundColor(.secondary)
+        }
+    }
+    
+    private var actionConfigurationSection: some View {
+        VStack(alignment: .leading, spacing: 24) {
+            
+            // Match Action
+            VStack(alignment: .leading, spacing: 8) {
+                Text("When in Target Space:")
+                    .font(.headline)
+                    .foregroundColor(.secondary)
+                    .font(.system(size: 13))
+                
+                Picker("", selection: $workingRule.matchAction) {
+                    ForEach(WindowAction.allCases) { action in
+                        Text(action.localizedString).tag(action)
+                    }
+                }
+                .labelsHidden()
+                
+                Text("Standard behavior: Show")
+                    .font(.caption2)
+                    .foregroundColor(.secondary)
+            }
+            
+            // Else Action
+            VStack(alignment: .leading, spacing: 8) {
+                Text("In Other Spaces:")
+                    .font(.headline)
+                    .foregroundColor(.secondary)
+                    .font(.system(size: 13))
+                
+                Picker("", selection: $workingRule.elseAction) {
+                    ForEach(WindowAction.allCases) { action in
+                        Text(action.localizedString).tag(action)
+                    }
+                }
+                .labelsHidden()
+                
+                Text("Standard behavior: Hide or Minimize")
+                    .font(.caption2)
+                    .foregroundColor(.secondary)
+            }
+            
+            Spacer()
+        }
+        .padding(16)
+        .background(
+            RoundedRectangle(cornerRadius: 8)
+                .fill(Color(NSColor.controlBackgroundColor))
+                .shadow(color: .black.opacity(0.05), radius: 2, x: 0, y: 1)
+        )
     }
     
     func loadRunningApps() {
