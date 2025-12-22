@@ -208,6 +208,7 @@
     },
     "DoNothing" : {
       "comment" : "Action: Do Nothing",
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {

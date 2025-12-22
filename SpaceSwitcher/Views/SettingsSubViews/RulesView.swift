@@ -44,8 +44,15 @@ struct RulesView: View {
             HStack {
                 Button { spaceManager.refreshSpaceList() } label: { Label("Refresh Spaces", systemImage: "arrow.clockwise") }
                 Spacer()
+                // FIX: Initialize new rule with empty actions (Do Nothing by default)
                 Button {
-                    editingRule = AppRule(appBundleID: "", appName: NSLocalizedString("Select Target App", comment: ""), targetSpaceIDs: [], matchActions: [.show], elseActions: [.hide])
+                    editingRule = AppRule(
+                        appBundleID: "",
+                        appName: NSLocalizedString("Select Target App", comment: ""),
+                        targetSpaceIDs: [],
+                        matchActions: [],
+                        elseActions: []
+                    )
                 } label: { Text("+ Add Rule").frame(minWidth: 80) }
                 .buttonStyle(.borderedProminent)
             }
@@ -61,6 +68,7 @@ struct RulesView: View {
     }
 }
 
+// RuleRow remains largely the same, logic works for empty arrays too
 struct RuleRow: View {
     let rule: AppRule
     let spaces: [SpaceInfo]
@@ -81,17 +89,9 @@ struct RuleRow: View {
                     Text("In").foregroundColor(.secondary)
                     Text(formatSpaces(rule.targetSpaceIDs)).fontWeight(.medium).foregroundColor(.primary)
                     Text("→").foregroundColor(.secondary).font(.caption)
-                    
-                    // Match Actions
-                    Text(formatActions(rule.matchActions))
-                        .foregroundColor(.green) // Simplified color logic for lists
-                        .fontWeight(.semibold)
-                    
+                    Text(formatActions(rule.matchActions)).foregroundColor(.green).fontWeight(.semibold)
                     Text("• else").foregroundColor(.secondary)
-                    
-                    // Else Actions
-                    Text(formatActions(rule.elseActions))
-                        .foregroundColor(.red) // Simplified color logic
+                    Text(formatActions(rule.elseActions)).foregroundColor(.red)
                 }
                 .font(.caption)
             }

@@ -56,7 +56,6 @@ class RuleManager: ObservableObject {
     private func applyRules(for spaceID: String) {
         for rule in rules where rule.isEnabled {
             let isMatch = rule.targetSpaceIDs.contains(spaceID)
-            // Retrieve Sequence
             let actions = isMatch ? rule.matchActions : rule.elseActions
             perform(actions: actions, on: rule.appBundleID)
         }
@@ -65,14 +64,15 @@ class RuleManager: ObservableObject {
     private func perform(actions: [WindowAction], on bundleID: String) {
         guard let app = NSRunningApplication.runningApplications(withBundleIdentifier: bundleID).first else { return }
         
-        // Execute sequence in order
         for action in actions {
             switch action {
             case .hide:
                 app.hide()
                 
             case .show:
-                app.unhide()
+                // FIX: Use AX to unhide without activating (preserves layer)
+                unhideAppWithoutActivation(app)
+                // Also ensure individual windows are not minimized
                 unminimizeAppWindows(app)
                 
             case .minimize:
@@ -80,15 +80,19 @@ class RuleManager: ObservableObject {
                 
             case .bringToFront:
                 app.activate(options: .activateIgnoringOtherApps)
-                
-            case .doNothing:
-                break
             }
         }
     }
     
     // MARK: - Accessibility Helpers
-    // (Minimize/Unminimize helpers remain identical to previous version)
+    
+    private func unhideAppWithoutActivation(_ app: NSRunningApplication) {
+        // If we use app.unhide(), it activates the app.
+        // Instead, we set kAXHiddenAttribute to false via Accessibility.
+        let pid = app.processIdentifier
+        let appElement = AXUIElementCreateApplication(pid)
+        AXUIElementSetAttributeValue(appElement, kAXHiddenAttribute as CFString, kCFBooleanFalse)
+    }
     
     private func minimizeAppWindows(_ app: NSRunningApplication) {
         let pid = app.processIdentifier
@@ -106,6 +110,7 @@ class RuleManager: ObservableObject {
         let pid = app.processIdentifier
         let appElement = AXUIElementCreateApplication(pid)
         var windowsRef: AnyObject?
+        // Note: Getting windows often only returns visible ones, but unhiding the app first helps.
         if AXUIElementCopyAttributeValue(appElement, kAXWindowsAttribute as CFString, &windowsRef) == .success,
            let windows = windowsRef as? [AXUIElement] {
             for window in windows {
@@ -119,7 +124,7 @@ class RuleManager: ObservableObject {
     }
     
     // MARK: - Sorting & Persistence
-    
+    // (Existing code: sortedRules, getLowestSpaceNumber, deleteRule, loadRules, saveRules...)
     var sortedRules: [AppRule] {
         switch sortOption {
         case .name: return rules.sorted { $0.appName.localizedCaseInsensitiveCompare($1.appName) == .orderedAscending }

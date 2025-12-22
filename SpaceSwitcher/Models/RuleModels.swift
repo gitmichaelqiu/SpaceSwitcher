@@ -1,17 +1,15 @@
 import Foundation
 
 enum WindowAction: String, Codable, CaseIterable, Identifiable {
-    case doNothing = "DoNothing"
     case show = "Show"
     case hide = "Hide"
     case minimize = "Minimize"
-    case bringToFront = "BringToFront" // New Action
+    case bringToFront = "BringToFront"
     
     var id: String { self.rawValue }
     
     var localizedString: String {
         switch self {
-        case .doNothing: return NSLocalizedString("DoNothing", comment: "")
         case .show: return NSLocalizedString("Show", comment: "")
         case .hide: return NSLocalizedString("Hide", comment: "")
         case .minimize: return NSLocalizedString("Minimize", comment: "")
@@ -26,7 +24,6 @@ struct AppRule: Identifiable, Codable {
     var appName: String
     var targetSpaceIDs: Set<String>
     
-    // Changed to Arrays for Sequences
     var matchActions: [WindowAction]
     var elseActions: [WindowAction]
     
@@ -42,11 +39,11 @@ struct AppRule: Identifiable, Codable {
         self.isEnabled = isEnabled
     }
     
-    // Migration Logic: Handle old JSON with single 'matchAction'
+    // Migration Logic
     enum CodingKeys: String, CodingKey {
         case id, appBundleID, appName, targetSpaceIDs, isEnabled
-        case matchActions, elseActions // New keys
-        case matchAction, elseAction   // Old keys
+        case matchActions, elseActions
+        case matchAction, elseAction // Legacy
     }
     
     init(from decoder: Decoder) throws {
@@ -58,21 +55,22 @@ struct AppRule: Identifiable, Codable {
         targetSpaceIDs = try container.decode(Set<String>.self, forKey: .targetSpaceIDs)
         isEnabled = try container.decode(Bool.self, forKey: .isEnabled)
         
-        // Try decoding new arrays; fall back to wrapping old single values
+        // Decode arrays or migrate legacy singles
         if let actions = try? container.decode([WindowAction].self, forKey: .matchActions) {
             matchActions = actions
         } else if let single = try? container.decode(WindowAction.self, forKey: .matchAction) {
-            matchActions = [single]
+            // Map legacy 'DoNothing' to empty array, others to single item
+            matchActions = (single.rawValue == "DoNothing") ? [] : [single]
         } else {
-            matchActions = [.show] // Default
+            matchActions = []
         }
         
         if let actions = try? container.decode([WindowAction].self, forKey: .elseActions) {
             elseActions = actions
         } else if let single = try? container.decode(WindowAction.self, forKey: .elseAction) {
-            elseActions = [single]
+            elseActions = (single.rawValue == "DoNothing") ? [] : [single]
         } else {
-            elseActions = [.hide] // Default
+            elseActions = []
         }
     }
     
