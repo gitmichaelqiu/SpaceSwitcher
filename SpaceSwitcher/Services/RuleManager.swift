@@ -5,14 +5,10 @@ import ApplicationServices
 
 enum RuleSortOption: String, CaseIterable, Identifiable {
     case name = "Name"
-    case space = "Space" // Groups by the lowest space number assigned
+    case space = "Space"
     
     var id: String { rawValue }
 }
-
-import Foundation
-import AppKit
-import Combine
 
 class RuleManager: ObservableObject {
     @Published var rules: [AppRule] = [] {
@@ -60,18 +56,24 @@ class RuleManager: ObservableObject {
         switch action {
         case .hide:
             app.hide()
+            
         case .show:
+            // 1. Unhide (if it was Cmd+H hidden)
             app.unhide()
-            // Optional: app.activate(options: .activateIgnoringOtherApps) to force front
+            // 2. Un-minimize (if it was Cmd+M minimized or minimized via rule)
+            unminimizeAppWindows(app)
+            
         case .minimize:
             minimizeAppWindows(app)
+            
         case .doNothing:
             break
         }
     }
     
+    // MARK: - Accessibility Helpers
+    
     private func minimizeAppWindows(_ app: NSRunningApplication) {
-        // Accessibility API Logic
         let pid = app.processIdentifier
         let appElement = AXUIElementCreateApplication(pid)
         
@@ -80,8 +82,37 @@ class RuleManager: ObservableObject {
         
         if result == .success, let windows = windowsRef as? [AXUIElement] {
             for window in windows {
-                // Set kAXMinimizedAttribute to true
+                // Set minimized = true
                 AXUIElementSetAttributeValue(window, kAXMinimizedAttribute as CFString, kCFBooleanTrue)
+            }
+        }
+    }
+    
+    private func unminimizeAppWindows(_ app: NSRunningApplication) {
+        let pid = app.processIdentifier
+        let appElement = AXUIElementCreateApplication(pid)
+        
+        var windowsRef: AnyObject?
+        // Note: kAXWindowsAttribute usually only returns visible (non-minimized) windows.
+        // To get minimized windows, we often need to check the application's entire list or standard window role.
+        // However, for many apps, checking kAXWindowsAttribute is sufficient if the OS considers them "windows belonging to the app".
+        // If that fails, using kAXVisibleChildrenAttribute or iterating standard Accessibility hierarchy might be needed,
+        // but often the issue is simply setting the attribute.
+        
+        // Strategy: Iterate windows and set minimized to false.
+        let result = AXUIElementCopyAttributeValue(appElement, kAXWindowsAttribute as CFString, &windowsRef)
+        
+        if result == .success, let windows = windowsRef as? [AXUIElement] {
+            for window in windows {
+                // Check if minimized first to avoid redundant calls (optional but good practice)
+                var isMinimizedRef: AnyObject?
+                if AXUIElementCopyAttributeValue(window, kAXMinimizedAttribute as CFString, &isMinimizedRef) == .success,
+                   let isMinimized = isMinimizedRef as? Bool,
+                   isMinimized {
+                    
+                    // Set minimized = false
+                    AXUIElementSetAttributeValue(window, kAXMinimizedAttribute as CFString, kCFBooleanFalse)
+                }
             }
         }
     }
