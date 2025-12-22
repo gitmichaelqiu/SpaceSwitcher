@@ -1,4 +1,5 @@
 import SwiftUI
+import UniformTypeIdentifiers
 
 struct RuleEditor: View {
     @State private var workingRule: AppRule
@@ -10,7 +11,6 @@ struct RuleEditor: View {
     @State private var runningApps: [(name: String, id: String, icon: NSImage)] = []
     
     init(rule: AppRule, availableSpaces: [SpaceInfo], onSave: @escaping (AppRule) -> Void, onCancel: @escaping () -> Void) {
-        // Explicitly initialize State to satisfy compiler complexity limits
         self._workingRule = State<AppRule>(initialValue: rule)
         self.availableSpaces = availableSpaces
         self.onSave = onSave
@@ -19,88 +19,50 @@ struct RuleEditor: View {
     
     var body: some View {
         VStack(spacing: 0) {
-            headerView
+            // 1. Header (App Selector)
+            appSelectorHeader
+                .zIndex(1) // Keep menu on top if it overlaps
             
             Divider()
             
-            ScrollView {
-                VStack(alignment: .leading, spacing: 24) {
-                    applicationSection
-                    
-                    if !workingRule.appBundleID.isEmpty {
-                        spacesAndActionsSection
-                    }
-                }
-                .padding(24)
+            // 2. Main Content (Two Equal Columns)
+            HStack(alignment: .top, spacing: 16) {
+                // LEFT: Spaces
+                spacesColumn
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                
+                // RIGHT: Actions
+                actionsColumn
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
+            .padding(20)
+            .background(Color(NSColor.windowBackgroundColor))
             
             Divider()
             
+            // 3. Footer
             footerView
         }
-        .frame(width: 650, height: 550)
+        .frame(width: 700, height: 500)
         .onAppear {
             loadRunningApps()
         }
     }
     
-    // MARK: - Sub-Views
+    // MARK: - 1. App Selector Header
     
-    private var headerView: some View {
+    private var appSelectorHeader: some View {
         ZStack {
             Color(NSColor.controlBackgroundColor)
                 .ignoresSafeArea()
             
-            HStack(spacing: 16) {
-                // Large Icon Display
-                if !workingRule.appBundleID.isEmpty,
-                   let path = NSWorkspace.shared.urlForApplication(withBundleIdentifier: workingRule.appBundleID)?.path {
-                    Image(nsImage: NSWorkspace.shared.icon(forFile: path))
-                        .resizable()
-                        .frame(width: 48, height: 48)
-                } else {
-                    Image(systemName: "gearshape.circle.fill") // Generic rule icon until app selected
-                        .resizable()
-                        .frame(width: 48, height: 48)
-                        .foregroundColor(.secondary.opacity(0.5))
-                }
-                
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(workingRule.appBundleID.isEmpty ? "New Rule" : workingRule.appName)
-                        .font(.title2)
-                        .fontWeight(.bold)
-                    
-                    if !workingRule.appBundleID.isEmpty {
-                        Text("Bundle ID: \(workingRule.appBundleID)")
-                            .font(.caption)
-                            .foregroundColor(.secondary)
-                            .monospaced()
-                    } else {
-                        Text("Configure a new switching rule")
-                            .font(.caption)
-                            .foregroundColor(.secondary)
-                    }
-                }
-                
-                Spacer()
-            }
-            .padding(20)
-        }
-        .frame(height: 90)
-    }
-    
-    private var applicationSection: some View {
-        GroupBox(label: Label("Target Application", systemImage: "app.dashed")) {
-            if #available(macOS 14.0, *) {
-                Menu {
-                    // Section 1: Dynamic List of Running Apps
+            Menu {
+                // Section A: Running Apps
+                if !runningApps.isEmpty {
                     Section("Running Applications") {
                         ForEach(runningApps, id: \.id) { app in
                             Button {
-                                withAnimation(.snappy) {
-                                    workingRule.appBundleID = app.id
-                                    workingRule.appName = app.name
-                                }
+                                selectApp(name: app.name, id: app.id)
                             } label: {
                                 HStack {
                                     Image(nsImage: app.icon)
@@ -109,162 +71,177 @@ struct RuleEditor: View {
                             }
                         }
                     }
-                } label: {
-                    // DYNAMIC LABEL: Shows exactly what is selected inside the clickable area
-                    HStack {
-                        if !workingRule.appBundleID.isEmpty {
-                            // 1. Selected State
-                            if let path = NSWorkspace.shared.urlForApplication(withBundleIdentifier: workingRule.appBundleID)?.path {
-                                Image(nsImage: NSWorkspace.shared.icon(forFile: path))
-                                    .resizable()
-                                    .frame(width: 18, height: 18)
-                            } else {
-                                Image(systemName: "app")
-                            }
-                            
-                            Text(workingRule.appName)
-                                .fontWeight(.medium)
+                }
+                
+                Divider()
+                
+                // Section B: File Picker
+                Button("Choose other app...") {
+                    pickOtherApp()
+                }
+                
+            } label: {
+                HStack(spacing: 16) {
+                    // App Icon (Large)
+                    if !workingRule.appBundleID.isEmpty,
+                       let path = NSWorkspace.shared.urlForApplication(withBundleIdentifier: workingRule.appBundleID)?.path {
+                        Image(nsImage: NSWorkspace.shared.icon(forFile: path))
+                            .resizable()
+                            .frame(width: 54, height: 54)
+                            .shadow(radius: 1)
+                    } else {
+                        Image(systemName: "app.dashed")
+                            .resizable()
+                            .frame(width: 54, height: 54)
+                            .foregroundColor(.secondary.opacity(0.5))
+                    }
+                    
+                    // App Name & Bundle ID (Clickable)
+                    VStack(alignment: .leading, spacing: 4) {
+                        HStack {
+                            Text(workingRule.appBundleID.isEmpty ? "Select Application" : workingRule.appName)
+                                .font(.title)
+                                .fontWeight(.bold)
                                 .foregroundColor(.primary)
                             
-                            Spacer()
-                            
-                            Text("Change")
-                                .font(.caption)
-                                .foregroundColor(.secondary)
-                        } else {
-                            // 2. Empty State
-                            Text("Select an application...")
-                                .foregroundColor(.secondary)
-                            Spacer()
+                            Image(systemName: "chevron.down.circle.fill")
+                                .font(.title3)
+                                .foregroundColor(.secondary.opacity(0.5))
+                                .padding(.leading, 4)
                         }
                         
-                        Image(systemName: "chevron.up.chevron.down")
-                            .font(.caption2)
+                        Text(workingRule.appBundleID.isEmpty ? "Click here to choose target" : workingRule.appBundleID)
+                            .font(.caption)
                             .foregroundColor(.secondary)
+                            .monospaced()
                     }
-                    .padding(.horizontal, 4)
+                    
+                    Spacer()
                 }
-                .menuStyle(.borderlessButton) // Looks like a standard form picker
-                .frame(maxWidth: .infinity)
-                .padding(8)
-                .background(
-                    RoundedRectangle(cornerRadius: 6)
-                        .fill(Color(NSColor.textBackgroundColor))
-                        .stroke(Color.gray.opacity(0.2), lineWidth: 1)
-                )
-                .padding(.top, 4)
-            } else {
-                // Fallback on earlier versions
+                .contentShape(Rectangle()) // Make the whole area clickable
+            }
+            .menuStyle(.borderlessButton) // Makes the menu button invisible, using our custom label
+            .padding(24)
+        }
+        .frame(height: 100)
+    }
+    
+    // MARK: - 2. Left Column: Spaces
+    
+    private var spacesColumn: some View {
+        GroupBox(label: Label("Target Spaces", systemImage: "macwindow")) {
+            VStack(alignment: .leading, spacing: 0) {
+                if availableSpaces.isEmpty {
+                    VStack {
+                        Spacer()
+                        Text("No spaces detected.")
+                            .foregroundColor(.secondary)
+                        Text("Is DesktopRenamer running?")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                        Spacer()
+                    }
+                    .frame(maxWidth: .infinity)
+                } else {
+                    List {
+                        ForEach(availableSpaces) { space in
+                            HStack {
+                                Toggle(isOn: Binding(
+                                    get: { workingRule.targetSpaceIDs.contains(space.id) },
+                                    set: { isSelected in
+                                        if isSelected { workingRule.targetSpaceIDs.insert(space.id) }
+                                        else { workingRule.targetSpaceIDs.remove(space.id) }
+                                    }
+                                )) {
+                                    HStack {
+                                        Text("\(space.number)")
+                                            .font(.system(.body, design: .monospaced))
+                                            .foregroundColor(.secondary)
+                                            .frame(width: 20, alignment: .trailing)
+                                        
+                                        Text(space.name)
+                                            .fontWeight(.medium)
+                                            .lineLimit(1)
+                                        
+                                        Spacer()
+                                    }
+                                }
+                                .toggleStyle(.checkbox)
+                            }
+                            .padding(.vertical, 4)
+                        }
+                    }
+                    .listStyle(.plain)
+                    // Remove default list background to blend with GroupBox
+                    .scrollContentBackground(.hidden)
+                }
+            }
+            .padding(.top, 8)
+        }
+    }
+    
+    // MARK: - 3. Right Column: Actions
+    
+    private var actionsColumn: some View {
+        GroupBox(label: Label("Window Actions", systemImage: "slider.horizontal.3")) {
+            VStack(spacing: 0) {
+                // Section A: Match
+                VStack(alignment: .leading, spacing: 8) {
+                    HStack {
+                        Image(systemName: "checkmark.circle.fill")
+                            .foregroundColor(.green)
+                        Text("In Target Spaces")
+                            .font(.headline)
+                            .foregroundColor(.primary)
+                    }
+                    .padding(.top, 16)
+                    
+                    Picker("", selection: $workingRule.matchAction) {
+                        ForEach(WindowAction.allCases) { action in
+                            Text(action.localizedString).tag(action)
+                        }
+                    }
+                    .labelsHidden()
+                    .frame(maxWidth: .infinity)
+                    
+                    Text("Standard: Show")
+                        .font(.caption2)
+                        .foregroundColor(.secondary)
+                }
+                .padding(.horizontal, 12)
+                
+                Divider().padding(.vertical, 20)
+                
+                // Section B: Else
+                VStack(alignment: .leading, spacing: 8) {
+                    HStack {
+                        Image(systemName: "xmark.circle.fill")
+                            .foregroundColor(.red)
+                        Text("In Other Spaces")
+                            .font(.headline)
+                            .foregroundColor(.primary)
+                    }
+                    
+                    Picker("", selection: $workingRule.elseAction) {
+                        ForEach(WindowAction.allCases) { action in
+                            Text(action.localizedString).tag(action)
+                        }
+                    }
+                    .labelsHidden()
+                    .frame(maxWidth: .infinity)
+                    
+                    Text("Standard: Hide or Minimize")
+                        .font(.caption2)
+                        .foregroundColor(.secondary)
+                }
+                .padding(.horizontal, 12)
+                
+                Spacer()
             }
         }
     }
     
-    private var spacesAndActionsSection: some View {
-        HStack(alignment: .top, spacing: 20) {
-            
-            // LEFT COLUMN: Spaces
-            GroupBox(label: Label("Active Spaces", systemImage: "macwindow")) {
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("Check the spaces where this app belongs.")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                        .padding(.bottom, 4)
-                    
-                    if availableSpaces.isEmpty {
-                        Text("No spaces detected.")
-                            .foregroundColor(.orange)
-                            .font(.caption)
-                            .padding()
-                            .frame(maxWidth: .infinity)
-                            .background(Color.orange.opacity(0.1))
-                            .cornerRadius(6)
-                    } else {
-                        ScrollView {
-                            VStack(alignment: .leading, spacing: 1) {
-                                ForEach(availableSpaces) { space in
-                                    Toggle(isOn: Binding(
-                                        get: { workingRule.targetSpaceIDs.contains(space.id) },
-                                        set: { isSelected in
-                                            if isSelected { workingRule.targetSpaceIDs.insert(space.id) }
-                                            else { workingRule.targetSpaceIDs.remove(space.id) }
-                                        }
-                                    )) {
-                                        HStack {
-                                            Text("\(space.number)")
-                                                .font(.system(.body, design: .monospaced))
-                                                .foregroundColor(.secondary)
-                                                .frame(width: 20, alignment: .trailing)
-                                            
-                                            Text(space.name)
-                                                .fontWeight(.medium)
-                                            
-                                            Spacer()
-                                            
-                                            if workingRule.targetSpaceIDs.contains(space.id) {
-                                                Image(systemName: "checkmark")
-                                                    .font(.caption)
-                                                    .foregroundColor(.blue)
-                                            }
-                                        }
-                                        .padding(.vertical, 4)
-                                    }
-                                    .toggleStyle(.checkbox)
-                                }
-                            }
-                        }
-                        .frame(height: 180)
-                        .padding(10)
-                        .background(Color(NSColor.textBackgroundColor))
-                        .cornerRadius(6)
-                        .overlay(RoundedRectangle(cornerRadius: 6).stroke(Color.gray.opacity(0.15)))
-                    }
-                }
-                .padding(8)
-            }
-            
-            // RIGHT COLUMN: Behavior
-            VStack(spacing: 20) {
-                GroupBox(label: Label("Match Action", systemImage: "checkmark.circle.fill")) {
-                    VStack(alignment: .leading, spacing: 8) {
-                        Picker("", selection: $workingRule.matchAction) {
-                            ForEach(WindowAction.allCases) { action in
-                                Text(action.localizedString).tag(action)
-                            }
-                        }
-                        .labelsHidden()
-                        .pickerStyle(.menu)
-                        .frame(maxWidth: .infinity)
-                        
-                        Text("When in selected spaces")
-                            .font(.caption2)
-                            .foregroundColor(.secondary)
-                    }
-                    .padding(8)
-                }
-                
-                GroupBox(label: Label("Else Action", systemImage: "xmark.circle.fill")) {
-                    VStack(alignment: .leading, spacing: 8) {
-                        Picker("", selection: $workingRule.elseAction) {
-                            ForEach(WindowAction.allCases) { action in
-                                Text(action.localizedString).tag(action)
-                            }
-                        }
-                        .labelsHidden()
-                        .pickerStyle(.menu)
-                        .frame(maxWidth: .infinity)
-                        
-                        Text("When in other spaces")
-                            .font(.caption2)
-                            .foregroundColor(.secondary)
-                    }
-                    .padding(8)
-                }
-                
-                Spacer()
-            }
-            .frame(maxWidth: 220)
-        }
-    }
+    // MARK: - 4. Footer
     
     private var footerView: some View {
         HStack {
@@ -281,7 +258,45 @@ struct RuleEditor: View {
             .keyboardShortcut(.return, modifiers: [])
         }
         .padding(16)
-        .background(Color(NSColor.windowBackgroundColor))
+        .background(Color(NSColor.controlBackgroundColor))
+    }
+    
+    // MARK: - Logic Helpers
+    
+    private func selectApp(name: String, id: String) {
+        withAnimation {
+            workingRule.appName = name
+            workingRule.appBundleID = id
+        }
+    }
+    
+    private func pickOtherApp() {
+        let panel = NSOpenPanel()
+        panel.allowedContentTypes = [.application]
+        panel.directoryURL = URL(fileURLWithPath: "/Applications")
+        panel.canChooseDirectories = false
+        panel.canChooseFiles = true
+        panel.allowsMultipleSelection = false
+        panel.message = "Select an application to control"
+        
+        panel.begin { response in
+            if response == .OK, let url = panel.url {
+                let bundle = Bundle(url: url)
+                let id = bundle?.bundleIdentifier ?? ""
+                
+                // Fallback name logic
+                var name = bundle?.infoDictionary?["CFBundleName"] as? String
+                if name == nil {
+                     name = url.deletingPathExtension().lastPathComponent
+                }
+                
+                if !id.isEmpty {
+                    DispatchQueue.main.async {
+                        self.selectApp(name: name ?? "Unknown", id: id)
+                    }
+                }
+            }
+        }
     }
     
     func loadRunningApps() {
