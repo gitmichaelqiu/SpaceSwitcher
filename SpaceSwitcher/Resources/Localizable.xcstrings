@@ -136,6 +136,9 @@
     "App Rules" : {
 
     },
+    "App will wait until you manually switch to it." : {
+
+    },
     "Application" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -793,7 +796,7 @@
         }
       }
     },
-    "Wait for App to be Frontmost" : {
+    "Wait for Manual Activation" : {
 
     },
     "Workflow Group %lld" : {

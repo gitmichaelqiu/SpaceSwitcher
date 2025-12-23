@@ -69,12 +69,30 @@ class RuleManager: ObservableObject {
                     app.activate(options: .activateIgnoringOtherApps)
                     
                 case .hotkey(let k, let m, let restoreWindow, let waitFrontmost):
-                    // 1. Activate Target
-                    if !app.isActive {
-                        app.activate(options: .activateIgnoringOtherApps)
+                    
+                    if waitFrontmost {
+                        // MODE A: WAIT FOR MANUAL ACTIVATION
+                        // We do NOT force activation. We loop until the user activates it.
+                        // We use a reasonably long timeout (e.g. 5 seconds) or wait indefinitely depending on UX preference.
+                        // Here we poll for up to 5 seconds.
+                        var retries = 0
+                        while !app.isActive && retries < 100 { // 100 * 0.05 = 5 seconds
+                            try? await Task.sleep(nanoseconds: 50_000_000)
+                            retries += 1
+                        }
                         
-                        // 2. Wait logic
-                        if waitFrontmost {
+                        // If user never activated it, we abort this specific hotkey action
+                        if !app.isActive { continue }
+                        
+                        // Give a small buffer after manual activation for focus to settle
+                        try? await Task.sleep(nanoseconds: 200_000_000)
+                        
+                    } else {
+                        // MODE B: FORCE ACTIVATION
+                        if !app.isActive {
+                            app.activate(options: .activateIgnoringOtherApps)
+                            
+                            // Wait for it to become active (Max 1s)
                             var retries = 0
                             while !app.isActive && retries < 20 {
                                 try? await Task.sleep(nanoseconds: 50_000_000)
@@ -82,18 +100,18 @@ class RuleManager: ObservableObject {
                             }
                             // Animation buffer
                             try? await Task.sleep(nanoseconds: 300_000_000)
+                        } else {
+                            // Already active buffer
+                            try? await Task.sleep(nanoseconds: 50_000_000)
                         }
-                    } else {
-                        // Small buffer for event loop
-                        try? await Task.sleep(nanoseconds: 50_000_000)
                     }
                     
-                    // 3. Fire Hotkey
+                    // Fire Hotkey
                     simulateHotkey(keyCode: k, modifiers: m)
                     
-                    // 4. Restore Previous App if requested
-                    if restoreWindow, let prev = previousApp, prev.processIdentifier != app.processIdentifier {
-                        // Small delay to ensure hotkey registers before switching away
+                    // Restore Previous App
+                    // Only applicable if we FORCED activation (waitFrontmost == false)
+                    if !waitFrontmost && restoreWindow, let prev = previousApp, prev.processIdentifier != app.processIdentifier {
                         try? await Task.sleep(nanoseconds: 100_000_000)
                         prev.activate(options: .activateIgnoringOtherApps)
                     }
@@ -125,7 +143,6 @@ class RuleManager: ObservableObject {
         return matched.map { $0.number }.min() ?? 999
     }
     
-    // Accessibility Helpers
     private func unhideAppWithoutActivation(_ app: NSRunningApplication) {
          let pid = app.processIdentifier
          let appElement = AXUIElementCreateApplication(pid)

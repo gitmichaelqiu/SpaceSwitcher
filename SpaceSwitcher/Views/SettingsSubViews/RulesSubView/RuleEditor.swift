@@ -1,5 +1,5 @@
 import SwiftUI
-import UniformTypeIdentifiers
+internal import UniformTypeIdentifiers
 
 struct RuleEditor: View {
     @State private var workingRule: AppRule
@@ -21,6 +21,13 @@ struct RuleEditor: View {
             Divider()
             
             List {
+                // SPACER 1: Top Padding relative to Title
+                Section {
+                    Color.clear.frame(height: 12)
+                }
+                .listRowInsets(EdgeInsets())
+                .listRowSeparator(.hidden)
+                
                 // --- GROUPS ---
                 ForEach(Array(workingRule.groups.enumerated()), id: \.element.id) { index, group in
                     Section {
@@ -46,7 +53,7 @@ struct RuleEditor: View {
                         .listRowInsets(EdgeInsets())
                         .listRowSeparator(.hidden)
                         
-                        // Spacer
+                        // Spacer between groups
                         Color.clear.frame(height: 24)
                             .listRowInsets(EdgeInsets())
                             .listRowSeparator(.hidden)
@@ -71,8 +78,11 @@ struct RuleEditor: View {
                         .background(RoundedRectangle(cornerRadius: 8).stroke(Color.blue.opacity(0.3), lineWidth: 1))
                     }
                     .buttonStyle(.plain)
-                    .listRowInsets(EdgeInsets(top: 0, leading: 20, bottom: 20, trailing: 20))
+                    .listRowInsets(EdgeInsets(top: 0, leading: 20, bottom: 0, trailing: 20))
                     .listRowSeparator(.hidden)
+                } footer: {
+                    // SPACER 2: Padding relative to Fallback
+                    Color.clear.frame(height: 24)
                 }
                 
                 // --- ELSE ---
@@ -96,7 +106,7 @@ struct RuleEditor: View {
                             ForEach(Array(workingRule.elseActions.enumerated()), id: \.element.id) { i, item in
                                 ActionRowContent(
                                     index: i,
-                                    item: $workingRule.elseActions[i], // Binding for updates
+                                    item: $workingRule.elseActions[i], // Binding
                                     onDelete: { workingRule.elseActions.remove(at: i) }
                                 )
                                 .padding(.horizontal, 12).padding(.vertical, 8)
@@ -211,7 +221,6 @@ struct RuleEditor: View {
 
 // MARK: - Components
 
-// 1. Condition Row (Information Efficient: Tag Cloud)
 struct SpaceConditionRow: View {
     let groupIndex: Int
     @Binding var group: RuleGroup
@@ -220,7 +229,6 @@ struct SpaceConditionRow: View {
     
     var body: some View {
         VStack(spacing: 0) {
-            // Header with Delete
             HStack {
                 Text("Workflow Group \(groupIndex + 1)")
                     .font(.headline)
@@ -235,7 +243,6 @@ struct SpaceConditionRow: View {
             
             Divider()
             
-            // Compact Space Selector
             HStack(alignment: .top) {
                 Text("Active in:")
                     .font(.caption).fontWeight(.bold).foregroundColor(.secondary)
@@ -244,7 +251,6 @@ struct SpaceConditionRow: View {
                 if availableSpaces.isEmpty {
                     Text("No spaces detected").font(.caption).foregroundColor(.secondary).padding(.top, 4)
                 } else {
-                    // Tag Cloud Logic
                     ScrollView(.horizontal, showsIndicators: false) {
                         HStack {
                             ForEach(availableSpaces) { space in
@@ -258,7 +264,7 @@ struct SpaceConditionRow: View {
                                         .padding(.horizontal, 8)
                                         .padding(.vertical, 4)
                                 }
-                                .toggleStyle(.button) // Looks like a tag
+                                .toggleStyle(.button)
                                 .buttonStyle(.bordered)
                                 .tint(isSelected ? .blue : .gray)
                                 .opacity(isSelected ? 1 : 0.6)
@@ -278,7 +284,6 @@ struct SpaceConditionRow: View {
     }
 }
 
-// 2. Action Rows Wrapper
 struct ActionListRows: View {
     @Binding var actions: [ActionItem]
     
@@ -308,7 +313,6 @@ struct ActionListRows: View {
     }
 }
 
-// 3. Add Button
 struct AddActionRow<Content: View>: View {
     let action: () -> Void
     @ViewBuilder let menuContent: Content
@@ -337,18 +341,16 @@ struct AddActionRow<Content: View>: View {
     }
 }
 
-// 4. Action Row Content (Expandable Hotkey)
 struct ActionRowContent: View {
     let index: Int
     @Binding var item: ActionItem
     let onDelete: () -> Void
     
     @State private var isRecording = false
-    @State private var isExpanded = false // To show detailed options
+    @State private var isExpanded = false
     
     var body: some View {
         VStack(spacing: 8) {
-            // Main Row
             HStack {
                 Image(systemName: "line.3.horizontal")
                     .foregroundColor(.secondary.opacity(0.2)).font(.caption)
@@ -370,7 +372,6 @@ struct ActionRowContent: View {
                     .buttonStyle(.plain)
                     .padding(4).background(Color.gray.opacity(0.1)).cornerRadius(4)
                     
-                    // Expand Button
                     Button { withAnimation { isExpanded.toggle() } } label: {
                         Image(systemName: "gearshape.fill")
                             .font(.caption)
@@ -390,25 +391,38 @@ struct ActionRowContent: View {
             if case .hotkey(let c, let m, let r, let w) = item.value, isExpanded {
                 VStack(alignment: .leading, spacing: 8) {
                     Divider()
-                    Toggle("Wait for App to be Frontmost", isOn: Binding(
+                    
+                    // UPDATED: Renamed Toggle
+                    Toggle("Wait for Manual Activation", isOn: Binding(
                         get: { w },
-                        set: { item.value = .hotkey(keyCode: c, modifiers: m, restoreWindow: r, waitFrontmost: $0) }
+                        set: {
+                            // If user turns ON waiting, force restore OFF (irrelevant)
+                            let newR = $0 ? false : r
+                            item.value = .hotkey(keyCode: c, modifiers: m, restoreWindow: newR, waitFrontmost: $0)
+                        }
                     ))
                     .toggleStyle(.switch)
                     .controlSize(.mini)
                     
-                    Toggle("Restore Previously Active Window", isOn: Binding(
-                        get: { r },
-                        set: { item.value = .hotkey(keyCode: c, modifiers: m, restoreWindow: $0, waitFrontmost: w) }
-                    ))
-                    .toggleStyle(.switch)
-                    .controlSize(.mini)
+                    // UPDATED: Conditional visibility for Restore
+                    if !w {
+                        Toggle("Restore Previously Active Window", isOn: Binding(
+                            get: { r },
+                            set: { item.value = .hotkey(keyCode: c, modifiers: m, restoreWindow: $0, waitFrontmost: w) }
+                        ))
+                        .toggleStyle(.switch)
+                        .controlSize(.mini)
+                    } else {
+                        // Optional: Helper text explaining why restore is gone
+                        Text("App will wait until you manually switch to it.")
+                            .font(.caption2)
+                            .foregroundColor(.secondary)
+                    }
                 }
                 .padding(.leading, 36)
                 .padding(.bottom, 4)
             }
             
-            // Hidden Recorder
             if isRecording {
                 Text("").frame(width: 0, height: 0).onAppear { startRecording(item: item) }
             }
@@ -420,7 +434,6 @@ struct ActionRowContent: View {
             if isRecording {
                 let mods = event.modifierFlags.intersection(.deviceIndependentFlagsMask).rawValue
                 let code = Int(event.keyCode)
-                // Preserve existing flags
                 if case .hotkey(_, _, let r, let w) = item.value {
                     self.item.value = .hotkey(keyCode: code, modifiers: UInt(mods), restoreWindow: r, waitFrontmost: w)
                 }
@@ -432,7 +445,6 @@ struct ActionRowContent: View {
     }
 }
 
-// Shape Helper
 struct CustomCornerShape: Shape {
     var radius: CGFloat
     var corners: RectCorner
