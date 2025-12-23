@@ -1,5 +1,5 @@
 import SwiftUI
-internal import UniformTypeIdentifiers
+import UniformTypeIdentifiers
 
 struct RuleEditor: View {
     @State private var workingRule: AppRule
