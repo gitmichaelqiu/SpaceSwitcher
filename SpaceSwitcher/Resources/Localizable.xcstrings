@@ -7,9 +7,6 @@
     "(Used)" : {
 
     },
-    "%lld." : {
-
-    },
     "%lld. %@" : {
       "localizations" : {
         "en" : {
