@@ -120,8 +120,6 @@ struct RuleEditor: View {
                                 Button("Show") { workingRule.elseActions.append(ActionItem(.show)) }
                                 Button("Hide") { workingRule.elseActions.append(ActionItem(.hide)) }
                                 Button("Minimize") { workingRule.elseActions.append(ActionItem(.minimize)) } // ADDED MINIMIZE
-                                Divider()
-                                Button("Simulate Gloabl Hotkey") { workingRule.elseActions.append(ActionItem(.globalHotkey(keyCode: -1, modifiers: 0))) }
                             } label: {
                                 Label("Add Action", systemImage: "plus")
                                     .font(.caption).fontWeight(.medium)
