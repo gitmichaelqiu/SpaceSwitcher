@@ -1,17 +1,18 @@
 import SwiftUI
 import UniformTypeIdentifiers
 
-// MARK: - Unique Wrapper for Reordering
+// MARK: - Unique Wrapper
+// Essential for reordering: ensures every row has a permanent unique ID
 struct UniqueAction: Identifiable, Equatable, Hashable {
     let id = UUID()
     var action: WindowAction
     
-    func hash(into hasher: inout Hasher) {
-        hasher.combine(id)
-    }
-    
     static func == (lhs: UniqueAction, rhs: UniqueAction) -> Bool {
         lhs.id == rhs.id && lhs.action == rhs.action
+    }
+    
+    func hash(into hasher: inout Hasher) {
+        hasher.combine(id)
     }
 }
 
@@ -258,8 +259,6 @@ struct ActionSequenceEditor: View {
     // UI state using Unique wrappers
     @State private var uniqueItems: [UniqueAction] = []
     @State private var recordingIndex: Int? = nil
-    
-    // Only track the ID of the dragged item
     @State private var draggedItemID: UUID?
     
     var body: some View {
@@ -282,6 +281,7 @@ struct ActionSequenceEditor: View {
                     )
                     .onDrag {
                         self.draggedItemID = item.id
+                        // Provide a clean string representation for the drag
                         return NSItemProvider(object: item.id.uuidString as NSString)
                     }
                     .onDrop(of: [.text], delegate: ActionDropDelegate(item: item, items: $uniqueItems, draggedItemID: $draggedItemID))
@@ -299,12 +299,18 @@ struct ActionSequenceEditor: View {
             .menuStyle(.borderlessButton).foregroundColor(.blue).padding(.top, 4)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .animation(.default, value: uniqueItems)
+        // Sync State
         .onAppear {
             self.uniqueItems = actions.map { UniqueAction(action: $0) }
         }
         .onChange(of: uniqueItems) { _ in
             syncBack()
+        }
+        .onChange(of: actions) { newActions in
+            // Basic diff check to prevent loops
+            if newActions.count != uniqueItems.count {
+                self.uniqueItems = newActions.map { UniqueAction(action: $0) }
+            }
         }
     }
     
@@ -313,12 +319,16 @@ struct ActionSequenceEditor: View {
     }
     
     private func addAction(_ action: WindowAction) {
-        uniqueItems.append(UniqueAction(action: action))
+        withAnimation {
+            uniqueItems.append(UniqueAction(action: action))
+        }
     }
     
     private func deleteItem(_ item: UniqueAction) {
-        if let idx = uniqueItems.firstIndex(where: { $0.id == item.id }) {
-            uniqueItems.remove(at: idx)
+        withAnimation {
+            if let idx = uniqueItems.firstIndex(where: { $0.id == item.id }) {
+                uniqueItems.remove(at: idx)
+            }
         }
     }
     
@@ -356,7 +366,6 @@ struct ActionRowView: View {
             Image(systemName: "line.3.horizontal")
                 .foregroundColor(.secondary.opacity(0.3))
             
-            // We don't display index number anymore to simplify view updates during drag
             if case .hotkey(let code, let mods) = item.action {
                 Button(action: onRecord) {
                     if isRecording {
@@ -383,8 +392,9 @@ struct ActionRowView: View {
             .buttonStyle(.plain).foregroundColor(.secondary)
         }
         .padding(6).background(RoundedRectangle(cornerRadius: 6).fill(Color.secondary.opacity(0.08)))
+        // Hide the original row while it is being dragged
         .opacity(draggedItemID == item.id ? 0.0 : 1.0)
-        .contentShape(Rectangle()) // Ensures hit testing works for the whole row
+        .contentShape(Rectangle())
     }
 }
 
@@ -394,28 +404,33 @@ struct ActionDropDelegate: DropDelegate {
     @Binding var items: [UniqueAction]
     @Binding var draggedItemID: UUID?
     
+    // 1. Validate: Allow drop only if the item exists in our list
+    func validateDrop(info: DropInfo) -> Bool {
+        return draggedItemID != nil
+    }
+    
+    // 2. Proposal: Explicitly tell OS this is a MOVE operation
+    func dropUpdated(info: DropInfo) -> DropProposal? {
+        return DropProposal(operation: .move)
+    }
+    
+    // 3. Perform: Finalize the drop (mostly cleanup here since we move live)
     func performDrop(info: DropInfo) -> Bool {
         draggedItemID = nil
         return true
     }
     
+    // 4. Live Update: Animate the row movement
     func dropEntered(info: DropInfo) {
         guard let draggedID = draggedItemID else { return }
         
-        // Find indices safely
-        if let fromIndex = items.firstIndex(where: { $0.id == draggedID }),
-           let toIndex = items.firstIndex(where: { $0.id == item.id }) {
-            
-            if fromIndex != toIndex {
+        if draggedID != item.id {
+            if let from = items.firstIndex(where: { $0.id == draggedID }),
+               let to = items.firstIndex(where: { $0.id == item.id }) {
                 withAnimation {
-                    items.move(fromOffsets: IndexSet(integer: fromIndex), toOffset: toIndex > fromIndex ? toIndex + 1 : toIndex)
+                    items.move(fromOffsets: IndexSet(integer: from), toOffset: to > from ? to + 1 : to)
                 }
             }
         }
-    }
-    
-    // Ensure we clear state if drop is cancelled
-    func dropExited(info: DropInfo) {
-        // Optional: Can handle cleanup here if needed, but usually strictly handled in performDrop
     }
 }
