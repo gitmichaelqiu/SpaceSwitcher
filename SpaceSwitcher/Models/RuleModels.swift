@@ -7,8 +7,10 @@ enum WindowAction: Identifiable, Codable, Equatable, Hashable {
     case hide
     case minimize
     case bringToFront
-    // UPDATED: Added configuration flags
+    // Standard App-Specific Hotkey
     case hotkey(keyCode: Int, modifiers: UInt, restoreWindow: Bool, waitFrontmost: Bool)
+    // NEW: Global System Hotkey
+    case globalHotkey(keyCode: Int, modifiers: UInt)
     
     var id: String {
         switch self {
@@ -17,6 +19,7 @@ enum WindowAction: Identifiable, Codable, Equatable, Hashable {
         case .minimize: return "minimize"
         case .bringToFront: return "bringToFront"
         case .hotkey(let k, let m, _, _): return "hotkey-\(k)-\(m)"
+        case .globalHotkey(let k, let m): return "global-\(k)-\(m)"
         }
     }
     
@@ -28,10 +31,11 @@ enum WindowAction: Identifiable, Codable, Equatable, Hashable {
         case .bringToFront: return NSLocalizedString("Bring to Front", comment: "")
         case .hotkey(let code, let mods, _, _):
             return "Press: " + ShortcutHelper.format(code: code, modifiers: mods)
+        case .globalHotkey(let code, let mods):
+            return "Global: " + ShortcutHelper.format(code: code, modifiers: mods)
         }
     }
 
-    // Custom Codable implementation
     private enum CodingKeys: String, CodingKey { case type, keyCode, modifiers, restoreWindow, waitFrontmost }
     
     init(from decoder: Decoder) throws {
@@ -45,10 +49,13 @@ enum WindowAction: Identifiable, Codable, Equatable, Hashable {
         case "hotkey":
             let c = try container.decode(Int.self, forKey: .keyCode)
             let m = try container.decode(UInt.self, forKey: .modifiers)
-            // Default values for backward compatibility
             let r = try container.decodeIfPresent(Bool.self, forKey: .restoreWindow) ?? false
             let w = try container.decodeIfPresent(Bool.self, forKey: .waitFrontmost) ?? true
             self = .hotkey(keyCode: c, modifiers: m, restoreWindow: r, waitFrontmost: w)
+        case "globalHotkey":
+            let c = try container.decode(Int.self, forKey: .keyCode)
+            let m = try container.decode(UInt.self, forKey: .modifiers)
+            self = .globalHotkey(keyCode: c, modifiers: m)
         default: self = .show
         }
     }
@@ -66,6 +73,10 @@ enum WindowAction: Identifiable, Codable, Equatable, Hashable {
             try container.encode(m, forKey: .modifiers)
             try container.encode(r, forKey: .restoreWindow)
             try container.encode(w, forKey: .waitFrontmost)
+        case .globalHotkey(let c, let m):
+            try container.encode("globalHotkey", forKey: .type)
+            try container.encode(c, forKey: .keyCode)
+            try container.encode(m, forKey: .modifiers)
         }
     }
 }
@@ -90,10 +101,10 @@ struct ActionItem: Identifiable, Codable, Hashable {
     }
 }
 
-// MARK: - Shortcut Helper (Same as before)
+// MARK: - Shortcut Helper (Updated for Reverse Lookup)
 enum ShortcutHelper {
     static func format(code: Int, modifiers: UInt) -> String {
-        if code == -1 { return "Record Shortcut..." }
+        if code == -1 { return "None" }
         var string = ""
         let flags = NSEvent.ModifierFlags(rawValue: modifiers)
         if flags.contains(.control) { string += "⌃" }
@@ -109,14 +120,27 @@ enum ShortcutHelper {
         return string
     }
     
+    // KeyCode -> String
     static func keyString(for code: Int) -> String? {
         switch code {
         case 0: return "A"; case 1: return "S"; case 2: return "D"; case 3: return "F"; case 4: return "H"; case 5: return "G"; case 6: return "Z"; case 7: return "X"; case 8: return "C"; case 9: return "V"; case 11: return "B"; case 12: return "Q"; case 13: return "W"; case 14: return "E"; case 15: return "R"; case 16: return "Y"; case 17: return "T"; case 18: return "1"; case 19: return "2"; case 20: return "3"; case 21: return "4"; case 22: return "6"; case 23: return "5"; case 24: return "="; case 25: return "9"; case 26: return "7"; case 27: return "-"; case 28: return "8"; case 29: return "0"; case 30: return "]"; case 31: return "O"; case 32: return "U"; case 33: return "["; case 34: return "I"; case 35: return "P"; case 36: return "⏎"; case 37: return "L"; case 38: return "J"; case 39: return "'"; case 40: return "K"; case 41: return ";"; case 42: return "\\"; case 43: return ","; case 44: return "/"; case 45: return "N"; case 46: return "M"; case 47: return "."; case 48: return "Tab"; case 49: return "Space"; case 50: return "`"; case 51: return "Del"; case 53: return "Esc";
         default: return nil
         }
     }
+    
+    // String -> KeyCode (For Global Hotkey Textbox)
+    static func keyCode(for char: String) -> Int {
+        let upper = char.uppercased()
+        for code in 0...127 {
+            if keyString(for: code) == upper {
+                return code
+            }
+        }
+        return -1 // Not found
+    }
 }
 
+// ... (RuleGroup, AppRule, SpaceInfo remain unchanged)
 struct RuleGroup: Identifiable, Codable {
     var id: UUID = UUID()
     var targetSpaceIDs: Set<String>
@@ -146,35 +170,12 @@ struct AppRule: Identifiable, Codable {
         appName = try container.decode(String.self, forKey: .appName)
         isEnabled = try container.decode(Bool.self, forKey: .isEnabled)
         
-        if let g = try? container.decode([RuleGroup].self, forKey: .groups) {
-            groups = g
-        } else {
-            let oldSpaces = try? container.decode(Set<String>.self, forKey: .targetSpaceIDs)
-            var oldMatch: [ActionItem] = []
-            if let arr = try? container.decode([ActionItem].self, forKey: .matchActions) { oldMatch = arr }
-            else if let s = try? container.decode(WindowAction.self, forKey: .matchAction) { oldMatch = [ActionItem(s)] }
-            else { oldMatch = [ActionItem(.show)] }
-            
-            if let spaces = oldSpaces, !spaces.isEmpty {
-                groups = [RuleGroup(targetSpaceIDs: spaces, actions: oldMatch)]
-            } else {
-                groups = []
-            }
-        }
-        
-        if let arr = try? container.decode([ActionItem].self, forKey: .elseActions) {
-            elseActions = arr
-        } else if let s = try? container.decode(WindowAction.self, forKey: .elseAction) {
-            elseActions = [ActionItem(s)]
-        } else {
-            elseActions = [ActionItem(.hide)]
-        }
+        if let g = try? container.decode([RuleGroup].self, forKey: .groups) { groups = g } else { groups = [] }
+        if let arr = try? container.decode([ActionItem].self, forKey: .elseActions) { elseActions = arr } else { elseActions = [] }
     }
     
     enum CodingKeys: String, CodingKey {
-        case id, appBundleID, appName, isEnabled
-        case groups, elseActions, elseAction
-        case targetSpaceIDs, matchActions, matchAction
+        case id, appBundleID, appName, isEnabled, groups, elseActions
     }
     
     func encode(to encoder: Encoder) throws {
@@ -189,9 +190,7 @@ struct AppRule: Identifiable, Codable {
 }
 
 struct SpaceInfo: Identifiable, Codable, Hashable {
-    let id: String
-    let name: String
-    let number: Int
+    let id: String; let name: String; let number: Int
     static func == (lhs: SpaceInfo, rhs: SpaceInfo) -> Bool { lhs.id == rhs.id }
     func hash(into hasher: inout Hasher) { hasher.combine(id) }
 }

@@ -261,6 +261,9 @@
         }
       }
     },
+    "Global Key:" : {
+
+    },
     "Hide" : {
       "comment" : "Action: Hide Window",
       "localizations" : {
@@ -751,7 +754,10 @@
         }
       }
     },
-    "Simulate Hotkey..." : {
+    "Simulate App Hotkey..." : {
+
+    },
+    "Simulate Global Hotkey..." : {
 
     },
     "Sort by %@" : {

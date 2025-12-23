@@ -45,72 +45,67 @@ class RuleManager: ObservableObject {
     }
     
     private func perform(actions: [ActionItem], on bundleID: String) {
+        // NOTE: Even for Global Hotkeys, we check bundleID existence loosely,
+        // but Global Hotkeys technically don't require the app to be running.
+        // However, the rule structure is tied to an app.
         guard let app = NSRunningApplication.runningApplications(withBundleIdentifier: bundleID).first else { return }
         
-        // Capture currently active app for the "Restore Active Window" feature
         let previousApp = NSWorkspace.shared.frontmostApplication
         
         Task { @MainActor in
             for item in actions {
                 switch item.value {
-                case .hide:
-                    app.hide()
-                    
+                case .hide: app.hide()
                 case .show:
                     let wasHidden = app.isHidden
                     unhideAppWithoutActivation(app)
                     unminimizeAppWindows(app)
                     if wasHidden { try? await Task.sleep(nanoseconds: 200_000_000) }
                     
-                case .minimize:
-                    minimizeAppWindows(app)
+                case .minimize: minimizeAppWindows(app)
+                case .bringToFront: app.activate(options: .activateIgnoringOtherApps)
                     
-                case .bringToFront:
-                    app.activate(options: .activateIgnoringOtherApps)
+                // --- NEW: Global Hotkey ---
+                case .globalHotkey(let k, let m):
+                    // No activation logic. Just fire.
+                    simulateHotkey(keyCode: k, modifiers: m)
                     
+                // --- Standard Hotkey ---
                 case .hotkey(let k, let m, let restoreWindow, let waitFrontmost):
-                    
                     if waitFrontmost {
-                        // MODE A: WAIT FOR MANUAL ACTIVATION
-                        // We do NOT force activation. We loop until the user activates it.
-                        // We use a reasonably long timeout (e.g. 5 seconds) or wait indefinitely depending on UX preference.
-                        // Here we poll for up to 5 seconds.
+                        // MODE A: WAIT (Passive)
                         var retries = 0
-                        while !app.isActive && retries < 100 { // 100 * 0.05 = 5 seconds
+                        while !app.isActive && retries < 100 {
                             try? await Task.sleep(nanoseconds: 50_000_000)
                             retries += 1
                         }
-                        
-                        // If user never activated it, we abort this specific hotkey action
                         if !app.isActive { continue }
-                        
-                        // Give a small buffer after manual activation for focus to settle
                         try? await Task.sleep(nanoseconds: 200_000_000)
                         
                     } else {
-                        // MODE B: FORCE ACTIVATION
-                        if !app.isActive {
+                        // MODE B: FORCE (Aggressive)
+                        // Retry activation loop to handle stubborn apps
+                        var attempts = 0
+                        while !app.isActive && attempts < 5 {
                             app.activate(options: .activateIgnoringOtherApps)
                             
-                            // Wait for it to become active (Max 1s)
-                            var retries = 0
-                            while !app.isActive && retries < 20 {
+                            // Check if successful
+                            var check = 0
+                            while !app.isActive && check < 5 { // Wait up to 0.25s per attempt
                                 try? await Task.sleep(nanoseconds: 50_000_000)
-                                retries += 1
+                                check += 1
                             }
-                            // Animation buffer
-                            try? await Task.sleep(nanoseconds: 300_000_000)
-                        } else {
-                            // Already active buffer
-                            try? await Task.sleep(nanoseconds: 50_000_000)
+                            attempts += 1
+                        }
+                        
+                        // Final animation buffer
+                        if app.isActive {
+                            try? await Task.sleep(nanoseconds: 200_000_000)
                         }
                     }
                     
-                    // Fire Hotkey
                     simulateHotkey(keyCode: k, modifiers: m)
                     
-                    // Restore Previous App
-                    // Only applicable if we FORCED activation (waitFrontmost == false)
                     if !waitFrontmost && restoreWindow, let prev = previousApp, prev.processIdentifier != app.processIdentifier {
                         try? await Task.sleep(nanoseconds: 100_000_000)
                         prev.activate(options: .activateIgnoringOtherApps)
@@ -123,18 +118,14 @@ class RuleManager: ObservableObject {
     private func simulateHotkey(keyCode: Int, modifiers: UInt) {
         guard keyCode >= 0 else { return }
         let flags = CGEventFlags(rawValue: UInt64(modifiers))
-        
-        guard let keyDown = CGEvent(keyboardEventSource: nil, virtualKey: CGKeyCode(keyCode), keyDown: true) else { return }
-        keyDown.flags = flags
-        keyDown.post(tap: .cghidEventTap)
-        
+        guard let d = CGEvent(keyboardEventSource: nil, virtualKey: CGKeyCode(keyCode), keyDown: true) else { return }
+        d.flags = flags; d.post(tap: .cghidEventTap)
         usleep(10000)
-        
-        guard let keyUp = CGEvent(keyboardEventSource: nil, virtualKey: CGKeyCode(keyCode), keyDown: false) else { return }
-        keyUp.flags = flags
-        keyUp.post(tap: .cghidEventTap)
+        guard let u = CGEvent(keyboardEventSource: nil, virtualKey: CGKeyCode(keyCode), keyDown: false) else { return }
+        u.flags = flags; u.post(tap: .cghidEventTap)
     }
 
+    // ... (Helpers: getLowestSpaceNumber, unhideAppWithoutActivation, etc. remain unchanged) ...
     private func getLowestSpaceNumber(for rule: AppRule) -> Int {
         guard let sm = spaceManager else { return 999 }
         let allIDs = rule.groups.flatMap { $0.targetSpaceIDs }
@@ -142,65 +133,30 @@ class RuleManager: ObservableObject {
         let matched = sm.availableSpaces.filter { allIDs.contains($0.id) }
         return matched.map { $0.number }.min() ?? 999
     }
-    
     private func unhideAppWithoutActivation(_ app: NSRunningApplication) {
-         let pid = app.processIdentifier
-         let appElement = AXUIElementCreateApplication(pid)
+         let pid = app.processIdentifier; let appElement = AXUIElementCreateApplication(pid)
          AXUIElementSetAttributeValue(appElement, kAXHiddenAttribute as CFString, kCFBooleanFalse)
     }
-    
     private func minimizeAppWindows(_ app: NSRunningApplication) {
-        let pid = app.processIdentifier
-        let appElement = AXUIElementCreateApplication(pid)
-        var windowsRef: AnyObject?
-        if AXUIElementCopyAttributeValue(appElement, kAXWindowsAttribute as CFString, &windowsRef) == .success,
-           let windows = windowsRef as? [AXUIElement] {
-            for window in windows {
-                AXUIElementSetAttributeValue(window, kAXMinimizedAttribute as CFString, kCFBooleanTrue)
-            }
+        let pid = app.processIdentifier; let appElement = AXUIElementCreateApplication(pid); var windowsRef: AnyObject?
+        if AXUIElementCopyAttributeValue(appElement, kAXWindowsAttribute as CFString, &windowsRef) == .success, let windows = windowsRef as? [AXUIElement] {
+            for window in windows { AXUIElementSetAttributeValue(window, kAXMinimizedAttribute as CFString, kCFBooleanTrue) }
         }
     }
-    
     private func unminimizeAppWindows(_ app: NSRunningApplication) {
-        let pid = app.processIdentifier
-        let appElement = AXUIElementCreateApplication(pid)
-        var windowsRef: AnyObject?
-        if AXUIElementCopyAttributeValue(appElement, kAXWindowsAttribute as CFString, &windowsRef) == .success,
-           let windows = windowsRef as? [AXUIElement] {
-            for window in windows {
-                var isMin: AnyObject?
-                if AXUIElementCopyAttributeValue(window, kAXMinimizedAttribute as CFString, &isMin) == .success,
-                   let minBool = isMin as? Bool, minBool {
-                    AXUIElementSetAttributeValue(window, kAXMinimizedAttribute as CFString, kCFBooleanFalse)
-                }
-            }
+        let pid = app.processIdentifier; let appElement = AXUIElementCreateApplication(pid); var windowsRef: AnyObject?
+        if AXUIElementCopyAttributeValue(appElement, kAXWindowsAttribute as CFString, &windowsRef) == .success, let windows = windowsRef as? [AXUIElement] {
+            for window in windows { var isMin: AnyObject?; if AXUIElementCopyAttributeValue(window, kAXMinimizedAttribute as CFString, &isMin) == .success, let minBool = isMin as? Bool, minBool { AXUIElementSetAttributeValue(window, kAXMinimizedAttribute as CFString, kCFBooleanFalse) } }
         }
     }
     
     var sortedRules: [AppRule] {
         switch sortOption {
         case .name: return rules.sorted { $0.appName.localizedCaseInsensitiveCompare($1.appName) == .orderedAscending }
-        case .space:
-            return rules.sorted { r1, r2 in
-                let s1 = getLowestSpaceNumber(for: r1)
-                let s2 = getLowestSpaceNumber(for: r2)
-                return s1 != s2 ? s1 < s2 : r1.appName.localizedCaseInsensitiveCompare(r2.appName) == .orderedAscending
-            }
+        case .space: return rules.sorted { r1, r2 in let s1 = getLowestSpaceNumber(for: r1); let s2 = getLowestSpaceNumber(for: r2); return s1 != s2 ? s1 < s2 : r1.appName.localizedCaseInsensitiveCompare(r2.appName) == .orderedAscending }
         }
     }
-    
     func deleteRule(withID id: UUID) { rules.removeAll { $0.id == id } }
-    
-    private func loadRules() {
-        if let data = UserDefaults.standard.data(forKey: rulesKey),
-           let decoded = try? JSONDecoder().decode([AppRule].self, from: data) {
-            rules = decoded
-        }
-    }
-    
-    private func saveRules() {
-        if let encoded = try? JSONEncoder().encode(rules) {
-            UserDefaults.standard.set(encoded, forKey: rulesKey)
-        }
-    }
+    private func loadRules() { if let data = UserDefaults.standard.data(forKey: rulesKey), let decoded = try? JSONDecoder().decode([AppRule].self, from: data) { rules = decoded } }
+    private func saveRules() { if let encoded = try? JSONEncoder().encode(rules) { UserDefaults.standard.set(encoded, forKey: rulesKey) } }
 }
