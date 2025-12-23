@@ -1,10 +1,7 @@
 import SwiftUI
 internal import UniformTypeIdentifiers
 
-// ... (RuleEditor, GroupHeaderRow, etc. stay largely the same except the Add Button Menu)
-
 struct RuleEditor: View {
-    // ... (Init and Body wrapper same as before) ...
     @State private var workingRule: AppRule
     let availableSpaces: [SpaceInfo]
     let onSave: (AppRule) -> Void
@@ -17,20 +14,22 @@ struct RuleEditor: View {
         self.onSave = onSave
         self.onCancel = onCancel
     }
-
+    
     var body: some View {
         VStack(spacing: 0) {
             appSelectorHeader.zIndex(1)
             Divider()
             
             List {
+                // Top Spacer
                 Section { Color.clear.frame(height: 12) }
                 .listRowInsets(EdgeInsets())
                 .listRowSeparator(.hidden)
                 
-                // GROUPS
+                // --- GROUPS ---
                 ForEach(Array(workingRule.groups.enumerated()), id: \.element.id) { index, group in
                     Section {
+                        // 1. Condition
                         SpaceConditionRow(
                             groupIndex: index,
                             group: $workingRule.groups[index],
@@ -40,8 +39,10 @@ struct RuleEditor: View {
                         .listRowInsets(EdgeInsets())
                         .listRowSeparator(.hidden)
                         
+                        // 2. Actions
                         ActionListRows(actions: $workingRule.groups[index].actions)
                         
+                        // 3. Add Button
                         AddActionRow {
                             addActionToGroup(index: index, action: .show)
                         } menuContent: {
@@ -50,13 +51,14 @@ struct RuleEditor: View {
                         .listRowInsets(EdgeInsets())
                         .listRowSeparator(.hidden)
                         
+                        // Spacer
                         Color.clear.frame(height: 24)
                             .listRowInsets(EdgeInsets())
                             .listRowSeparator(.hidden)
                     }
                 }
                 
-                // ADD GROUP
+                // --- ADD GROUP ---
                 Section {
                     Button {
                         withAnimation { workingRule.groups.append(RuleGroup(targetSpaceIDs: [], actions: [])) }
@@ -73,36 +75,64 @@ struct RuleEditor: View {
                     Color.clear.frame(height: 24)
                 }
                 
-                // ELSE
+                // --- FALLBACK WIDGET (Rebuilt) ---
                 Section {
                     VStack(alignment: .leading, spacing: 0) {
+                        // Header
                         HStack {
                             Image(systemName: "arrow.triangle.branch").foregroundColor(.secondary)
                             Text("Fallback (All Other Spaces)").font(.headline).foregroundColor(.secondary)
                             Spacer()
                         }
-                        .padding(12).background(Color.secondary.opacity(0.05))
+                        .padding(12)
+                        .background(Color.secondary.opacity(0.05))
+                        
                         Divider()
+                        
+                        // Actions List
                         if workingRule.elseActions.isEmpty {
-                            Text("Do Nothing").italic().foregroundColor(.secondary).padding(12)
+                            Text("Do Nothing")
+                                .italic().foregroundColor(.secondary)
+                                .padding(20)
+                                .frame(maxWidth: .infinity, alignment: .leading)
                         } else {
                             ForEach(Array(workingRule.elseActions.enumerated()), id: \.element.id) { i, item in
-                                ActionRowContent(
-                                    index: i,
-                                    item: $workingRule.elseActions[i],
-                                    onDelete: { workingRule.elseActions.remove(at: i) }
-                                )
-                                .padding(.horizontal, 12).padding(.vertical, 8)
-                                if i < workingRule.elseActions.count - 1 { Divider().padding(.leading, 12) }
+                                VStack(spacing: 0) {
+                                    ActionRowContent(
+                                        index: i,
+                                        item: $workingRule.elseActions[i],
+                                        onDelete: { workingRule.elseActions.remove(at: i) }
+                                    )
+                                    .padding(.horizontal, 12).padding(.vertical, 8)
+                                    
+                                    if i < workingRule.elseActions.count - 1 {
+                                        Divider().padding(.leading, 12)
+                                    }
+                                }
                             }
                         }
+                        
                         Divider()
-                        AddActionRow {
-                            workingRule.elseActions.append(ActionItem(.hide))
-                        } menuContent: {
-                            Button("Show") { workingRule.elseActions.append(ActionItem(.show)) }
-                            Button("Hide") { workingRule.elseActions.append(ActionItem(.hide)) }
+                        
+                        // Add Button (Integrated)
+                        HStack {
+                            Menu {
+                                Button("Show") { workingRule.elseActions.append(ActionItem(.show)) }
+                                Button("Hide") { workingRule.elseActions.append(ActionItem(.hide)) }
+                                Button("Minimize") { workingRule.elseActions.append(ActionItem(.minimize)) } // ADDED MINIMIZE
+                                Divider()
+                                Button("Simulate Gloabl Hotkey") { workingRule.elseActions.append(ActionItem(.globalHotkey(keyCode: -1, modifiers: 0))) }
+                            } label: {
+                                Label("Add Action", systemImage: "plus")
+                                    .font(.caption).fontWeight(.medium)
+                            }
+                            .menuStyle(.borderlessButton)
+                            .foregroundColor(.blue)
+                            .fixedSize()
+                            
+                            Spacer()
                         }
+                        .padding(12) // Bottom padding for the widget
                     }
                     .background(Color(NSColor.controlBackgroundColor))
                     .cornerRadius(8)
@@ -122,7 +152,7 @@ struct RuleEditor: View {
         .onAppear { loadRunningApps() }
     }
     
-    // ... (Helpers and Header/Footer remain same) ...
+    // MARK: - Helpers
     private func addActionToGroup(index: Int, action: WindowAction) {
         workingRule.groups[index].actions.append(ActionItem(action))
     }
@@ -133,7 +163,6 @@ struct RuleEditor: View {
         Button("Bring to Front") { addActionToGroup(index: index, action: .bringToFront) }
         Divider()
         Button("Simulate App Hotkey...") { addActionToGroup(index: index, action: .hotkey(keyCode: -1, modifiers: 0, restoreWindow: false, waitFrontmost: true)) }
-        // NEW OPTION
         Button("Simulate Global Hotkey...") { addActionToGroup(index: index, action: .globalHotkey(keyCode: -1, modifiers: 0)) }
     }
     
@@ -202,7 +231,7 @@ struct RuleEditor: View {
     }
 }
 
-// ... (SpaceConditionRow, ActionListRows, AddActionRow remain same) ...
+// ... (SpaceConditionRow, ActionListRows, AddActionRow same as previous) ...
 struct SpaceConditionRow: View {
     let groupIndex: Int; @Binding var group: RuleGroup; let availableSpaces: [SpaceInfo]; let onRemove: () -> Void
     var body: some View {
@@ -241,7 +270,7 @@ struct AddActionRow<Content: View>: View {
     }
 }
 
-// MARK: - Updated Action Content with Global Hotkey UI
+// MARK: - Action Content
 struct ActionRowContent: View {
     let index: Int
     @Binding var item: ActionItem
@@ -250,26 +279,20 @@ struct ActionRowContent: View {
     @State private var isRecording = false
     @State private var isExpanded = false
     
-    // For Global Key Textbox
-    @State private var globalKeyChar: String = ""
-    
     var body: some View {
         VStack(spacing: 8) {
-            // MAIN ROW
             HStack {
                 Image(systemName: "line.3.horizontal")
                     .foregroundColor(.secondary.opacity(0.2)).font(.caption)
                 Text("\(index + 1).").font(.caption).monospacedDigit().foregroundColor(.secondary).frame(width: 20, alignment: .trailing)
                 
-                // Content Switch
                 switch item.value {
                     
-                // --- CASE 1: GLOBAL KEY UI (New) ---
+                // --- GLOBAL KEY (Updated with KeyCaptureView) ---
                 case .globalHotkey(let code, let mods):
                     HStack(spacing: 12) {
                         Text("Global Key:").font(.subheadline).foregroundColor(.secondary)
                         
-                        // Modifiers
                         HStack(spacing: 4) {
                             ModifierToggle("⌘", flag: .command, current: mods) { toggleModifier(.command, current: mods) }
                             ModifierToggle("⇧", flag: .shift, current: mods) { toggleModifier(.shift, current: mods) }
@@ -277,27 +300,12 @@ struct ActionRowContent: View {
                             ModifierToggle("⌃", flag: .control, current: mods) { toggleModifier(.control, current: mods) }
                         }
                         
-                        // Single Char Textbox
-                        TextField("", text: $globalKeyChar)
-                            .frame(width: 30)
-                            .multilineTextAlignment(.center)
-                            .textFieldStyle(.roundedBorder)
-                            .onChange(of: globalKeyChar) { newVal in
-                                if newVal.count > 1 {
-                                    globalKeyChar = String(newVal.prefix(1)).uppercased()
-                                } else {
-                                    globalKeyChar = newVal.uppercased()
-                                }
-                                let newCode = ShortcutHelper.keyCode(for: globalKeyChar)
-                                item.value = .globalHotkey(keyCode: newCode, modifiers: mods)
-                            }
-                            .onAppear {
-                                // Init char from code
-                                if let s = ShortcutHelper.keyString(for: code) { globalKeyChar = s }
-                            }
+                        // FIX: Replaced TextField with KeyCaptureButton
+                        KeyCaptureButton(keyCode: code) { newCode in
+                            item.value = .globalHotkey(keyCode: newCode, modifiers: mods)
+                        }
                     }
                     
-                // --- CASE 2: STANDARD APP HOTKEY ---
                 case .hotkey(let code, let mods, _, _):
                     Button(action: { isRecording = true }) {
                         if isRecording {
@@ -351,30 +359,23 @@ struct ActionRowContent: View {
                 .padding(.leading, 36).padding(.bottom, 4)
             }
             
-            // Hidden Recorder for Standard Key
             if isRecording {
                 Text("").frame(width: 0, height: 0).onAppear { startRecording(item: item) }
             }
         }
     }
     
-    // Modifier Toggle Helper
     private func toggleModifier(_ flag: NSEvent.ModifierFlags, current: UInt) {
         let raw = flag.rawValue
-        // Check if contains raw (ignoring device independent mask issues for UI logic)
-        // Simple bitwise check
         let hasIt = (current & raw) != 0
         var newMods = current
         if hasIt { newMods &= ~raw }
         else { newMods |= raw }
-        
-        // Update item
         if case .globalHotkey(let c, _) = item.value {
             item.value = .globalHotkey(keyCode: c, modifiers: newMods)
         }
     }
     
-    // Recording Logic for Standard Key
     private func startRecording(item: ActionItem) {
         NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
             if isRecording {
@@ -391,30 +392,88 @@ struct ActionRowContent: View {
     }
 }
 
+// FIX: Custom Button to capture single key stroke immediately
+struct KeyCaptureButton: View {
+    let keyCode: Int
+    let onUpdate: (Int) -> Void
+    @State private var isListening = false
+    
+    var body: some View {
+        Button(action: { isListening = true }) {
+            ZStack {
+                RoundedRectangle(cornerRadius: 6)
+                    .stroke(isListening ? Color.blue : Color.gray.opacity(0.3), lineWidth: 1)
+                    .background(Color(NSColor.controlBackgroundColor))
+                
+                if isListening {
+                    Text("Type").font(.caption).foregroundColor(.blue)
+                } else {
+                    Text(displayString)
+                        .font(.system(.body, design: .monospaced))
+                        .foregroundColor(.primary)
+                }
+            }
+            .frame(width: 40, height: 24)
+        }
+        .buttonStyle(.plain)
+        .overlay(
+            Group {
+                if isListening {
+                    KeyReceiver { event in
+                        let code = Int(event.keyCode)
+                        onUpdate(code)
+                        isListening = false
+                    }
+                    .frame(width: 0, height: 0)
+                }
+            }
+        )
+    }
+    
+    var displayString: String {
+        if keyCode == -1 { return "-" }
+        return ShortcutHelper.keyString(for: keyCode) ?? "?"
+    }
+}
+
+// Hidden view to capture one key event
+struct KeyReceiver: NSViewRepresentable {
+    let onKeyDown: (NSEvent) -> Void
+    
+    func makeNSView(context: Context) -> KeyView {
+        let view = KeyView()
+        view.onKeyDown = onKeyDown
+        return view
+    }
+    
+    func updateNSView(_ nsView: KeyView, context: Context) {
+        // Force focus so we catch the key
+        DispatchQueue.main.async {
+            nsView.window?.makeFirstResponder(nsView)
+        }
+    }
+    
+    class KeyView: NSView {
+        var onKeyDown: ((NSEvent) -> Void)?
+        override var acceptsFirstResponder: Bool { true }
+        override func keyDown(with event: NSEvent) {
+            onKeyDown?(event)
+        }
+    }
+}
+
 // UI Helper for Modifier Toggles
 struct ModifierToggle: View {
     let title: String
     let flag: NSEvent.ModifierFlags
     let current: UInt
     let action: () -> Void
-    
     var isOn: Bool { (current & flag.rawValue) != 0 }
-    
     init(_ title: String, flag: NSEvent.ModifierFlags, current: UInt, action: @escaping () -> Void) {
-        self.title = title
-        self.flag = flag
-        self.current = current
-        self.action = action
+        self.title = title; self.flag = flag; self.current = current; self.action = action
     }
-    
     var body: some View {
-        Text(title)
-            .font(.system(size: 11, weight: .bold))
-            .frame(width: 20, height: 20)
-            .background(isOn ? Color.blue : Color.gray.opacity(0.2))
-            .foregroundColor(isOn ? .white : .secondary)
-            .cornerRadius(4)
-            .onTapGesture(perform: action)
+        Text(title).font(.system(size: 11, weight: .bold)).frame(width: 20, height: 20).background(isOn ? Color.blue : Color.gray.opacity(0.2)).foregroundColor(isOn ? .white : .secondary).cornerRadius(4).onTapGesture(perform: action)
     }
 }
 

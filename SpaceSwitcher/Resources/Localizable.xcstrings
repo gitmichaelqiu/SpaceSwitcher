@@ -757,6 +757,9 @@
     "Simulate App Hotkey..." : {
 
     },
+    "Simulate Gloabl Hotkey" : {
+
+    },
     "Simulate Global Hotkey..." : {
 
     },
@@ -784,6 +787,9 @@
       }
     },
     "Switcher" : {
+
+    },
+    "Type" : {
 
     },
     "v%@" : {
