@@ -14,7 +14,6 @@ class RuleManager: ObservableObject {
     @Published var rules: [AppRule] = [] {
         didSet {
             saveRules()
-            // Delayed refresh handled by WindowController on close
         }
     }
     
@@ -53,24 +52,53 @@ class RuleManager: ObservableObject {
         }
     }
     
-    // UPDATED: Now accepts [ActionItem]
     private func perform(actions: [ActionItem], on bundleID: String) {
         guard let app = NSRunningApplication.runningApplications(withBundleIdentifier: bundleID).first else { return }
         
         Task { @MainActor in
             for item in actions {
                 switch item.value {
-                case .hide: app.hide()
+                case .hide:
+                    app.hide()
+                    
                 case .show:
+                    let wasHidden = app.isHidden
                     unhideAppWithoutActivation(app)
                     unminimizeAppWindows(app)
-                case .minimize: minimizeAppWindows(app)
-                case .bringToFront: app.activate(options: .activateIgnoringOtherApps)
+                    // If app was hidden, give it a moment to appear before processing next actions
+                    if wasHidden {
+                        try? await Task.sleep(nanoseconds: 200_000_000) // 0.2s
+                    }
+                    
+                case .minimize:
+                    minimizeAppWindows(app)
+                    
+                case .bringToFront:
+                    app.activate(options: .activateIgnoringOtherApps)
+                    
                 case .hotkey(let k, let m):
+                    // ROBUST HOTKEY EXECUTION
+                    
+                    // 1. Ensure App is Active
                     if !app.isActive {
                         app.activate(options: .activateIgnoringOtherApps)
-                        try? await Task.sleep(nanoseconds: 100_000_000)
+                        
+                        // 2. Poll until it is actually active (Max 1.0s)
+                        var retries = 0
+                        while !app.isActive && retries < 20 {
+                            try? await Task.sleep(nanoseconds: 50_000_000) // 0.05s poll
+                            retries += 1
+                        }
+                        
+                        // 3. Animation Buffer: Wait for "unminimize/zoom" animation to finish
+                        // Even if .isActive is true, the window might still be flying in.
+                        try? await Task.sleep(nanoseconds: 300_000_000) // 0.3s
+                    } else {
+                        // Even if already active, add a tiny buffer to ensure the event loop isn't busy
+                        try? await Task.sleep(nanoseconds: 50_000_000) // 0.05s
                     }
+                    
+                    // 4. Fire
                     simulateHotkey(keyCode: k, modifiers: m)
                 }
             }
@@ -80,10 +108,17 @@ class RuleManager: ObservableObject {
     private func simulateHotkey(keyCode: Int, modifiers: UInt) {
         guard keyCode >= 0 else { return }
         let flags = CGEventFlags(rawValue: UInt64(modifiers))
-        guard let d = CGEvent(keyboardEventSource: nil, virtualKey: CGKeyCode(keyCode), keyDown: true) else { return }
-        d.flags = flags; d.post(tap: .cghidEventTap)
-        guard let u = CGEvent(keyboardEventSource: nil, virtualKey: CGKeyCode(keyCode), keyDown: false) else { return }
-        u.flags = flags; u.post(tap: .cghidEventTap)
+        
+        guard let keyDown = CGEvent(keyboardEventSource: nil, virtualKey: CGKeyCode(keyCode), keyDown: true) else { return }
+        keyDown.flags = flags
+        keyDown.post(tap: .cghidEventTap)
+        
+        // Tiny delay between Down and Up to register correctly
+        usleep(10000) // 0.01s
+        
+        guard let keyUp = CGEvent(keyboardEventSource: nil, virtualKey: CGKeyCode(keyCode), keyDown: false) else { return }
+        keyUp.flags = flags
+        keyUp.post(tap: .cghidEventTap)
     }
 
     private func getLowestSpaceNumber(for rule: AppRule) -> Int {

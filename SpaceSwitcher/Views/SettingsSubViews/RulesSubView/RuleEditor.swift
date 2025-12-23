@@ -17,18 +17,14 @@ struct RuleEditor: View {
     
     var body: some View {
         VStack(spacing: 0) {
-            // 1. App Header
-            appSelectorHeader
-                .zIndex(1)
-            
+            appSelectorHeader.zIndex(1)
             Divider()
             
-            // 2. Main List
+            // Native List for reliable reordering
             List {
                 // --- GROUPS ---
                 ForEach(Array(workingRule.groups.enumerated()), id: \.element.id) { index, group in
                     Section {
-                        // ROW 1: Custom Header (Moved inside the list for better styling)
                         GroupHeaderRow(
                             groupIndex: index,
                             group: $workingRule.groups[index],
@@ -36,18 +32,13 @@ struct RuleEditor: View {
                             availableSpaces: availableSpaces,
                             onRemove: { withAnimation { _ = workingRule.groups.remove(at: index) } }
                         )
-                        .listRowInsets(EdgeInsets()) // Remove default padding
+                        .listRowInsets(EdgeInsets(top: 0, leading: 20, bottom: 0, trailing: 20))
                         .listRowSeparator(.hidden)
                         
-                        // ROW 2...N: Actions (Reorderable)
                         ActionListRows(actions: $workingRule.groups[index].actions)
                         
-                        // ROW N+1: Add Button
                         AddActionButton {
-                            withAnimation {
-                                // Add default empty action or specific
-                                // For List reordering to work best, we add items directly
-                            }
+                            // Add via menu
                         } menuContent: {
                             Button("Show") { workingRule.groups[index].actions.append(ActionItem(.show)) }
                             Button("Hide") { workingRule.groups[index].actions.append(ActionItem(.hide)) }
@@ -56,12 +47,11 @@ struct RuleEditor: View {
                             Divider()
                             Button("Simulate Hotkey...") { workingRule.groups[index].actions.append(ActionItem(.hotkey(keyCode: -1, modifiers: 0))) }
                         }
-                        .listRowInsets(EdgeInsets())
+                        .listRowInsets(EdgeInsets(top: 0, leading: 20, bottom: 0, trailing: 20))
                         .listRowSeparator(.hidden)
                         
-                        // GAP: Spacer Row to visually separate groups
-                        Color.clear
-                            .frame(height: 20)
+                        // Spacer Row
+                        Color.clear.frame(height: 12)
                             .listRowInsets(EdgeInsets())
                             .listRowSeparator(.hidden)
                     }
@@ -81,11 +71,11 @@ struct RuleEditor: View {
                         .font(.headline)
                         .foregroundColor(.blue)
                         .frame(maxWidth: .infinity, alignment: .center)
-                        .padding(.vertical, 12)
+                        .padding(.vertical, 8) // Tightened padding
                         .background(RoundedRectangle(cornerRadius: 8).stroke(Color.blue.opacity(0.3), lineWidth: 1))
                     }
                     .buttonStyle(.plain)
-                    .listRowInsets(EdgeInsets(top: 0, leading: 20, bottom: 0, trailing: 20))
+                    .listRowInsets(EdgeInsets(top: 0, leading: 20, bottom: 12, trailing: 20))
                     .listRowSeparator(.hidden)
                 }
                 
@@ -96,15 +86,11 @@ struct RuleEditor: View {
                             Image(systemName: "asterisk.circle.fill").foregroundColor(.secondary)
                             Text("In All Other Spaces").font(.headline).foregroundColor(.secondary)
                         }
-                        .padding(12)
+                        .padding(.vertical, 8).padding(.horizontal, 12) // Tightened
                         .background(Color(NSColor.controlBackgroundColor))
                         
                         Divider()
                         
-                        // Create a mini-list behavior for Else actions since they are in a distinct block
-                        // Note: List inside List is bad, so we use the same row logic if we want reordering,
-                        // or just a simple loop if reordering isn't critical here.
-                        // For consistency, let's treat it as a block.
                         if workingRule.elseActions.isEmpty {
                             Text("Do Nothing")
                                 .italic().foregroundColor(.secondary)
@@ -114,7 +100,7 @@ struct RuleEditor: View {
                                 ActionRowContent(
                                     index: i,
                                     item: item,
-                                    isRecording: false, // simplified for else block
+                                    isRecording: false,
                                     onRecord: {},
                                     onDelete: { workingRule.elseActions.remove(at: i) }
                                 )
@@ -130,28 +116,28 @@ struct RuleEditor: View {
                             Button("Show") { workingRule.elseActions.append(ActionItem(.show)) }
                             Button("Hide") { workingRule.elseActions.append(ActionItem(.hide)) }
                         }
+                        // Reuse component style but handle internal padding manually if needed
+                        // (AddActionButton handles its own internal layout)
                     }
                     .background(Color(NSColor.controlBackgroundColor))
                     .cornerRadius(8)
                     .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color.gray.opacity(0.15)))
-                    .listRowInsets(EdgeInsets(top: 10, leading: 20, bottom: 20, trailing: 20))
+                    .listRowInsets(EdgeInsets(top: 0, leading: 20, bottom: 20, trailing: 20))
                     .listRowSeparator(.hidden)
                 }
             }
-            .listStyle(.plain) // KEY FIX: Removes default gray grouped styling
-            .scrollContentBackground(.hidden) // Removes system background (macOS 13+)
-            .background(Color(NSColor.windowBackgroundColor)) // Matches window
+            .listStyle(.plain)
+            .scrollContentBackground(.hidden)
+            .background(Color(NSColor.windowBackgroundColor))
             
             Divider()
-            
-            // 3. Footer
             footerView
         }
         .frame(width: 800, height: 600)
         .onAppear { loadRunningApps() }
     }
     
-    // ... (App Header, Footer, Helpers remain unchanged) ...
+    // ... (Header, Footer, Helpers same as previous) ...
     private var appSelectorHeader: some View {
         ZStack(alignment: .leading) {
             Color(NSColor.controlBackgroundColor).ignoresSafeArea()
@@ -216,9 +202,8 @@ struct RuleEditor: View {
     }
 }
 
-// MARK: - Row Components
+// MARK: - Row Components (Optimized Padding)
 
-// 1. The Header Row (Title + Spaces)
 struct GroupHeaderRow: View {
     let groupIndex: Int
     @Binding var group: RuleGroup
@@ -228,7 +213,6 @@ struct GroupHeaderRow: View {
     
     var body: some View {
         VStack(spacing: 0) {
-            // Title Bar
             HStack {
                 Text("Workflow Group \(groupIndex + 1)")
                     .font(.headline)
@@ -240,13 +224,12 @@ struct GroupHeaderRow: View {
                 }
                 .buttonStyle(.plain)
             }
-            .padding(12)
-            .background(Color.secondary.opacity(0.05)) // Subtle header bg
+            .padding(.vertical, 8).padding(.horizontal, 12) // Tightened
+            .background(Color.secondary.opacity(0.05))
             
             Divider()
             
-            // Spaces Grid
-            VStack(alignment: .leading, spacing: 8) {
+            VStack(alignment: .leading, spacing: 6) {
                 HStack {
                     Text("Active in Spaces:")
                         .font(.caption).fontWeight(.bold).foregroundColor(.secondary)
@@ -276,19 +259,16 @@ struct GroupHeaderRow: View {
                     }
                 }
             }
-            .padding(12)
+            .padding(.vertical, 8).padding(.horizontal, 12) // Tightened
             
             Divider()
         }
-        .background(Color(NSColor.controlBackgroundColor)) // Unified Card Background
-        // Simulate Top Rounded Corners
+        .background(Color(NSColor.controlBackgroundColor))
         .clipShape(CustomCornerShape(radius: 8, corners: [.topLeft, .topRight]))
         .overlay(
             CustomCornerShape(radius: 8, corners: [.topLeft, .topRight])
                 .stroke(Color.gray.opacity(0.15), lineWidth: 1)
         )
-        // Add padding to List Row so it floats
-        .padding(.horizontal, 20)
     }
     
     private func isSpaceUsedElsewhere(_ spaceID: String) -> Bool {
@@ -299,7 +279,6 @@ struct GroupHeaderRow: View {
     }
 }
 
-// 2. The Action Rows (Wrapper)
 struct ActionListRows: View {
     @Binding var actions: [ActionItem]
     @State private var recordingIndex: Int? = nil
@@ -315,14 +294,13 @@ struct ActionListRows: View {
                     onDelete: { actions.remove(at: index) }
                 )
                 .padding(.horizontal, 12)
-                .padding(.vertical, 8)
+                .padding(.vertical, 6) // Tightened
                 
                 if index < actions.count - 1 {
                     Divider().padding(.leading, 12)
                 }
             }
             .background(Color(NSColor.controlBackgroundColor))
-            // Borders to simulate card body
             .overlay(
                 Rectangle()
                     .strokeBorder(Color.gray.opacity(0.15), lineWidth: 1)
@@ -350,7 +328,6 @@ struct ActionListRows: View {
     }
 }
 
-// 3. The Add Button Row
 struct AddActionButton<Content: View>: View {
     let action: () -> Void
     @ViewBuilder let menuContent: Content
@@ -374,20 +351,17 @@ struct AddActionButton<Content: View>: View {
                 
                 Spacer()
             }
-            .padding(12)
+            .padding(.vertical, 8).padding(.horizontal, 12) // Tightened
         }
         .background(Color(NSColor.controlBackgroundColor))
-        // Simulate Bottom Rounded Corners
         .clipShape(CustomCornerShape(radius: 8, corners: [.bottomLeft, .bottomRight]))
         .overlay(
             CustomCornerShape(radius: 8, corners: [.bottomLeft, .bottomRight])
                 .stroke(Color.gray.opacity(0.15), lineWidth: 1)
         )
-        .padding(.horizontal, 20)
     }
 }
 
-// 4. Action Row Content (Shared)
 struct ActionRowContent: View {
     let index: Int
     let item: ActionItem
@@ -397,7 +371,6 @@ struct ActionRowContent: View {
     
     var body: some View {
         HStack {
-            // Drag Handle Icon (Visual only, List handles the drag)
             Image(systemName: "line.3.horizontal")
                 .foregroundColor(.secondary.opacity(0.2))
                 .font(.caption)
@@ -439,7 +412,6 @@ struct ActionRowContent: View {
     }
 }
 
-// Helper for Partial Rounded Corners
 struct CustomCornerShape: Shape {
     var radius: CGFloat
     var corners: RectCorner
