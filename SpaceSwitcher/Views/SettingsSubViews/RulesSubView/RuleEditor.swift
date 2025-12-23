@@ -1,6 +1,13 @@
 import SwiftUI
 import UniformTypeIdentifiers
 
+// MARK: - Unique Wrapper for Reordering
+// This struct ensures every row has a unique ID, even if the action (e.g. "Show") is identical.
+struct UniqueAction: Identifiable, Equatable {
+    let id = UUID()
+    var action: WindowAction
+}
+
 struct RuleEditor: View {
     @State private var workingRule: AppRule
     let availableSpaces: [SpaceInfo]
@@ -242,12 +249,15 @@ struct GroupEditorCard: View {
 struct ActionSequenceEditor: View {
     @Binding var actions: [WindowAction]
     var placeholder: String
+    
+    // Local state to manage unique identities for the UI
+    @State private var uniqueItems: [UniqueAction] = []
     @State private var recordingIndex: Int? = nil
-    @State private var draggedItem: WindowAction?
+    @State private var draggedItem: UniqueAction?
     
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            if actions.isEmpty {
+            if uniqueItems.isEmpty {
                 Text(placeholder)
                     .font(.caption)
                     .italic()
@@ -255,31 +265,59 @@ struct ActionSequenceEditor: View {
                     .padding(.vertical, 8)
                     .frame(maxWidth: .infinity, alignment: .leading)
             } else {
-                ForEach(Array(actions.enumerated()), id: \.element) { index, action in
+                // Use the UniqueAction's stable UUID for the loop
+                ForEach(Array(uniqueItems.enumerated()), id: \.element.id) { index, item in
                     ActionRowView(
                         index: index,
-                        action: action,
-                        actions: $actions,
+                        item: item, // Pass the wrapper
+                        items: $uniqueItems,
                         draggedItem: $draggedItem,
                         isRecording: recordingIndex == index,
                         onRecord: { startRecording(at: index) },
-                        onDelete: { actions.remove(at: index) }
+                        onDelete: {
+                            uniqueItems.remove(at: index)
+                            syncBack()
+                        }
                     )
                 }
             }
             
             Menu {
-                Button("Show") { actions.append(.show) }
-                Button("Bring to Front") { actions.append(.bringToFront) }
-                Button("Hide") { actions.append(.hide) }
-                Button("Minimize") { actions.append(.minimize) }
+                Button("Show") { addAction(.show) }
+                Button("Bring to Front") { addAction(.bringToFront) }
+                Button("Hide") { addAction(.hide) }
+                Button("Minimize") { addAction(.minimize) }
                 Divider()
-                Button("Simulate Hotkey...") { actions.append(.hotkey(keyCode: -1, modifiers: 0)) }
+                Button("Simulate Hotkey...") { addAction(.hotkey(keyCode: -1, modifiers: 0)) }
             } label: { HStack { Image(systemName: "plus"); Text("Add Action") }.font(.caption).fontWeight(.medium) }
             .menuStyle(.borderlessButton).foregroundColor(.blue).padding(.top, 4)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .animation(.default, value: actions)
+        .animation(.default, value: uniqueItems)
+        .onAppear {
+            // Convert data model -> View model (Unique IDs)
+            self.uniqueItems = actions.map { UniqueAction(action: $0) }
+        }
+        // If actions are modified externally (unlikely here but good practice), re-sync
+        .onChange(of: actions) { newActions in
+            if newActions.count != uniqueItems.count {
+                self.uniqueItems = newActions.map { UniqueAction(action: $0) }
+            }
+        }
+        // Watch for reordering in UI and sync back to Binding
+        .onChange(of: uniqueItems) { _ in
+            syncBack()
+        }
+    }
+    
+    private func addAction(_ action: WindowAction) {
+        uniqueItems.append(UniqueAction(action: action))
+        syncBack()
+    }
+    
+    private func syncBack() {
+        // Convert View model -> Data model
+        self.actions = uniqueItems.map { $0.action }
     }
     
     private func startRecording(at index: Int) {
@@ -288,7 +326,11 @@ struct ActionSequenceEditor: View {
             if self.recordingIndex == index {
                 let mods = event.modifierFlags.intersection(.deviceIndependentFlagsMask).rawValue
                 let code = Int(event.keyCode)
-                self.actions[index] = .hotkey(keyCode: code, modifiers: UInt(mods))
+                
+                // Update local state
+                self.uniqueItems[index].action = .hotkey(keyCode: code, modifiers: UInt(mods))
+                self.syncBack()
+                
                 self.recordingIndex = nil
                 return nil
             }
@@ -300,9 +342,9 @@ struct ActionSequenceEditor: View {
 // MARK: - Action Row View
 struct ActionRowView: View {
     let index: Int
-    let action: WindowAction
-    @Binding var actions: [WindowAction]
-    @Binding var draggedItem: WindowAction?
+    let item: UniqueAction
+    @Binding var items: [UniqueAction]
+    @Binding var draggedItem: UniqueAction?
     let isRecording: Bool
     let onRecord: () -> Void
     let onDelete: () -> Void
@@ -315,7 +357,7 @@ struct ActionRowView: View {
             
             Text("\(index + 1).").font(.caption).monospacedDigit().foregroundColor(.secondary).frame(width: 20, alignment: .trailing)
             
-            if case .hotkey(let code, let mods) = action {
+            if case .hotkey(let code, let mods) = item.action {
                 Button(action: onRecord) {
                     if isRecording {
                         Text("Recording...").foregroundColor(.red).fontWeight(.bold)
@@ -330,7 +372,7 @@ struct ActionRowView: View {
                 .buttonStyle(.plain).padding(.horizontal, 4).padding(.vertical, 2)
                 .background(isRecording ? Color.red.opacity(0.1) : Color.clear).cornerRadius(4)
             } else {
-                Text(action.localizedString).font(.subheadline)
+                Text(item.action.localizedString).font(.subheadline)
             }
             
             Spacer()
@@ -341,22 +383,21 @@ struct ActionRowView: View {
             .buttonStyle(.plain).foregroundColor(.secondary)
         }
         .padding(6).background(RoundedRectangle(cornerRadius: 6).fill(Color.secondary.opacity(0.08)))
-        // UPDATED: Hide the original row while it is being draggedf
-        .opacity(draggedItem == action ? 0.0 : 1.0)
-        // Drag and Drop Logic
+        // Fix: Hide original row while dragging using the stable unique ID
+        .opacity(draggedItem?.id == item.id ? 0.0 : 1.0)
         .onDrag {
-            self.draggedItem = action
-            return NSItemProvider(object: action.id as NSString)
+            self.draggedItem = item
+            return NSItemProvider(object: item.id.uuidString as NSString)
         }
-        .onDrop(of: [.text], delegate: ActionDropDelegate(item: action, items: $actions, draggedItem: $draggedItem))
+        .onDrop(of: [.text], delegate: ActionDropDelegate(item: item, items: $items, draggedItem: $draggedItem))
     }
 }
 
 // MARK: - Drop Delegate for Reordering
 struct ActionDropDelegate: DropDelegate {
-    let item: WindowAction
-    @Binding var items: [WindowAction]
-    @Binding var draggedItem: WindowAction?
+    let item: UniqueAction
+    @Binding var items: [UniqueAction]
+    @Binding var draggedItem: UniqueAction?
     
     func performDrop(info: DropInfo) -> Bool {
         draggedItem = nil
@@ -366,9 +407,10 @@ struct ActionDropDelegate: DropDelegate {
     func dropEntered(info: DropInfo) {
         guard let draggedItem = draggedItem else { return }
         
-        if draggedItem != item {
-            if let from = items.firstIndex(of: draggedItem),
-               let to = items.firstIndex(of: item) {
+        // Compare using unique ID
+        if draggedItem.id != item.id {
+            if let from = items.firstIndex(where: { $0.id == draggedItem.id }),
+               let to = items.firstIndex(where: { $0.id == item.id }) {
                 withAnimation {
                     items.move(fromOffsets: IndexSet(integer: from), toOffset: to > from ? to + 1 : to)
                 }
