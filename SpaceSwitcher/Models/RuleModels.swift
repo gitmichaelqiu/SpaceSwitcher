@@ -7,7 +7,8 @@ enum WindowAction: Identifiable, Codable, Equatable, Hashable {
     case hide
     case minimize
     case bringToFront
-    case hotkey(keyCode: Int, modifiers: UInt)
+    // UPDATED: Added configuration flags
+    case hotkey(keyCode: Int, modifiers: UInt, restoreWindow: Bool, waitFrontmost: Bool)
     
     var id: String {
         switch self {
@@ -15,7 +16,7 @@ enum WindowAction: Identifiable, Codable, Equatable, Hashable {
         case .hide: return "hide"
         case .minimize: return "minimize"
         case .bringToFront: return "bringToFront"
-        case .hotkey(let k, let m): return "hotkey-\(k)-\(m)"
+        case .hotkey(let k, let m, _, _): return "hotkey-\(k)-\(m)"
         }
     }
     
@@ -25,13 +26,13 @@ enum WindowAction: Identifiable, Codable, Equatable, Hashable {
         case .hide: return NSLocalizedString("Hide", comment: "")
         case .minimize: return NSLocalizedString("Minimize", comment: "")
         case .bringToFront: return NSLocalizedString("Bring to Front", comment: "")
-        case .hotkey(let code, let mods):
+        case .hotkey(let code, let mods, _, _):
             return "Press: " + ShortcutHelper.format(code: code, modifiers: mods)
         }
     }
 
     // Custom Codable implementation
-    private enum CodingKeys: String, CodingKey { case type, keyCode, modifiers }
+    private enum CodingKeys: String, CodingKey { case type, keyCode, modifiers, restoreWindow, waitFrontmost }
     
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
@@ -44,7 +45,10 @@ enum WindowAction: Identifiable, Codable, Equatable, Hashable {
         case "hotkey":
             let c = try container.decode(Int.self, forKey: .keyCode)
             let m = try container.decode(UInt.self, forKey: .modifiers)
-            self = .hotkey(keyCode: c, modifiers: m)
+            // Default values for backward compatibility
+            let r = try container.decodeIfPresent(Bool.self, forKey: .restoreWindow) ?? false
+            let w = try container.decodeIfPresent(Bool.self, forKey: .waitFrontmost) ?? true
+            self = .hotkey(keyCode: c, modifiers: m, restoreWindow: r, waitFrontmost: w)
         default: self = .show
         }
     }
@@ -56,17 +60,17 @@ enum WindowAction: Identifiable, Codable, Equatable, Hashable {
         case .hide: try container.encode("hide", forKey: .type)
         case .minimize: try container.encode("minimize", forKey: .type)
         case .bringToFront: try container.encode("bringToFront", forKey: .type)
-        case .hotkey(let c, let m):
+        case .hotkey(let c, let m, let r, let w):
             try container.encode("hotkey", forKey: .type)
             try container.encode(c, forKey: .keyCode)
             try container.encode(m, forKey: .modifiers)
+            try container.encode(r, forKey: .restoreWindow)
+            try container.encode(w, forKey: .waitFrontmost)
         }
     }
 }
 
-// MARK: - Action Wrapper (NEW)
-// Wraps WindowAction with a unique Runtime ID to support reliable List reordering.
-// Encodes/Decodes transparently as the underlying WindowAction to maintain JSON compatibility.
+// MARK: - Action Wrapper
 struct ActionItem: Identifiable, Codable, Hashable {
     let id = UUID()
     var value: WindowAction
@@ -86,11 +90,10 @@ struct ActionItem: Identifiable, Codable, Hashable {
     }
 }
 
-// MARK: - Shortcut Helper
+// MARK: - Shortcut Helper (Same as before)
 enum ShortcutHelper {
     static func format(code: Int, modifiers: UInt) -> String {
         if code == -1 { return "Record Shortcut..." }
-        
         var string = ""
         let flags = NSEvent.ModifierFlags(rawValue: modifiers)
         if flags.contains(.control) { string += "⌃" }
@@ -114,22 +117,18 @@ enum ShortcutHelper {
     }
 }
 
-// MARK: - Rule Group (UPDATED)
 struct RuleGroup: Identifiable, Codable {
     var id: UUID = UUID()
     var targetSpaceIDs: Set<String>
-    var actions: [ActionItem] // Changed from [WindowAction]
+    var actions: [ActionItem]
 }
 
-// MARK: - App Rule (UPDATED)
 struct AppRule: Identifiable, Codable {
     var id: UUID = UUID()
     var appBundleID: String
     var appName: String
-    
     var groups: [RuleGroup]
-    var elseActions: [ActionItem] // Changed from [WindowAction]
-    
+    var elseActions: [ActionItem]
     var isEnabled: Bool = true
     
     init(appBundleID: String, appName: String, groups: [RuleGroup], elseActions: [ActionItem], isEnabled: Bool = true) {
@@ -147,15 +146,11 @@ struct AppRule: Identifiable, Codable {
         appName = try container.decode(String.self, forKey: .appName)
         isEnabled = try container.decode(Bool.self, forKey: .isEnabled)
         
-        // Decode new structure (ActionItem handles decoding WindowAction transparently)
         if let g = try? container.decode([RuleGroup].self, forKey: .groups) {
             groups = g
         } else {
-            // Migrating old structure
             let oldSpaces = try? container.decode(Set<String>.self, forKey: .targetSpaceIDs)
-            
             var oldMatch: [ActionItem] = []
-            // Decode as ActionItem list
             if let arr = try? container.decode([ActionItem].self, forKey: .matchActions) { oldMatch = arr }
             else if let s = try? container.decode(WindowAction.self, forKey: .matchAction) { oldMatch = [ActionItem(s)] }
             else { oldMatch = [ActionItem(.show)] }
@@ -167,7 +162,6 @@ struct AppRule: Identifiable, Codable {
             }
         }
         
-        // Else Actions
         if let arr = try? container.decode([ActionItem].self, forKey: .elseActions) {
             elseActions = arr
         } else if let s = try? container.decode(WindowAction.self, forKey: .elseAction) {
@@ -198,12 +192,6 @@ struct SpaceInfo: Identifiable, Codable, Hashable {
     let id: String
     let name: String
     let number: Int
-    
-    static func == (lhs: SpaceInfo, rhs: SpaceInfo) -> Bool {
-        lhs.id == rhs.id
-    }
-    
-    func hash(into hasher: inout Hasher) {
-        hasher.combine(id)
-    }
+    static func == (lhs: SpaceInfo, rhs: SpaceInfo) -> Bool { lhs.id == rhs.id }
+    func hash(into hasher: inout Hasher) { hasher.combine(id) }
 }

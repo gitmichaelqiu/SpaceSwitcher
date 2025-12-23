@@ -1,5 +1,5 @@
 import SwiftUI
-internal import UniformTypeIdentifiers
+import UniformTypeIdentifiers
 
 struct RuleEditor: View {
     @State private var workingRule: AppRule
@@ -20,44 +20,40 @@ struct RuleEditor: View {
             appSelectorHeader.zIndex(1)
             Divider()
             
-            // Native List for reliable reordering
             List {
                 // --- GROUPS ---
                 ForEach(Array(workingRule.groups.enumerated()), id: \.element.id) { index, group in
                     Section {
-                        GroupHeaderRow(
+                        // 1. Condition Row (Spaces)
+                        SpaceConditionRow(
                             groupIndex: index,
                             group: $workingRule.groups[index],
-                            allGroups: workingRule.groups,
                             availableSpaces: availableSpaces,
                             onRemove: { withAnimation { _ = workingRule.groups.remove(at: index) } }
                         )
-                        .listRowInsets(EdgeInsets(top: 0, leading: 20, bottom: 0, trailing: 20))
+                        .listRowInsets(EdgeInsets())
                         .listRowSeparator(.hidden)
                         
+                        // 2. Action Rows
                         ActionListRows(actions: $workingRule.groups[index].actions)
                         
-                        AddActionButton {
-                            // Add via menu
+                        // 3. Add Button
+                        AddActionRow {
+                            addActionToGroup(index: index, action: .show)
                         } menuContent: {
-                            Button("Show") { workingRule.groups[index].actions.append(ActionItem(.show)) }
-                            Button("Hide") { workingRule.groups[index].actions.append(ActionItem(.hide)) }
-                            Button("Minimize") { workingRule.groups[index].actions.append(ActionItem(.minimize)) }
-                            Button("Bring to Front") { workingRule.groups[index].actions.append(ActionItem(.bringToFront)) }
-                            Divider()
-                            Button("Simulate Hotkey...") { workingRule.groups[index].actions.append(ActionItem(.hotkey(keyCode: -1, modifiers: 0))) }
+                            actionMenu(for: index)
                         }
-                        .listRowInsets(EdgeInsets(top: 0, leading: 20, bottom: 0, trailing: 20))
+                        .listRowInsets(EdgeInsets())
                         .listRowSeparator(.hidden)
                         
-                        // Spacer Row
-                        Color.clear.frame(height: 12)
+                        // Spacer
+                        Color.clear.frame(height: 24)
                             .listRowInsets(EdgeInsets())
                             .listRowSeparator(.hidden)
                     }
                 }
                 
-                // --- ADD NEW GROUP BUTTON ---
+                // --- ADD GROUP ---
                 Section {
                     Button {
                         withAnimation {
@@ -65,59 +61,56 @@ struct RuleEditor: View {
                         }
                     } label: {
                         HStack {
-                            Image(systemName: "plus.circle.fill")
-                            Text("Add Space Group")
+                            Image(systemName: "plus.rectangle.on.rectangle")
+                            Text("Add Workflow Group")
                         }
                         .font(.headline)
                         .foregroundColor(.blue)
-                        .frame(maxWidth: .infinity, alignment: .center)
-                        .padding(.vertical, 8) // Tightened padding
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 10)
                         .background(RoundedRectangle(cornerRadius: 8).stroke(Color.blue.opacity(0.3), lineWidth: 1))
                     }
                     .buttonStyle(.plain)
-                    .listRowInsets(EdgeInsets(top: 0, leading: 20, bottom: 12, trailing: 20))
+                    .listRowInsets(EdgeInsets(top: 0, leading: 20, bottom: 20, trailing: 20))
                     .listRowSeparator(.hidden)
                 }
                 
-                // --- ELSE / FALLBACK ---
+                // --- ELSE ---
                 Section {
                     VStack(alignment: .leading, spacing: 0) {
                         HStack {
-                            Image(systemName: "asterisk.circle.fill").foregroundColor(.secondary)
-                            Text("In All Other Spaces").font(.headline).foregroundColor(.secondary)
+                            Image(systemName: "arrow.triangle.branch")
+                                .foregroundColor(.secondary)
+                            Text("Fallback (All Other Spaces)")
+                                .font(.headline).foregroundColor(.secondary)
+                            Spacer()
                         }
-                        .padding(.vertical, 8).padding(.horizontal, 12) // Tightened
-                        .background(Color(NSColor.controlBackgroundColor))
+                        .padding(12)
+                        .background(Color.secondary.opacity(0.05))
                         
                         Divider()
                         
                         if workingRule.elseActions.isEmpty {
-                            Text("Do Nothing")
-                                .italic().foregroundColor(.secondary)
-                                .padding(12)
+                            Text("Do Nothing").italic().foregroundColor(.secondary).padding(12)
                         } else {
                             ForEach(Array(workingRule.elseActions.enumerated()), id: \.element.id) { i, item in
                                 ActionRowContent(
                                     index: i,
-                                    item: item,
-                                    isRecording: false,
-                                    onRecord: {},
+                                    item: $workingRule.elseActions[i], // Binding for updates
                                     onDelete: { workingRule.elseActions.remove(at: i) }
                                 )
-                                .padding(.horizontal, 12)
-                                .padding(.vertical, 6)
-                                if i < workingRule.elseActions.count - 1 { Divider().padding(.leading, 20) }
+                                .padding(.horizontal, 12).padding(.vertical, 8)
+                                if i < workingRule.elseActions.count - 1 { Divider().padding(.leading, 12) }
                             }
                         }
                         
                         Divider()
-                        
-                        AddActionButton { } menuContent: {
+                        AddActionRow {
+                            workingRule.elseActions.append(ActionItem(.hide))
+                        } menuContent: {
                             Button("Show") { workingRule.elseActions.append(ActionItem(.show)) }
                             Button("Hide") { workingRule.elseActions.append(ActionItem(.hide)) }
                         }
-                        // Reuse component style but handle internal padding manually if needed
-                        // (AddActionButton handles its own internal layout)
                     }
                     .background(Color(NSColor.controlBackgroundColor))
                     .cornerRadius(8)
@@ -137,7 +130,21 @@ struct RuleEditor: View {
         .onAppear { loadRunningApps() }
     }
     
-    // ... (Header, Footer, Helpers same as previous) ...
+    // MARK: - Helpers
+    private func addActionToGroup(index: Int, action: WindowAction) {
+        workingRule.groups[index].actions.append(ActionItem(action))
+    }
+    
+    @ViewBuilder
+    private func actionMenu(for index: Int) -> some View {
+        Button("Show") { addActionToGroup(index: index, action: .show) }
+        Button("Hide") { addActionToGroup(index: index, action: .hide) }
+        Button("Minimize") { addActionToGroup(index: index, action: .minimize) }
+        Button("Bring to Front") { addActionToGroup(index: index, action: .bringToFront) }
+        Divider()
+        Button("Simulate Hotkey...") { addActionToGroup(index: index, action: .hotkey(keyCode: -1, modifiers: 0, restoreWindow: false, waitFrontmost: true)) }
+    }
+
     private var appSelectorHeader: some View {
         ZStack(alignment: .leading) {
             Color(NSColor.controlBackgroundColor).ignoresSafeArea()
@@ -202,109 +209,96 @@ struct RuleEditor: View {
     }
 }
 
-// MARK: - Row Components (Optimized Padding)
+// MARK: - Components
 
-struct GroupHeaderRow: View {
+// 1. Condition Row (Information Efficient: Tag Cloud)
+struct SpaceConditionRow: View {
     let groupIndex: Int
     @Binding var group: RuleGroup
-    let allGroups: [RuleGroup]
     let availableSpaces: [SpaceInfo]
     let onRemove: () -> Void
     
     var body: some View {
         VStack(spacing: 0) {
+            // Header with Delete
             HStack {
                 Text("Workflow Group \(groupIndex + 1)")
                     .font(.headline)
-                    .foregroundColor(.primary)
                 Spacer()
                 Button(action: onRemove) {
-                    Image(systemName: "trash")
-                        .foregroundColor(.secondary)
+                    Image(systemName: "trash").foregroundColor(.secondary)
                 }
                 .buttonStyle(.plain)
             }
-            .padding(.vertical, 8).padding(.horizontal, 12) // Tightened
+            .padding(12)
             .background(Color.secondary.opacity(0.05))
             
             Divider()
             
-            VStack(alignment: .leading, spacing: 6) {
-                HStack {
-                    Text("Active in Spaces:")
-                        .font(.caption).fontWeight(.bold).foregroundColor(.secondary)
-                    Spacer()
-                }
+            // Compact Space Selector
+            HStack(alignment: .top) {
+                Text("Active in:")
+                    .font(.caption).fontWeight(.bold).foregroundColor(.secondary)
+                    .padding(.top, 4)
                 
                 if availableSpaces.isEmpty {
-                    Text("No spaces detected").font(.caption).foregroundColor(.secondary)
+                    Text("No spaces detected").font(.caption).foregroundColor(.secondary).padding(.top, 4)
                 } else {
-                    LazyVGrid(columns: [GridItem(.adaptive(minimum: 110))], alignment: .leading) {
-                        ForEach(availableSpaces) { space in
-                            let isUsedElsewhere = isSpaceUsedElsewhere(space.id)
-                            let isSelectedHere = group.targetSpaceIDs.contains(space.id)
-                            
-                            Toggle(isOn: Binding(
-                                get: { isSelectedHere },
-                                set: { val in if val { group.targetSpaceIDs.insert(space.id) } else { group.targetSpaceIDs.remove(space.id) } }
-                            )) {
-                                Text("\(space.number). \(space.name)")
-                                    .font(.system(size: 11))
-                                    .lineLimit(1)
-                                    .foregroundColor(isUsedElsewhere && !isSelectedHere ? .secondary.opacity(0.5) : .primary)
+                    // Tag Cloud Logic
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        HStack {
+                            ForEach(availableSpaces) { space in
+                                let isSelected = group.targetSpaceIDs.contains(space.id)
+                                Toggle(isOn: Binding(
+                                    get: { isSelected },
+                                    set: { val in if val { group.targetSpaceIDs.insert(space.id) } else { group.targetSpaceIDs.remove(space.id) } }
+                                )) {
+                                    Text(space.name)
+                                        .font(.caption)
+                                        .padding(.horizontal, 8)
+                                        .padding(.vertical, 4)
+                                }
+                                .toggleStyle(.button) // Looks like a tag
+                                .buttonStyle(.bordered)
+                                .tint(isSelected ? .blue : .gray)
+                                .opacity(isSelected ? 1 : 0.6)
                             }
-                            .toggleStyle(.checkbox)
-                            .disabled(isUsedElsewhere && !isSelectedHere)
                         }
                     }
                 }
             }
-            .padding(.vertical, 8).padding(.horizontal, 12) // Tightened
+            .padding(12)
             
             Divider()
         }
         .background(Color(NSColor.controlBackgroundColor))
         .clipShape(CustomCornerShape(radius: 8, corners: [.topLeft, .topRight]))
-        .overlay(
-            CustomCornerShape(radius: 8, corners: [.topLeft, .topRight])
-                .stroke(Color.gray.opacity(0.15), lineWidth: 1)
-        )
-    }
-    
-    private func isSpaceUsedElsewhere(_ spaceID: String) -> Bool {
-        for (idx, g) in allGroups.enumerated() {
-            if idx != groupIndex && g.targetSpaceIDs.contains(spaceID) { return true }
-        }
-        return false
+        .overlay(CustomCornerShape(radius: 8, corners: [.topLeft, .topRight]).stroke(Color.gray.opacity(0.15)))
+        .padding(.horizontal, 20)
     }
 }
 
+// 2. Action Rows Wrapper
 struct ActionListRows: View {
     @Binding var actions: [ActionItem]
-    @State private var recordingIndex: Int? = nil
     
     var body: some View {
         ForEach(Array(actions.enumerated()), id: \.element.id) { index, item in
             VStack(spacing: 0) {
                 ActionRowContent(
                     index: index,
-                    item: item,
-                    isRecording: recordingIndex == index,
-                    onRecord: { startRecording(at: index) },
+                    item: $actions[index],
                     onDelete: { actions.remove(at: index) }
                 )
                 .padding(.horizontal, 12)
-                .padding(.vertical, 6) // Tightened
+                .padding(.vertical, 8)
                 
                 if index < actions.count - 1 {
                     Divider().padding(.leading, 12)
                 }
             }
             .background(Color(NSColor.controlBackgroundColor))
-            .overlay(
-                Rectangle()
-                    .strokeBorder(Color.gray.opacity(0.15), lineWidth: 1)
-            )
+            .overlay(Rectangle().strokeBorder(Color.gray.opacity(0.15), lineWidth: 1))
             .listRowInsets(EdgeInsets(top: 0, leading: 20, bottom: 0, trailing: 20))
             .listRowSeparator(.hidden)
         }
@@ -312,23 +306,10 @@ struct ActionListRows: View {
             actions.move(fromOffsets: indices, toOffset: newOffset)
         }
     }
-    
-    private func startRecording(at index: Int) {
-        recordingIndex = index
-        NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
-            if self.recordingIndex == index {
-                let mods = event.modifierFlags.intersection(.deviceIndependentFlagsMask).rawValue
-                let code = Int(event.keyCode)
-                self.actions[index].value = .hotkey(keyCode: code, modifiers: UInt(mods))
-                self.recordingIndex = nil
-                return nil
-            }
-            return event
-        }
-    }
 }
 
-struct AddActionButton<Content: View>: View {
+// 3. Add Button
+struct AddActionRow<Content: View>: View {
     let action: () -> Void
     @ViewBuilder let menuContent: Content
     
@@ -339,83 +320,122 @@ struct AddActionButton<Content: View>: View {
                 Menu {
                     menuContent
                 } label: {
-                    HStack {
-                        Image(systemName: "plus")
-                        Text("Add Action")
-                    }
-                    .font(.caption).fontWeight(.medium)
+                    Label("Add Action", systemImage: "plus")
+                        .font(.caption).fontWeight(.medium)
                 }
                 .menuStyle(.borderlessButton)
                 .foregroundColor(.blue)
                 .fixedSize()
-                
                 Spacer()
             }
-            .padding(.vertical, 8).padding(.horizontal, 12) // Tightened
+            .padding(10)
         }
         .background(Color(NSColor.controlBackgroundColor))
         .clipShape(CustomCornerShape(radius: 8, corners: [.bottomLeft, .bottomRight]))
-        .overlay(
-            CustomCornerShape(radius: 8, corners: [.bottomLeft, .bottomRight])
-                .stroke(Color.gray.opacity(0.15), lineWidth: 1)
-        )
+        .overlay(CustomCornerShape(radius: 8, corners: [.bottomLeft, .bottomRight]).stroke(Color.gray.opacity(0.15)))
+        .padding(.horizontal, 20)
     }
 }
 
+// 4. Action Row Content (Expandable Hotkey)
 struct ActionRowContent: View {
     let index: Int
-    let item: ActionItem
-    let isRecording: Bool
-    let onRecord: () -> Void
+    @Binding var item: ActionItem
     let onDelete: () -> Void
     
+    @State private var isRecording = false
+    @State private var isExpanded = false // To show detailed options
+    
     var body: some View {
-        HStack {
-            Image(systemName: "line.3.horizontal")
-                .foregroundColor(.secondary.opacity(0.2))
-                .font(.caption)
-            
-            Text("\(index + 1).")
-                .font(.caption).monospacedDigit()
-                .foregroundColor(.secondary)
-                .frame(width: 20, alignment: .trailing)
-            
-            if case .hotkey(let code, let mods) = item.value {
-                Button(action: onRecord) {
-                    if isRecording {
-                        Text("Recording...").foregroundColor(.red).fontWeight(.bold)
-                    } else {
-                        HStack {
-                            Image(systemName: "keyboard")
-                            Text(code == -1 ? "Click to Record" : ShortcutHelper.format(code: code, modifiers: mods))
+        VStack(spacing: 8) {
+            // Main Row
+            HStack {
+                Image(systemName: "line.3.horizontal")
+                    .foregroundColor(.secondary.opacity(0.2)).font(.caption)
+                Text("\(index + 1).").font(.caption).monospacedDigit().foregroundColor(.secondary).frame(width: 20, alignment: .trailing)
+                
+                switch item.value {
+                case .hotkey(let code, let mods, _, _):
+                    Button(action: { isRecording = true }) {
+                        if isRecording {
+                            Text("Recording...").foregroundColor(.red).fontWeight(.bold)
+                        } else {
+                            HStack {
+                                Image(systemName: "keyboard")
+                                Text(code == -1 ? "Click to Record" : ShortcutHelper.format(code: code, modifiers: mods))
+                            }
+                            .font(.subheadline)
                         }
-                        .font(.subheadline)
                     }
+                    .buttonStyle(.plain)
+                    .padding(4).background(Color.gray.opacity(0.1)).cornerRadius(4)
+                    
+                    // Expand Button
+                    Button { withAnimation { isExpanded.toggle() } } label: {
+                        Image(systemName: "gearshape.fill")
+                            .font(.caption)
+                            .foregroundColor(isExpanded ? .blue : .secondary.opacity(0.5))
+                    }
+                    .buttonStyle(.plain)
+                    
+                default:
+                    Text(item.value.localizedString).font(.subheadline)
                 }
-                .buttonStyle(.plain)
-                .padding(.horizontal, 6).padding(.vertical, 2)
-                .background(isRecording ? Color.red.opacity(0.1) : Color.gray.opacity(0.1))
-                .cornerRadius(4)
-            } else {
-                Text(item.value.localizedString).font(.subheadline)
+                
+                Spacer()
+                Button(action: onDelete) { Image(systemName: "xmark").font(.caption2).foregroundColor(.secondary) }.buttonStyle(.plain)
             }
             
-            Spacer()
-            
-            Button(action: onDelete) {
-                Image(systemName: "xmark")
-                    .font(.caption2)
-                    .foregroundColor(.secondary)
+            // Expanded Settings for Hotkey
+            if case .hotkey(let c, let m, let r, let w) = item.value, isExpanded {
+                VStack(alignment: .leading, spacing: 8) {
+                    Divider()
+                    Toggle("Wait for App to be Frontmost", isOn: Binding(
+                        get: { w },
+                        set: { item.value = .hotkey(keyCode: c, modifiers: m, restoreWindow: r, waitFrontmost: $0) }
+                    ))
+                    .toggleStyle(.switch)
+                    .controlSize(.mini)
+                    
+                    Toggle("Restore Previously Active Window", isOn: Binding(
+                        get: { r },
+                        set: { item.value = .hotkey(keyCode: c, modifiers: m, restoreWindow: $0, waitFrontmost: w) }
+                    ))
+                    .toggleStyle(.switch)
+                    .controlSize(.mini)
+                }
+                .padding(.leading, 36)
+                .padding(.bottom, 4)
             }
-            .buttonStyle(.plain)
+            
+            // Hidden Recorder
+            if isRecording {
+                Text("").frame(width: 0, height: 0).onAppear { startRecording(item: item) }
+            }
+        }
+    }
+    
+    private func startRecording(item: ActionItem) {
+        NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
+            if isRecording {
+                let mods = event.modifierFlags.intersection(.deviceIndependentFlagsMask).rawValue
+                let code = Int(event.keyCode)
+                // Preserve existing flags
+                if case .hotkey(_, _, let r, let w) = item.value {
+                    self.item.value = .hotkey(keyCode: code, modifiers: UInt(mods), restoreWindow: r, waitFrontmost: w)
+                }
+                isRecording = false
+                return nil
+            }
+            return event
         }
     }
 }
 
+// Shape Helper
 struct CustomCornerShape: Shape {
     var radius: CGFloat
     var corners: RectCorner
-    
     struct RectCorner: OptionSet {
         let rawValue: Int
         static let topLeft = RectCorner(rawValue: 1 << 0)
@@ -424,7 +444,6 @@ struct CustomCornerShape: Shape {
         static let bottomRight = RectCorner(rawValue: 1 << 3)
         static let all: RectCorner = [.topLeft, .topRight, .bottomLeft, .bottomRight]
     }
-    
     func path(in rect: CGRect) -> Path {
         var path = Path()
         let p1 = CGPoint(x: rect.minX, y: corners.contains(.topLeft) ? rect.minY + radius : rect.minY)
@@ -435,7 +454,6 @@ struct CustomCornerShape: Shape {
         let p6 = CGPoint(x: corners.contains(.bottomRight) ? rect.maxX - radius : rect.maxX, y: rect.maxY)
         let p7 = CGPoint(x: corners.contains(.bottomLeft) ? rect.minX + radius : rect.minX, y: rect.maxY)
         let p8 = CGPoint(x: rect.minX, y: corners.contains(.bottomLeft) ? rect.maxY - radius : rect.maxY)
-        
         path.move(to: p1)
         path.addArc(tangent1End: CGPoint(x: rect.minX, y: rect.minY), tangent2End: p2, radius: radius)
         path.addLine(to: p3)

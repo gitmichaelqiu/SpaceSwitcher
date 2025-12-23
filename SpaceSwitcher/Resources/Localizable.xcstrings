@@ -8,6 +8,7 @@
 
     },
     "%lld. %@" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -110,7 +111,7 @@
         }
       }
     },
-    "Active in Spaces:" : {
+    "Active in:" : {
 
     },
     "Add a rule to control app visibility across spaces." : {
@@ -119,7 +120,7 @@
     "Add Action" : {
 
     },
-    "Add Space Group" : {
+    "Add Workflow Group" : {
 
     },
     "API Connection" : {
@@ -244,6 +245,9 @@
     "Else" : {
 
     },
+    "Fallback (All Other Spaces)" : {
+
+    },
     "General" : {
       "localizations" : {
         "zh-Hans" : {
@@ -274,9 +278,6 @@
           }
         }
       }
-    },
-    "In All Other Spaces" : {
-
     },
     "In these spaces:" : {
       "extractionState" : "stale",
@@ -388,6 +389,9 @@
       }
     },
     "Refresh Spaces" : {
+
+    },
+    "Restore Previously Active Window" : {
 
     },
     "Rules" : {
@@ -788,6 +792,9 @@
           }
         }
       }
+    },
+    "Wait for App to be Frontmost" : {
+
     },
     "Workflow Group %lld" : {
 
