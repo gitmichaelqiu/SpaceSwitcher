@@ -48,8 +48,8 @@ struct RulesView: View {
                     editingRule = AppRule(
                         appBundleID: "",
                         appName: NSLocalizedString("Select Target App", comment: ""),
-                        groups: [RuleGroup(targetSpaceIDs: [], actions: [])],
-                        elseActions: []
+                        groups: [RuleGroup(targetSpaceIDs: [], actions: [])], // Default Empty
+                        elseActions: [ActionItem(.hide)]
                     )
                 } label: { Text("+ Add Rule").frame(minWidth: 80) }
                 .buttonStyle(.borderedProminent)
@@ -66,7 +66,6 @@ struct RulesView: View {
     }
 }
 
-// MARK: - Updated RuleRow
 struct RuleRow: View {
     let rule: AppRule
     let spaces: [SpaceInfo]
@@ -75,7 +74,6 @@ struct RuleRow: View {
     
     var body: some View {
         HStack(alignment: .center, spacing: 12) {
-            // Icon
             if let path = NSWorkspace.shared.urlForApplication(withBundleIdentifier: rule.appBundleID)?.path {
                 Image(nsImage: NSWorkspace.shared.icon(forFile: path)).resizable().frame(width: 32, height: 32)
             } else {
@@ -83,10 +81,8 @@ struct RuleRow: View {
             }
             
             VStack(alignment: .leading, spacing: 4) {
-                // Title
                 Text(rule.appName).font(.headline).foregroundColor(.primary)
                 
-                // Logic Flow: Iterate Groups
                 VStack(alignment: .leading, spacing: 2) {
                     ForEach(rule.groups.indices, id: \.self) { idx in
                         let group = rule.groups[idx]
@@ -99,7 +95,6 @@ struct RuleRow: View {
                         .font(.caption)
                     }
                     
-                    // Else
                     HStack(spacing: 4) {
                         Text("Else").foregroundColor(.secondary)
                         Text("→").foregroundColor(.secondary)
@@ -129,8 +124,9 @@ struct RuleRow: View {
         return matched.map { $0.name }.joined(separator: ", ")
     }
     
-    func formatActions(_ actions: [WindowAction]) -> String {
+    // Updated for ActionItem
+    func formatActions(_ actions: [ActionItem]) -> String {
         if actions.isEmpty { return "Nothing" }
-        return actions.map { $0.localizedString }.joined(separator: " + ")
+        return actions.map { $0.value.localizedString }.joined(separator: " + ")
     }
 }

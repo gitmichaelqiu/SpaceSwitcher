@@ -1,20 +1,5 @@
 import SwiftUI
-import UniformTypeIdentifiers
-
-// MARK: - Unique Wrapper
-// Essential for reordering: ensures every row has a permanent unique ID
-struct UniqueAction: Identifiable, Equatable, Hashable {
-    let id = UUID()
-    var action: WindowAction
-    
-    static func == (lhs: UniqueAction, rhs: UniqueAction) -> Bool {
-        lhs.id == rhs.id && lhs.action == rhs.action
-    }
-    
-    func hash(into hasher: inout Hasher) {
-        hasher.combine(id)
-    }
-}
+internal import UniformTypeIdentifiers
 
 struct RuleEditor: View {
     @State private var workingRule: AppRule
@@ -32,90 +17,74 @@ struct RuleEditor: View {
     
     var body: some View {
         VStack(spacing: 0) {
-            appSelectorHeader.zIndex(1)
+            // 1. App Header
+            appSelectorHeader
+                .zIndex(1)
+            
             Divider()
             
-            ScrollView {
-                scrollContent
-                    .padding(20)
+            // 2. Main List with Native Reordering
+            List {
+                // GROUPS
+                ForEach(Array(workingRule.groups.enumerated()), id: \.element.id) { index, group in
+                    Section {
+                        // Actions List for this group
+                        ActionListSection(actions: $workingRule.groups[index].actions)
+                    } header: {
+                        GroupHeaderView(
+                            groupIndex: index,
+                            group: $workingRule.groups[index],
+                            allGroups: workingRule.groups,
+                            availableSpaces: availableSpaces,
+                            onRemove: { withAnimation { _ = workingRule.groups.remove(at: index) } }
+                        )
+                        .padding(.bottom, 8)
+                    }
+                }
+                
+                // ADD GROUP BUTTON
+                Section {
+                    Button {
+                        withAnimation {
+                            workingRule.groups.append(RuleGroup(targetSpaceIDs: [], actions: []))
+                        }
+                    } label: {
+                        HStack {
+                            Image(systemName: "plus.circle.fill")
+                            Text("Add Space Group")
+                        }
+                        .font(.headline)
+                        .foregroundColor(.blue)
+                        .frame(maxWidth: .infinity, alignment: .center)
+                        .padding(.vertical, 8)
+                    }
+                    .buttonStyle(.plain)
+                }
+                
+                // ELSE / FALLBACK
+                Section {
+                    ActionListSection(actions: $workingRule.elseActions)
+                } header: {
+                    HStack {
+                        Image(systemName: "asterisk.circle.fill").foregroundColor(.secondary)
+                        Text("In All Other Spaces").font(.headline).foregroundColor(.secondary)
+                    }
+                    .padding(.vertical, 8)
+                }
             }
-            .background(Color(NSColor.windowBackgroundColor))
+            .listStyle(.sidebar) // Clean look on macOS
             
             Divider()
+            
+            // 3. Footer
             footerView
         }
         .frame(width: 800, height: 600)
         .onAppear { loadRunningApps() }
     }
     
-    // MARK: - Extracted Scroll Content
-    @ViewBuilder
-    private var scrollContent: some View {
-        VStack(alignment: .leading, spacing: 24) {
-            
-            // 1. Groups
-            ForEach(Array(workingRule.groups.enumerated()), id: \.element.id) { index, group in
-                GroupEditorCard(
-                    groupIndex: index,
-                    group: $workingRule.groups[index],
-                    allGroups: workingRule.groups,
-                    availableSpaces: availableSpaces,
-                    onRemove: {
-                        withAnimation {
-                            _ = workingRule.groups.remove(at: index)
-                        }
-                    }
-                )
-            }
-            
-            // 2. Add Group Button
-            Button {
-                withAnimation {
-                    workingRule.groups.append(RuleGroup(targetSpaceIDs: [], actions: []))
-                }
-            } label: {
-                HStack {
-                    Image(systemName: "plus.circle.fill")
-                    Text("Add Space Group")
-                }
-                .font(.headline)
-                .foregroundColor(.blue)
-                .padding()
-                .frame(maxWidth: .infinity)
-                .background(
-                    RoundedRectangle(cornerRadius: 8)
-                        .stroke(style: StrokeStyle(lineWidth: 1, dash: [5]))
-                        .foregroundColor(.blue.opacity(0.5))
-                )
-            }
-            .buttonStyle(.plain)
-            
-            Divider()
-            
-            // 3. Else / Fallback
-            VStack(alignment: .leading, spacing: 0) {
-                HStack {
-                    Image(systemName: "asterisk.circle.fill")
-                        .foregroundColor(.secondary)
-                    Text("In All Other Spaces")
-                        .font(.headline)
-                        .foregroundColor(.secondary)
-                    Spacer()
-                }
-                .padding(.bottom, 12)
-                
-                ActionSequenceEditor(
-                    actions: $workingRule.elseActions,
-                    placeholder: "Do Nothing"
-                )
-            }
-            .padding()
-            .background(RoundedRectangle(cornerRadius: 12).fill(Color(NSColor.controlBackgroundColor)))
-            .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.gray.opacity(0.1)))
-        }
-    }
+    // MARK: - Components
     
-    // MARK: - Subviews
     private var appSelectorHeader: some View {
         ZStack(alignment: .leading) {
             Color(NSColor.controlBackgroundColor).ignoresSafeArea()
@@ -165,8 +134,7 @@ struct RuleEditor: View {
     private func selectApp(name: String, id: String) { withAnimation { workingRule.appName = name; workingRule.appBundleID = id } }
     private func pickOtherApp() {
         let panel = NSOpenPanel()
-        panel.allowedContentTypes = [.application]
-        panel.directoryURL = URL(fileURLWithPath: "/Applications")
+        panel.allowedContentTypes = [.application]; panel.directoryURL = URL(fileURLWithPath: "/Applications")
         panel.canChooseFiles = true; panel.allowsMultipleSelection = false
         panel.begin { if $0 == .OK, let url = panel.url {
             let b = Bundle(url: url)
@@ -181,8 +149,8 @@ struct RuleEditor: View {
     }
 }
 
-// MARK: - Group Card Editor
-struct GroupEditorCard: View {
+// MARK: - Header View (Spaces Selector)
+struct GroupHeaderView: View {
     let groupIndex: Int
     @Binding var group: RuleGroup
     let allGroups: [RuleGroup]
@@ -192,55 +160,52 @@ struct GroupEditorCard: View {
     var body: some View {
         VStack(spacing: 0) {
             HStack {
-                Text("Workflow Group \(groupIndex + 1)").font(.headline).foregroundColor(.primary)
+                Text("Workflow Group \(groupIndex + 1)")
+                    .font(.headline)
+                    .foregroundColor(.primary)
                 Spacer()
-                Button(action: onRemove) { Image(systemName: "trash").foregroundColor(.red.opacity(0.8)) }.buttonStyle(.plain)
+                Button(action: onRemove) {
+                    Image(systemName: "trash")
+                        .foregroundColor(.red.opacity(0.8))
+                }
+                .buttonStyle(.plain)
             }
-            .padding(12).background(Color.secondary.opacity(0.05))
+            .padding(10)
+            .background(Color.secondary.opacity(0.1))
+            .cornerRadius(6)
             
-            HStack(alignment: .top, spacing: 0) {
-                // Spaces
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("If in Spaces:").font(.caption).fontWeight(.bold).foregroundColor(.secondary)
-                    ScrollView {
-                        VStack(alignment: .leading, spacing: 4) {
-                            if availableSpaces.isEmpty { Text("No spaces").font(.caption).foregroundColor(.secondary) }
-                            ForEach(availableSpaces) { space in
-                                let isUsedElsewhere = isSpaceUsedElsewhere(space.id)
-                                let isSelectedHere = group.targetSpaceIDs.contains(space.id)
-                                HStack {
-                                    Toggle(isOn: Binding(
-                                        get: { isSelectedHere },
-                                        set: { val in if val { group.targetSpaceIDs.insert(space.id) } else { group.targetSpaceIDs.remove(space.id) } }
-                                    )) {
-                                        Text("\(space.number). \(space.name)").font(.body).lineLimit(1)
-                                            .foregroundColor(isUsedElsewhere && !isSelectedHere ? .secondary.opacity(0.5) : .primary)
-                                    }
-                                    .toggleStyle(.checkbox).disabled(isUsedElsewhere && !isSelectedHere)
-                                    Spacer()
-                                    if isUsedElsewhere && !isSelectedHere { Text("(Used)").font(.caption2).foregroundColor(.secondary) }
-                                }
+            VStack(alignment: .leading, spacing: 8) {
+                Text("Active in Spaces:").font(.caption).fontWeight(.bold).foregroundColor(.secondary)
+                
+                if availableSpaces.isEmpty {
+                    Text("No spaces detected").font(.caption).foregroundColor(.secondary)
+                } else {
+                    // Custom grid/flow layout for spaces
+                    LazyVGrid(columns: [GridItem(.adaptive(minimum: 120))], alignment: .leading) {
+                        ForEach(availableSpaces) { space in
+                            let isUsedElsewhere = isSpaceUsedElsewhere(space.id)
+                            let isSelectedHere = group.targetSpaceIDs.contains(space.id)
+                            
+                            Toggle(isOn: Binding(
+                                get: { isSelectedHere },
+                                set: { val in if val { group.targetSpaceIDs.insert(space.id) } else { group.targetSpaceIDs.remove(space.id) } }
+                            )) {
+                                Text("\(space.number). \(space.name)")
+                                    .font(.system(size: 11))
+                                    .lineLimit(1)
+                                    .foregroundColor(isUsedElsewhere && !isSelectedHere ? .secondary.opacity(0.5) : .primary)
                             }
+                            .toggleStyle(.checkbox)
+                            .disabled(isUsedElsewhere && !isSelectedHere)
                         }
                     }
-                    .frame(height: 120)
                 }
-                .padding(12).frame(width: 250)
-                
-                Divider()
-                
-                // Actions
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("Do Actions:").font(.caption).fontWeight(.bold).foregroundColor(.secondary)
-                    ActionSequenceEditor(actions: $group.actions, placeholder: "No actions defined")
-                }
-                .padding(12)
-                .frame(maxWidth: .infinity, alignment: .leading)
             }
+            .padding(10)
         }
         .background(Color(NSColor.controlBackgroundColor))
-        .cornerRadius(12).overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.gray.opacity(0.15), lineWidth: 1))
-        .shadow(color: .black.opacity(0.02), radius: 2, x: 0, y: 1)
+        .cornerRadius(8)
+        .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color.gray.opacity(0.15)))
     }
     
     private func isSpaceUsedElsewhere(_ spaceID: String) -> Bool {
@@ -251,100 +216,61 @@ struct GroupEditorCard: View {
     }
 }
 
-// MARK: - Action Sequence Editor
-struct ActionSequenceEditor: View {
-    @Binding var actions: [WindowAction]
-    var placeholder: String
-    
-    // UI state using Unique wrappers
-    @State private var uniqueItems: [UniqueAction] = []
+// MARK: - Action List Section (Reorderable)
+struct ActionListSection: View {
+    @Binding var actions: [ActionItem]
     @State private var recordingIndex: Int? = nil
-    @State private var draggedItemID: UUID?
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            if uniqueItems.isEmpty {
-                Text(placeholder)
-                    .font(.caption)
-                    .italic()
-                    .foregroundColor(.secondary)
-                    .padding(.vertical, 8)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-            } else {
-                ForEach(uniqueItems) { item in
-                    ActionRowView(
-                        item: item,
-                        isRecording: recordingIndex == indexOf(item),
-                        draggedItemID: draggedItemID,
-                        onRecord: { startRecording(for: item) },
-                        onDelete: { deleteItem(item) }
-                    )
-                    .onDrag {
-                        self.draggedItemID = item.id
-                        // Provide a clean string representation for the drag
-                        return NSItemProvider(object: item.id.uuidString as NSString)
-                    }
-                    .onDrop(of: [.text], delegate: ActionDropDelegate(item: item, items: $uniqueItems, draggedItemID: $draggedItemID))
-                }
-            }
-            
+        if actions.isEmpty {
+            Text("Do Nothing")
+                .font(.caption).italic().foregroundColor(.secondary)
+                .listRowBackground(Color.clear)
+        }
+        
+        ForEach(Array(actions.enumerated()), id: \.element.id) { index, item in
+            ActionRowContent(
+                index: index,
+                item: item,
+                isRecording: recordingIndex == index,
+                onRecord: { startRecording(at: index) },
+                onDelete: { actions.remove(at: index) }
+            )
+        }
+        .onMove { indices, newOffset in
+            actions.move(fromOffsets: indices, toOffset: newOffset)
+        }
+        
+        // Add Button Row
+        HStack {
             Menu {
-                Button("Show") { addAction(.show) }
-                Button("Bring to Front") { addAction(.bringToFront) }
-                Button("Hide") { addAction(.hide) }
-                Button("Minimize") { addAction(.minimize) }
+                Button("Show") { actions.append(ActionItem(.show)) }
+                Button("Bring to Front") { actions.append(ActionItem(.bringToFront)) }
+                Button("Hide") { actions.append(ActionItem(.hide)) }
+                Button("Minimize") { actions.append(ActionItem(.minimize)) }
                 Divider()
-                Button("Simulate Hotkey...") { addAction(.hotkey(keyCode: -1, modifiers: 0)) }
-            } label: { HStack { Image(systemName: "plus"); Text("Add Action") }.font(.caption).fontWeight(.medium) }
-            .menuStyle(.borderlessButton).foregroundColor(.blue).padding(.top, 4)
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        // Sync State
-        .onAppear {
-            self.uniqueItems = actions.map { UniqueAction(action: $0) }
-        }
-        .onChange(of: uniqueItems) { _ in
-            syncBack()
-        }
-        .onChange(of: actions) { newActions in
-            // Basic diff check to prevent loops
-            if newActions.count != uniqueItems.count {
-                self.uniqueItems = newActions.map { UniqueAction(action: $0) }
+                Button("Simulate Hotkey...") { actions.append(ActionItem(.hotkey(keyCode: -1, modifiers: 0))) }
+            } label: {
+                Label("Add Action", systemImage: "plus")
+                    .font(.caption).fontWeight(.medium)
             }
+            .menuStyle(.borderlessButton)
+            .foregroundColor(.blue)
+            
+            Spacer()
         }
+        .padding(.top, 4)
+        .listRowBackground(Color.clear)
+        .listRowSeparator(.hidden)
     }
     
-    private func indexOf(_ item: UniqueAction) -> Int? {
-        uniqueItems.firstIndex(where: { $0.id == item.id })
-    }
-    
-    private func addAction(_ action: WindowAction) {
-        withAnimation {
-            uniqueItems.append(UniqueAction(action: action))
-        }
-    }
-    
-    private func deleteItem(_ item: UniqueAction) {
-        withAnimation {
-            if let idx = uniqueItems.firstIndex(where: { $0.id == item.id }) {
-                uniqueItems.remove(at: idx)
-            }
-        }
-    }
-    
-    private func syncBack() {
-        self.actions = uniqueItems.map { $0.action }
-    }
-    
-    private func startRecording(for item: UniqueAction) {
-        guard let index = uniqueItems.firstIndex(where: { $0.id == item.id }) else { return }
+    private func startRecording(at index: Int) {
         recordingIndex = index
         NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
             if self.recordingIndex == index {
                 let mods = event.modifierFlags.intersection(.deviceIndependentFlagsMask).rawValue
                 let code = Int(event.keyCode)
-                
-                self.uniqueItems[index].action = .hotkey(keyCode: code, modifiers: UInt(mods))
+                self.actions[index].value = .hotkey(keyCode: code, modifiers: UInt(mods))
                 self.recordingIndex = nil
                 return nil
             }
@@ -353,20 +279,18 @@ struct ActionSequenceEditor: View {
     }
 }
 
-// MARK: - Action Row View
-struct ActionRowView: View {
-    let item: UniqueAction
+struct ActionRowContent: View {
+    let index: Int
+    let item: ActionItem
     let isRecording: Bool
-    let draggedItemID: UUID?
     let onRecord: () -> Void
     let onDelete: () -> Void
     
     var body: some View {
         HStack {
-            Image(systemName: "line.3.horizontal")
-                .foregroundColor(.secondary.opacity(0.3))
+            Text("\(index + 1).").font(.caption).monospacedDigit().foregroundColor(.secondary).frame(width: 20, alignment: .trailing)
             
-            if case .hotkey(let code, let mods) = item.action {
+            if case .hotkey(let code, let mods) = item.value {
                 Button(action: onRecord) {
                     if isRecording {
                         Text("Recording...").foregroundColor(.red).fontWeight(.bold)
@@ -381,7 +305,7 @@ struct ActionRowView: View {
                 .buttonStyle(.plain).padding(.horizontal, 4).padding(.vertical, 2)
                 .background(isRecording ? Color.red.opacity(0.1) : Color.clear).cornerRadius(4)
             } else {
-                Text(item.action.localizedString).font(.subheadline)
+                Text(item.value.localizedString).font(.subheadline)
             }
             
             Spacer()
@@ -391,46 +315,6 @@ struct ActionRowView: View {
             }
             .buttonStyle(.plain).foregroundColor(.secondary)
         }
-        .padding(6).background(RoundedRectangle(cornerRadius: 6).fill(Color.secondary.opacity(0.08)))
-        // Hide the original row while it is being dragged
-        .opacity(draggedItemID == item.id ? 0.0 : 1.0)
-        .contentShape(Rectangle())
-    }
-}
-
-// MARK: - Robust Drop Delegate
-struct ActionDropDelegate: DropDelegate {
-    let item: UniqueAction
-    @Binding var items: [UniqueAction]
-    @Binding var draggedItemID: UUID?
-    
-    // 1. Validate: Allow drop only if the item exists in our list
-    func validateDrop(info: DropInfo) -> Bool {
-        return draggedItemID != nil
-    }
-    
-    // 2. Proposal: Explicitly tell OS this is a MOVE operation
-    func dropUpdated(info: DropInfo) -> DropProposal? {
-        return DropProposal(operation: .move)
-    }
-    
-    // 3. Perform: Finalize the drop (mostly cleanup here since we move live)
-    func performDrop(info: DropInfo) -> Bool {
-        draggedItemID = nil
-        return true
-    }
-    
-    // 4. Live Update: Animate the row movement
-    func dropEntered(info: DropInfo) {
-        guard let draggedID = draggedItemID else { return }
-        
-        if draggedID != item.id {
-            if let from = items.firstIndex(where: { $0.id == draggedID }),
-               let to = items.firstIndex(where: { $0.id == item.id }) {
-                withAnimation {
-                    items.move(fromOffsets: IndexSet(integer: from), toOffset: to > from ? to + 1 : to)
-                }
-            }
-        }
+        .padding(.vertical, 4)
     }
 }

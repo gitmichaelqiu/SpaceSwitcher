@@ -14,8 +14,7 @@ class RuleManager: ObservableObject {
     @Published var rules: [AppRule] = [] {
         didSet {
             saveRules()
-            // UPDATED: Removed refreshRules() from here.
-            // Changes are saved, but not applied until the user closes settings.
+            // Delayed refresh handled by WindowController on close
         }
     }
     
@@ -25,8 +24,6 @@ class RuleManager: ObservableObject {
     private let rulesKey = "SpaceSwitcherRules"
     
     init() { loadRules() }
-    
-    // MARK: - Logic
     
     private func setupBindings() {
         spaceManager?.$currentSpaceID
@@ -38,7 +35,6 @@ class RuleManager: ObservableObject {
             .store(in: &cancellables)
     }
     
-    // UPDATED: Renamed/Made Public to be called by SettingsWindowController
     func forceRefresh() {
         guard let spaceID = spaceManager?.currentSpaceID else { return }
         if Thread.isMainThread { self.applyRules(for: spaceID) }
@@ -57,12 +53,13 @@ class RuleManager: ObservableObject {
         }
     }
     
-    private func perform(actions: [WindowAction], on bundleID: String) {
+    // UPDATED: Now accepts [ActionItem]
+    private func perform(actions: [ActionItem], on bundleID: String) {
         guard let app = NSRunningApplication.runningApplications(withBundleIdentifier: bundleID).first else { return }
         
         Task { @MainActor in
-            for action in actions {
-                switch action {
+            for item in actions {
+                switch item.value {
                 case .hide: app.hide()
                 case .show:
                     unhideAppWithoutActivation(app)
@@ -89,11 +86,8 @@ class RuleManager: ObservableObject {
         u.flags = flags; u.post(tap: .cghidEventTap)
     }
 
-    // ... (Accessibility helpers & Sorting same as before) ...
-    
     private func getLowestSpaceNumber(for rule: AppRule) -> Int {
         guard let sm = spaceManager else { return 999 }
-        // Flatten all spaces in all groups
         let allIDs = rule.groups.flatMap { $0.targetSpaceIDs }
         if allIDs.isEmpty { return 999 }
         

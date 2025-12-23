@@ -4,7 +4,7 @@
     "" : {
 
     },
-    "(Used)" : {
+    "%lld." : {
 
     },
     "%lld. %@" : {
@@ -110,6 +110,9 @@
         }
       }
     },
+    "Active in Spaces:" : {
+
+    },
     "Add a rule to control app visibility across spaces." : {
 
     },
@@ -206,7 +209,7 @@
         }
       }
     },
-    "Do Actions:" : {
+    "Do Nothing" : {
 
     },
     "DoNothing" : {
@@ -261,9 +264,6 @@
           }
         }
       }
-    },
-    "If in Spaces:" : {
-
     },
     "In" : {
       "localizations" : {
@@ -322,7 +322,7 @@
         }
       }
     },
-    "No spaces" : {
+    "No spaces detected" : {
 
     },
     "Not Connected" : {
