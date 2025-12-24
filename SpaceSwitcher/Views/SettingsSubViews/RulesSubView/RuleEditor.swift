@@ -137,6 +137,7 @@ struct RuleEditor: View {
             .listStyle(.plain)
             .scrollContentBackground(.hidden)
             .background(Color(NSColor.windowBackgroundColor))
+            .padding(.bottom, 12)
             
             Divider()
             footerView
