@@ -44,12 +44,15 @@ extension View {
 class AppState: ObservableObject {
     dynamic let spaceManager: SpaceManager
     let ruleManager: RuleManager
+    let dockManager: DockManager
     
     init() {
         print("APP: Launching Services...")
         self.spaceManager = SpaceManager()
         self.ruleManager = RuleManager()
         self.ruleManager.spaceManager = self.spaceManager
+        self.dockManager = DockManager()
+        self.dockManager.spaceManager = self.spaceManager
         print("APP: Services Linked and Running.")
     }
 }
@@ -67,17 +70,16 @@ class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCenterDele
     @objc func openSettingsWindow() {
         SettingsWindowController.shared.open(
             spaceManager: appState.spaceManager,
-            ruleManager: appState.ruleManager
+            ruleManager: appState.ruleManager,
+            dockManager: appState.dockManager
         )
     }
     
     @objc func openAboutWindow() {
-        // Pre-select About tab if desired, though NavigationSplitView handles state differently
-        // We can handle this via a notification or singleton state if strictly needed,
-        // but opening the window is the primary action.
         SettingsWindowController.shared.open(
             spaceManager: appState.spaceManager,
             ruleManager: appState.ruleManager,
+            dockManager: appState.dockManager,
             targetTab: .about
         )
     }

@@ -1,7 +1,7 @@
 import SwiftUI
 
 enum SettingsTab: String, CaseIterable, Identifiable {
-    case general, rules, about
+    case general, rules, dock, about
     
     var id: String { self.rawValue }
     
@@ -9,6 +9,7 @@ enum SettingsTab: String, CaseIterable, Identifiable {
         switch self {
         case .general: return "General"
         case .rules: return "Rules"
+        case .dock: return "Docks"
         case .about: return "About"
         }
     }
@@ -17,6 +18,7 @@ enum SettingsTab: String, CaseIterable, Identifiable {
         switch self {
         case .general: return "gearshape"
         case .rules: return "list.bullet.rectangle.portrait"
+        case .dock: return "dock.rectangle"
         case .about: return "info.circle"
         }
     }
@@ -33,6 +35,7 @@ let titleHeaderHeight: CGFloat = 48
 struct SettingsView: View {
     @ObservedObject var spaceManager: SpaceManager
     @ObservedObject var ruleManager: RuleManager
+    @ObservedObject var dockManager: DockManager
     
     // Controlled by parent or defaults
     @State var selectedTab: SettingsTab? = .general
@@ -128,10 +131,11 @@ struct SettingsView: View {
                     case .general:
                         GeneralSettingsView(spaceManager: spaceManager)
                     case .rules:
-                        // Wrap RulesView to manage padding manually since we ignore safe area
                         RulesView(ruleManager: ruleManager, spaceManager: spaceManager)
                             .padding(.horizontal)
                             .padding(.bottom)
+                    case .dock:
+                        DockSettingsView(dockManager: dockManager, spaceManager: spaceManager)
                     case .about:
                         AboutView()
                     }
@@ -168,10 +172,11 @@ struct SettingsView: View {
 // MARK: - Hosting Controller
 class SettingsHostingController: NSHostingController<SettingsView> {
     
-    init(spaceManager: SpaceManager, ruleManager: RuleManager, startTab: SettingsTab? = nil) {
+    init(spaceManager: SpaceManager, ruleManager: RuleManager, dockManager: DockManager, startTab: SettingsTab? = nil) {
         let rootView = SettingsView(
             spaceManager: spaceManager,
             ruleManager: ruleManager,
+            dockManager: dockManager,
             selectedTab: startTab ?? .general
         )
         super.init(rootView: rootView)
