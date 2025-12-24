@@ -195,9 +195,6 @@
     "Create" : {
 
     },
-    "Create New Dock Set" : {
-
-    },
     "Current Space" : {
       "localizations" : {
         "zh-Hans" : {
@@ -207,9 +204,6 @@
           }
         }
       }
-    },
-    "Default Dock" : {
-
     },
     "Delete" : {
 
@@ -390,9 +384,6 @@
         }
       }
     },
-    "Or create a new one from the sidebar." : {
-
-    },
     "Otherwise:" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -489,6 +480,9 @@
           }
         }
       }
+    },
+    "Set as Default" : {
+
     },
     "Settings" : {
       "extractionState" : "manual",
@@ -830,13 +824,13 @@
     "Switcher" : {
 
     },
-    "This dock will be used for any space not explicitly assigned." : {
-
-    },
-    "This will capture your current Dock layout as a starting point." : {
+    "This is the default dock. It applies to all spaces not assigned to other sets." : {
 
     },
     "Type" : {
+
+    },
+    "Used in other set" : {
 
     },
     "v%@" : {
