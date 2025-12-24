@@ -28,132 +28,137 @@ struct DockSettingsView: View {
             
             Divider()
             
-            // 3-Pane Layout using HSplitView
-            HSplitView {
-                // PANE 1: LIST OF SETS
-                VStack(alignment: .leading, spacing: 0) {
-                    Text("Saved Docks").font(.caption).fontWeight(.bold).foregroundColor(.secondary).padding(8)
-                    List(selection: $selectedSetID) {
-                        ForEach(dockManager.config.dockSets) { set in
-                            HStack {
-                                Image(systemName: "dock.rectangle")
-                                VStack(alignment: .leading) {
-                                    Text(set.name).fontWeight(.medium)
-                                    if dockManager.config.defaultDockSetID == set.id {
-                                        Text("Default").font(.caption2).foregroundColor(.secondary)
-                                            .padding(.horizontal, 4).padding(.vertical, 1)
-                                            .background(Color.secondary.opacity(0.1)).cornerRadius(4)
-                                    }
-                                }
-                                Spacer()
-                            }
-                            .tag(set.id)
-                            .contextMenu {
-                                Button("Set as Default") { dockManager.config.defaultDockSetID = set.id }
-                                Divider()
-                                Button("Delete") { deleteSet(set) }
-                            }
-                        }
-                    }
-                    .listStyle(.sidebar)
-                }
-                .frame(minWidth: 180, maxWidth: 250)
-                
-                // PANE 2: EDITOR (Items in selected set)
-                VStack(alignment: .leading, spacing: 0) {
-                    HStack {
-                        Text("Dock Contents").font(.caption).fontWeight(.bold).foregroundColor(.secondary)
-                        Spacer()
-                        if selectedSetID != nil {
-                            Button(action: addAppToSelectedSet) {
-                                Image(systemName: "plus")
-                            }
-                            .buttonStyle(.borderless)
-                            .help("Add Application")
-                        }
-                    }
-                    .padding(8)
-                    
-                    if let selectedID = selectedSetID,
-                       let index = dockManager.config.dockSets.firstIndex(where: { $0.id == selectedID }) {
-                        
-                        List {
-                            ForEach(dockManager.config.dockSets[index].tiles) { tile in
+            // FIX: Added Horizontal ScrollView to prevent layout distortion
+            // The content is forced to a minimum width of 750 (fitting the window comfortably),
+            // but can expand. If the window is too small, it scrolls instead of breaking.
+            ScrollView(.horizontal, showsIndicators: true) {
+                HSplitView {
+                    // PANE 1: LIST OF SETS
+                    VStack(alignment: .leading, spacing: 0) {
+                        Text("Saved Docks").font(.caption).fontWeight(.bold).foregroundColor(.secondary).padding(8)
+                        List(selection: $selectedSetID) {
+                            ForEach(dockManager.config.dockSets) { set in
                                 HStack {
-                                    // Try to resolve icon
-                                    if let bid = tile.bundleIdentifier,
-                                       let path = NSWorkspace.shared.urlForApplication(withBundleIdentifier: bid)?.path {
-                                        Image(nsImage: NSWorkspace.shared.icon(forFile: path))
-                                            .resizable().frame(width: 24, height: 24)
-                                    } else {
-                                        Image(systemName: "app.fill")
-                                            .resizable().frame(width: 24, height: 24)
-                                            .foregroundColor(.secondary)
-                                    }
-                                    
-                                    Text(tile.label)
-                                    Spacer()
-                                }
-                            }
-                            .onMove { indices, newOffset in
-                                dockManager.config.dockSets[index].tiles.move(fromOffsets: indices, toOffset: newOffset)
-                            }
-                            .onDelete { indices in
-                                dockManager.config.dockSets[index].tiles.remove(atOffsets: indices)
-                            }
-                        }
-                        .listStyle(.inset)
-                        
-                    } else {
-                        Text("Select a Dock Set to edit")
-                            .foregroundColor(.secondary)
-                            .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    }
-                }
-                .frame(minWidth: 220)
-                
-                // PANE 3: ASSIGNMENTS
-                VStack(alignment: .leading, spacing: 0) {
-                    Text("Space Assignments").font(.caption).fontWeight(.bold).foregroundColor(.secondary).padding(8)
-                    
-                    if dockManager.config.dockSets.isEmpty {
-                        Text("No Dock Sets").foregroundColor(.secondary).padding()
-                        Spacer()
-                    } else {
-                        List {
-                            ForEach(spaceManager.availableSpaces) { space in
-                                HStack {
-                                    Text("\(space.number). \(space.name)")
-                                    Spacer()
-                                    Picker("", selection: Binding(
-                                        get: { dockManager.config.spaceAssignments[space.id] ?? dockManager.config.defaultDockSetID ?? UUID() },
-                                        set: { newVal in dockManager.config.spaceAssignments[space.id] = newVal }
-                                    )) {
-                                        if let defId = dockManager.config.defaultDockSetID,
-                                           let defSet = dockManager.config.dockSets.first(where: { $0.id == defId }) {
-                                            Text("Default (\(defSet.name))").tag(defId)
-                                        } else {
-                                            Text("Default").tag(dockManager.config.defaultDockSetID ?? UUID())
+                                    Image(systemName: "dock.rectangle")
+                                    VStack(alignment: .leading) {
+                                        Text(set.name).fontWeight(.medium)
+                                        if dockManager.config.defaultDockSetID == set.id {
+                                            Text("Default").font(.caption2).foregroundColor(.secondary)
+                                                .padding(.horizontal, 4).padding(.vertical, 1)
+                                                .background(Color.secondary.opacity(0.1)).cornerRadius(4)
                                         }
-                                        Divider()
-                                        ForEach(dockManager.config.dockSets) { set in
-                                            if set.id != dockManager.config.defaultDockSetID {
-                                                Text(set.name).tag(set.id)
+                                    }
+                                    Spacer()
+                                }
+                                .tag(set.id)
+                                .contextMenu {
+                                    Button("Set as Default") { dockManager.config.defaultDockSetID = set.id }
+                                    Divider()
+                                    Button("Delete") { deleteSet(set) }
+                                }
+                            }
+                        }
+                        .listStyle(.sidebar)
+                    }
+                    .frame(minWidth: 200, maxWidth: 250) // Fixed constraint
+                    
+                    // PANE 2: EDITOR (Items in selected set)
+                    VStack(alignment: .leading, spacing: 0) {
+                        HStack {
+                            Text("Dock Contents").font(.caption).fontWeight(.bold).foregroundColor(.secondary)
+                            Spacer()
+                            if selectedSetID != nil {
+                                Button(action: addAppToSelectedSet) {
+                                    Image(systemName: "plus")
+                                }
+                                .buttonStyle(.borderless)
+                                .help("Add Application")
+                            }
+                        }
+                        .padding(8)
+                        
+                        if let selectedID = selectedSetID,
+                           let index = dockManager.config.dockSets.firstIndex(where: { $0.id == selectedID }) {
+                            
+                            List {
+                                ForEach(dockManager.config.dockSets[index].tiles) { tile in
+                                    HStack {
+                                        // Try to resolve icon
+                                        if let bid = tile.bundleIdentifier,
+                                           let path = NSWorkspace.shared.urlForApplication(withBundleIdentifier: bid)?.path {
+                                            Image(nsImage: NSWorkspace.shared.icon(forFile: path))
+                                                .resizable().frame(width: 24, height: 24)
+                                        } else {
+                                            Image(systemName: "app.fill")
+                                                .resizable().frame(width: 24, height: 24)
+                                                .foregroundColor(.secondary)
+                                        }
+                                        
+                                        Text(tile.label)
+                                        Spacer()
+                                    }
+                                }
+                                .onMove { indices, newOffset in
+                                    dockManager.config.dockSets[index].tiles.move(fromOffsets: indices, toOffset: newOffset)
+                                }
+                                .onDelete { indices in
+                                    dockManager.config.dockSets[index].tiles.remove(atOffsets: indices)
+                                }
+                            }
+                            .listStyle(.inset)
+                            
+                        } else {
+                            Text("Select a Dock Set to edit")
+                                .foregroundColor(.secondary)
+                                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        }
+                    }
+                    .frame(minWidth: 250, maxWidth: .infinity)
+                    
+                    // PANE 3: ASSIGNMENTS
+                    VStack(alignment: .leading, spacing: 0) {
+                        Text("Space Assignments").font(.caption).fontWeight(.bold).foregroundColor(.secondary).padding(8)
+                        
+                        if dockManager.config.dockSets.isEmpty {
+                            Text("No Dock Sets").foregroundColor(.secondary).padding()
+                            Spacer()
+                        } else {
+                            List {
+                                ForEach(spaceManager.availableSpaces) { space in
+                                    HStack {
+                                        Text("\(space.number). \(space.name)")
+                                        Spacer()
+                                        Picker("", selection: Binding(
+                                            get: { dockManager.config.spaceAssignments[space.id] ?? dockManager.config.defaultDockSetID ?? UUID() },
+                                            set: { newVal in dockManager.config.spaceAssignments[space.id] = newVal }
+                                        )) {
+                                            if let defId = dockManager.config.defaultDockSetID,
+                                               let defSet = dockManager.config.dockSets.first(where: { $0.id == defId }) {
+                                                Text("Default (\(defSet.name))").tag(defId)
+                                            } else {
+                                                Text("Default").tag(dockManager.config.defaultDockSetID ?? UUID())
+                                            }
+                                            Divider()
+                                            ForEach(dockManager.config.dockSets) { set in
+                                                if set.id != dockManager.config.defaultDockSetID {
+                                                    Text(set.name).tag(set.id)
+                                                }
                                             }
                                         }
+                                        .labelsHidden()
+                                        .frame(width: 140)
                                     }
-                                    .labelsHidden()
-                                    .frame(width: 120)
                                 }
                             }
+                            .listStyle(.inset)
                         }
-                        .listStyle(.inset)
                     }
+                    .frame(minWidth: 300)
                 }
-                .frame(minWidth: 250)
+                .frame(minWidth: 750, minHeight: 400) // Ensure layout has enough width internally
             }
         }
-        // Moved Sheet to root of view to prevent layout lockups
+        // Name Sheet attached to root
         .sheet(isPresented: $showingNameSheet) {
             VStack(spacing: 20) {
                 Text("Capture Current Dock").font(.headline)

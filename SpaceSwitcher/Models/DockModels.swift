@@ -2,21 +2,22 @@ import Foundation
 import AppKit
 
 // MARK: - Dock Tile Model
-// Represents a single icon in the Dock (App, Folder, etc.)
 struct DockTile: Identifiable, Codable, Hashable {
     var id = UUID()
     var label: String
-    var bundleIdentifier: String? // For apps
-    var fileURL: URL?            // For apps or files
+    var bundleIdentifier: String?
+    var fileURL: URL?
     
-    // We store the raw dictionary for any keys we don't fully parse/edit,
-    // ensuring we don't lose special system properties when saving back.
+    // We store the raw dictionary to preserve system data (aliases, folder settings, etc.)
     var rawData: [String: Any]
     
-    // Custom coding to handle the complex [String: Any] rawData
     enum CodingKeys: String, CodingKey {
         case id, label, bundleIdentifier, fileURL, rawData
     }
+    
+    // MARK: - Safe Serialization Fix
+    // We use PropertyListSerialization because Dock data contains binary Data types (aliases)
+    // which causes JSONSerialization to crash with "Invalid type in JSON write (__NSCFData)"
     
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
@@ -25,10 +26,16 @@ struct DockTile: Identifiable, Codable, Hashable {
         bundleIdentifier = try container.decodeIfPresent(String.self, forKey: .bundleIdentifier)
         fileURL = try container.decodeIfPresent(URL.self, forKey: .fileURL)
         
-        // Decode rawData as JSON Data then convert back to Dict (workaround for Any codable)
+        // 1. Decode the blob
         let data = try container.decode(Data.self, forKey: .rawData)
-        let dict = try JSONSerialization.jsonObject(with: data) as? [String: Any]
-        rawData = dict ?? [:]
+        
+        // 2. Deserialize using PropertyList (Handles Data/Date types safely)
+        var format = PropertyListSerialization.PropertyListFormat.binary
+        if let dict = try PropertyListSerialization.propertyList(from: data, options: [], format: &format) as? [String: Any] {
+            rawData = dict
+        } else {
+            rawData = [:]
+        }
     }
     
     func encode(to encoder: Encoder) throws {
@@ -38,8 +45,10 @@ struct DockTile: Identifiable, Codable, Hashable {
         try container.encode(bundleIdentifier, forKey: .bundleIdentifier)
         try container.encode(fileURL, forKey: .fileURL)
         
-        // Encode rawData as Data
-        let data = try JSONSerialization.data(withJSONObject: rawData)
+        // 1. Serialize using PropertyList to support NSData/Date types
+        let data = try PropertyListSerialization.data(fromPropertyList: rawData, format: .binary, options: 0)
+        
+        // 2. Encode the safe blob
         try container.encode(data, forKey: .rawData)
     }
     
@@ -64,7 +73,7 @@ struct DockSet: Identifiable, Codable, Equatable {
     let id: UUID
     var name: String
     var dateCreated: Date
-    var tiles: [DockTile] // Now Editable
+    var tiles: [DockTile]
     
     static func == (lhs: DockSet, rhs: DockSet) -> Bool {
         lhs.id == rhs.id && lhs.name == rhs.name && lhs.tiles == rhs.tiles
