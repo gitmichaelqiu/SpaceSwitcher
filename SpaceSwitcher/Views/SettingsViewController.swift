@@ -32,7 +32,7 @@ class SettingsWindowController: NSObject, NSWindowDelegate {
 
     private func createWindow(spaceManager: SpaceManager, ruleManager: RuleManager, dockManager: DockManager, startTab: SettingsTab?) {
         // 1. STYLE: .fullSizeContentView is critical for the "Ice" style (content goes behind title bar)
-        let styleMask: NSWindow.StyleMask = [.titled, .closable, .miniaturizable, .fullSizeContentView]
+        let styleMask: NSWindow.StyleMask = [.titled, .closable, .miniaturizable, .fullSizeContentView, .resizable]
         
         let win = NSWindow(
             contentRect: NSRect(x: 0, y: 0, width: defaultSettingsWindowWidth, height: defaultSettingsWindowHeight),

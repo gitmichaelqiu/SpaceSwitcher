@@ -26,7 +26,7 @@ enum SettingsTab: String, CaseIterable, Identifiable {
 
 // Layout Constants matching DesktopRenamer
 let sidebarWidth: CGFloat = 180
-let defaultSettingsWindowWidth = 750 // Increased width for better layout
+let defaultSettingsWindowWidth = 1050 // Increased width for better layout
 let defaultSettingsWindowHeight = 550
 let sidebarRowHeight: CGFloat = 32
 let sidebarFontSize: CGFloat = 16
@@ -49,7 +49,7 @@ struct SettingsView: View {
         .navigationTitle("")
         .toolbar(.hidden, for: .windowToolbar)
         .edgesIgnoringSafeArea(.top)
-        .frame(width: CGFloat(defaultSettingsWindowWidth), height: CGFloat(defaultSettingsWindowHeight))
+        .frame(minWidth: CGFloat(defaultSettingsWindowWidth), minHeight: CGFloat(defaultSettingsWindowHeight))
     }
     
     // MARK: - Sidebar
