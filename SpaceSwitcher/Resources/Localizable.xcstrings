@@ -119,7 +119,7 @@
     "Add Action" : {
 
     },
-    "Add Application" : {
+    "Add App" : {
 
     },
     "Add Workflow Group" : {
@@ -152,6 +152,9 @@
         }
       }
     },
+    "Apply to Spaces" : {
+
+    },
     "Bring to Front" : {
 
     },
@@ -164,12 +167,6 @@
           }
         }
       }
-    },
-    "Capture" : {
-
-    },
-    "Capture Current Dock" : {
-
     },
     "Choose other app..." : {
 
@@ -195,6 +192,12 @@
         }
       }
     },
+    "Create" : {
+
+    },
+    "Create New Dock Set" : {
+
+    },
     "Current Space" : {
       "localizations" : {
         "zh-Hans" : {
@@ -205,10 +208,7 @@
         }
       }
     },
-    "Default" : {
-
-    },
-    "Default (%@)" : {
+    "Default Dock" : {
 
     },
     "Delete" : {
@@ -233,7 +233,10 @@
     "Do Nothing" : {
 
     },
-    "Dock Contents" : {
+    "Dock Items" : {
+
+    },
+    "Dock Name" : {
 
     },
     "Dock Sets" : {
@@ -348,7 +351,7 @@
     "Name" : {
 
     },
-    "No Dock Sets" : {
+    "New Dock Set" : {
 
     },
     "No Rules Configured" : {
@@ -362,6 +365,9 @@
       }
     },
     "No spaces detected" : {
+
+    },
+    "No spaces detected." : {
 
     },
     "Not Connected" : {
@@ -383,6 +389,9 @@
           }
         }
       }
+    },
+    "Or create a new one from the sidebar." : {
+
     },
     "Otherwise:" : {
       "extractionState" : "stale",
@@ -455,13 +464,10 @@
         }
       }
     },
-    "Saved Docks" : {
-
-    },
     "Select a category" : {
 
     },
-    "Select a Dock Set to edit" : {
+    "Select a Dock Set" : {
 
     },
     "Select Target App" : {
@@ -483,9 +489,6 @@
           }
         }
       }
-    },
-    "Set as Default" : {
-
     },
     "Settings" : {
       "extractionState" : "manual",
@@ -807,9 +810,6 @@
     "Space" : {
 
     },
-    "Space Assignments" : {
-
-    },
     "SpaceCount" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -828,6 +828,12 @@
       }
     },
     "Switcher" : {
+
+    },
+    "This dock will be used for any space not explicitly assigned." : {
+
+    },
+    "This will capture your current Dock layout as a starting point." : {
 
     },
     "Type" : {
