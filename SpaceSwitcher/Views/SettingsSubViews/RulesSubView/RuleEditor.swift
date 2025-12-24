@@ -29,7 +29,6 @@ struct RuleEditor: View {
                 // --- GROUPS ---
                 ForEach(Array(workingRule.groups.enumerated()), id: \.element.id) { index, group in
                     Section {
-                        // 1. Condition
                         SpaceConditionRow(
                             groupIndex: index,
                             group: $workingRule.groups[index],
@@ -39,10 +38,8 @@ struct RuleEditor: View {
                         .listRowInsets(EdgeInsets())
                         .listRowSeparator(.hidden)
                         
-                        // 2. Actions
                         ActionListRows(actions: $workingRule.groups[index].actions)
                         
-                        // 3. Add Button
                         AddActionRow {
                             addActionToGroup(index: index, action: .show)
                         } menuContent: {
@@ -51,7 +48,6 @@ struct RuleEditor: View {
                         .listRowInsets(EdgeInsets())
                         .listRowSeparator(.hidden)
                         
-                        // Spacer
                         Color.clear.frame(height: 24)
                             .listRowInsets(EdgeInsets())
                             .listRowSeparator(.hidden)
@@ -71,14 +67,16 @@ struct RuleEditor: View {
                     .buttonStyle(.plain)
                     .listRowInsets(EdgeInsets(top: 0, leading: 20, bottom: 0, trailing: 20))
                     .listRowSeparator(.hidden)
-                } footer: {
+                    
+                    // FIXED: Replaced "footer" (which caused the line) with an empty row inside the section
                     Color.clear.frame(height: 24)
+                        .listRowInsets(EdgeInsets())
+                        .listRowSeparator(.hidden)
                 }
                 
-                // --- FALLBACK WIDGET (Rebuilt) ---
+                // --- FALLBACK WIDGET ---
                 Section {
                     VStack(alignment: .leading, spacing: 0) {
-                        // Header
                         HStack {
                             Image(systemName: "arrow.triangle.branch").foregroundColor(.secondary)
                             Text("Fallback (All Other Spaces)").font(.headline).foregroundColor(.secondary)
@@ -89,7 +87,6 @@ struct RuleEditor: View {
                         
                         Divider()
                         
-                        // Actions List
                         if workingRule.elseActions.isEmpty {
                             Text("Do Nothing")
                                 .italic().foregroundColor(.secondary)
@@ -114,12 +111,11 @@ struct RuleEditor: View {
                         
                         Divider()
                         
-                        // Add Button (Integrated)
                         HStack {
                             Menu {
                                 Button("Show") { workingRule.elseActions.append(ActionItem(.show)) }
                                 Button("Hide") { workingRule.elseActions.append(ActionItem(.hide)) }
-                                Button("Minimize") { workingRule.elseActions.append(ActionItem(.minimize)) } // ADDED MINIMIZE
+                                Button("Minimize") { workingRule.elseActions.append(ActionItem(.minimize)) }
                             } label: {
                                 Label("Add Action", systemImage: "plus")
                                     .font(.caption).fontWeight(.medium)
@@ -127,10 +123,9 @@ struct RuleEditor: View {
                             .menuStyle(.borderlessButton)
                             .foregroundColor(.blue)
                             .fixedSize()
-                            
                             Spacer()
                         }
-                        .padding(12) // Bottom padding for the widget
+                        .padding(12)
                     }
                     .background(Color(NSColor.controlBackgroundColor))
                     .cornerRadius(8)
@@ -150,7 +145,10 @@ struct RuleEditor: View {
         .onAppear { loadRunningApps() }
     }
     
-    // MARK: - Helpers
+    // ... (All Helpers, ActionRowContent, KeyCaptureButton, etc. remain exactly as previously provided) ...
+    // Note: Ensure the previously provided KeyCaptureButton and ActionRowContent implementations are included here.
+    
+    // FOR COMPLETENESS: Helpers
     private func addActionToGroup(index: Int, action: WindowAction) {
         workingRule.groups[index].actions.append(ActionItem(action))
     }
@@ -163,8 +161,6 @@ struct RuleEditor: View {
         Button("Simulate App Hotkey...") { addActionToGroup(index: index, action: .hotkey(keyCode: -1, modifiers: 0, restoreWindow: false, waitFrontmost: true)) }
         Button("Simulate Global Hotkey...") { addActionToGroup(index: index, action: .globalHotkey(keyCode: -1, modifiers: 0)) }
     }
-    
-    // ... (appSelectorHeader, footerView, selectApp, pickOtherApp, loadRunningApps same as previous) ...
     private var appSelectorHeader: some View {
         ZStack(alignment: .leading) {
             Color(NSColor.controlBackgroundColor).ignoresSafeArea()
@@ -198,7 +194,6 @@ struct RuleEditor: View {
         }
         .frame(height: 72)
     }
-    
     private var footerView: some View {
         HStack {
             Button("Cancel", action: onCancel).keyboardShortcut(.escape, modifiers: [])
@@ -210,7 +205,6 @@ struct RuleEditor: View {
         }
         .padding(16).background(Color(NSColor.controlBackgroundColor))
     }
-    
     private func selectApp(name: String, id: String) { withAnimation { workingRule.appName = name; workingRule.appBundleID = id } }
     private func pickOtherApp() {
         let panel = NSOpenPanel()

@@ -16,6 +16,9 @@ class RuleManager: ObservableObject {
     private var cancellables = Set<AnyCancellable>()
     private let rulesKey = "SpaceSwitcherRules"
     
+    // MASTER TASK: Tracks the current rule enforcement process
+    private var enforcementTask: Task<Void, Never>?
+    
     init() { loadRules() }
     
     private func setupBindings() {
@@ -30,84 +33,101 @@ class RuleManager: ObservableObject {
     
     func forceRefresh() {
         guard let spaceID = spaceManager?.currentSpaceID else { return }
-        if Thread.isMainThread { self.applyRules(for: spaceID) }
-        else { DispatchQueue.main.async { self.applyRules(for: spaceID) } }
+        // Always run on main thread via the Task manager
+        self.applyRules(for: spaceID)
     }
     
     private func applyRules(for spaceID: String) {
-        for rule in rules where rule.isEnabled {
-            if let matchingGroup = rule.groups.first(where: { $0.targetSpaceIDs.contains(spaceID) }) {
-                perform(actions: matchingGroup.actions, on: rule.appBundleID)
-            } else {
-                perform(actions: rule.elseActions, on: rule.appBundleID)
+        // 1. Cancel any existing enforcement (Fixes the "Stale Action" bug)
+        enforcementTask?.cancel()
+        
+        // 2. Start new enforcement task
+        enforcementTask = Task { @MainActor in
+            for rule in rules where rule.isEnabled {
+                // Check cancellation before every rule
+                if Task.isCancelled { return }
+                
+                if let matchingGroup = rule.groups.first(where: { $0.targetSpaceIDs.contains(spaceID) }) {
+                    await perform(actions: matchingGroup.actions, on: rule.appBundleID)
+                } else {
+                    await perform(actions: rule.elseActions, on: rule.appBundleID)
+                }
             }
         }
     }
     
-    private func perform(actions: [ActionItem], on bundleID: String) {
-        // NOTE: Even for Global Hotkeys, we check bundleID existence loosely,
-        // but Global Hotkeys technically don't require the app to be running.
-        // However, the rule structure is tied to an app.
+    // UPDATED: Now an async function called by the Master Task (No internal Task creation)
+    private func perform(actions: [ActionItem], on bundleID: String) async {
+        // Loosely check app existence
         guard let app = NSRunningApplication.runningApplications(withBundleIdentifier: bundleID).first else { return }
         
         let previousApp = NSWorkspace.shared.frontmostApplication
         
-        Task { @MainActor in
-            for item in actions {
-                switch item.value {
-                case .hide: app.hide()
-                case .show:
-                    let wasHidden = app.isHidden
-                    unhideAppWithoutActivation(app)
-                    unminimizeAppWindows(app)
-                    if wasHidden { try? await Task.sleep(nanoseconds: 200_000_000) }
-                    
-                case .minimize: minimizeAppWindows(app)
-                case .bringToFront: app.activate(options: .activateIgnoringOtherApps)
-                    
-                // --- NEW: Global Hotkey ---
-                case .globalHotkey(let k, let m):
-                    // No activation logic. Just fire.
-                    simulateHotkey(keyCode: k, modifiers: m)
-                    
-                // --- Standard Hotkey ---
-                case .hotkey(let k, let m, let restoreWindow, let waitFrontmost):
-                    if waitFrontmost {
-                        // MODE A: WAIT (Passive)
-                        var retries = 0
-                        while !app.isActive && retries < 100 {
-                            try? await Task.sleep(nanoseconds: 50_000_000)
-                            retries += 1
-                        }
-                        if !app.isActive { continue }
-                        try? await Task.sleep(nanoseconds: 200_000_000)
-                        
-                    } else {
-                        // MODE B: FORCE (Aggressive)
-                        // Retry activation loop to handle stubborn apps
-                        var attempts = 0
-                        while !app.isActive && attempts < 5 {
-                            app.activate(options: .activateIgnoringOtherApps)
-                            
-                            // Check if successful
-                            var check = 0
-                            while !app.isActive && check < 5 { // Wait up to 0.25s per attempt
-                                try? await Task.sleep(nanoseconds: 50_000_000)
-                                check += 1
-                            }
-                            attempts += 1
-                        }
-                        
-                        // Final animation buffer
-                        if app.isActive {
-                            try? await Task.sleep(nanoseconds: 200_000_000)
-                        }
+        for item in actions {
+            // Check cancellation before every action
+            if Task.isCancelled { return }
+            
+            switch item.value {
+            case .hide:
+                app.hide()
+                
+            case .show:
+                let wasHidden = app.isHidden
+                unhideAppWithoutActivation(app)
+                unminimizeAppWindows(app)
+                if wasHidden { try? await Task.sleep(nanoseconds: 200_000_000) }
+                
+            case .minimize:
+                minimizeAppWindows(app)
+                
+            case .bringToFront:
+                app.activate(options: .activateIgnoringOtherApps)
+                
+            case .globalHotkey(let k, let m):
+                simulateHotkey(keyCode: k, modifiers: m)
+                
+            case .hotkey(let k, let m, let restoreWindow, let waitFrontmost):
+                
+                if waitFrontmost {
+                    // MODE A: WAIT
+                    var retries = 0
+                    // Poll for 5 seconds
+                    while !app.isActive && retries < 100 {
+                        if Task.isCancelled { return } // Stop if space changed
+                        try? await Task.sleep(nanoseconds: 50_000_000)
+                        retries += 1
                     }
                     
-                    simulateHotkey(keyCode: k, modifiers: m)
+                    if !app.isActive { continue } // Timed out or cancelled
+                    try? await Task.sleep(nanoseconds: 200_000_000)
                     
-                    if !waitFrontmost && restoreWindow, let prev = previousApp, prev.processIdentifier != app.processIdentifier {
-                        try? await Task.sleep(nanoseconds: 100_000_000)
+                } else {
+                    // MODE B: FORCE
+                    var attempts = 0
+                    while !app.isActive && attempts < 5 {
+                        if Task.isCancelled { return }
+                        app.activate(options: .activateIgnoringOtherApps)
+                        
+                        var check = 0
+                        while !app.isActive && check < 5 {
+                            try? await Task.sleep(nanoseconds: 50_000_000)
+                            check += 1
+                        }
+                        attempts += 1
+                    }
+                    
+                    if app.isActive {
+                        try? await Task.sleep(nanoseconds: 200_000_000)
+                    }
+                }
+                
+                // Final check before firing keys
+                if Task.isCancelled { return }
+                simulateHotkey(keyCode: k, modifiers: m)
+                
+                if !waitFrontmost && restoreWindow, let prev = previousApp, prev.processIdentifier != app.processIdentifier {
+                    try? await Task.sleep(nanoseconds: 100_000_000)
+                    if !Task.isCancelled {
                         prev.activate(options: .activateIgnoringOtherApps)
                     }
                 }
@@ -118,14 +138,19 @@ class RuleManager: ObservableObject {
     private func simulateHotkey(keyCode: Int, modifiers: UInt) {
         guard keyCode >= 0 else { return }
         let flags = CGEventFlags(rawValue: UInt64(modifiers))
-        guard let d = CGEvent(keyboardEventSource: nil, virtualKey: CGKeyCode(keyCode), keyDown: true) else { return }
-        d.flags = flags; d.post(tap: .cghidEventTap)
+        
+        guard let keyDown = CGEvent(keyboardEventSource: nil, virtualKey: CGKeyCode(keyCode), keyDown: true) else { return }
+        keyDown.flags = flags
+        keyDown.post(tap: .cghidEventTap)
+        
         usleep(10000)
-        guard let u = CGEvent(keyboardEventSource: nil, virtualKey: CGKeyCode(keyCode), keyDown: false) else { return }
-        u.flags = flags; u.post(tap: .cghidEventTap)
+        
+        guard let keyUp = CGEvent(keyboardEventSource: nil, virtualKey: CGKeyCode(keyCode), keyDown: false) else { return }
+        keyUp.flags = flags
+        keyUp.post(tap: .cghidEventTap)
     }
 
-    // ... (Helpers: getLowestSpaceNumber, unhideAppWithoutActivation, etc. remain unchanged) ...
+    // ... (Helpers remain unchanged) ...
     private func getLowestSpaceNumber(for rule: AppRule) -> Int {
         guard let sm = spaceManager else { return 999 }
         let allIDs = rule.groups.flatMap { $0.targetSpaceIDs }
@@ -149,7 +174,6 @@ class RuleManager: ObservableObject {
             for window in windows { var isMin: AnyObject?; if AXUIElementCopyAttributeValue(window, kAXMinimizedAttribute as CFString, &isMin) == .success, let minBool = isMin as? Bool, minBool { AXUIElementSetAttributeValue(window, kAXMinimizedAttribute as CFString, kCFBooleanFalse) } }
         }
     }
-    
     var sortedRules: [AppRule] {
         switch sortOption {
         case .name: return rules.sorted { $0.appName.localizedCaseInsensitiveCompare($1.appName) == .orderedAscending }
