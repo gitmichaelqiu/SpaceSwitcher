@@ -57,9 +57,6 @@
         }
       }
     },
-    "+ Capture Current Dock" : {
-
-    },
     "1. Target App" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -122,6 +119,9 @@
     "Add Action" : {
 
     },
+    "Add Application" : {
+
+    },
     "Add Workflow Group" : {
 
     },
@@ -165,7 +165,10 @@
         }
       }
     },
-    "Capture a Dock Set first to assign it to spaces." : {
+    "Capture" : {
+
+    },
+    "Capture Current Dock" : {
 
     },
     "Choose other app..." : {
@@ -205,6 +208,9 @@
     "Default" : {
 
     },
+    "Default (%@)" : {
+
+    },
     "Delete" : {
 
     },
@@ -225,6 +231,9 @@
       }
     },
     "Do Nothing" : {
+
+    },
+    "Dock Contents" : {
 
     },
     "Dock Sets" : {
@@ -339,7 +348,7 @@
     "Name" : {
 
     },
-    "Name your Dock Set" : {
+    "No Dock Sets" : {
 
     },
     "No Rules Configured" : {
@@ -436,9 +445,6 @@
     "Running Applications" : {
 
     },
-    "Save" : {
-
-    },
     "Save Rule" : {
       "localizations" : {
         "zh-Hans" : {
@@ -453,6 +459,9 @@
 
     },
     "Select a category" : {
+
+    },
+    "Select a Dock Set to edit" : {
 
     },
     "Select Target App" : {

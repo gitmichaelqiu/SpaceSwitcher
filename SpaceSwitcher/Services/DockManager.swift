@@ -7,16 +7,12 @@ class DockManager: ObservableObject {
         didSet { saveConfig() }
     }
     
-    // To avoid applying the same dock repeatedly
     private var lastAppliedDockSetID: UUID?
-    
     weak var spaceManager: SpaceManager? { didSet { setupBindings() } }
     private var cancellables = Set<AnyCancellable>()
     private let configKey = "SpaceSwitcherDockConfig"
     
-    init() {
-        loadConfig()
-    }
+    init() { loadConfig() }
     
     // MARK: - Space Watching
     private func setupBindings() {
@@ -29,68 +25,102 @@ class DockManager: ObservableObject {
             .store(in: &cancellables)
     }
     
-    // MARK: - Logic
-    
+    // MARK: - Apply Logic
     func applyDockForSpace(_ spaceID: String) {
-        // 1. Determine target set
         let targetSetID = config.spaceAssignments[spaceID] ?? config.defaultDockSetID
-        
-        // 2. Guard against unnecessary updates (Dock restart is jarring)
         guard let setID = targetSetID, setID != lastAppliedDockSetID else { return }
-        
-        // 3. Find the set data
         guard let set = config.dockSets.first(where: { $0.id == setID }) else { return }
         
-        print("DOCK: Applying set '\(set.name)' for space \(spaceID)...")
+        print("DOCK: Applying set '\(set.name)'...")
         applyDockSet(set)
     }
     
+    // MARK: - Capture Logic
     func captureCurrentDock(as name: String) {
-        guard let apps = getSystemDockPersistentApps() else { return }
+        guard let rawApps = getSystemDockPersistentApps() else { return }
+        let tiles = parseRawDockData(rawApps)
         
-        do {
-            let data = try JSONSerialization.data(withJSONObject: apps, options: [])
-            let newSet = DockSet(id: UUID(), name: name, dateCreated: Date(), persistentAppsData: data)
-            
-            DispatchQueue.main.async {
-                self.config.dockSets.append(newSet)
-                // If it's the first one, make it default automatically
-                if self.config.defaultDockSetID == nil {
-                    self.config.defaultDockSetID = newSet.id
-                }
+        DispatchQueue.main.async {
+            let newSet = DockSet(id: UUID(), name: name, dateCreated: Date(), tiles: tiles)
+            self.config.dockSets.append(newSet)
+            if self.config.defaultDockSetID == nil {
+                self.config.defaultDockSetID = newSet.id
             }
-        } catch {
-            print("DOCK: Failed to encode dock data: \(error)")
         }
     }
     
-    // MARK: - System Operations
+    // MARK: - Helper: Parse Raw -> [DockTile]
+    private func parseRawDockData(_ rawArray: [Any]) -> [DockTile] {
+        var tiles: [DockTile] = []
+        
+        for case let itemDict as [String: Any] in rawArray {
+            guard let tileData = itemDict["tile-data"] as? [String: Any] else { continue }
+            
+            let label = tileData["file-label"] as? String ?? "Unknown"
+            let bundleID = tileData["bundle-identifier"] as? String
+            
+            // Try to extract URL from _CFURLString if available
+            var url: URL?
+            if let urlStr = tileData["file-data"] as? [String: Any],
+               let path = urlStr["_CFURLString"] as? String {
+                url = URL(string: path)
+            }
+            
+            // Fallback: If no explicit URL structure, we can sometimes infer it,
+            // but usually 'file-data' is a complex dictionary or pure data.
+            // For editing purposes, we keep 'rawData' to restore everything we don't understand.
+            
+            tiles.append(DockTile(label: label, bundleIdentifier: bundleID, fileURL: url, rawData: itemDict))
+        }
+        return tiles
+    }
     
+    // MARK: - Helper: [DockTile] -> Raw
+    private func buildRawDockData(from tiles: [DockTile]) -> [Any] {
+        return tiles.map { $0.rawData }
+    }
+    
+    // MARK: - System Operations
     private func getSystemDockPersistentApps() -> [Any]? {
         let defaults = UserDefaults(suiteName: "com.apple.dock")
         return defaults?.array(forKey: "persistent-apps")
     }
     
     private func applyDockSet(_ set: DockSet) {
-        do {
-            if let appsArray = try JSONSerialization.jsonObject(with: set.persistentAppsData, options: []) as? [Any] {
-                
-                // 1. Write to com.apple.dock
-                let dockDefaults = UserDefaults(suiteName: "com.apple.dock")
-                dockDefaults?.set(appsArray, forKey: "persistent-apps")
-                dockDefaults?.synchronize()
-                
-                // 2. Restart Dock
-                let task = Process()
-                task.launchPath = "/usr/bin/killall"
-                task.arguments = ["Dock"]
-                task.launch()
-                
-                self.lastAppliedDockSetID = set.id
-            }
-        } catch {
-            print("DOCK: Failed to decode dock set for application: \(error)")
-        }
+        let rawData = buildRawDockData(from: set.tiles)
+        
+        let dockDefaults = UserDefaults(suiteName: "com.apple.dock")
+        dockDefaults?.set(rawData, forKey: "persistent-apps")
+        dockDefaults?.synchronize()
+        
+        let task = Process()
+        task.launchPath = "/usr/bin/killall"
+        task.arguments = ["Dock"]
+        task.launch()
+        
+        self.lastAppliedDockSetID = set.id
+    }
+    
+    // MARK: - Create Tile from File
+    func createTile(from url: URL) -> DockTile {
+        let name = url.deletingPathExtension().lastPathComponent
+        let bundleID = Bundle(url: url)?.bundleIdentifier
+        
+        // Construct the minimal structure expected by com.apple.dock
+        // This is a simplified reconstruction. The Dock usually fills in the details.
+        let tileData: [String: Any] = [
+            "file-data": ["_CFURLString": url.absoluteString, "_CFURLStringType": 15],
+            "file-label": name,
+            "bundle-identifier": bundleID ?? "",
+            "file-type": 41 // 41 usually denotes an application
+        ]
+        
+        let raw: [String: Any] = [
+            "tile-data": tileData,
+            "tile-type": "file-tile"
+        ]
+        
+        return DockTile(label: name, bundleIdentifier: bundleID, fileURL: url, rawData: raw)
     }
     
     // MARK: - Persistence
