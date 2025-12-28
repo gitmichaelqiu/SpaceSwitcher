@@ -200,8 +200,20 @@ struct DockSettingsView: View {
         if dockManager.config.defaultDockSetID == set.id { dockManager.config.defaultDockSetID = dockManager.config.dockSets.first?.id }
     }
     private func addAppToSelectedSet() {
-        guard let selectedID = selectedSetID, let index = dockManager.config.dockSets.firstIndex(where: { $0.id == selectedID }) else { return }
-        let panel = NSOpenPanel(); panel.allowedContentTypes = [.application]; panel.directoryURL = URL(fileURLWithPath: "/Applications"); panel.canChooseFiles = true; panel.allowsMultipleSelection = true
-        panel.begin { if $0 == .OK { for url in panel.urls { let newTile = dockManager.createTile(from: url); DispatchQueue.main.async { dockManager.config.dockSets[index].tiles.append(newTile) } } } }
+        guard let targetID = selectedSetID else { return } // Capture ID, not index
+
+        let panel = NSOpenPanel()
+        panel.begin { response in
+            if response == .OK {
+                for url in panel.urls {
+                    let newTile = dockManager.createTile(from: url)
+                    DispatchQueue.main.async {
+                        if let freshIndex = self.dockManager.config.dockSets.firstIndex(where: { $0.id == targetID }) {
+                            self.dockManager.config.dockSets[freshIndex].tiles.append(newTile)
+                        }
+                    }
+                }
+            }
+        }
     }
 }
