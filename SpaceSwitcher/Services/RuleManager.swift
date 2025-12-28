@@ -42,7 +42,7 @@ class RuleManager: ObservableObject {
         enforcementTask?.cancel()
         
         // 2. Start new enforcement task
-        enforcementTask = Task { @MainActor in
+        enforcementTask = Task {
             for rule in rules where rule.isEnabled {
                 // Check cancellation before every rule
                 if Task.isCancelled { return }
