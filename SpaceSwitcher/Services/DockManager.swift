@@ -87,7 +87,7 @@ class DockManager: ObservableObject {
         }
     }
     
-    // MARK: - Core Logic (Verified Write)
+    // MARK: - Core Logic (Verified Write + Force Kill)
     
     private func applyDockSetVerified(_ set: DockSet) async -> Bool {
         return await Task.detached(priority: .userInitiated) {
@@ -110,20 +110,15 @@ class DockManager: ObservableObject {
                 }
                 
                 // B. WAIT (Give cfprefsd time to flush)
-                // We increase delay slightly on each retry
                 let delay = UInt32(150_000 + (attempt * 50_000))
                 usleep(delay)
                 
                 // C. READ BACK (Verification)
-                // We force a fresh read from the system
                 CFPreferencesAppSynchronize(appID) // Force re-sync before read
                 
                 if let readVal = CFPreferencesCopyAppValue(key, appID) as? [Any] {
-                    // Simple verification: Check count.
-                    // (Deep comparison is expensive, but we can do it if needed).
                     if readVal.count == targetCount {
-                        // Deep check first item to be sure it's not a coincidence
-                        // (Checking the label of the first item)
+                        // Deep check first item
                         if let firstTarget = rawData.first as? [String: Any],
                            let firstRead = readVal.first as? [String: Any],
                            let targetLabel = (firstTarget["tile-data"] as? [String: Any])?["file-label"] as? String,
@@ -134,7 +129,6 @@ class DockManager: ObservableObject {
                             verified = true
                             break
                         } else if targetCount == 0 {
-                            // Handle empty dock case
                             self.logger.info("Attempt \(attempt): Verification PASSED (Empty Dock).")
                             verified = true
                             break
@@ -151,11 +145,15 @@ class DockManager: ObservableObject {
                 return false
             }
             
-            // 3. Kill Dock (Only if verified)
-            self.logger.info("Restarting Dock process...")
+            // 3. KILL DOCK (FORCE KILL FIX)
+            self.logger.info("Restarting Dock process (SIGKILL)...")
             let task = Process()
             task.launchPath = "/usr/bin/killall"
-            task.arguments = ["Dock"]
+            
+            // FIX IS HERE: Add "-KILL" to force immediate termination
+            // This prevents the Dock from saving its current state on exit.
+            task.arguments = ["-KILL", "Dock"]
+            
             task.launch()
             task.waitUntilExit()
             
