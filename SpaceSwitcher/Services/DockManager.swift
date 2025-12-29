@@ -1,12 +1,12 @@
 import Foundation
 import Combine
 import AppKit
+import os.log
 
 class DockManager: ObservableObject {
     @Published var config: DockConfig = DockConfig() {
         didSet {
             saveConfig()
-            // Reset cache if default changes so we re-evaluate on next switch
             if config.defaultDockSetID != oldValue.defaultDockSetID {
                 lastAppliedDockSetID = nil
             }
@@ -14,22 +14,20 @@ class DockManager: ObservableObject {
     }
     
     private var lastAppliedDockSetID: UUID?
-    
-    // MARK: - Task Management
-    // We use a Task to handle the async nature of waiting (debouncing) and applying settings
-    private var dockUpdateTask: Task<Void, Never>?
+    private var dockTask: Task<Void, Never>?
     
     weak var spaceManager: SpaceManager? { didSet { setupBindings() } }
     private var cancellables = Set<AnyCancellable>()
     private let configKey = "SpaceSwitcherDockConfig"
+    
+    // DEBUG LOGGER
+    private let logger = Logger(subsystem: "com.michaelqiu.SpaceSwitcher", category: "DockManager")
     
     init() {
         loadConfig()
     }
     
     private func setupBindings() {
-        // Remove .debounce from here and handle it via Task in applyDockForSpace
-        // This gives us more granular control over cancellation
         spaceManager?.$currentSpaceID
             .removeDuplicates()
             .sink { [weak self] spaceID in
@@ -42,105 +40,146 @@ class DockManager: ObservableObject {
     // MARK: - Logic
     
     func applyDockForSpace(_ spaceID: String) {
-        // 1. Cancel any pending dock update.
-        // If the user is swiping quickly A -> B -> C, we cancel A and B, only applying C.
-        dockUpdateTask?.cancel()
+        dockTask?.cancel()
         
-        dockUpdateTask = Task {
-            // 2. DEBOUNCE: Wait for the user to "settle" on this space.
-            // 300ms is usually a sweet spot for macOS space switching animations.
-            try? await Task.sleep(nanoseconds: 300_000_000) // 0.3 seconds
+        dockTask = Task {
+            // 1. Prevent App Nap
+            let activity = ProcessInfo.processInfo.beginActivity(
+                options: [.userInitiated, .latencyCritical],
+                reason: "DockSwitch-\(spaceID)"
+            )
+            defer { ProcessInfo.processInfo.endActivity(activity) }
             
+            // 2. Debounce (Allow rapid swiping)
+            try? await Task.sleep(nanoseconds: 350_000_000) // 0.35s
             if Task.isCancelled { return }
             
-            // 3. Determine target
-            // We do this AFTER the sleep to ensure config is fresh
-            await self.performDockSwitch(for: spaceID)
+            await performDockSwitch(for: spaceID)
         }
     }
     
     @MainActor
     private func performDockSwitch(for spaceID: String) async {
         let targetSetID = config.spaceAssignments[spaceID] ?? config.defaultDockSetID
-        
-        guard let setID = targetSetID else { return }
-        
-        // 4. Optimization Check
-        // If we are already on this dock set, do nothing.
-        // We skip this check if switching to Default to ensure "Reset" behavior works if needed,
-        // but generally, if IDs match, the Dock is correct.
-        let isSwitchingToDefault = (setID == config.defaultDockSetID)
-        if !isSwitchingToDefault && setID == lastAppliedDockSetID {
-            print("DOCK: Already on set \(setID), skipping update.")
+        guard let setID = targetSetID else {
+            logger.debug("No dock assigned for space \(spaceID), and no default set.")
             return
         }
         
-        // 5. Find Data
+        // Skip if already applied
+        if setID == lastAppliedDockSetID && setID != config.defaultDockSetID {
+            logger.debug("Already on Dock Set \(setID), skipping.")
+            return
+        }
+        
         guard let set = config.dockSets.first(where: { $0.id == setID }) else { return }
         
-        print("DOCK: Applying '\(set.name)' (Delaying for disk write...)")
+        logger.info(">>> STARTING SWITCH: '\(set.name)' for Space \(spaceID)")
         
-        // 6. Apply with System Safety
-        applyDockSet(set)
+        // Run blocking I/O on background thread
+        let success = await applyDockSetVerified(set)
+        
+        if success {
+            self.lastAppliedDockSetID = set.id
+            logger.info("<<< SUCCESS: Switched to '\(set.name)'")
+        } else {
+            logger.error("<<< FAILURE: Could not verify dock write for '\(set.name)'")
+        }
     }
+    
+    // MARK: - Core Logic (Verified Write)
+    
+    private func applyDockSetVerified(_ set: DockSet) async -> Bool {
+        return await Task.detached(priority: .userInitiated) {
+            let key = "persistent-apps" as CFString
+            let appID = "com.apple.dock" as CFString
+            
+            // 1. Prepare Data
+            let rawData = self.buildRawDockData(from: set.tiles)
+            let targetCount = rawData.count
+            
+            // 2. Write & Verify Loop (Max 5 attempts)
+            var verified = false
+            for attempt in 1...5 {
+                // A. WRITE
+                CFPreferencesSetAppValue(key, rawData as CFPropertyList, appID)
+                let syncResult = CFPreferencesAppSynchronize(appID)
+                
+                if !syncResult {
+                    self.logger.error("Attempt \(attempt): CFPreferencesAppSynchronize returned FALSE")
+                }
+                
+                // B. WAIT (Give cfprefsd time to flush)
+                // We increase delay slightly on each retry
+                let delay = UInt32(150_000 + (attempt * 50_000))
+                usleep(delay)
+                
+                // C. READ BACK (Verification)
+                // We force a fresh read from the system
+                CFPreferencesAppSynchronize(appID) // Force re-sync before read
+                
+                if let readVal = CFPreferencesCopyAppValue(key, appID) as? [Any] {
+                    // Simple verification: Check count.
+                    // (Deep comparison is expensive, but we can do it if needed).
+                    if readVal.count == targetCount {
+                        // Deep check first item to be sure it's not a coincidence
+                        // (Checking the label of the first item)
+                        if let firstTarget = rawData.first as? [String: Any],
+                           let firstRead = readVal.first as? [String: Any],
+                           let targetLabel = (firstTarget["tile-data"] as? [String: Any])?["file-label"] as? String,
+                           let readLabel = (firstRead["tile-data"] as? [String: Any])?["file-label"] as? String,
+                           targetLabel == readLabel {
+                            
+                            self.logger.info("Attempt \(attempt): Verification PASSED. (Items: \(targetCount))")
+                            verified = true
+                            break
+                        } else if targetCount == 0 {
+                            // Handle empty dock case
+                            self.logger.info("Attempt \(attempt): Verification PASSED (Empty Dock).")
+                            verified = true
+                            break
+                        }
+                    }
+                    self.logger.warning("Attempt \(attempt): Verification FAILED. Read \(readVal.count) items, expected \(targetCount). Retrying...")
+                } else {
+                    self.logger.warning("Attempt \(attempt): Read-back returned nil.")
+                }
+            }
+            
+            if !verified {
+                self.logger.fault("CRITICAL: Failed to verify dock preferences after 5 attempts. Aborting kill.")
+                return false
+            }
+            
+            // 3. Kill Dock (Only if verified)
+            self.logger.info("Restarting Dock process...")
+            let task = Process()
+            task.launchPath = "/usr/bin/killall"
+            task.arguments = ["Dock"]
+            task.launch()
+            task.waitUntilExit()
+            
+            return true
+        }.value
+    }
+    
+    // ... (All Helpers/Create functions remain unchanged) ...
     
     func createNewDockSet(name: String) {
         guard let rawApps = getSystemDockPersistentApps() else { return }
         let tiles = parseRawDockData(rawApps)
-        
         DispatchQueue.main.async {
             let newSet = DockSet(id: UUID(), name: name, dateCreated: Date(), tiles: tiles)
             self.config.dockSets.append(newSet)
-            if self.config.defaultDockSetID == nil {
-                self.config.defaultDockSetID = newSet.id
-            }
+            if self.config.defaultDockSetID == nil { self.config.defaultDockSetID = newSet.id }
         }
     }
-    
-    // MARK: - System Operations
     
     private func getSystemDockPersistentApps() -> [Any]? {
         let defaults = UserDefaults(suiteName: "com.apple.dock")
         return defaults?.array(forKey: "persistent-apps")
     }
     
-    private func applyDockSet(_ set: DockSet) {
-        let rawData = buildRawDockData(from: set.tiles)
-        
-        let key = "persistent-apps" as CFString
-        let appID = "com.apple.dock" as CFString
-        
-        // A. Write Preference
-        CFPreferencesSetAppValue(key, rawData as CFPropertyList, appID)
-        
-        // B. Synchronize (Blocking Write)
-        let success = CFPreferencesAppSynchronize(appID)
-        
-        if success {
-            // C. CRITICAL: Give the system a moment to flush to disk/cache
-            // This prevents the "Race Condition" where Dock restarts before reading new prefs.
-            // Since this function is called from an async Task context, we can block briefly
-            // without freezing the UI (if we were truly async), but CFPreferences is synchronous.
-            // To be safe, we use 'usleep' here as we are on a background Task (conceptually)
-            // or we accept a tiny freeze on the main thread (Process launch is heavy anyway).
-            usleep(150_000) // 0.15 seconds wait
-            
-            // D. Restart Dock
-            let task = Process()
-            task.launchPath = "/usr/bin/killall"
-            task.arguments = ["Dock"]
-            task.launch()
-            task.waitUntilExit() // Wait for the kill command to finish
-            
-            // E. Update State
-            self.lastAppliedDockSetID = set.id
-            print("DOCK: Restarted successfully.")
-        } else {
-            print("DOCK: Failed to synchronize preferences.")
-        }
-    }
-    
-    // MARK: - Helpers
     private func parseRawDockData(_ rawArray: [Any]) -> [DockTile] {
         var tiles: [DockTile] = []
         for case let itemDict as [String: Any] in rawArray {
