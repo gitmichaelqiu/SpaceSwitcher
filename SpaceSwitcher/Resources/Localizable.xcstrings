@@ -2,10 +2,10 @@
   "sourceLanguage" : "en",
   "strings" : {
     "" : {
-
+      "shouldTranslate" : false
     },
     "%lld." : {
-
+      "shouldTranslate" : false
     },
     "%lld. %@" : {
       "localizations" : {
@@ -23,17 +23,6 @@
         }
       }
     },
-    "• else" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "• 其他"
-          }
-        }
-      }
-    },
     "© %@ Michael Yicheng Qiu" : {
       "localizations" : {
         "zh-Hans" : {
@@ -45,7 +34,7 @@
       }
     },
     "→" : {
-
+      "shouldTranslate" : false
     },
     "+ Add Rule" : {
       "localizations" : {
@@ -53,28 +42,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "+ 添加规则"
-          }
-        }
-      }
-    },
-    "1. Target App" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "1. 目标 App"
-          }
-        }
-      }
-    },
-    "2. Logic" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "2. 规则"
           }
         }
       }
@@ -99,40 +66,85 @@
         }
       }
     },
-    "Action:" : {
-      "extractionState" : "stale",
+    "Active in:" : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "操作:"
+            "value" : "活跃于："
           }
         }
       }
     },
-    "Active in:" : {
-
-    },
     "Add a large gap" : {
-
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "添加大间隔"
+          }
+        }
+      }
     },
     "Add a rule to control app visibility across spaces." : {
-
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "控制 App 在每个空间的显示/隐藏"
+          }
+        }
+      }
     },
     "Add a small gap" : {
-
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "添加小间隔"
+          }
+        }
+      }
     },
     "Add Action" : {
-
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "添加操作"
+          }
+        }
+      }
     },
     "Add an application" : {
-
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "添加 App"
+          }
+        }
+      }
     },
     "Add App" : {
-
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "添加 App"
+          }
+        }
+      }
     },
     "Add Workflow Group" : {
-
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "添加桌面组"
+          }
+        }
+      }
     },
     "API Connection" : {
       "localizations" : {
@@ -145,30 +157,54 @@
       }
     },
     "App Rules" : {
-
-    },
-    "App will wait until you manually switch to it." : {
-
-    },
-    "Application" : {
-      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "应用"
+            "value" : "App 规则"
+          }
+        }
+      }
+    },
+    "App will wait until you manually switch to it." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "App 等待你手动切换"
           }
         }
       }
     },
     "Apply Now" : {
-
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "立即应用"
+          }
+        }
+      }
     },
     "Apply to Spaces" : {
-
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "应用于桌面"
+          }
+        }
+      }
     },
     "Bring to Front" : {
-
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "移至最前"
+          }
+        }
+      }
     },
     "Cancel" : {
       "localizations" : {
@@ -181,15 +217,11 @@
       }
     },
     "Choose other app..." : {
-
-    },
-    "Click + to add a new switching rule." : {
-      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "点击 + 以添加新规则"
+            "value" : "选择另一个 App"
           }
         }
       }
@@ -205,7 +237,14 @@
       }
     },
     "Create" : {
-
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "创建"
+          }
+        }
+      }
     },
     "Current Space" : {
       "localizations" : {
@@ -218,13 +257,34 @@
       }
     },
     "Currently Active Dock" : {
-
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "当前 Dock"
+          }
+        }
+      }
     },
     "Default Dock Set" : {
-
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "默认 Dock"
+          }
+        }
+      }
     },
     "Delete" : {
-
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "删除"
+          }
+        }
+      }
     },
     "DesktopRenamer API Status" : {
       "localizations" : {
@@ -243,30 +303,7 @@
       }
     },
     "Do Nothing" : {
-
-    },
-    "Dock Items" : {
-
-    },
-    "Dock Name" : {
-
-    },
-    "Dock Sets" : {
-
-    },
-    "Docks" : {
-
-    },
-    "DoNothing" : {
-      "comment" : "Action: Do Nothing",
-      "extractionState" : "stale",
       "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Do Nothing"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -275,25 +312,75 @@
         }
       }
     },
-    "Edit Rule" : {
-      "extractionState" : "stale",
+    "Dock Items" : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "编辑规则"
+            "value" : "Dock 软件"
+          }
+        }
+      }
+    },
+    "Dock Name" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dock 名称"
+          }
+        }
+      }
+    },
+    "Dock Sets" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dock 组"
+          }
+        }
+      }
+    },
+    "Docks" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dock"
           }
         }
       }
     },
     "Else" : {
-
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "其他"
+          }
+        }
+      }
     },
     "Fallback (All Other Spaces)" : {
-
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "其他空间"
+          }
+        }
+      }
     },
     "Force apply this dock configuration immediately" : {
-
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "强制启用这套 Dock"
+          }
+        }
+      }
     },
     "General" : {
       "localizations" : {
@@ -306,7 +393,14 @@
       }
     },
     "Global Key:" : {
-
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "全局快捷键："
+          }
+        }
+      }
     },
     "Hide" : {
       "comment" : "Action: Hide Window",
@@ -329,19 +423,15 @@
         }
       }
     },
-    "In these spaces:" : {
-      "extractionState" : "stale",
+    "Large spacer" : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "于这些桌面:"
+            "value" : "大间隔"
           }
         }
       }
-    },
-    "Large spacer" : {
-
     },
     "Launch" : {
       "localizations" : {
@@ -364,16 +454,45 @@
       }
     },
     "Minimize" : {
-      "comment" : "Action: Minimize Window"
+      "comment" : "Action: Minimize Window",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "最小化"
+          }
+        }
+      }
     },
     "More Apps" : {
-
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "更多 App"
+          }
+        }
+      }
     },
     "Name" : {
-
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "名称"
+          }
+        }
+      }
     },
     "New Dock Set" : {
-
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "新 Dock 组"
+          }
+        }
+      }
     },
     "No Rules Configured" : {
       "localizations" : {
@@ -386,10 +505,24 @@
       }
     },
     "No spaces detected" : {
-
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "未监测到桌面"
+          }
+        }
+      }
     },
     "No spaces detected." : {
-
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "未监测到桌面。"
+          }
+        }
+      }
     },
     "Not Connected" : {
       "localizations" : {
@@ -407,17 +540,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "打开 DesktopRenamer 并启用API"
-          }
-        }
-      }
-    },
-    "Otherwise:" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "否则:"
           }
         }
       }
@@ -440,24 +562,34 @@
       }
     },
     "Recording..." : {
-
-    },
-    "Refresh Space List" : {
-      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "刷新桌面列表"
+            "value" : "录制…"
           }
         }
       }
     },
     "Refresh Spaces" : {
-
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "刷新空间"
+          }
+        }
+      }
     },
     "Restore Previously Active Window" : {
-
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "恢复原本最顶的窗口"
+          }
+        }
+      }
     },
     "Rules" : {
       "localizations" : {
@@ -470,7 +602,14 @@
       }
     },
     "Running Applications" : {
-
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "正在运行"
+          }
+        }
+      }
     },
     "Save Rule" : {
       "localizations" : {
@@ -483,33 +622,44 @@
       }
     },
     "Select a category" : {
-
-    },
-    "Select a Dock Set" : {
-
-    },
-    "Select Target App" : {
-
-    },
-    "SelectApp" : {
-      "extractionState" : "stale",
       "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Select App"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "选择 App"
+            "value" : "选择分类"
+          }
+        }
+      }
+    },
+    "Select a Dock Set" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "选择 Dock 组"
+          }
+        }
+      }
+    },
+    "Select Target App" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "选择目标 App"
           }
         }
       }
     },
     "Set as Default" : {
-
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "设为默认"
+          }
+        }
+      }
     },
     "Settings" : {
       "extractionState" : "manual",
@@ -820,19 +970,47 @@
       }
     },
     "Simulate App Hotkey..." : {
-
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "模拟 App 快捷键…"
+          }
+        }
+      }
     },
     "Simulate Global Hotkey..." : {
-
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "模拟全局快捷键..."
+          }
+        }
+      }
     },
     "Small spacer" : {
-
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "小间隔"
+          }
+        }
+      }
     },
     "Sort by %@" : {
-
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "以%@排序"
+          }
+        }
+      }
     },
     "Space" : {
-
+      "shouldTranslate" : false
     },
     "SpaceCount" : {
       "extractionState" : "manual",
@@ -852,16 +1030,37 @@
       }
     },
     "Switcher" : {
-
+      "shouldTranslate" : false
     },
     "This is the default dock. It applies to all spaces not assigned to other sets." : {
-
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "默认 Dock 自动应用至未分配桌面。"
+          }
+        }
+      }
     },
     "Type" : {
-
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "类型"
+          }
+        }
+      }
     },
     "Used in other set" : {
-
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已分配"
+          }
+        }
+      }
     },
     "v%@" : {
       "localizations" : {
@@ -880,10 +1079,24 @@
       }
     },
     "Wait for Manual Activation" : {
-
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "等待手动切换"
+          }
+        }
+      }
     },
     "Workflow Group %lld" : {
-
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "桌面组 %lld"
+          }
+        }
+      }
     }
   },
   "version" : "1.1"
