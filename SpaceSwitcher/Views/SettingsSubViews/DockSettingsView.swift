@@ -101,15 +101,38 @@ struct DockSidebarView: View {
                 Section(header: Text("Dock Sets")) {
                     ForEach(dockManager.config.dockSets) { set in
                         HStack {
+                            // 1. Status Indicator (NEW)
+                            if dockManager.activeDockSetID == set.id {
+                                Circle()
+                                    .fill(Color.green)
+                                    .frame(width: 8, height: 8)
+                                    .help("Currently Active Dock")
+                            } else {
+                                // Invisible spacer to keep alignment if you prefer,
+                                // or just nothing for a cleaner look.
+                                Color.clear
+                                    .frame(width: 8, height: 8)
+                            }
+                            
                             Image(systemName: "dock.rectangle")
-                            Text(set.name).fontWeight(.medium)
+                            
+                            Text(set.name)
+                                .fontWeight(.medium)
+                            
                             Spacer()
+                            
+                            // 2. Default Star
                             if dockManager.config.defaultDockSetID == set.id {
-                                Image(systemName: "star.fill").foregroundColor(.yellow).font(.caption)
+                                Image(systemName: "star.fill")
+                                    .foregroundColor(.yellow)
+                                    .font(.caption)
+                                    .help("Default Dock Set")
                             }
                         }
                         .tag(set.id)
-                        .contextMenu { Button("Delete") { deleteSet(set) } }
+                        .contextMenu {
+                            Button("Delete") { deleteSet(set) }
+                        }
                     }
                 }
             }
@@ -121,9 +144,12 @@ struct DockSidebarView: View {
                 newSetName = "Dock Set \(dockManager.config.dockSets.count + 1)"
                 showingCreateSheet = true
             } label: {
-                HStack { Image(systemName: "plus.circle.fill"); Text("New Dock Set") }
-                    .frame(maxWidth: .infinity)
-                    .padding(12)
+                HStack {
+                    Image(systemName: "plus.circle.fill")
+                    Text("New Dock Set")
+                }
+                .frame(maxWidth: .infinity)
+                .padding(12)
             }
             .buttonStyle(.borderless)
             .background(Color(NSColor.controlBackgroundColor))

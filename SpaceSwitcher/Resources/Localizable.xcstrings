@@ -119,7 +119,7 @@
     "Add a rule to control app visibility across spaces." : {
 
     },
-    "Add a small gap (separator)" : {
+    "Add a small gap" : {
 
     },
     "Add Action" : {
@@ -216,6 +216,12 @@
           }
         }
       }
+    },
+    "Currently Active Dock" : {
+
+    },
+    "Default Dock Set" : {
+
     },
     "Delete" : {
 
@@ -846,9 +852,6 @@
 
     },
     "This is the default dock. It applies to all spaces not assigned to other sets." : {
-
-    },
-    "Tip: 'Line' adds a small spacer. macOS does not support visual lines in the apps section." : {
 
     },
     "Type" : {
