@@ -279,7 +279,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 13.0;
-				MARKETING_VERSION = "0.1.0-beta.1";
+				MARKETING_VERSION = "0.2.0-beta.1";
 				PRODUCT_BUNDLE_IDENTIFIER = michaelqiu.SpaceSwitcher;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;
@@ -327,7 +327,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 13.0;
-				MARKETING_VERSION = "0.1.0-beta.1";
+				MARKETING_VERSION = "0.2.0-beta.1";
 				PRODUCT_BUNDLE_IDENTIFIER = michaelqiu.SpaceSwitcher;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;

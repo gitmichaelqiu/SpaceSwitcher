@@ -14,7 +14,7 @@ class SettingsWindowController: NSObject, NSWindowDelegate {
         super.init()
     }
 
-    func open(spaceManager: SpaceManager, ruleManager: RuleManager, targetTab: SettingsTab? = nil) {
+    func open(spaceManager: SpaceManager, ruleManager: RuleManager, dockManager: DockManager, targetTab: SettingsTab? = nil) {
         NSApp.setActivationPolicy(.regular)
 
         // UPDATED: Store reference
@@ -27,12 +27,12 @@ class SettingsWindowController: NSObject, NSWindowDelegate {
             return
         }
 
-        createWindow(spaceManager: spaceManager, ruleManager: ruleManager, startTab: targetTab)
+        createWindow(spaceManager: spaceManager, ruleManager: ruleManager, dockManager: dockManager, startTab: targetTab)
     }
 
-    private func createWindow(spaceManager: SpaceManager, ruleManager: RuleManager, startTab: SettingsTab?) {
+    private func createWindow(spaceManager: SpaceManager, ruleManager: RuleManager, dockManager: DockManager, startTab: SettingsTab?) {
         // 1. STYLE: .fullSizeContentView is critical for the "Ice" style (content goes behind title bar)
-        let styleMask: NSWindow.StyleMask = [.titled, .closable, .miniaturizable, .fullSizeContentView]
+        let styleMask: NSWindow.StyleMask = [.titled, .closable, .miniaturizable, .fullSizeContentView, .resizable]
         
         let win = NSWindow(
             contentRect: NSRect(x: 0, y: 0, width: defaultSettingsWindowWidth, height: defaultSettingsWindowHeight),
@@ -62,6 +62,7 @@ class SettingsWindowController: NSObject, NSWindowDelegate {
         let settingsVC = SettingsHostingController(
             spaceManager: spaceManager,
             ruleManager: ruleManager,
+            dockManager: dockManager,
             startTab: startTab
         )
         win.contentViewController = settingsVC

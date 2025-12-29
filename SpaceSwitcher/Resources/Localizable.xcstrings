@@ -8,7 +8,6 @@
 
     },
     "%lld. %@" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -114,10 +113,22 @@
     "Active in:" : {
 
     },
+    "Add a large gap" : {
+
+    },
     "Add a rule to control app visibility across spaces." : {
 
     },
+    "Add a small gap" : {
+
+    },
     "Add Action" : {
+
+    },
+    "Add an application" : {
+
+    },
+    "Add App" : {
 
     },
     "Add Workflow Group" : {
@@ -149,6 +160,12 @@
           }
         }
       }
+    },
+    "Apply Now" : {
+
+    },
+    "Apply to Spaces" : {
+
     },
     "Bring to Front" : {
 
@@ -187,6 +204,9 @@
         }
       }
     },
+    "Create" : {
+
+    },
     "Current Space" : {
       "localizations" : {
         "zh-Hans" : {
@@ -196,6 +216,15 @@
           }
         }
       }
+    },
+    "Currently Active Dock" : {
+
+    },
+    "Default Dock Set" : {
+
+    },
+    "Delete" : {
+
     },
     "DesktopRenamer API Status" : {
       "localizations" : {
@@ -214,6 +243,18 @@
       }
     },
     "Do Nothing" : {
+
+    },
+    "Dock Items" : {
+
+    },
+    "Dock Name" : {
+
+    },
+    "Dock Sets" : {
+
+    },
+    "Docks" : {
 
     },
     "DoNothing" : {
@@ -249,6 +290,9 @@
 
     },
     "Fallback (All Other Spaces)" : {
+
+    },
+    "Force apply this dock configuration immediately" : {
 
     },
     "General" : {
@@ -296,6 +340,9 @@
         }
       }
     },
+    "Large spacer" : {
+
+    },
     "Launch" : {
       "localizations" : {
         "zh-Hans" : {
@@ -319,6 +366,15 @@
     "Minimize" : {
       "comment" : "Action: Minimize Window"
     },
+    "More Apps" : {
+
+    },
+    "Name" : {
+
+    },
+    "New Dock Set" : {
+
+    },
     "No Rules Configured" : {
       "localizations" : {
         "zh-Hans" : {
@@ -330,6 +386,9 @@
       }
     },
     "No spaces detected" : {
+
+    },
+    "No spaces detected." : {
 
     },
     "Not Connected" : {
@@ -426,6 +485,9 @@
     "Select a category" : {
 
     },
+    "Select a Dock Set" : {
+
+    },
     "Select Target App" : {
 
     },
@@ -445,6 +507,9 @@
           }
         }
       }
+    },
+    "Set as Default" : {
+
     },
     "Settings" : {
       "extractionState" : "manual",
@@ -760,6 +825,9 @@
     "Simulate Global Hotkey..." : {
 
     },
+    "Small spacer" : {
+
+    },
     "Sort by %@" : {
 
     },
@@ -786,7 +854,13 @@
     "Switcher" : {
 
     },
+    "This is the default dock. It applies to all spaces not assigned to other sets." : {
+
+    },
     "Type" : {
+
+    },
+    "Used in other set" : {
 
     },
     "v%@" : {

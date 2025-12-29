@@ -1,7 +1,7 @@
 import SwiftUI
 
 enum SettingsTab: String, CaseIterable, Identifiable {
-    case general, rules, about
+    case general, rules, dock, about
     
     var id: String { self.rawValue }
     
@@ -9,6 +9,7 @@ enum SettingsTab: String, CaseIterable, Identifiable {
         switch self {
         case .general: return "General"
         case .rules: return "Rules"
+        case .dock: return "Docks"
         case .about: return "About"
         }
     }
@@ -17,6 +18,7 @@ enum SettingsTab: String, CaseIterable, Identifiable {
         switch self {
         case .general: return "gearshape"
         case .rules: return "list.bullet.rectangle.portrait"
+        case .dock: return "dock.rectangle"
         case .about: return "info.circle"
         }
     }
@@ -24,7 +26,7 @@ enum SettingsTab: String, CaseIterable, Identifiable {
 
 // Layout Constants matching DesktopRenamer
 let sidebarWidth: CGFloat = 180
-let defaultSettingsWindowWidth = 750 // Increased width for better layout
+let defaultSettingsWindowWidth = 1050 // Increased width for better layout
 let defaultSettingsWindowHeight = 550
 let sidebarRowHeight: CGFloat = 32
 let sidebarFontSize: CGFloat = 16
@@ -33,6 +35,7 @@ let titleHeaderHeight: CGFloat = 48
 struct SettingsView: View {
     @ObservedObject var spaceManager: SpaceManager
     @ObservedObject var ruleManager: RuleManager
+    @ObservedObject var dockManager: DockManager
     
     // Controlled by parent or defaults
     @State var selectedTab: SettingsTab? = .general
@@ -46,7 +49,7 @@ struct SettingsView: View {
         .navigationTitle("")
         .toolbar(.hidden, for: .windowToolbar)
         .edgesIgnoringSafeArea(.top)
-        .frame(width: CGFloat(defaultSettingsWindowWidth), height: CGFloat(defaultSettingsWindowHeight))
+        .frame(minWidth: CGFloat(defaultSettingsWindowWidth), minHeight: CGFloat(defaultSettingsWindowHeight))
     }
     
     // MARK: - Sidebar
@@ -128,10 +131,11 @@ struct SettingsView: View {
                     case .general:
                         GeneralSettingsView(spaceManager: spaceManager)
                     case .rules:
-                        // Wrap RulesView to manage padding manually since we ignore safe area
                         RulesView(ruleManager: ruleManager, spaceManager: spaceManager)
                             .padding(.horizontal)
                             .padding(.bottom)
+                    case .dock:
+                        DockSettingsView(dockManager: dockManager, spaceManager: spaceManager)
                     case .about:
                         AboutView()
                     }
@@ -168,10 +172,11 @@ struct SettingsView: View {
 // MARK: - Hosting Controller
 class SettingsHostingController: NSHostingController<SettingsView> {
     
-    init(spaceManager: SpaceManager, ruleManager: RuleManager, startTab: SettingsTab? = nil) {
+    init(spaceManager: SpaceManager, ruleManager: RuleManager, dockManager: DockManager, startTab: SettingsTab? = nil) {
         let rootView = SettingsView(
             spaceManager: spaceManager,
             ruleManager: ruleManager,
+            dockManager: dockManager,
             selectedTab: startTab ?? .general
         )
         super.init(rootView: rootView)

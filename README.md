@@ -1,4 +1,4 @@
-<!-- v0.1.0-beta.1 -->
+<!-- v0.2.0-beta.1 -->
 
 <h1 align="center">
   <img src="./SpaceSwitcher/Resources/SpaceSwitcherIcon_Default.png" width="25%" alt=""/>  
@@ -9,7 +9,7 @@
 <table align="center" border="0" cellpadding="0" cellspacing="0">
   <tr>
     <td align="center">
-      <img src="./SpaceSwitcher/Resources/Demo/SpaceSwitcher_v0.1.0-beta.1_General.png" width="300"/><br>
+      <img src="./SpaceSwitcher/Resources/Demo/SpaceSwitcher_v0.2.0-beta.1_General.png" width="300"/><br>
       <i>
       Connect to
       <a href=https://github.com/gitmichaelqiu/DesktopRenamer>
@@ -17,14 +17,20 @@
       </a>
       </i>
     </td>
+  </tr>
+  <tr>
     <td align="center">
-      <img src="./SpaceSwitcher/Resources/Demo/SpaceSwitcher_v0.1.0-beta.1_Rules.png" width="300"/><br>
+      <img src="./SpaceSwitcher/Resources/Demo/SpaceSwitcher_v0.2.0-beta.1_Rules.png" width="300"/><br>
       <i>Add custom rules to each space</i>
+    </td>
+    <td align="center">
+      <img src="./SpaceSwitcher/Resources/Demo/SpaceSwitcher_v0.2.0-beta.1_Docks.png" width="300"/><br>
+      <i>Different docks for each space</i>
     </td>
   </tr>
 </table>
 
-**SpaceSwitcher** is a macOS workspace enhancer that lets you control **which app to show** in each workspace. Especially for apps that you have **assigned to all desktops**.
+**SpaceSwitcher** is a macOS workspace enhancer that lets you control **which app and dock to show** in each workspace. Especially for apps that you have **assigned to all desktops**.
 
 ## 📦 Installation
 
@@ -36,9 +42,17 @@ Requires **macOS 13.0 Ventura** or above.
 4. Drag the app to the *Applications* folder
 5. All set!
 
-Because I do **NOT** have an Apple developer account for the app releases ~~(Apple charges an annual fee for this)~~, you may receive alerts such as "App is broken".
+Because I do **NOT** have an Apple developer account for the app releases, you may receive alerts such as "Developer is not verified".
 
-To resolve this, go to System Settings → the bottom of Privacy & Security → Open DesktopRenamer.
+To resolve this, go to System Settings → the bottom of Privacy & Security → Open SpaceSwitcher.
+
+## 💡 How to Use
+
+Here is an example:
+
+- My Zen browser has four workspaces with the shortcut Control + Shift + Number
+- In SpaceSwitcher/Rules, I add the rule of "simulate shortkey" for each macOS space
+- So when I switch to a space, Zen browser can automatically switch to the corresponding workspace
 
 ## 🛜 SpaceAPI
 
@@ -46,13 +60,9 @@ To get the current space's information, an extra app DesktopRenamer is required.
 
 After downloading DesktopRenamer, you need to turn on SpaceAPI in Settings → General.
 
-## 💡 Tips
-
-The app will not work as expected when you connect to **multiple** displays, for an issue in DesktopRenamer. I am currently working on solving this. If you have any ideas, you are welcomed to post them in [DesktopRenamer Issues](https://github.com/gitmichaelqiu/DesktopRenamer/issues).
-
 ## ⚠️ Issues/Suggestions
 
-You are welcome to create issues/suggestions in [GitHub Issues](https://github.com/gitmichaelqiu/DesktopRenamer/issues).
+You are welcome to create issues/suggestions in [GitHub Issues](https://github.com/gitmichaelqiu/SpaceSwitcher/issues).
 
 ## ⭐ Support This Project
 
