@@ -175,16 +175,56 @@ class DockManager: ObservableObject {
         let defaults = UserDefaults(suiteName: "com.apple.dock")
         return defaults?.array(forKey: "persistent-apps")
     }
-    
+
+    // MARK: - Spacer Creation (NEW)
+    func createSpacerTile(isSmall: Bool) -> DockTile {
+        let type = isSmall ? "small-spacer-tile" : "spacer-tile"
+        let label = isSmall ? "Small Spacer" : "Large Spacer"
+        
+        // Spacers use a simple dictionary structure
+        let rawData: [String: Any] = [
+            "tile-data": [:], // Empty dict for data
+            "tile-type": type
+        ]
+        
+        return DockTile(label: label, bundleIdentifier: nil, fileURL: nil, rawData: rawData)
+    }
+
+    // MARK: - Helpers
     private func parseRawDockData(_ rawArray: [Any]) -> [DockTile] {
         var tiles: [DockTile] = []
         for case let itemDict as [String: Any] in rawArray {
-            guard let tileData = itemDict["tile-data"] as? [String: Any] else { continue }
-            let label = tileData["file-label"] as? String ?? "Unknown"
-            let bundleID = tileData["bundle-identifier"] as? String
-            var url: URL?
-            if let urlStr = tileData["file-data"] as? [String: Any], let path = urlStr["_CFURLString"] as? String { url = URL(string: path) }
-            tiles.append(DockTile(label: label, bundleIdentifier: bundleID, fileURL: url, rawData: itemDict))
+            // 1. Check tile type first
+            let tileType = itemDict["tile-type"] as? String
+            
+            // 2. Default extraction
+            var label = "Unknown"
+            var bundleID: String? = nil
+            var url: URL? = nil
+            
+            if let tileData = itemDict["tile-data"] as? [String: Any] {
+                // If it's a spacer, override the label
+                if tileType == "spacer-tile" {
+                    label = "Large Spacer"
+                } else if tileType == "small-spacer-tile" {
+                    label = "Small Spacer"
+                } else {
+                    // Regular App/File logic
+                    label = tileData["file-label"] as? String ?? "Unknown"
+                    bundleID = tileData["bundle-identifier"] as? String
+                    if let urlStr = tileData["file-data"] as? [String: Any],
+                       let path = urlStr["_CFURLString"] as? String {
+                        url = URL(string: path)
+                    }
+                }
+            }
+            
+            tiles.append(DockTile(
+                label: label,
+                bundleIdentifier: bundleID,
+                fileURL: url,
+                rawData: itemDict
+            ))
         }
         return tiles
     }
