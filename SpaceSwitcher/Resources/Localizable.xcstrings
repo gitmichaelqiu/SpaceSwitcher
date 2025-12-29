@@ -113,13 +113,22 @@
     "Active in:" : {
 
     },
+    "Add a large gap" : {
+
+    },
     "Add a rule to control app visibility across spaces." : {
+
+    },
+    "Add a small gap (separator)" : {
 
     },
     "Add Action" : {
 
     },
-    "Add Item" : {
+    "Add an application" : {
+
+    },
+    "Add App" : {
 
     },
     "Add Workflow Group" : {
@@ -152,7 +161,7 @@
         }
       }
     },
-    "Application..." : {
+    "Apply Now" : {
 
     },
     "Apply to Spaces" : {
@@ -277,6 +286,9 @@
     "Fallback (All Other Spaces)" : {
 
     },
+    "Force apply this dock configuration immediately" : {
+
+    },
     "General" : {
       "localizations" : {
         "zh-Hans" : {
@@ -322,7 +334,7 @@
         }
       }
     },
-    "Large Spacer" : {
+    "Large spacer" : {
 
     },
     "Launch" : {
@@ -804,7 +816,7 @@
     "Simulate Global Hotkey..." : {
 
     },
-    "Small Spacer" : {
+    "Small spacer" : {
 
     },
     "Sort by %@" : {
@@ -834,6 +846,9 @@
 
     },
     "This is the default dock. It applies to all spaces not assigned to other sets." : {
+
+    },
+    "Tip: 'Line' adds a small spacer. macOS does not support visual lines in the apps section." : {
 
     },
     "Type" : {

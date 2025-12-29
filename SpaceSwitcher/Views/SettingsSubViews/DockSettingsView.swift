@@ -48,7 +48,8 @@ struct DockSettingsView: View {
                                 // 3. Dock Items List (Apps + Spacers)
                                 DockItemsListView(
                                     dockManager: dockManager,
-                                    selectedSetID: selectedID, // Pass ID for robust lookups
+                                    spaceManager: spaceManager,
+                                    selectedSetID: selectedID,
                                     tiles: $dockManager.config.dockSets[index].tiles
                                 )
                                 
@@ -231,47 +232,62 @@ struct DockSpaceAssignmentView: View {
     }
 }
 
-// MARK: - Component 4: Dock Items List (Apps + Spacers)
+// MARK: - Component 4: Dock Items List (Apps + Spacers + Apply)
 struct DockItemsListView: View {
     @ObservedObject var dockManager: DockManager
+    @ObservedObject var spaceManager: SpaceManager // Needed for current space ID
     let selectedSetID: UUID
     @Binding var tiles: [DockTile]
     
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            HStack {
-                Text("Dock Items").font(.headline)
+            
+            // MARK: - ACTION BAR
+            HStack(spacing: 12) {
+                Text("Dock Items")
+                    .font(.headline)
+                
                 Spacer()
                 
-                // ADD ITEM MENU
-                Menu {
-                    Button {
-                        addAppToSelectedSet()
-                    } label: {
-                        Label("Application...", systemImage: "plus.app")
-                    }
-                    
-                    Divider()
-                    
-                    Button {
-                        addSpacerToSelectedSet(isSmall: false)
-                    } label: {
-                        Label("Large Spacer", systemImage: "arrow.left.and.right.square")
-                    }
-                    
-                    Button {
-                        addSpacerToSelectedSet(isSmall: true)
-                    } label: {
-                        Label("Small Spacer", systemImage: "arrow.left.and.right.square.fill")
-                    }
+                // 1. APPLY BUTTON (Refresh)
+                Button {
+                    forceApply()
                 } label: {
-                    Label("Add Item", systemImage: "plus")
+                    Label("Apply Now", systemImage: "arrow.clockwise")
                 }
-                .menuStyle(.borderedButton)
-                .controlSize(.small)
-                .fixedSize()
+                .help("Force apply this dock configuration immediately")
+                
+                Divider()
+                    .frame(height: 16)
+                
+                // 2. ADD APP
+                Button {
+                    addAppToSelectedSet()
+                } label: {
+                    Label("Add App", systemImage: "plus.app")
+                }
+                .help("Add an application")
+                
+                // 3. ADD LARGE SPACER
+                Button {
+                    addSpacerToSelectedSet(isSmall: false)
+                } label: {
+                    Label("Large spacer", systemImage: "arrow.left.and.right.square")
+                }
+                .help("Add a large gap")
+                
+                // 4. ADD SMALL SPACER (Separator)
+                Button {
+                    addSpacerToSelectedSet(isSmall: true)
+                } label: {
+                    Label("Small spacer", systemImage: "arrow.left.and.right.square.fill")
+                }
+                .help("Add a small gap")
             }
+            .buttonStyle(.bordered)
+            .controlSize(.small)
             
+            // MARK: - LIST
             List {
                 ForEach(tiles) { tile in
                     DockTileRow(tile: tile)
@@ -285,20 +301,30 @@ struct DockItemsListView: View {
             }
             .frame(height: 350)
             .listStyle(.inset)
-            .border(Color.gray.opacity(0.2), width: 1).cornerRadius(6)
+            .border(Color.gray.opacity(0.2), width: 1)
+            .cornerRadius(6)
         }
         .padding(.horizontal, 20)
     }
     
     // Actions
+    private func forceApply() {
+        guard let currentSpace = spaceManager.currentSpaceID else { return }
+        // Call the updated manager method with force: true
+        dockManager.applyDockForSpace(currentSpace, force: true)
+    }
+    
     private func addAppToSelectedSet() {
         let panel = NSOpenPanel()
+        panel.allowedContentTypes = [.application]
+        panel.allowsMultipleSelection = true
+        panel.canChooseDirectories = false
+        
         panel.begin { response in
             if response == .OK {
                 for url in panel.urls {
                     let newTile = dockManager.createTile(from: url)
                     DispatchQueue.main.async {
-                        // We must find the set again in the manager to append safely
                         if let index = dockManager.config.dockSets.firstIndex(where: { $0.id == selectedSetID }) {
                             dockManager.config.dockSets[index].tiles.append(newTile)
                         }
@@ -318,7 +344,6 @@ struct DockItemsListView: View {
     }
 }
 
-// MARK: - Sub-Component: Dock Tile Row
 struct DockTileRow: View {
     let tile: DockTile
     

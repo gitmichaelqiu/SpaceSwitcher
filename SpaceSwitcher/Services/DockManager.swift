@@ -39,37 +39,38 @@ class DockManager: ObservableObject {
     
     // MARK: - Logic
     
-    func applyDockForSpace(_ spaceID: String) {
-        dockTask?.cancel()
-        
-        dockTask = Task {
-            // 1. Prevent App Nap
-            let activity = ProcessInfo.processInfo.beginActivity(
-                options: [.userInitiated, .latencyCritical],
-                reason: "DockSwitch-\(spaceID)"
-            )
-            defer { ProcessInfo.processInfo.endActivity(activity) }
+    func applyDockForSpace(_ spaceID: String, force: Bool = false) {
+            dockTask?.cancel()
             
-            // 2. Debounce (Allow rapid swiping)
-            try? await Task.sleep(nanoseconds: 350_000_000) // 0.35s
-            if Task.isCancelled { return }
-            
-            await performDockSwitch(for: spaceID)
+            dockTask = Task {
+                let activity = ProcessInfo.processInfo.beginActivity(
+                    options: [.userInitiated, .latencyCritical],
+                    reason: "DockSwitch-\(spaceID)"
+                )
+                defer { ProcessInfo.processInfo.endActivity(activity) }
+                
+                // Only debounce if NOT forcing
+                if !force {
+                    try? await Task.sleep(nanoseconds: 350_000_000)
+                }
+                if Task.isCancelled { return }
+                
+                await performDockSwitch(for: spaceID, force: force)
+            }
         }
-    }
     
     @MainActor
-    private func performDockSwitch(for spaceID: String) async {
+    private func performDockSwitch(for spaceID: String, force: Bool) async {
         let targetSetID = config.spaceAssignments[spaceID] ?? config.defaultDockSetID
         guard let setID = targetSetID else {
             logger.debug("No dock assigned for space \(spaceID), and no default set.")
             return
         }
         
-        // Skip if already applied
-        if setID == lastAppliedDockSetID && setID != config.defaultDockSetID {
-            logger.debug("Already on Dock Set \(setID), skipping.")
-            return
+        let isSwitchingToDefault = (setID == config.defaultDockSetID)
+            if !force && !isSwitchingToDefault && setID == lastAppliedDockSetID {
+                logger.debug("Already on Dock Set \(setID), skipping.")
+                return
         }
         
         guard let set = config.dockSets.first(where: { $0.id == setID }) else { return }
