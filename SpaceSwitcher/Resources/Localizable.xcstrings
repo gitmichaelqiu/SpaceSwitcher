@@ -119,7 +119,7 @@
     "Add Action" : {
 
     },
-    "Add App" : {
+    "Add Item" : {
 
     },
     "Add Workflow Group" : {
@@ -151,6 +151,9 @@
           }
         }
       }
+    },
+    "Application..." : {
+
     },
     "Apply to Spaces" : {
 
@@ -318,6 +321,9 @@
           }
         }
       }
+    },
+    "Large Spacer" : {
+
     },
     "Launch" : {
       "localizations" : {
@@ -796,6 +802,9 @@
 
     },
     "Simulate Global Hotkey..." : {
+
+    },
+    "Small Spacer" : {
 
     },
     "Sort by %@" : {
