@@ -25,7 +25,7 @@ class DockManager: ObservableObject {
     
     private func setupBindings() {
         spaceManager?.$currentSpaceID
-            .dropFirst().removeDuplicates()
+            .removeDuplicates()
             .sink { [weak self] spaceID in
                 guard let self = self, let spaceID = spaceID else { return }
                 self.applyDockForSpace(spaceID)
@@ -36,15 +36,12 @@ class DockManager: ObservableObject {
     // MARK: - Logic
     
     func applyDockForSpace(_ spaceID: String) {
-        // 1. Determine target (Specific Assignment OR Default)
+        // 1. Determine target
         let targetSetID = config.spaceAssignments[spaceID] ?? config.defaultDockSetID
         
         guard let setID = targetSetID else { return }
         
         // 2. Reliability Check
-        // If we are switching TO the default, we should be aggressive because the user might have
-        // drifted from the "Default" state while in an unassigned space.
-        // If we are switching TO a specific set, simple caching is usually fine.
         let isSwitchingToDefault = (setID == config.defaultDockSetID)
         
         if !isSwitchingToDefault && setID == lastAppliedDockSetID {
@@ -54,10 +51,12 @@ class DockManager: ObservableObject {
         // 3. Find Data
         guard let set = config.dockSets.first(where: { $0.id == setID }) else { return }
         
-        // 4. Validate content
+        // FIX 2: Do NOT return early for empty sets.
+        // If the user configured an empty dock, we should apply an empty dock
+        // rather than leaving the wrong dock (previous space's dock) active.
         if set.tiles.isEmpty {
-            print("DOCK: Skipping empty set '\(set.name)'")
-            return
+            print("DOCK: Applying empty set '\(set.name)' (User configured empty dock)")
+            // proceed...
         }
         
         print("DOCK: Applying '\(set.name)' (Default: \(isSwitchingToDefault))")
