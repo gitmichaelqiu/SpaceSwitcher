@@ -95,7 +95,7 @@ class DockManager: ObservableObject {
             let appID = "com.apple.dock" as CFString
             
             // 1. Prepare Data
-            let rawData = self.buildRawDockData(from: set.tiles)
+            let rawData = await self.buildRawDockData(from: set.tiles)
             let targetCount = rawData.count
             
             // 2. Write & Verify Loop (Max 5 attempts)
@@ -110,8 +110,8 @@ class DockManager: ObservableObject {
                 }
                 
                 // B. WAIT (Give cfprefsd time to flush)
-                let delay = UInt32(150_000 + (attempt * 50_000))
-                usleep(delay)
+                // let delay = UInt32(150_000 + (attempt * 50_000))
+                // usleep(delay)
                 
                 // C. READ BACK (Verification)
                 CFPreferencesAppSynchronize(appID) // Force re-sync before read
@@ -160,8 +160,6 @@ class DockManager: ObservableObject {
             return true
         }.value
     }
-    
-    // ... (All Helpers/Create functions remain unchanged) ...
     
     func createNewDockSet(name: String) {
         guard let rawApps = getSystemDockPersistentApps() else { return }
