@@ -27,7 +27,7 @@ enum SettingsTab: String, CaseIterable, Identifiable {
 // Layout Constants matching DesktopRenamer
 let sidebarWidth: CGFloat = 180
 let defaultSettingsWindowWidth = 1050 // Increased width for better layout
-let defaultSettingsWindowHeight = 550
+let defaultSettingsWindowHeight = 650
 let sidebarRowHeight: CGFloat = 32
 let sidebarFontSize: CGFloat = 16
 let titleHeaderHeight: CGFloat = 48
