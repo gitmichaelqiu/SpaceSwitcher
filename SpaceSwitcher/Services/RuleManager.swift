@@ -158,20 +158,38 @@ class RuleManager: ObservableObject {
         let matched = sm.availableSpaces.filter { allIDs.contains($0.id) }
         return matched.map { $0.number }.min() ?? 999
     }
+    private func checkAccessibility() -> Bool {
+        let options = [kAXTrustedCheckOptionPrompt.takeUnretainedValue() as String: false] as CFDictionary
+        return AXIsProcessTrustedWithOptions(options)
+    }
+
     private func unhideAppWithoutActivation(_ app: NSRunningApplication) {
-         let pid = app.processIdentifier; let appElement = AXUIElementCreateApplication(pid)
-         AXUIElementSetAttributeValue(appElement, kAXHiddenAttribute as CFString, kCFBooleanFalse)
+        if !checkAccessibility() { print("RULE: Accessibility permission missing, skipping unhide") ; return }
+        let pid = app.processIdentifier; let appElement = AXUIElementCreateApplication(pid)
+        let result = AXUIElementSetAttributeValue(appElement, kAXHiddenAttribute as CFString, kCFBooleanFalse)
+        if result != .success { print("RULE: Failed to unhide \(app.localizedName ?? "Unknown"): \(result.rawValue)") }
     }
     private func minimizeAppWindows(_ app: NSRunningApplication) {
+        if !checkAccessibility() { print("RULE: Accessibility permission missing, skipping minimize") ; return }
         let pid = app.processIdentifier; let appElement = AXUIElementCreateApplication(pid); var windowsRef: AnyObject?
         if AXUIElementCopyAttributeValue(appElement, kAXWindowsAttribute as CFString, &windowsRef) == .success, let windows = windowsRef as? [AXUIElement] {
-            for window in windows { AXUIElementSetAttributeValue(window, kAXMinimizedAttribute as CFString, kCFBooleanTrue) }
+            for window in windows { 
+                let result = AXUIElementSetAttributeValue(window, kAXMinimizedAttribute as CFString, kCFBooleanTrue)
+                if result != .success { print("RULE: Failed to minimize window: \(result.rawValue)") }
+            }
         }
     }
     private func unminimizeAppWindows(_ app: NSRunningApplication) {
+        if !checkAccessibility() { print("RULE: Accessibility permission missing, skipping unminimize") ; return }
         let pid = app.processIdentifier; let appElement = AXUIElementCreateApplication(pid); var windowsRef: AnyObject?
         if AXUIElementCopyAttributeValue(appElement, kAXWindowsAttribute as CFString, &windowsRef) == .success, let windows = windowsRef as? [AXUIElement] {
-            for window in windows { var isMin: AnyObject?; if AXUIElementCopyAttributeValue(window, kAXMinimizedAttribute as CFString, &isMin) == .success, let minBool = isMin as? Bool, minBool { AXUIElementSetAttributeValue(window, kAXMinimizedAttribute as CFString, kCFBooleanFalse) } }
+            for window in windows { 
+                var isMin: AnyObject?
+                if AXUIElementCopyAttributeValue(window, kAXMinimizedAttribute as CFString, &isMin) == .success, let minBool = isMin as? Bool, minBool { 
+                    let result = AXUIElementSetAttributeValue(window, kAXMinimizedAttribute as CFString, kCFBooleanFalse) 
+                    if result != .success { print("RULE: Failed to unminimize window: \(result.rawValue)") }
+                } 
+            }
         }
     }
     var sortedRules: [AppRule] {

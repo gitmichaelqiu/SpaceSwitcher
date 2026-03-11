@@ -126,6 +126,8 @@ class DockManager: ObservableObject {
             // 2. Write & Verify Loop (Max 5 attempts)
             var verified = false
             for attempt in 1...5 {
+                if Task.isCancelled { return false }
+                
                 // A. WRITE
                 CFPreferencesSetAppValue(key, rawData as CFPropertyList, appID)
                 let syncResult = CFPreferencesAppSynchronize(appID)
@@ -137,6 +139,8 @@ class DockManager: ObservableObject {
                 // B. WAIT (Give cfprefsd time to flush) - Increases with attempts
                 let delay = UInt32(150_000 + (attempt * 50_000))
                 usleep(delay)
+                
+                if Task.isCancelled { return false }
                 
                 // C. READ BACK (Verification)
                 CFPreferencesAppSynchronize(appID) // Force re-sync before read
@@ -174,12 +178,14 @@ class DockManager: ObservableObject {
                 return false
             }
             
-            // 3. KILL DOCK (FORCE KILL)
-            // We use -KILL (SIGKILL) to prevent the Dock from saving its state on exit.
-            self.logger.info("Restarting Dock process (SIGKILL)...")
+            if Task.isCancelled { return false }
+            
+            // 3. KILL DOCK
+            // Standard kill signal (SIGTERM) allows the Dock to cleanly exit.
+            self.logger.info("Restarting Dock process...")
             let task = Process()
             task.launchPath = "/usr/bin/killall"
-            task.arguments = ["-KILL", "Dock"]
+            task.arguments = ["Dock"]
             task.launch()
             task.waitUntilExit()
             

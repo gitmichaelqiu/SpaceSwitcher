@@ -66,6 +66,9 @@
         }
       }
     },
+    "Accessibility" : {
+
+    },
     "Active in:" : {
       "localizations" : {
         "zh-Hans" : {
@@ -195,6 +198,9 @@
           }
         }
       }
+    },
+    "Automation" : {
+
     },
     "Bring to Front" : {
       "localizations" : {
@@ -402,6 +408,12 @@
         }
       }
     },
+    "Grant" : {
+
+    },
+    "Granted" : {
+
+    },
     "Hide" : {
       "comment" : "Action: Hide Window",
       "localizations" : {
@@ -412,6 +424,9 @@
           }
         }
       }
+    },
+    "If the Settings show that the permission is granted but the app still does not have the permission, remove the app row in Settings and re-grant." : {
+
     },
     "In" : {
       "localizations" : {
@@ -534,6 +549,9 @@
         }
       }
     },
+    "Not Granted" : {
+
+    },
     "Open DesktopRenamer and enable API" : {
       "localizations" : {
         "zh-Hans" : {
@@ -543,6 +561,12 @@
           }
         }
       }
+    },
+    "Open Settings" : {
+
+    },
+    "Permissions" : {
+
     },
     "Quit" : {
       "extractionState" : "manual",
@@ -580,6 +604,12 @@
           }
         }
       }
+    },
+    "Required for injecting shortcuts to switch spaces, and reading active window information." : {
+
+    },
+    "Required for using Mission Control via AppleScript (System Events) to switch spaces when the fast-switch method falls back." : {
+
     },
     "Restore Previously Active Window" : {
       "localizations" : {

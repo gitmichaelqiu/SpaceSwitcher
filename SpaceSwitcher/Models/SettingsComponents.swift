@@ -2,44 +2,66 @@ import SwiftUI
 
 struct SettingsRow<Content: View>: View {
     let title: LocalizedStringKey?
+    let helperText: LocalizedStringKey?
     let content: Content
 
-    init(_ title: LocalizedStringKey?, @ViewBuilder content: () -> Content) {
+    init(_ title: LocalizedStringKey?, helperText: LocalizedStringKey? = nil, @ViewBuilder content: () -> Content) {
         self.title = title
+        self.helperText = helperText
         self.content = content()
     }
 
     var body: some View {
-        HStack {
-            if let _title = title {
-                Text(_title)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-            } else {
-                Spacer()
+        VStack(alignment: .leading, spacing: 2) {
+            HStack {
+                if let _title = title {
+                    Text(_title)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                } else {
+                    Spacer()
+                }
+                
+                content
+                    .frame(alignment: .trailing)
             }
             
-            content
-                .frame(alignment: .trailing)
+            if let _helper = helperText {
+                Text(_helper)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
         }
-        .padding(.vertical, 6)
+        .padding(.vertical, 8)
         .padding(.horizontal, 10)
     }
 }
 
 struct SettingsSection<Content: View>: View {
     let title: LocalizedStringKey
+    let helperText: LocalizedStringKey?
     let content: Content
 
-    init(_ title: LocalizedStringKey, @ViewBuilder content: () -> Content) {
+    init(_ title: LocalizedStringKey, helperText: LocalizedStringKey? = nil, @ViewBuilder content: () -> Content) {
         self.title = title
+        self.helperText = helperText
         self.content = content()
     }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text(title)
-                .font(.headline)
-                .padding(.leading, 4)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title)
+                    .font(.headline)
+                    .padding(.leading, 4)
+                
+                if let _helper = helperText {
+                    Text(_helper)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .padding(.leading, 4)
+                }
+            }
 
             VStack(spacing: 0) {
                 content

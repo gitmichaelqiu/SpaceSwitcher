@@ -1,13 +1,14 @@
 import SwiftUI
 
 enum SettingsTab: String, CaseIterable, Identifiable {
-    case general, rules, dock, about
+    case general, permissions, rules, dock, about
     
     var id: String { self.rawValue }
     
     var localizedName: LocalizedStringKey {
         switch self {
         case .general: return "General"
+        case .permissions: return "Permissions"
         case .rules: return "Rules"
         case .dock: return "Docks"
         case .about: return "About"
@@ -17,6 +18,7 @@ enum SettingsTab: String, CaseIterable, Identifiable {
     var iconName: String {
         switch self {
         case .general: return "gearshape"
+        case .permissions: return "lock.shield"
         case .rules: return "list.bullet.rectangle.portrait"
         case .dock: return "dock.rectangle"
         case .about: return "info.circle"
@@ -130,6 +132,8 @@ struct SettingsView: View {
                     switch tab {
                     case .general:
                         GeneralSettingsView(spaceManager: spaceManager)
+                    case .permissions:
+                        PermissionsSettingsView()
                     case .rules:
                         RulesView(ruleManager: ruleManager, spaceManager: spaceManager)
                             .padding(.horizontal)
