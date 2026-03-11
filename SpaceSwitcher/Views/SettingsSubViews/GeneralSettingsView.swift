@@ -33,7 +33,7 @@ struct GeneralSettingsView: View {
                     if spaceManager.availableSpaces.isEmpty {
                         Divider()
                         
-                        SettingsRow(nil) {
+                        SettingsRow("Current Space") {
                             Text("Open DesktopRenamer and enable API")
                                 .foregroundStyle(.secondary)
                                 .padding(4)

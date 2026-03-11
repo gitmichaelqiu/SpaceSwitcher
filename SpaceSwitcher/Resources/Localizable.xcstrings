@@ -36,6 +36,9 @@
     "→" : {
       "shouldTranslate" : false
     },
+    "↺" : {
+
+    },
     "+ Add Rule" : {
       "localizations" : {
         "zh-Hans" : {
@@ -198,9 +201,6 @@
           }
         }
       }
-    },
-    "Automation" : {
-
     },
     "Bring to Front" : {
       "localizations" : {
@@ -608,7 +608,7 @@
     "Required for injecting shortcuts to switch spaces, and reading active window information." : {
 
     },
-    "Required for using Mission Control via AppleScript (System Events) to switch spaces when the fast-switch method falls back." : {
+    "Reset to default" : {
 
     },
     "Restore Previously Active Window" : {
