@@ -1,7 +1,7 @@
 import SwiftUI
 
 enum SettingsTab: String, CaseIterable, Identifiable {
-    case general, permissions, rules, dock, about
+    case general, rules, dock, permissions, about
     
     var id: String { self.rawValue }
     
@@ -132,14 +132,14 @@ struct SettingsView: View {
                     switch tab {
                     case .general:
                         GeneralSettingsView(spaceManager: spaceManager)
-                    case .permissions:
-                        PermissionsSettingsView()
                     case .rules:
                         RulesView(ruleManager: ruleManager, spaceManager: spaceManager)
                             .padding(.horizontal)
                             .padding(.bottom)
                     case .dock:
                         DockSettingsView(dockManager: dockManager, spaceManager: spaceManager)
+                    case .permissions:
+                        PermissionsSettingsView()
                     case .about:
                         AboutView()
                     }
