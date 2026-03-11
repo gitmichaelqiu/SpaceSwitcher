@@ -86,10 +86,8 @@ class DockManager: ObservableObject {
             return
         }
         
-        // OPTIMIZATION: Skip if already active (unless forced or switching to default)
-        // We generally allow re-applying default to ensure consistency, but strictly skip custom sets.
-        let isSwitchingToDefault = (setID == config.defaultDockSetID)
-        if !force && !isSwitchingToDefault && setID == lastAppliedDockSetID {
+        // OPTIMIZATION: Skip if already active (unless forced)
+        if !force && setID == lastAppliedDockSetID {
             logger.debug("Already on Dock Set \(setID), skipping.")
             // Ensure UI is in sync even if we skipped the work
             if activeDockSetID != setID { activeDockSetID = setID }

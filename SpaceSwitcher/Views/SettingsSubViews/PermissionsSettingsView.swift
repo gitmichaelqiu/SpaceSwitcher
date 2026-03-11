@@ -23,23 +23,6 @@ struct PermissionsSettingsView: View {
                         }
                     }
                     
-                    Divider()
-                    
-                    SettingsRow("Automation", helperText: "Required for using Mission Control via AppleScript (System Events) to switch spaces when the fast-switch method falls back.") {
-                        HStack {
-                            if permissionManager.isAutomationGranted {
-                                Text("Granted")
-                                    .foregroundColor(.green)
-                            } else {
-                                Text("Not Granted")
-                                    .foregroundColor(.red)
-                            }
-                            
-                            Button(permissionManager.isAutomationGranted ? "Open Settings" : "Grant") {
-                                permissionManager.requestAutomationPermission()
-                            }
-                        }
-                    }
                 }
                 
                 Spacer()

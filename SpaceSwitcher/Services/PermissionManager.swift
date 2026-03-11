@@ -6,7 +6,6 @@ class PermissionManager: ObservableObject {
     static let shared = PermissionManager()
 
     @Published var isAccessibilityGranted: Bool = false
-    @Published var isAutomationGranted: Bool = false
 
     private init() {
         checkPermissions()
@@ -28,17 +27,6 @@ class PermissionManager: ObservableObject {
             kAXTrustedCheckOptionPrompt.takeUnretainedValue() as String: false
         ]
         self.isAccessibilityGranted = AXIsProcessTrustedWithOptions(axOptions)
-
-        // Check for automation (specifically for System Events)
-        let targetBundleID = "com.apple.systemevents"
-        let targetDesc = NSAppleEventDescriptor(bundleIdentifier: targetBundleID)
-        if let aeDesc = targetDesc.aeDesc {
-            let status = AEDeterminePermissionToAutomateTarget(
-                aeDesc, typeWildCard, typeWildCard, false)
-            self.isAutomationGranted = (status == noErr)
-        } else {
-            self.isAutomationGranted = false
-        }
     }
 
     func requestAccessibilityPermission() {
@@ -51,20 +39,6 @@ class PermissionManager: ObservableObject {
         // If it wasn't immediately granted, we open the settings
         if !trusted {
             openSystemSettings(type: "Privacy_Accessibility")
-        }
-    }
-
-    func requestAutomationPermission() {
-        let targetBundleID = "com.apple.systemevents"
-        let targetDesc = NSAppleEventDescriptor(bundleIdentifier: targetBundleID)
-        if let aeDesc = targetDesc.aeDesc {
-            let status = AEDeterminePermissionToAutomateTarget(
-                aeDesc, typeWildCard, typeWildCard, true)
-            self.isAutomationGranted = (status == noErr)
-            
-            if status != noErr {
-                openSystemSettings(type: "Privacy_Automation")
-            }
         }
     }
 
