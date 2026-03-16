@@ -1,7 +1,7 @@
 import SwiftUI
 
 enum SettingsTab: String, CaseIterable, Identifiable {
-    case general, rules, dock, about
+    case general, rules, dock, permissions, about
     
     var id: String { self.rawValue }
     
@@ -10,6 +10,7 @@ enum SettingsTab: String, CaseIterable, Identifiable {
         case .general: return "General"
         case .rules: return "Rules"
         case .dock: return "Docks"
+        case .permissions: return "Permissions"
         case .about: return "About"
         }
     }
@@ -19,6 +20,7 @@ enum SettingsTab: String, CaseIterable, Identifiable {
         case .general: return "gearshape"
         case .rules: return "list.bullet.rectangle.portrait"
         case .dock: return "dock.rectangle"
+        case .permissions: return "lock.shield"
         case .about: return "info.circle"
         }
     }
@@ -27,7 +29,7 @@ enum SettingsTab: String, CaseIterable, Identifiable {
 // Layout Constants matching DesktopRenamer
 let sidebarWidth: CGFloat = 180
 let defaultSettingsWindowWidth = 1050 // Increased width for better layout
-let defaultSettingsWindowHeight = 550
+let defaultSettingsWindowHeight = 650
 let sidebarRowHeight: CGFloat = 32
 let sidebarFontSize: CGFloat = 16
 let titleHeaderHeight: CGFloat = 48
@@ -136,6 +138,8 @@ struct SettingsView: View {
                             .padding(.bottom)
                     case .dock:
                         DockSettingsView(dockManager: dockManager, spaceManager: spaceManager)
+                    case .permissions:
+                        PermissionsSettingsView()
                     case .about:
                         AboutView()
                     }
