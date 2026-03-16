@@ -37,7 +37,7 @@
       "shouldTranslate" : false
     },
     "↺" : {
-
+      "shouldTranslate" : false
     },
     "+ Add Rule" : {
       "localizations" : {
@@ -70,7 +70,14 @@
       }
     },
     "Accessibility" : {
-
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "辅助"
+          }
+        }
+      }
     },
     "Active in:" : {
       "localizations" : {
@@ -409,10 +416,24 @@
       }
     },
     "Grant" : {
-
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "授权"
+          }
+        }
+      }
     },
     "Granted" : {
-
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已授权"
+          }
+        }
+      }
     },
     "Hide" : {
       "comment" : "Action: Hide Window",
@@ -426,7 +447,14 @@
       }
     },
     "If the Settings show that the permission is granted but the app still does not have the permission, remove the app row in Settings and re-grant." : {
-
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "如果设置显示权限已获取但是 App 显示未获取，在设置权限中移除 App 并重新获取权限。"
+          }
+        }
+      }
     },
     "In" : {
       "localizations" : {
@@ -550,7 +578,14 @@
       }
     },
     "Not Granted" : {
-
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "未授权"
+          }
+        }
+      }
     },
     "Open DesktopRenamer and enable API" : {
       "localizations" : {
@@ -563,10 +598,24 @@
       }
     },
     "Open Settings" : {
-
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "打开设置呢"
+          }
+        }
+      }
     },
     "Permissions" : {
-
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "权限"
+          }
+        }
+      }
     },
     "Quit" : {
       "extractionState" : "manual",
@@ -605,11 +654,15 @@
         }
       }
     },
-    "Required for injecting shortcuts to switch spaces, and reading active window information." : {
-
-    },
     "Reset to default" : {
-
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "重置"
+          }
+        }
+      }
     },
     "Restore Previously Active Window" : {
       "localizations" : {
