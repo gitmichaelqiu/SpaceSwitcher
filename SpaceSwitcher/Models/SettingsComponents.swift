@@ -42,12 +42,12 @@ struct SettingsRow<Content: View>: View {
 }
 
 struct SettingsSection<Content: View>: View {
-    let title: LocalizedStringKey
+    let title: LocalizedStringKey?
     let helperText: LocalizedStringKey?
     let content: Content
 
     init(
-        _ title: LocalizedStringKey, helperText: LocalizedStringKey? = nil,
+        _ title: LocalizedStringKey? = nil, helperText: LocalizedStringKey? = nil,
         @ViewBuilder content: () -> Content
     ) {
         self.title = title
@@ -57,15 +57,17 @@ struct SettingsSection<Content: View>: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            HStack(spacing: 4) {
-                Text(title)
-                    .font(.headline)
+            if let title = title {
+                HStack(spacing: 4) {
+                    Text(title)
+                        .font(.headline)
 
-                if let helperText = helperText {
-                    HelperInfoButton(text: helperText)
+                    if let helperText = helperText {
+                        HelperInfoButton(text: helperText)
+                    }
                 }
+                .padding(.leading, 4)
             }
-            .padding(.leading, 4)
 
             VStack(spacing: 0) {
                 content
@@ -79,6 +81,7 @@ struct SettingsSection<Content: View>: View {
                     )
             )
         }
+        .padding(.top, title == nil ? -10 : 0)
     }
 
     private var backgroundColor: Color {
@@ -150,23 +153,26 @@ struct SliderSettingsRow<V>: View where V: BinaryFloatingPoint, V.Stride: Binary
     let defaultValue: V
     let step: V?
     let helperText: LocalizedStringKey?
+    let warningText: LocalizedStringKey?
     let valueString: (V) -> String
 
     init(
         _ title: LocalizedStringKey,
+        helperText: LocalizedStringKey? = nil,
+        warningText: LocalizedStringKey? = nil,
         value: Binding<V>,
         range: ClosedRange<V>,
         defaultValue: V,
         step: V? = nil,
-        helperText: LocalizedStringKey? = nil,
         valueString: @escaping (V) -> String = { String(format: "%.2f", Double($0)) }
     ) {
         self.title = title
+        self.helperText = helperText
+        self.warningText = warningText
         self._value = value
         self.range = range
         self.defaultValue = defaultValue
         self.step = step
-        self.helperText = helperText
         self.valueString = valueString
     }
 
@@ -178,6 +184,9 @@ struct SliderSettingsRow<V>: View where V: BinaryFloatingPoint, V.Stride: Binary
                     Text(title)
                     if let helperText = helperText {
                         HelperInfoButton(text: helperText)
+                    }
+                    if let warningText = warningText {
+                        WarningInfoButton(text: warningText)
                     }
                 }
 
