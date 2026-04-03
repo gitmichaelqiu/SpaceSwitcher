@@ -26,13 +26,13 @@ enum SettingsTab: String, CaseIterable, Identifiable {
     }
 }
 
-// Layout Constants
-let sidebarWidth: CGFloat = 200
-let defaultSettingsWindowWidth = 1050
-let defaultSettingsWindowHeight = 650
-let sidebarRowHeight: CGFloat = 36
-let sidebarFontSize: CGFloat = 14
-let titleHeaderHeight: CGFloat = 52
+// Layout Constants - Standardized for macOSers bundle
+let sidebarWidth: CGFloat = 180
+let defaultSettingsWindowWidth = 750
+let defaultSettingsWindowHeight = 550
+let sidebarRowHeight: CGFloat = 32
+let sidebarFontSize: CGFloat = 16
+let titleHeaderHeight: CGFloat = 48
 
 struct SettingsView: View {
     @ObservedObject var spaceManager: SpaceManager
@@ -48,9 +48,19 @@ struct SettingsView: View {
             detailView
         }
         .navigationTitle("")
-        .toolbar(.hidden, for: .windowToolbar)
+        .modifier(ToolbarHider())
         .edgesIgnoringSafeArea(.top)
-        .frame(minWidth: CGFloat(defaultSettingsWindowWidth), minHeight: CGFloat(defaultSettingsWindowHeight))
+        .frame(width: CGFloat(defaultSettingsWindowWidth), height: CGFloat(defaultSettingsWindowHeight))
+    }
+    
+    struct ToolbarHider: ViewModifier {
+        func body(content: Content) -> some View {
+            if #available(macOS 14.0, *) {
+                content.toolbar(.hidden, for: .windowToolbar)
+            } else {
+                content
+            }
+        }
     }
     
     // MARK: - Sidebar
@@ -73,16 +83,15 @@ struct SettingsView: View {
     }
     
     private var headerView: some View {
-        VStack(alignment: .leading, spacing: -2) {
-            Color.clear.frame(height: 54) // Better alignment with traffic lights
-            
+        VStack(alignment: .leading, spacing: 0) {
+            Color.clear.frame(height: 45)
             Text("Space")
-                .font(.system(size: 24, weight: .bold))
+                .font(.system(size: 28, weight: .heavy))
                 .foregroundStyle(.primary)
             Text("Switcher")
-                .font(.system(size: 24, weight: .bold))
+                .font(.system(size: 28, weight: .heavy))
                 .foregroundStyle(.primary)
-                .padding(.bottom, 16)
+                .padding(.bottom, 20)
         }
     }
     
@@ -92,13 +101,12 @@ struct SettingsView: View {
             Label {
                 Text(tab.localizedName)
                     .font(.system(size: sidebarFontSize, weight: .medium))
-                    .padding(.leading, 4)
+                    .padding(.leading, 2)
             } icon: {
                 Image(systemName: tab.iconName)
                     .resizable()
                     .scaledToFit()
-                    .frame(width: 18, height: 18)
-                    .foregroundColor(selectedTab == tab ? .white : .accentColor)
+                    .frame(height: sidebarRowHeight - 15)
             }
         }
         .frame(height: sidebarRowHeight)
@@ -126,9 +134,8 @@ struct SettingsView: View {
                         }
                     }
                 }
-                .padding(.top, titleHeaderHeight + 20)
-                .padding(.horizontal, 30)
-                .padding(.bottom, 30)
+                .padding(.top, titleHeaderHeight)
+                .frame(maxWidth: .infinity, alignment: .top)
             }
             
             // 2. HEADER LAYER
@@ -136,15 +143,14 @@ struct SettingsView: View {
                 VStack(spacing: 0) {
                     HStack {
                         Text(tab.localizedName)
-                            .font(.system(size: 18, weight: .semibold))
-                            .padding(.leading, 30)
+                            .font(.system(size: 20, weight: .semibold))
+                            .padding(.leading, 20)
                         Spacer()
                     }
                     .frame(height: titleHeaderHeight)
-                    .background(.ultraThinMaterial)
+                    .background(.bar)
                     
                     Divider()
-                        .opacity(0.4)
                 }
             }
         }

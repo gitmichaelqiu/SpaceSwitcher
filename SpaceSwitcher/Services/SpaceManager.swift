@@ -18,6 +18,7 @@ class SpaceManager: ObservableObject {
     @Published var currentSpaceID: String?
     @Published var currentSpaceName: String = "Unknown"
     @Published var availableSpaces: [SpaceInfo] = []
+    @Published var isAPIEnabled: Bool = true
     
     private var cancellables = Set<AnyCancellable>()
     
@@ -87,6 +88,7 @@ class SpaceManager: ObservableObject {
         print("CLIENT: API Toggle Received -> \(isEnabled)")
         
         DispatchQueue.main.async {
+            self.isAPIEnabled = isEnabled
             if isEnabled {
                 // API came back online: Refresh data
                 self.refreshSpaceList()

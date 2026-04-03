@@ -19,7 +19,7 @@ struct DockSettingsView: View {
                 showingCreateSheet: $showingCreateSheet,
                 newSetName: $newSetName
             )
-            .frame(minWidth: 200, maxWidth: 260)
+            .frame(minWidth: 160, maxWidth: 200)
             
             // RIGHT: Detail Area
             Group {
@@ -33,10 +33,10 @@ struct DockSettingsView: View {
                             config: $dockManager.config
                         )
                         
-                        Divider().opacity(0.5)
+                        Divider()
                         
                         ScrollView {
-                            VStack(alignment: .leading, spacing: 32) {
+                            VStack(alignment: .leading, spacing: 20) {
                                 
                                 // 2. Space Assignments
                                 DockSpaceAssignmentView(
@@ -55,14 +55,14 @@ struct DockSettingsView: View {
                                 
                                 Spacer(minLength: 40)
                             }
-                            .padding(.vertical, 24)
+                            .padding(.vertical, 20)
                         }
                     }
                 } else {
                     EmptySelectionView()
                 }
             }
-            .frame(minWidth: 460)
+            .frame(minWidth: 350)
             .background(Color(NSColor.windowBackgroundColor).opacity(0.3))
         }
         // Create Sheet Logic
@@ -101,14 +101,14 @@ struct DockSidebarView: View {
             List(selection: $selectedSetID) {
                 Section {
                     ForEach(dockManager.config.dockSets) { set in
-                        HStack(spacing: 10) {
+                        HStack(spacing: 8) {
                             // Status Indicator
                             Circle()
                                 .fill(dockManager.activeDockSetID == set.id ? Color.green : Color.clear)
                                 .frame(width: 6, height: 6)
                             
                             Image(systemName: "dock.rectangle")
-                                .font(.system(size: 14))
+                                .font(.system(size: 13))
                                 .foregroundColor(.secondary)
                             
                             Text(set.name)
@@ -119,8 +119,7 @@ struct DockSidebarView: View {
                             if dockManager.config.defaultDockSetID == set.id {
                                 Image(systemName: "star.fill")
                                     .foregroundColor(.orange.opacity(0.8))
-                                    .font(.system(size: 10))
-                                    .help("Default Dock Set")
+                                    .font(.system(size: 9))
                             }
                         }
                         .padding(.vertical, 2)
@@ -133,25 +132,24 @@ struct DockSidebarView: View {
                     Text("Dock Sets")
                         .font(.system(size: 11, weight: .bold))
                         .foregroundColor(.secondary)
-                        .textCase(.uppercase)
                 }
             }
             .listStyle(.sidebar)
             
-            Divider().opacity(0.5)
+            Divider()
             
             Button {
                 newSetName = "Dock Set \(dockManager.config.dockSets.count + 1)"
                 showingCreateSheet = true
             } label: {
-                HStack(spacing: 8) {
+                HStack(spacing: 6) {
                     Image(systemName: "plus.circle.fill")
                     Text("New Dock Set")
                 }
                 .font(.system(size: 13, weight: .semibold))
                 .foregroundColor(.accentColor)
                 .frame(maxWidth: .infinity)
-                .padding(.vertical, 12)
+                .padding(.vertical, 10)
             }
             .buttonStyle(.plain)
             .background(Color(NSColor.controlBackgroundColor).opacity(0.5))
@@ -161,10 +159,8 @@ struct DockSidebarView: View {
     private func deleteSet(_ set: DockSet) {
         withAnimation {
             dockManager.config.dockSets.removeAll { $0.id == set.id }
-            // Clean assignments
             let keys = dockManager.config.spaceAssignments.filter { $0.value == set.id }.map { $0.key }
             keys.forEach { dockManager.config.spaceAssignments.removeValue(forKey: $0) }
-            
             if selectedSetID == set.id { selectedSetID = dockManager.config.dockSets.first?.id }
             if dockManager.config.defaultDockSetID == set.id {
                 dockManager.config.defaultDockSetID = dockManager.config.dockSets.first?.id
@@ -180,35 +176,22 @@ struct DockHeaderView: View {
     
     var body: some View {
         HStack(alignment: .center) {
-            TextField("Rename Dock Set", text: $set.name)
-                .font(.system(size: 20, weight: .bold))
+            TextField("Rename", text: $set.name)
+                .font(.system(size: 18, weight: .bold))
                 .textFieldStyle(.plain)
             
             Spacer()
             
-            HStack(spacing: 8) {
-                Text("Default")
-                    .font(.system(size: 12, weight: .medium))
-                    .foregroundColor(.secondary)
-                
-                Toggle("", isOn: Binding(
-                    get: { config.defaultDockSetID == set.id },
-                    set: { if $0 { config.defaultDockSetID = set.id } }
-                ))
-                .toggleStyle(.switch)
-                .labelsHidden()
-                .scaleEffect(0.8)
-                .disabled(config.defaultDockSetID == set.id)
-            }
-            .padding(.horizontal, 10)
-            .padding(.vertical, 4)
-            .background(
-                Capsule()
-                    .fill(Color.primary.opacity(0.04))
-            )
+            Toggle("Default", isOn: Binding(
+                get: { config.defaultDockSetID == set.id },
+                set: { if $0 { config.defaultDockSetID = set.id } }
+            ))
+            .toggleStyle(.switch)
+            .controlSize(.small)
+            .disabled(config.defaultDockSetID == set.id)
         }
-        .padding(.horizontal, 24)
-        .padding(.vertical, 20)
+        .padding(.horizontal, 16)
+        .padding(.vertical, 12)
         .background(Color(NSColor.windowBackgroundColor).opacity(0.5))
     }
 }
@@ -220,38 +203,16 @@ struct DockSpaceAssignmentView: View {
     @ObservedObject var spaceManager: SpaceManager
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            HStack(alignment: .firstTextBaseline) {
-                Text("Assignment")
-                    .font(.system(size: 13, weight: .bold))
-                    .foregroundColor(.secondary)
-                    .textCase(.uppercase)
-                
-                Spacer()
-                
-                if dockManager.config.defaultDockSetID == selectedSetID {
-                    Text("Applied as default fallback")
-                        .font(.system(size: 11))
-                        .foregroundColor(.orange)
-                        .italic()
-                }
-            }
-            .padding(.horizontal, 4)
-            
+        SettingsSection("Apply to Spaces") {
             if dockManager.config.defaultDockSetID != selectedSetID {
-                VStack(alignment: .leading, spacing: 12) {
+                VStack(alignment: .leading, spacing: 10) {
                     if spaceManager.availableSpaces.isEmpty {
-                        HStack {
-                            Spacer()
-                            Text("No spaces detected.")
-                                .font(.system(size: 13))
-                                .foregroundColor(.secondary)
-                                .italic()
-                            Spacer()
-                        }
-                        .padding(20)
+                        Text("No spaces detected.")
+                            .font(.system(size: 12))
+                            .foregroundColor(.secondary)
+                            .padding(10)
                     } else {
-                        LazyVGrid(columns: [GridItem(.adaptive(minimum: 140))], spacing: 10) {
+                        LazyVGrid(columns: [GridItem(.adaptive(minimum: 120))], spacing: 8) {
                             ForEach(spaceManager.availableSpaces) { space in
                                 let assignedSetID = dockManager.config.spaceAssignments[space.id]
                                 let isAssignedHere = (assignedSetID == selectedSetID)
@@ -264,20 +225,20 @@ struct DockSpaceAssignmentView: View {
                                         dockManager.config.spaceAssignments[space.id] = selectedSetID
                                     }
                                 } label: {
-                                    VStack(alignment: .center, spacing: 4) {
+                                    VStack(alignment: .center, spacing: 2) {
                                         Text("\(space.number)")
-                                            .font(.system(size: 14, weight: .bold))
+                                            .font(.system(size: 13, weight: .bold))
                                         Text(space.name)
-                                            .font(.system(size: 11))
+                                            .font(.system(size: 10))
                                             .lineLimit(1)
                                     }
                                     .frame(maxWidth: .infinity)
-                                    .padding(.vertical, 8)
+                                    .padding(.vertical, 6)
                                     .background(
-                                        RoundedRectangle(cornerRadius: 8)
+                                        RoundedRectangle(cornerRadius: 6)
                                             .fill(isAssignedHere ? Color.accentColor : Color.primary.opacity(0.05))
                                             .overlay(
-                                                RoundedRectangle(cornerRadius: 8)
+                                                RoundedRectangle(cornerRadius: 6)
                                                     .stroke(isAssignedElsewhere ? Color.secondary.opacity(0.2) : Color.clear, lineWidth: 1)
                                             )
                                     )
@@ -285,28 +246,25 @@ struct DockSpaceAssignmentView: View {
                                 }
                                 .buttonStyle(.plain)
                                 .disabled(isAssignedElsewhere)
-                                .help(isAssignedElsewhere ? "Assigned to another dock set" : "")
                             }
                         }
+                        .padding(10)
                     }
                 }
             } else {
-                HStack(spacing: 12) {
+                HStack(spacing: 8) {
                     Image(systemName: "info.circle.fill")
-                        .foregroundColor(.orange.opacity(0.8))
-                    Text("This dock set will be used automatically for any space that doesn't have a specific assignment.")
-                        .font(.system(size: 13))
+                        .foregroundColor(.secondary)
+                        .font(.system(size: 12))
+                    Text("Used automatically for unassigned spaces.")
+                        .font(.system(size: 12))
                         .foregroundColor(.secondary)
                 }
-                .padding(16)
+                .padding(10)
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .background(
-                    RoundedRectangle(cornerRadius: 10)
-                        .fill(Color.orange.opacity(0.05))
-                )
             }
         }
-        .padding(.horizontal, 24)
+        .padding(.horizontal, 16)
     }
 }
 
@@ -318,31 +276,23 @@ struct DockItemsListView: View {
     @Binding var tiles: [DockTile]
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            
-            // MARK: - Header & Actions
-            HStack(alignment: .firstTextBaseline) {
-                Text("Dock Items")
-                    .font(.system(size: 13, weight: .bold))
+        VStack(alignment: .leading, spacing: 12) {
+            HStack {
+                Text("DOCK ITEMS")
+                    .font(.system(size: 11, weight: .bold))
                     .foregroundColor(.secondary)
-                    .textCase(.uppercase)
                 
                 Spacer()
                 
-                HStack(spacing: 8) {
+                HStack(spacing: 6) {
                     Button {
                         forceApply()
                     } label: {
-                        Image(systemName: "play.fill")
-                            .font(.system(size: 10))
                         Text("Apply")
                             .font(.system(size: 11, weight: .semibold))
                     }
                     .buttonStyle(.bordered)
                     .controlSize(.small)
-                    .help("Apply this dock to the current space now")
-                    
-                    Divider().frame(height: 12).padding(.horizontal, 4)
                     
                     Menu {
                         Button { addAppToSelectedSet() } label: { Label("Add Application...", systemImage: "app.badge.plus") }
@@ -350,37 +300,33 @@ struct DockItemsListView: View {
                         Button { addSpacerToSelectedSet(isSmall: false) } label: { Label("Add Large Spacer", systemImage: "spacer") }
                         Button { addSpacerToSelectedSet(isSmall: true) } label: { Label("Add Small Spacer", systemImage: "command") }
                     } label: {
-                        HStack(spacing: 4) {
-                            Image(systemName: "plus")
-                            Text("Add Item")
-                        }
-                        .font(.system(size: 11, weight: .semibold))
+                        Image(systemName: "plus")
+                            .font(.system(size: 11, weight: .semibold))
                     }
-                    .menuStyle(.borderedButton)
-                    .controlSize(.small)
+                    .menuStyle(.borderlessButton)
+                    .frame(width: 24, height: 24)
+                    .background(RoundedRectangle(cornerRadius: 4).fill(Color.primary.opacity(0.05)))
                 }
             }
             .padding(.horizontal, 4)
             
-            // MARK: - List View
-            VStack(spacing: 0) {
+            SettingsSection {
                 if tiles.isEmpty {
-                    VStack(spacing: 12) {
+                    VStack(spacing: 8) {
                         Image(systemName: "dock.rectangle")
-                            .font(.system(size: 32))
+                            .font(.system(size: 24))
                             .foregroundColor(.secondary.opacity(0.2))
-                        Text("No items in this dock set")
-                            .font(.system(size: 13))
+                        Text("No items")
+                            .font(.system(size: 12))
                             .foregroundColor(.secondary)
                     }
                     .frame(maxWidth: .infinity)
-                    .padding(.vertical, 60)
+                    .padding(.vertical, 30)
                 } else {
                     List {
                         ForEach(tiles) { tile in
                             DockTileRow(tile: tile)
-                                .listRowInsets(EdgeInsets(top: 0, leading: 12, bottom: 0, trailing: 12))
-                                .listRowSeparator(.visible, edges: .bottom)
+                                .listRowInsets(EdgeInsets(top: 0, leading: 8, bottom: 0, trailing: 8))
                         }
                         .onMove { indices, newOffset in
                             tiles.move(fromOffsets: indices, toOffset: newOffset)
@@ -390,22 +336,11 @@ struct DockItemsListView: View {
                         }
                     }
                     .listStyle(.plain)
-                    .frame(minHeight: 300, maxHeight: 500)
+                    .frame(minHeight: 200, maxHeight: 350)
                 }
             }
-            .background(Color(NSColor.controlBackgroundColor).opacity(0.4))
-            .cornerRadius(12)
-            .overlay(
-                RoundedRectangle(cornerRadius: 12)
-                    .stroke(Color.primary.opacity(0.05), lineWidth: 1)
-            )
-            
-            Text("Drag items to reorder. Swipe or press Backspace to delete.")
-                .font(.system(size: 11))
-                .foregroundColor(.secondary.opacity(0.6))
-                .padding(.horizontal, 4)
         }
-        .padding(.horizontal, 24)
+        .padding(.horizontal, 16)
     }
     
     private func forceApply() {
@@ -417,8 +352,6 @@ struct DockItemsListView: View {
         let panel = NSOpenPanel()
         panel.allowedContentTypes = [.application]
         panel.allowsMultipleSelection = true
-        panel.canChooseDirectories = false
-        
         panel.begin { response in
             if response == .OK {
                 for url in panel.urls {
@@ -447,27 +380,20 @@ struct DockTileRow: View {
     let tile: DockTile
     
     var body: some View {
-        HStack(spacing: 14) {
+        HStack(spacing: 12) {
             iconView
-                .frame(width: 32, height: 32)
+                .frame(width: 24, height: 24)
             
-            VStack(alignment: .leading, spacing: 2) {
-                Text(tile.label)
-                    .font(.system(size: 13, weight: .medium))
-                if let bid = tile.bundleIdentifier {
-                    Text(bid)
-                        .font(.system(size: 10, design: .monospaced))
-                        .foregroundColor(.secondary.opacity(0.7))
-                }
-            }
+            Text(tile.label)
+                .font(.system(size: 13, weight: .medium))
             
             Spacer()
             
             Image(systemName: "line.3.horizontal")
-                .font(.system(size: 12))
-                .foregroundColor(.secondary.opacity(0.3))
+                .font(.system(size: 10))
+                .foregroundColor(.secondary.opacity(0.2))
         }
-        .padding(.vertical, 8)
+        .padding(.vertical, 6)
     }
     
     @ViewBuilder
@@ -477,18 +403,13 @@ struct DockTileRow: View {
             Image(nsImage: NSWorkspace.shared.icon(forFile: path))
                 .resizable()
                 .aspectRatio(contentMode: .fit)
-                .shadow(color: .black.opacity(0.1), radius: 1, x: 0, y: 1)
         } else if tile.label.contains("Spacer") {
-            ZStack {
-                RoundedRectangle(cornerRadius: 6)
-                    .fill(Color.primary.opacity(0.05))
-                Image(systemName: tile.label.contains("Small") ? "arrow.left.and.right.square.fill" : "arrow.left.and.right.square")
-                    .font(.system(size: 14))
-                    .foregroundColor(.secondary)
-            }
+            Image(systemName: "spacer")
+                .font(.system(size: 12))
+                .foregroundColor(.secondary)
         } else {
             Image(systemName: "questionmark.app.dashed")
-                .font(.system(size: 20))
+                .font(.system(size: 14))
                 .foregroundColor(.secondary)
         }
     }
@@ -501,51 +422,35 @@ struct CreateDockSheet: View {
     let onCreate: () -> Void
     
     var body: some View {
-        VStack(spacing: 24) {
-            VStack(spacing: 8) {
-                Text("New Dock Set")
-                    .font(.system(size: 17, weight: .bold))
-                Text("Give your dock set a descriptive name.")
-                    .font(.system(size: 13))
-                    .foregroundColor(.secondary)
-            }
+        VStack(spacing: 20) {
+            Text("New Dock Set")
+                .font(.system(size: 15, weight: .bold))
             
             TextField("Name", text: $newSetName)
                 .textFieldStyle(.roundedBorder)
-                .controlSize(.large)
-                .frame(width: 280)
+                .frame(width: 240)
                 .onSubmit(onCreate)
             
-            HStack(spacing: 12) {
+            HStack(spacing: 10) {
                 Button("Cancel", action: onCancel)
-                    .controlSize(.large)
-                
-                Button("Create Set", action: onCreate)
+                Button("Create", action: onCreate)
                     .buttonStyle(.borderedProminent)
-                    .controlSize(.large)
             }
         }
-        .padding(32)
+        .padding(24)
         .background(Color(NSColor.windowBackgroundColor))
     }
 }
 
 struct EmptySelectionView: View {
     var body: some View {
-        VStack(spacing: 20) {
+        VStack(spacing: 16) {
             Image(systemName: "dock.rectangle")
-                .font(.system(size: 64))
+                .font(.system(size: 48))
                 .foregroundColor(.secondary.opacity(0.1))
-            
-            VStack(spacing: 4) {
-                Text("Select a Dock Set")
-                    .font(.system(size: 17, weight: .semibold))
-                Text("Choose a set from the sidebar to manage its items and assignments.")
-                    .font(.system(size: 13))
-                    .foregroundColor(.secondary)
-                    .multilineTextAlignment(.center)
-            }
-            .padding(.horizontal, 40)
+            Text("Select a Dock Set")
+                .font(.system(size: 15, weight: .semibold))
+                .foregroundColor(.secondary)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }

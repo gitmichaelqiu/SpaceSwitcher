@@ -28,7 +28,6 @@
       }
     },
     "© %@ Michael Yicheng Qiu" : {
-      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -38,11 +37,8 @@
         }
       }
     },
-    "© %@ Michael Yicheng Qiu. All rights reserved." : {
+    "↺" : {
 
-    },
-    "→" : {
-      "shouldTranslate" : false
     },
     "+ Add Rule" : {
       "extractionState" : "stale",
@@ -55,7 +51,7 @@
         }
       }
     },
-    "A powerful companion for macOS Desktops, allowing you to automate app visibility and dock configurations across different spaces." : {
+    "A powerful utility for macOS that gives you per-space control over your applications and Dock. Part of the macOSers productivity bundle." : {
 
     },
     "About" : {
@@ -89,6 +85,7 @@
       }
     },
     "Active in:" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -108,9 +105,6 @@
           }
         }
       }
-    },
-    "Add a rule to control app behavior across spaces." : {
-
     },
     "Add a rule to control app visibility across spaces." : {
       "extractionState" : "stale",
@@ -169,9 +163,6 @@
     "Add Application..." : {
 
     },
-    "Add Item" : {
-
-    },
     "Add Large Spacer" : {
 
     },
@@ -191,7 +182,11 @@
         }
       }
     },
+    "Advanced" : {
+
+    },
     "API Connection" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -201,10 +196,11 @@
         }
       }
     },
-    "App Key:" : {
+    "API Status" : {
 
     },
     "App Rules" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -213,9 +209,6 @@
           }
         }
       }
-    },
-    "App will wait until it becomes frontmost." : {
-
     },
     "App will wait until you manually switch to it." : {
       "extractionState" : "stale",
@@ -227,9 +220,6 @@
           }
         }
       }
-    },
-    "Applied as default fallback" : {
-
     },
     "Apply" : {
 
@@ -245,11 +235,7 @@
         }
       }
     },
-    "Apply this dock to the current space now" : {
-
-    },
     "Apply to Spaces" : {
-      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -259,13 +245,10 @@
         }
       }
     },
-    "Assigned to another dock set" : {
+    "Automation API" : {
 
     },
-    "Assignment" : {
-
-    },
-    "Automatically Check" : {
+    "AUTOMATION RULES" : {
 
     },
     "Bring to Front" : {
@@ -291,10 +274,10 @@
     "Check for Updates" : {
 
     },
-    "Check Now..." : {
+    "Check for Updates Automatically" : {
 
     },
-    "Choose a set from the sidebar to manage its items and assignments." : {
+    "Check Now" : {
 
     },
     "Choose from Applications..." : {
@@ -322,7 +305,6 @@
       }
     },
     "Create" : {
-      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -332,10 +314,11 @@
         }
       }
     },
-    "Create Set" : {
+    "Create First Rule" : {
 
     },
     "Current Space" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -360,6 +343,7 @@
 
     },
     "Default Dock Set" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -368,9 +352,6 @@
           }
         }
       }
-    },
-    "Default for all other spaces" : {
-
     },
     "Delete" : {
       "localizations" : {
@@ -383,6 +364,7 @@
       }
     },
     "DesktopRenamer API Status" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -398,6 +380,9 @@
         }
       }
     },
+    "Disconnected" : {
+
+    },
     "Do Nothing" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -410,6 +395,7 @@
       }
     },
     "Dock Items" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -418,6 +404,9 @@
           }
         }
       }
+    },
+    "DOCK ITEMS" : {
+
     },
     "Dock Name" : {
       "extractionState" : "stale",
@@ -450,10 +439,11 @@
         }
       }
     },
-    "Drag items to reorder. Swipe or press Backspace to delete." : {
+    "Duplicate Rule" : {
 
     },
     "Else" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -488,6 +478,9 @@
         }
       }
     },
+    "Force Rule Refresh" : {
+
+    },
     "General" : {
       "localizations" : {
         "zh-Hans" : {
@@ -501,10 +494,8 @@
     "GitHub Repository" : {
 
     },
-    "Give your dock set a descriptive name." : {
-
-    },
     "Global Key:" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -515,7 +506,6 @@
       }
     },
     "Grant" : {
-      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -525,10 +515,8 @@
         }
       }
     },
-    "Grant Access" : {
-
-    },
     "Granted" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -537,6 +525,9 @@
           }
         }
       }
+    },
+    "Group %lld" : {
+
     },
     "Hide" : {
       "comment" : "Action: Hide Window",
@@ -548,6 +539,9 @@
           }
         }
       }
+    },
+    "Hot Key..." : {
+
     },
     "If the Settings show that the permission is granted but the app still does not have the permission, remove the app row in Settings and re-grant." : {
       "extractionState" : "stale",
@@ -564,6 +558,7 @@
 
     },
     "In" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -585,6 +580,7 @@
       }
     },
     "Launch" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -594,7 +590,11 @@
         }
       }
     },
+    "Launch at Login" : {
+
+    },
     "Launch At Login" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -604,7 +604,7 @@
         }
       }
     },
-    "Made with ❤️ by Michael Yicheng Qiu" : {
+    "Manual activation" : {
 
     },
     "Minimize" : {
@@ -619,7 +619,6 @@
       }
     },
     "More Apps" : {
-      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -652,10 +651,14 @@
     "No automatic actions" : {
 
     },
-    "No items in this dock set" : {
+    "No automation rules yet." : {
+
+    },
+    "No items" : {
 
     },
     "No Rules Configured" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -686,6 +689,7 @@
       }
     },
     "Not Connected" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -696,6 +700,7 @@
       }
     },
     "Not Granted" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -706,6 +711,7 @@
       }
     },
     "Open DesktopRenamer and enable API" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -714,9 +720,6 @@
           }
         }
       }
-    },
-    "Open Options" : {
-
     },
     "Open Settings" : {
       "extractionState" : "stale",
@@ -728,9 +731,6 @@
           }
         }
       }
-    },
-    "Open System Settings" : {
-
     },
     "Permissions" : {
       "localizations" : {
@@ -769,7 +769,11 @@
         }
       }
     },
+    "Refresh Now" : {
+
+    },
     "Refresh Spaces" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -779,10 +783,10 @@
         }
       }
     },
-    "Related Projects" : {
+    "Rename" : {
 
     },
-    "Rename Dock Set" : {
+    "Required for detecting active applications and space changes via the bundle API." : {
 
     },
     "Reset to default" : {
@@ -795,9 +799,6 @@
         }
       }
     },
-    "Restore previously active window" : {
-
-    },
     "Restore Previously Active Window" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -808,6 +809,9 @@
           }
         }
       }
+    },
+    "Restore window" : {
+
     },
     "Rules" : {
       "localizations" : {
@@ -861,6 +865,7 @@
       }
     },
     "Select Target App" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -1195,6 +1200,7 @@
       }
     },
     "Simulate App Hotkey..." : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -1205,6 +1211,7 @@
       }
     },
     "Simulate Global Hotkey..." : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -1225,10 +1232,8 @@
         }
       }
     },
-    "Software Update" : {
-
-    },
     "Sort by %@" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -1258,17 +1263,14 @@
         }
       }
     },
-    "Status" : {
+    "Spaces:" : {
+
+    },
+    "SpaceSwitcher uses the DesktopRenamer API to detect space changes. Ensure the API is enabled in DesktopRenamer." : {
 
     },
     "Switcher" : {
       "shouldTranslate" : false
-    },
-    "System Permissions" : {
-
-    },
-    "This dock set will be used automatically for any space that doesn't have a specific assignment." : {
-
     },
     "This is the default dock. It applies to all spaces not assigned to other sets." : {
       "extractionState" : "stale",
@@ -1292,6 +1294,9 @@
         }
       }
     },
+    "Used automatically for unassigned spaces." : {
+
+    },
     "Used in other set" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -1304,7 +1309,6 @@
       }
     },
     "v%@" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1320,12 +1324,6 @@
         }
       }
     },
-    "Version %@" : {
-
-    },
-    "Wait for manual activation" : {
-
-    },
     "Wait for Manual Activation" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -1338,6 +1336,7 @@
       }
     },
     "Workflow Group %lld" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {

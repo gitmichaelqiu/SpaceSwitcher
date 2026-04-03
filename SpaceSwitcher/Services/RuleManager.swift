@@ -198,6 +198,20 @@ class RuleManager: ObservableObject {
         case .space: return rules.sorted { r1, r2 in let s1 = getLowestSpaceNumber(for: r1); let s2 = getLowestSpaceNumber(for: r2); return s1 != s2 ? s1 < s2 : r1.appName.localizedCaseInsensitiveCompare(r2.appName) == .orderedAscending }
         }
     }
+    func addRule(_ rule: AppRule) {
+        rules.append(rule)
+    }
+    
+    func updateRule(_ rule: AppRule) {
+        if let index = rules.firstIndex(where: { $0.id == rule.id }) {
+            rules[index] = rule
+        }
+    }
+    
+    func deleteRule(_ rule: AppRule) {
+        rules.removeAll { $0.id == rule.id }
+    }
+    
     func deleteRule(withID id: UUID) { rules.removeAll { $0.id == id } }
     private func loadRules() { if let data = UserDefaults.standard.data(forKey: rulesKey), let decoded = try? JSONDecoder().decode([AppRule].self, from: data) { rules = decoded } }
     private func saveRules() { if let encoded = try? JSONEncoder().encode(rules) { UserDefaults.standard.set(encoded, forKey: rulesKey) } }

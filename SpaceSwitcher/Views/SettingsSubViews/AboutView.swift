@@ -16,93 +16,80 @@ struct AboutView: View {
 
     var body: some View {
         ScrollView {
-            VStack(spacing: 32) {
-                // MARK: - App Header
-                VStack(spacing: 16) {
+            VStack(spacing: 24) {
+                // App Icon and Name
+                VStack(spacing: 12) {
                     if let nsImage = NSApplication.shared.applicationIconImage {
                         Image(nsImage: nsImage)
                             .resizable()
                             .aspectRatio(contentMode: .fit)
-                            .frame(width: 128, height: 128)
-                            .shadow(color: .black.opacity(0.15), radius: 10, x: 0, y: 4)
+                            .frame(width: 120, height: 120)
+                            .shadow(radius: 5)
                     }
 
-                    VStack(spacing: 6) {
+                    VStack(spacing: 4) {
                         Text(appName)
-                            .font(.system(size: 32, weight: .bold))
-                            .tracking(-0.5)
+                            .font(.system(size: 28, weight: .bold))
 
-                        Text("Version \(appVersion)")
-                            .font(.system(size: 15, weight: .medium))
+                        Text("v\(appVersion)")
+                            .font(.title3)
                             .foregroundColor(.secondary)
                     }
                 }
-                .padding(.top, 40)
+                .padding(.top, 20)
 
-                Text("A powerful companion for macOS Desktops, allowing you to automate app visibility and dock configurations across different spaces.")
-                    .font(.system(size: 14))
-                    .lineSpacing(6)
+                Text("A powerful utility for macOS that gives you per-space control over your applications and Dock. Part of the macOSers productivity bundle.")
                     .multilineTextAlignment(.center)
-                    .foregroundColor(.primary.opacity(0.8))
-                    .padding(.horizontal, 40)
-                    .frame(maxWidth: 540)
+                    .font(.body)
+                    .lineSpacing(4)
+                    .padding(.horizontal, 30)
+                    .frame(maxWidth: 500)
 
                 Divider()
-                    .padding(.horizontal, 60)
-                    .opacity(0.5)
+                    .padding(.horizontal, 40)
 
-                // MARK: - More Apps Section
-                VStack(spacing: 24) {
-                    Text("Related Projects")
-                        .font(.system(size: 13, weight: .bold))
-                        .foregroundColor(.secondary)
-                        .textCase(.uppercase)
+                // Other projects by the same developer
+                VStack(spacing: 16) {
+                    Text("More Apps")
+                        .font(.headline)
+                        .foregroundColor(.primary)
                     
-                    HStack(alignment: .top, spacing: 24) {
+                    HStack(alignment: .top, spacing: 20) {
                         // DesktopRenamer
                         OtherAppCard(
-                            imageName: "DesktopRenamerIcon",
+                            imageName: "DesktopRenamerIcon_Default",
                             appName: "DesktopRenamer",
-                            description: "The core API for renaming and managing spaces on macOS.",
+                            description: "The essential tool for naming and organizing your desktop spaces.",
                             url: "https://github.com/gitmichaelqiu/DesktopRenamer"
                         )
                         
                         // OptClicker
                         OtherAppCard(
-                            imageName: "OptClickerIcon",
+                            imageName: "OptClickerIcon_Default",
                             appName: "OptClicker",
-                            description: "Enhance your workflow with Option-key based right-clicking.",
+                            description: "Right-click with ease using the Option key.",
                             url: "https://github.com/gitmichaelqiu/OptClicker"
                         )
                     }
                     .padding(.horizontal)
+                    .padding(.bottom, 10)
                 }
 
                 Divider()
-                    .padding(.horizontal, 60)
-                    .opacity(0.5)
+                    .padding(.horizontal, 40)
 
-                // MARK: - Footer
-                VStack(spacing: 12) {
-                    Link(destination: URL(string: "https://github.com/gitmichaelqiu/SpaceSwitcher")!) {
-                        HStack(spacing: 6) {
-                            Image(systemName: "link")
-                            Text("GitHub Repository")
-                        }
-                        .font(.system(size: 13, weight: .semibold))
-                        .foregroundColor(.accentColor)
-                    }
-                    .buttonStyle(.plain)
+                // Links and Copyright
+                VStack(spacing: 10) {
+                    Link("GitHub Repository",
+                         destination: URL(string: "https://github.com/gitmichaelqiu/SpaceSwitcher")!)
+                    .font(.body)
+                    .foregroundColor(.accentColor)
 
-                    VStack(spacing: 4) {
-                        Text("Made with ❤️ by Michael Yicheng Qiu")
-                            .font(.system(size: 12, weight: .medium))
-                        Text("© \(currentYear) Michael Yicheng Qiu. All rights reserved.")
-                            .font(.system(size: 11))
-                            .foregroundColor(.secondary.opacity(0.8))
-                    }
+                    Text("© \(currentYear) Michael Yicheng Qiu")
+                        .font(.footnote)
+                        .foregroundColor(.gray)
                 }
-                .padding(.bottom, 60)
+                .padding(.bottom, 40)
             }
             .frame(maxWidth: .infinity)
         }
@@ -119,65 +106,58 @@ struct OtherAppCard: View {
     
     var body: some View {
         Link(destination: URL(string: url)!) {
-            VStack(spacing: 12) {
+            VStack(spacing: 10) {
                 // Icon
-                ZStack {
-                    RoundedRectangle(cornerRadius: 12)
-                        .fill(Color.primary.opacity(0.03))
-                        .frame(width: 64, height: 64)
-                    
-                    if let nsImage = NSImage(named: imageName) {
-                        Image(nsImage: nsImage)
-                            .resizable()
-                            .aspectRatio(contentMode: .fit)
-                            .frame(width: 56, height: 56)
-                            .shadow(color: .black.opacity(0.1), radius: 2, x: 0, y: 1)
-                    } else {
-                        Image(systemName: "app.dashed")
-                            .resizable()
-                            .aspectRatio(contentMode: .fit)
-                            .frame(width: 44, height: 44)
-                            .foregroundColor(.secondary.opacity(0.5))
-                    }
+                if let nsImage = NSImage(named: imageName) {
+                    Image(nsImage: nsImage)
+                        .resizable()
+                        .aspectRatio(contentMode: .fit)
+                        .frame(width: 55, height: 55)
+                        .shadow(radius: 2)
+                } else {
+                    Image(systemName: "app.dashed")
+                        .resizable()
+                        .aspectRatio(contentMode: .fit)
+                        .frame(width: 50, height: 50)
+                        .foregroundColor(.secondary)
                 }
                 
                 // Text Content
                 VStack(spacing: 4) {
                     Text(appName)
-                        .font(.system(size: 14, weight: .bold))
+                        .font(.headline)
                         .foregroundColor(.primary)
                     
                     Text(description)
-                        .font(.system(size: 11))
+                        .font(.caption)
                         .foregroundColor(.secondary)
                         .multilineTextAlignment(.center)
                         .lineLimit(3)
-                        .frame(height: 44, alignment: .top)
+                        .frame(height: 40, alignment: .top)
                 }
             }
-            .padding(16)
-            .frame(width: 170)
+            .padding(12)
+            .frame(width: 160)
             .background(
-                RoundedRectangle(cornerRadius: 16)
-                    .fill(Color(NSColor.controlBackgroundColor).opacity(isHovering ? 0.6 : 0.4))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 16)
-                            .stroke(isHovering ? Color.accentColor.opacity(0.5) : Color.primary.opacity(0.05), lineWidth: 1)
-                    )
+                ZStack {
+                    RoundedRectangle(cornerRadius: 12)
+                        .fill(Color(NSColor.controlBackgroundColor))
+                    
+                    RoundedRectangle(cornerRadius: 12)
+                        .stroke(Color.primary.opacity(0.1), lineWidth: 1)
+                    
+                    RoundedRectangle(cornerRadius: 12)
+                        .stroke(Color.accentColor.opacity(isHovering ? 1.0 : 0.0), lineWidth: 2)
+                }
+                .shadow(color: .black.opacity(0.15), radius: 4, x: 0, y: 2)
+                .shadow(color: .accentColor.opacity(isHovering ? 0.5 : 0.0), radius: 10, x: 0, y: 0)
             )
-            .shadow(color: .black.opacity(isHovering ? 0.1 : 0.05), radius: isHovering ? 8 : 4, x: 0, y: 2)
-            .scaleEffect(isHovering ? 1.02 : 1.0)
+            .scaleEffect(isHovering ? 1.03 : 1.0)
+            .animation(.spring(response: 0.3, dampingFraction: 0.7), value: isHovering)
         }
         .buttonStyle(.plain)
         .onHover { hovering in
-            withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-                isHovering = hovering
-            }
-            if hovering {
-                NSCursor.pointingHand.push()
-            } else {
-                NSCursor.pop()
-            }
+            isHovering = hovering
         }
     }
 }
