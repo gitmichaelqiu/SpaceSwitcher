@@ -6,76 +6,84 @@ struct GeneralSettingsView: View {
     @State private var autoCheckForUpdates = UpdateManager.isAutoCheckEnabled
     
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 20) {
-                SettingsSection("API Connection") {
-                    SettingsRow("DesktopRenamer API Status") {
-                        HStack {
-                            Circle()
-                                .fill(spaceManager.availableSpaces.isEmpty ? Color.red : Color.green)
-                                .frame(width: 8, height: 8)
-                            Text(spaceManager.availableSpaces.isEmpty ? "Not Connected" : "Connected")
-                                .foregroundColor(.primary)
-                                .padding(4)
-                        }
+        VStack(alignment: .leading, spacing: 24) {
+            // MARK: - API Connection
+            SettingsSection("API Connection") {
+                SettingsRow("DesktopRenamer API Status") {
+                    HStack(spacing: 8) {
+                        Circle()
+                            .fill(spaceManager.availableSpaces.isEmpty ? Color.red : Color.green)
+                            .frame(width: 8, height: 8)
+                        Text(spaceManager.availableSpaces.isEmpty ? "Not Connected" : "Connected")
+                            .font(.system(size: 13, weight: .medium))
+                            .foregroundColor(spaceManager.availableSpaces.isEmpty ? .secondary : .primary)
                     }
+                }
+                
+                if !spaceManager.availableSpaces.isEmpty {
+                    Divider().padding(.horizontal, 10).opacity(0.5)
                     
-                    if !spaceManager.availableSpaces.isEmpty {
-                        Divider()
-                        
-                        SettingsRow("Current Space") {
-                            Text(spaceManager.currentSpaceName)
-                                .foregroundColor(.primary)
-                                .padding(4)
-                        }
+                    SettingsRow("Current Space") {
+                        Text(spaceManager.currentSpaceName)
+                            .font(.system(size: 13, weight: .medium))
+                            .foregroundColor(.secondary)
                     }
+                }
+                
+                if spaceManager.availableSpaces.isEmpty {
+                    Divider().padding(.horizontal, 10).opacity(0.5)
                     
-                    if spaceManager.availableSpaces.isEmpty {
-                        Divider()
-                        
-                        SettingsRow("Current Space") {
-                            Text("Open DesktopRenamer and enable API")
-                                .foregroundStyle(.secondary)
-                                .padding(4)
-                        }
+                    SettingsRow("Status") {
+                        Text("Open DesktopRenamer and enable API")
+                            .font(.system(size: 12))
+                            .foregroundStyle(.secondary)
                     }
                 }
-                
-                SettingsSection("Launch") {
-                    SettingsRow("Launch At Login") {
-                        Toggle("Launch At Login", isOn: $launchAtLogin)
-                            .labelsHidden()
-                            .toggleStyle(.switch)
-                            .onChange(of: launchAtLogin) { _ in
-                                LaunchManager.setEnabled(launchAtLogin)
-                            }
-                    }
-                }
-                
-                SettingsSection("Settings.General.Update") {
-                    SettingsRow("Settings.General.Update.AutoCheck") {
-                        Toggle("", isOn: $autoCheckForUpdates)
-                            .labelsHidden()
-                            .toggleStyle(.switch)
-                            .onChange(of: autoCheckForUpdates) { _ in
-                                UpdateManager.isAutoCheckEnabled = autoCheckForUpdates
-                            }
-                    }
-                    Divider()
-                    SettingsRow("Settings.General.Update.ManualCheck") {
-                        Button(NSLocalizedString("Settings.General.Update.ManualCheck", comment: "")) {
-                            Task {
-                                await UpdateManager.shared.checkForUpdate(from: NSApp.keyWindow)
-                            }
-                        }
-                    }
-                }
-                
-                Spacer()
             }
-            .padding()
-            .frame(maxWidth: .infinity, alignment: .topLeading)
-            .animation(.easeInOut(duration: 0.2), value: spaceManager.availableSpaces.isEmpty)
+            
+            // MARK: - Launch
+            SettingsSection("Launch") {
+                SettingsRow("Launch At Login") {
+                    Toggle("Launch At Login", isOn: $launchAtLogin)
+                        .labelsHidden()
+                        .toggleStyle(.switch)
+                        .scaleEffect(0.8)
+                        .onChange(of: launchAtLogin) { _ in
+                            LaunchManager.setEnabled(launchAtLogin)
+                        }
+                }
+            }
+            
+            // MARK: - Update
+            SettingsSection("Software Update") {
+                SettingsRow("Automatically Check") {
+                    Toggle("", isOn: $autoCheckForUpdates)
+                        .labelsHidden()
+                        .toggleStyle(.switch)
+                        .scaleEffect(0.8)
+                        .onChange(of: autoCheckForUpdates) { _ in
+                            UpdateManager.isAutoCheckEnabled = autoCheckForUpdates
+                        }
+                }
+                
+                Divider().padding(.horizontal, 10).opacity(0.5)
+                
+                SettingsRow("Check for Updates") {
+                    Button {
+                        Task {
+                            await UpdateManager.shared.checkForUpdate(from: NSApp.keyWindow)
+                        }
+                    } label: {
+                        Text("Check Now...")
+                            .font(.system(size: 12, weight: .medium))
+                    }
+                    .buttonStyle(.bordered)
+                    .controlSize(.small)
+                }
+            }
+            
+            Spacer()
         }
+        .animation(.easeInOut(duration: 0.2), value: spaceManager.availableSpaces.isEmpty)
     }
 }

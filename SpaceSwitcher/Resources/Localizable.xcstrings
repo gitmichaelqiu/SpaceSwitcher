@@ -4,10 +4,14 @@
     "" : {
       "shouldTranslate" : false
     },
-    "%lld." : {
-      "shouldTranslate" : false
+    "..." : {
+
+    },
+    "%lld" : {
+
     },
     "%lld. %@" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -24,6 +28,7 @@
       }
     },
     "© %@ Michael Yicheng Qiu" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -33,13 +38,14 @@
         }
       }
     },
+    "© %@ Michael Yicheng Qiu. All rights reserved." : {
+
+    },
     "→" : {
       "shouldTranslate" : false
     },
-    "↺" : {
-      "shouldTranslate" : false
-    },
     "+ Add Rule" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -48,6 +54,9 @@
           }
         }
       }
+    },
+    "A powerful companion for macOS Desktops, allowing you to automate app visibility and dock configurations across different spaces." : {
+
     },
     "About" : {
       "localizations" : {
@@ -90,6 +99,7 @@
       }
     },
     "Add a large gap" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -99,7 +109,11 @@
         }
       }
     },
+    "Add a rule to control app behavior across spaces." : {
+
+    },
     "Add a rule to control app visibility across spaces." : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -110,6 +124,7 @@
       }
     },
     "Add a small gap" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -130,6 +145,7 @@
       }
     },
     "Add an application" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -140,6 +156,7 @@
       }
     },
     "Add App" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -148,6 +165,21 @@
           }
         }
       }
+    },
+    "Add Application..." : {
+
+    },
+    "Add Item" : {
+
+    },
+    "Add Large Spacer" : {
+
+    },
+    "Add Rule" : {
+
+    },
+    "Add Small Spacer" : {
+
     },
     "Add Workflow Group" : {
       "localizations" : {
@@ -169,6 +201,9 @@
         }
       }
     },
+    "App Key:" : {
+
+    },
     "App Rules" : {
       "localizations" : {
         "zh-Hans" : {
@@ -179,7 +214,11 @@
         }
       }
     },
+    "App will wait until it becomes frontmost." : {
+
+    },
     "App will wait until you manually switch to it." : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -189,7 +228,14 @@
         }
       }
     },
+    "Applied as default fallback" : {
+
+    },
+    "Apply" : {
+
+    },
     "Apply Now" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -199,7 +245,11 @@
         }
       }
     },
+    "Apply this dock to the current space now" : {
+
+    },
     "Apply to Spaces" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -208,6 +258,15 @@
           }
         }
       }
+    },
+    "Assigned to another dock set" : {
+
+    },
+    "Assignment" : {
+
+    },
+    "Automatically Check" : {
+
     },
     "Bring to Front" : {
       "localizations" : {
@@ -229,7 +288,20 @@
         }
       }
     },
+    "Check for Updates" : {
+
+    },
+    "Check Now..." : {
+
+    },
+    "Choose a set from the sidebar to manage its items and assignments." : {
+
+    },
+    "Choose from Applications..." : {
+
+    },
     "Choose other app..." : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -250,6 +322,7 @@
       }
     },
     "Create" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -258,6 +331,9 @@
           }
         }
       }
+    },
+    "Create Set" : {
+
     },
     "Current Space" : {
       "localizations" : {
@@ -270,6 +346,7 @@
       }
     },
     "Currently Active Dock" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -278,6 +355,9 @@
           }
         }
       }
+    },
+    "Default" : {
+
     },
     "Default Dock Set" : {
       "localizations" : {
@@ -288,6 +368,9 @@
           }
         }
       }
+    },
+    "Default for all other spaces" : {
+
     },
     "Delete" : {
       "localizations" : {
@@ -316,6 +399,7 @@
       }
     },
     "Do Nothing" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -336,6 +420,7 @@
       }
     },
     "Dock Name" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -365,6 +450,9 @@
         }
       }
     },
+    "Drag items to reorder. Swipe or press Backspace to delete." : {
+
+    },
     "Else" : {
       "localizations" : {
         "zh-Hans" : {
@@ -376,6 +464,7 @@
       }
     },
     "Fallback (All Other Spaces)" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -385,7 +474,11 @@
         }
       }
     },
+    "Fallback Behavior" : {
+
+    },
     "Force apply this dock configuration immediately" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -405,6 +498,12 @@
         }
       }
     },
+    "GitHub Repository" : {
+
+    },
+    "Give your dock set a descriptive name." : {
+
+    },
     "Global Key:" : {
       "localizations" : {
         "zh-Hans" : {
@@ -416,6 +515,7 @@
       }
     },
     "Grant" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -424,6 +524,9 @@
           }
         }
       }
+    },
+    "Grant Access" : {
+
     },
     "Granted" : {
       "localizations" : {
@@ -447,6 +550,7 @@
       }
     },
     "If the Settings show that the permission is granted but the app still does not have the permission, remove the app row in Settings and re-grant." : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -455,6 +559,9 @@
           }
         }
       }
+    },
+    "If the status shows 'Granted' but automation isn't working, try removing SpaceSwitcher from the list in System Settings and re-adding it." : {
+
     },
     "In" : {
       "localizations" : {
@@ -467,6 +574,7 @@
       }
     },
     "Large spacer" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -496,6 +604,9 @@
         }
       }
     },
+    "Made with ❤️ by Michael Yicheng Qiu" : {
+
+    },
     "Minimize" : {
       "comment" : "Action: Minimize Window",
       "localizations" : {
@@ -508,6 +619,7 @@
       }
     },
     "More Apps" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -536,6 +648,12 @@
           }
         }
       }
+    },
+    "No automatic actions" : {
+
+    },
+    "No items in this dock set" : {
+
     },
     "No Rules Configured" : {
       "localizations" : {
@@ -597,7 +715,11 @@
         }
       }
     },
+    "Open Options" : {
+
+    },
     "Open Settings" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -606,6 +728,9 @@
           }
         }
       }
+    },
+    "Open System Settings" : {
+
     },
     "Permissions" : {
       "localizations" : {
@@ -654,6 +779,12 @@
         }
       }
     },
+    "Related Projects" : {
+
+    },
+    "Rename Dock Set" : {
+
+    },
     "Reset to default" : {
       "localizations" : {
         "zh-Hans" : {
@@ -664,7 +795,11 @@
         }
       }
     },
+    "Restore previously active window" : {
+
+    },
     "Restore Previously Active Window" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -705,6 +840,7 @@
       }
     },
     "Select a category" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -735,6 +871,7 @@
       }
     },
     "Set as Default" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -763,6 +900,7 @@
     },
     "Settings.About.Description" : {
       "comment" : "Description",
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -780,6 +918,7 @@
     },
     "Settings.About.Repo" : {
       "comment" : "GitHub Repo",
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -796,6 +935,7 @@
       }
     },
     "Settings.General.Update" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -812,6 +952,7 @@
       }
     },
     "Settings.General.Update.AutoCheck" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -988,6 +1129,7 @@
       }
     },
     "Settings.General.Update.ManualCheck" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1073,6 +1215,7 @@
       }
     },
     "Small spacer" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -1081,6 +1224,9 @@
           }
         }
       }
+    },
+    "Software Update" : {
+
     },
     "Sort by %@" : {
       "localizations" : {
@@ -1112,10 +1258,20 @@
         }
       }
     },
+    "Status" : {
+
+    },
     "Switcher" : {
       "shouldTranslate" : false
     },
+    "System Permissions" : {
+
+    },
+    "This dock set will be used automatically for any space that doesn't have a specific assignment." : {
+
+    },
     "This is the default dock. It applies to all spaces not assigned to other sets." : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -1126,6 +1282,7 @@
       }
     },
     "Type" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -1136,6 +1293,7 @@
       }
     },
     "Used in other set" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -1146,6 +1304,7 @@
       }
     },
     "v%@" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1161,7 +1320,14 @@
         }
       }
     },
+    "Version %@" : {
+
+    },
+    "Wait for manual activation" : {
+
+    },
     "Wait for Manual Activation" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {

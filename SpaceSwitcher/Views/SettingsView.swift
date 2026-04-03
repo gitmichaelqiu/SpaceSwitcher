@@ -26,20 +26,19 @@ enum SettingsTab: String, CaseIterable, Identifiable {
     }
 }
 
-// Layout Constants matching DesktopRenamer
-let sidebarWidth: CGFloat = 180
-let defaultSettingsWindowWidth = 1050 // Increased width for better layout
+// Layout Constants
+let sidebarWidth: CGFloat = 200
+let defaultSettingsWindowWidth = 1050
 let defaultSettingsWindowHeight = 650
-let sidebarRowHeight: CGFloat = 32
-let sidebarFontSize: CGFloat = 16
-let titleHeaderHeight: CGFloat = 48
+let sidebarRowHeight: CGFloat = 36
+let sidebarFontSize: CGFloat = 14
+let titleHeaderHeight: CGFloat = 52
 
 struct SettingsView: View {
     @ObservedObject var spaceManager: SpaceManager
     @ObservedObject var ruleManager: RuleManager
     @ObservedObject var dockManager: DockManager
     
-    // Controlled by parent or defaults
     @State var selectedTab: SettingsTab? = .general
     
     var body: some View {
@@ -57,50 +56,33 @@ struct SettingsView: View {
     // MARK: - Sidebar
     @ViewBuilder
     private var sidebar: some View {
-        if #available(macOS 14.0, *) {
-            List(selection: $selectedTab) {
-                Section {
-                    ForEach(SettingsTab.allCases) { tab in
-                        sidebarItem(for: tab)
-                    }
-                } header: {
-                    headerView
+        List(selection: $selectedTab) {
+            Section {
+                ForEach(SettingsTab.allCases) { tab in
+                    sidebarItem(for: tab)
                 }
-                .collapsible(false)
+            } header: {
+                headerView
             }
-            .scrollDisabled(true)
-            .removeSidebarToggle()
-            .navigationSplitViewColumnWidth(min: sidebarWidth, ideal: sidebarWidth, max: sidebarWidth)
-            .edgesIgnoringSafeArea(.top)
-        } else {
-            List(selection: $selectedTab) {
-                Section {
-                    ForEach(SettingsTab.allCases) { tab in
-                        sidebarItem(for: tab)
-                    }
-                } header: {
-                    headerView
-                }
-                .collapsible(false)
-            }
-            .scrollDisabled(true)
-            .navigationSplitViewColumnWidth(min: sidebarWidth, ideal: sidebarWidth, max: sidebarWidth)
-            .listStyle(.sidebar)
-            .edgesIgnoringSafeArea(.top)
+            .collapsible(false)
         }
+        .scrollDisabled(true)
+        .modifier(SidebarToggleRemover())
+        .navigationSplitViewColumnWidth(min: sidebarWidth, ideal: sidebarWidth, max: sidebarWidth)
+        .edgesIgnoringSafeArea(.top)
     }
     
     private var headerView: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            Color.clear.frame(height: 45)
+        VStack(alignment: .leading, spacing: -2) {
+            Color.clear.frame(height: 54) // Better alignment with traffic lights
             
             Text("Space")
-                .font(.system(size: 28, weight: .heavy))
+                .font(.system(size: 24, weight: .bold))
                 .foregroundStyle(.primary)
             Text("Switcher")
-                .font(.system(size: 28, weight: .heavy))
+                .font(.system(size: 24, weight: .bold))
                 .foregroundStyle(.primary)
-                .padding(.bottom, 20)
+                .padding(.bottom, 16)
         }
     }
     
@@ -110,63 +92,60 @@ struct SettingsView: View {
             Label {
                 Text(tab.localizedName)
                     .font(.system(size: sidebarFontSize, weight: .medium))
-                    .padding(.leading, 2)
+                    .padding(.leading, 4)
             } icon: {
                 Image(systemName: tab.iconName)
                     .resizable()
                     .scaledToFit()
-                    .frame(height: sidebarRowHeight-15)
+                    .frame(width: 18, height: 18)
+                    .foregroundColor(selectedTab == tab ? .white : .accentColor)
             }
         }
         .frame(height: sidebarRowHeight)
     }
     
-    // MARK: - Detail View (Content + Blurred Header)
+    // MARK: - Detail View
     @ViewBuilder
     private var detailView: some View {
         ZStack(alignment: .top) {
-            
             // 1. CONTENT LAYER
-            ZStack(alignment: .top) {
-                if let tab = selectedTab {
-                    switch tab {
-                    case .general:
-                        GeneralSettingsView(spaceManager: spaceManager)
-                    case .rules:
-                        RulesView(ruleManager: ruleManager, spaceManager: spaceManager)
-                            .padding(.horizontal)
-                            .padding(.bottom)
-                    case .dock:
-                        DockSettingsView(dockManager: dockManager, spaceManager: spaceManager)
-                    case .permissions:
-                        PermissionsSettingsView()
-                    case .about:
-                        AboutView()
+            ScrollView {
+                VStack(spacing: 0) {
+                    if let tab = selectedTab {
+                        switch tab {
+                        case .general:
+                            GeneralSettingsView(spaceManager: spaceManager)
+                        case .rules:
+                            RulesView(ruleManager: ruleManager, spaceManager: spaceManager)
+                        case .dock:
+                            DockSettingsView(dockManager: dockManager, spaceManager: spaceManager)
+                        case .permissions:
+                            PermissionsSettingsView()
+                        case .about:
+                            AboutView()
+                        }
                     }
-                } else {
-                    Text("Select a category")
-                        .foregroundColor(.secondary)
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
                 }
+                .padding(.top, titleHeaderHeight + 20)
+                .padding(.horizontal, 30)
+                .padding(.bottom, 30)
             }
-            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-            .padding(.top, titleHeaderHeight) // Push content below header
             
-            // 2. HEADER LAYER (Blurry Title Bar)
+            // 2. HEADER LAYER
             if let tab = selectedTab {
                 VStack(spacing: 0) {
                     HStack {
                         Text(tab.localizedName)
-                            .font(.system(size: 20, weight: .semibold))
-                            .padding(.leading, 20)
+                            .font(.system(size: 18, weight: .semibold))
+                            .padding(.leading, 30)
                         Spacer()
                     }
                     .frame(height: titleHeaderHeight)
-                    .background(.bar) // Native blur material
+                    .background(.ultraThinMaterial)
                     
                     Divider()
+                        .opacity(0.4)
                 }
-                .frame(maxHeight: .infinity, alignment: .top)
             }
         }
         .edgesIgnoringSafeArea(.top)
@@ -193,5 +172,17 @@ class SettingsHostingController: NSHostingController<SettingsView> {
     override func viewDidLoad() {
         super.viewDidLoad()
         self.preferredContentSize = NSSize(width: defaultSettingsWindowWidth, height: defaultSettingsWindowHeight)
+    }
+}
+
+// MARK: - Modifiers
+struct SidebarToggleRemover: ViewModifier {
+    func body(content: Content) -> some View {
+        if #available(macOS 14.0, *) {
+            content.toolbar(removing: .sidebarToggle)
+                .toolbar { Color.clear }
+        } else {
+            content
+        }
     }
 }

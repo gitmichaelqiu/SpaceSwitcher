@@ -4,31 +4,34 @@ struct PermissionsSettingsView: View {
     @StateObject private var permissionManager = PermissionManager.shared
     
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 20) {
-                SettingsSection("Permissions", helperText: "If the Settings show that the permission is granted but the app still does not have the permission, remove the app row in Settings and re-grant.") {
-                    SettingsRow("Accessibility") {
-                        HStack {
-                            if permissionManager.isAccessibilityGranted {
-                                Text("Granted")
-                                    .foregroundColor(.green)
-                            } else {
-                                Text("Not Granted")
-                                    .foregroundColor(.red)
-                            }
+        VStack(alignment: .leading, spacing: 24) {
+            SettingsSection("System Permissions", helperText: "If the status shows 'Granted' but automation isn't working, try removing SpaceSwitcher from the list in System Settings and re-adding it.") {
+                SettingsRow("Accessibility") {
+                    HStack(spacing: 12) {
+                        HStack(spacing: 6) {
+                            Circle()
+                                .fill(permissionManager.isAccessibilityGranted ? Color.green : Color.red)
+                                .frame(width: 8, height: 8)
                             
-                            Button(permissionManager.isAccessibilityGranted ? "Open Settings" : "Grant") {
-                                permissionManager.requestAccessibilityPermission()
-                            }
+                            Text(permissionManager.isAccessibilityGranted ? "Granted" : "Not Granted")
+                                .font(.system(size: 13, weight: .medium))
+                                .foregroundColor(permissionManager.isAccessibilityGranted ? .primary : .secondary)
                         }
+                        
+                        Button {
+                            permissionManager.requestAccessibilityPermission()
+                        } label: {
+                            Text(permissionManager.isAccessibilityGranted ? "Open System Settings" : "Grant Access")
+                                .font(.system(size: 12, weight: .medium))
+                        }
+                        .buttonStyle(.bordered)
+                        .controlSize(.small)
                     }
-                    
                 }
-                
-                Spacer()
             }
-            .padding()
-            .frame(maxWidth: .infinity, alignment: .topLeading)
+            
+            Spacer()
         }
+        .animation(.easeInOut(duration: 0.2), value: permissionManager.isAccessibilityGranted)
     }
 }

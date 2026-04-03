@@ -1,5 +1,7 @@
 import SwiftUI
 
+// MARK: - Settings Components
+
 struct SettingsRow<Content: View>: View {
     let title: LocalizedStringKey
     let content: Content
@@ -18,10 +20,11 @@ struct SettingsRow<Content: View>: View {
     }
 
     var body: some View {
-        HStack {
-            HStack(spacing: 4) {
+        HStack(alignment: .center) {
+            HStack(spacing: 6) {
                 Text(title)
-                    .frame(alignment: .leading)
+                    .font(.system(size: 13))
+                    .foregroundColor(.primary)
 
                 if let helperText = helperText {
                     HelperInfoButton(text: helperText)
@@ -34,10 +37,9 @@ struct SettingsRow<Content: View>: View {
             .frame(maxWidth: .infinity, alignment: .leading)
 
             content
-                .frame(alignment: .trailing)
         }
-        .padding(.vertical, 6)
-        .padding(.horizontal, 10)
+        .padding(.vertical, 8)
+        .padding(.horizontal, 12)
     }
 }
 
@@ -56,43 +58,33 @@ struct SettingsSection<Content: View>: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: 10) {
             if let title = title {
-                HStack(spacing: 4) {
+                HStack(spacing: 6) {
                     Text(title)
-                        .font(.headline)
+                        .font(.system(size: 11, weight: .bold))
+                        .foregroundColor(.secondary)
+                        .textCase(.uppercase)
 
                     if let helperText = helperText {
                         HelperInfoButton(text: helperText)
                     }
                 }
-                .padding(.leading, 4)
+                .padding(.leading, 12)
             }
 
             VStack(spacing: 0) {
                 content
             }
             .background(
-                RoundedRectangle(cornerRadius: 12, style: .continuous)
-                    .fill(backgroundColor.opacity(0.6))
+                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                    .fill(Color(NSColor.controlBackgroundColor).opacity(0.4))
                     .overlay(
-                        RoundedRectangle(cornerRadius: 12, style: .continuous)
-                            .fill(.regularMaterial)
+                        RoundedRectangle(cornerRadius: 10, style: .continuous)
+                            .stroke(Color.primary.opacity(0.05), lineWidth: 1)
                     )
             )
         }
-        .padding(.top, title == nil ? -10 : 0)
-    }
-
-    private var backgroundColor: Color {
-        let nsColor = NSColor(name: nil) { appearance in
-            if appearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua {
-                return NSColor(calibratedWhite: 0.20, alpha: 1.0)
-            } else {
-                return NSColor(calibratedWhite: 1.00, alpha: 1.0)
-            }
-        }
-        return Color(nsColor: nsColor)
     }
 }
 
@@ -105,18 +97,15 @@ private struct HelperInfoButton: View {
             showingPopover.toggle()
         } label: {
             Image(systemName: "questionmark.circle.fill")
-                .font(.caption)
-                .foregroundColor(.gray)
+                .font(.system(size: 11))
+                .foregroundColor(.secondary.opacity(0.6))
         }
         .buttonStyle(.plain)
         .popover(isPresented: $showingPopover, arrowEdge: .top) {
-            VStack(alignment: .leading, spacing: 10) {
-                Text(text)
-                    .font(.body)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-            .padding(15)
-            .frame(minWidth: 200, maxWidth: 300)
+            Text(text)
+                .font(.system(size: 12))
+                .padding(12)
+                .frame(minWidth: 200, maxWidth: 300)
         }
     }
 }
@@ -130,18 +119,15 @@ private struct WarningInfoButton: View {
             showingPopover.toggle()
         } label: {
             Image(systemName: "exclamationmark.triangle.fill")
-                .font(.caption)
-                .foregroundColor(.yellow)
+                .font(.system(size: 11))
+                .foregroundColor(.orange.opacity(0.8))
         }
         .buttonStyle(.plain)
         .popover(isPresented: $showingPopover, arrowEdge: .top) {
-            VStack(alignment: .leading, spacing: 10) {
-                Text(text)
-                    .font(.body)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-            .padding(15)
-            .frame(minWidth: 200, maxWidth: 300)
+            Text(text)
+                .font(.system(size: 12))
+                .padding(12)
+                .frame(minWidth: 200, maxWidth: 300)
         }
     }
 }
@@ -177,11 +163,11 @@ struct SliderSettingsRow<V>: View where V: BinaryFloatingPoint, V.Stride: Binary
     }
 
     var body: some View {
-        VStack(spacing: 6) {
-            // Row 1: Title + optional Helper + Spacer + Reset
+        VStack(spacing: 8) {
             HStack {
-                HStack(spacing: 4) {
+                HStack(spacing: 6) {
                     Text(title)
+                        .font(.system(size: 13))
                     if let helperText = helperText {
                         HelperInfoButton(text: helperText)
                     }
@@ -192,17 +178,22 @@ struct SliderSettingsRow<V>: View where V: BinaryFloatingPoint, V.Stride: Binary
 
                 Spacer()
 
-                Button("↺") {
-                    withAnimation {
+                Button {
+                    withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
                         value = defaultValue
                     }
+                } label: {
+                    Image(systemName: "arrow.counterclockwise")
+                        .font(.system(size: 10, weight: .bold))
+                        .foregroundColor(.secondary)
                 }
+                .buttonStyle(.plain)
                 .help("Reset to default")
                 .disabled(value == defaultValue)
+                .opacity(value == defaultValue ? 0 : 1)
             }
 
-            // Row 2: Slider + Spacer + Value
-            HStack {
+            HStack(spacing: 12) {
                 if let step = step {
                     Slider(value: $value, in: range, step: V.Stride(step))
                 } else {
@@ -210,12 +201,12 @@ struct SliderSettingsRow<V>: View where V: BinaryFloatingPoint, V.Stride: Binary
                 }
 
                 Text(valueString(value))
-                    .monospacedDigit()
+                    .font(.system(size: 12, weight: .medium).monospacedDigit())
                     .foregroundColor(.secondary)
-                    .frame(minWidth: 50, alignment: .trailing)
+                    .frame(minWidth: 44, alignment: .trailing)
             }
         }
-        .padding(.vertical, 8)
-        .padding(.horizontal, 10)
+        .padding(.vertical, 10)
+        .padding(.horizontal, 12)
     }
 }
