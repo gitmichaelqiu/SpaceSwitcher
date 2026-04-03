@@ -10,6 +10,9 @@
     "%lld" : {
 
     },
+    "%lld Spaces" : {
+
+    },
     "%lld. %@" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -36,6 +39,9 @@
           }
         }
       }
+    },
+    "→" : {
+
     },
     "↺" : {
 
@@ -163,6 +169,9 @@
     "Add Application..." : {
 
     },
+    "Add First Item" : {
+
+    },
     "Add Large Spacer" : {
 
     },
@@ -221,11 +230,7 @@
         }
       }
     },
-    "Apply" : {
-
-    },
     "Apply Now" : {
-      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -305,6 +310,7 @@
       }
     },
     "Create" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -315,6 +321,9 @@
       }
     },
     "Create First Rule" : {
+
+    },
+    "Create Set" : {
 
     },
     "Current Space" : {
@@ -654,7 +663,7 @@
     "No automation rules yet." : {
 
     },
-    "No items" : {
+    "No items assigned to this Dock set" : {
 
     },
     "No Rules Configured" : {
@@ -731,6 +740,9 @@
           }
         }
       }
+    },
+    "Otherwise:" : {
+
     },
     "Permissions" : {
       "localizations" : {
@@ -855,6 +867,7 @@
       }
     },
     "Select a Dock Set" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -863,6 +876,9 @@
           }
         }
       }
+    },
+    "Select a Dock Set to edit its configuration" : {
+
     },
     "Select Target App" : {
       "extractionState" : "stale",
@@ -1272,6 +1288,9 @@
     "Switcher" : {
       "shouldTranslate" : false
     },
+    "This dock set is used automatically for all unassigned spaces." : {
+
+    },
     "This is the default dock. It applies to all spaces not assigned to other sets." : {
       "extractionState" : "stale",
       "localizations" : {
@@ -1293,9 +1312,6 @@
           }
         }
       }
-    },
-    "Used automatically for unassigned spaces." : {
-
     },
     "Used in other set" : {
       "extractionState" : "stale",
@@ -1345,6 +1361,9 @@
           }
         }
       }
+    },
+    "WORKFLOWS" : {
+
     }
   },
   "version" : "1.1"

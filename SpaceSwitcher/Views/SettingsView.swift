@@ -28,8 +28,8 @@ enum SettingsTab: String, CaseIterable, Identifiable {
 
 // Layout Constants - Standardized for macOSers bundle
 let sidebarWidth: CGFloat = 180
-let defaultSettingsWindowWidth = 750
-let defaultSettingsWindowHeight = 550
+let defaultSettingsWindowWidth = 1000
+let defaultSettingsWindowHeight = 650
 let sidebarRowHeight: CGFloat = 32
 let sidebarFontSize: CGFloat = 16
 let titleHeaderHeight: CGFloat = 48
