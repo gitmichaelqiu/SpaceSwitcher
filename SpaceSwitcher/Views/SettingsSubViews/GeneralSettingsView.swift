@@ -54,7 +54,7 @@ struct GeneralSettingsView: View {
                 
                 Spacer(minLength: 40)
             }
-            .padding(20)
+            .padding(24)
             .frame(maxWidth: .infinity, alignment: .topLeading)
         }
     }

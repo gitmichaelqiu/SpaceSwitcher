@@ -47,7 +47,7 @@ struct SettingsView: View {
         } detail: {
             detailView
         }
-        .navigationSplitViewStyle(.balanced)
+        .navigationSplitViewStyle(.prominentDetail)
         .navigationTitle("")
         .modifier(ToolbarHider())
         .edgesIgnoringSafeArea(.top)
@@ -118,7 +118,7 @@ struct SettingsView: View {
     private var detailView: some View {
         ZStack(alignment: .top) {
             // 1. CONTENT LAYER - Removed outer ScrollView to fix HSplitView collapse
-            VStack(spacing: 0) {
+            VStack(alignment: .leading, spacing: 0) {
                 if let tab = selectedTab {
                     switch tab {
                     case .general:
@@ -135,7 +135,7 @@ struct SettingsView: View {
                 }
             }
             .padding(.top, titleHeaderHeight)
-            .frame(minWidth: 600, maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
             
             // 2. HEADER LAYER
             if let tab = selectedTab {

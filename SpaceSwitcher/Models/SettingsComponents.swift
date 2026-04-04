@@ -116,7 +116,9 @@ struct SettingsSection<Content: View, Accessory: View>: View {
 
             VStack(spacing: 0) {
                 content
+                    .frame(maxWidth: .infinity, alignment: .leading)
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
             .background(
                 RoundedRectangle(cornerRadius: 12, style: .continuous)
                     .fill(backgroundColor.opacity(0.6))

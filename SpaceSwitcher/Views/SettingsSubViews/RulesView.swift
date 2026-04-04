@@ -8,34 +8,32 @@ struct RulesView: View {
     @State private var selectedRule: AppRule?
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            
+        ScrollView(.vertical, showsIndicators: true) {
             if ruleManager.rules.isEmpty {
                 emptyState
+                    .frame(maxWidth: .infinity, minHeight: 400)
             } else {
-                ScrollView {
-                    VStack(spacing: 20) {
-                        ForEach(ruleManager.rules) { rule in
-                            SettingsSection {
-                                RuleRow(
-                                    rule: rule,
-                                    availableSpaces: spaceManager.availableSpaces,
-                                    onEdit: { selectedRule = rule },
-                                    onDelete: {
-                                        withAnimation {
-                                            ruleManager.deleteRule(rule)
-                                        }
+                VStack(spacing: 20) {
+                    ForEach(ruleManager.rules) { rule in
+                        SettingsSection {
+                            RuleRow(
+                                rule: rule,
+                                availableSpaces: spaceManager.availableSpaces,
+                                onEdit: { selectedRule = rule },
+                                onDelete: {
+                                    withAnimation {
+                                        ruleManager.deleteRule(rule)
                                     }
-                                )
-                            }
+                                }
+                            )
                         }
                     }
-                    .padding(20)
                 }
+                .padding(24)
+                .frame(maxWidth: .infinity, alignment: .topLeading)
             }
-            
-            Spacer()
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
         .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("AddRuleRequest"))) { _ in
             showingAddRule = true
         }

@@ -18,7 +18,7 @@ struct DockSettingsView: View {
                 showingCreateSheet: $showingCreateSheet,
                 newSetName: $newSetName
             )
-            .frame(minWidth: 180, idealWidth: 250, maxWidth: 300)
+            .frame(width: 250)
             .layoutPriority(0)
             
             // RIGHT: Detail Area
@@ -69,11 +69,12 @@ struct DockSettingsView: View {
                         .padding(24)
                         .frame(maxWidth: .infinity, alignment: .leading)
                     }
+                    .frame(maxWidth: .infinity)
                 } else {
                     EmptySelectionView()
                 }
             }
-            .frame(minWidth: 600, maxWidth: .infinity, maxHeight: .infinity)
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
             .layoutPriority(1)
             .background(Color(NSColor.windowBackgroundColor).opacity(0.1))
         }
