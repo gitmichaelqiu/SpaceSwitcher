@@ -92,17 +92,16 @@ struct RuleRow: View {
     @State private var isHovering = false
     
     private func spacesString(for spaceIDs: Set<String>) -> String {
-        let names = spaceIDs.compactMap { id -> String? in
+        let items = spaceIDs.compactMap { id -> String? in
             if let space = availableSpaces.first(where: { $0.id == id }) {
-                // Return custom name if it doesn't look like generic "Space N" or "Desktop N"
-                // Actually, just return the name from SpaceManager; fallback to Space N if missing
+                // Return just the name if it exists, otherwise "Space X"
                 return space.name.isEmpty ? "Space \(space.number)" : space.name
             }
             return nil
         }.sorted()
         
-        if names.isEmpty { return "Unassigned" }
-        return names.count == 1 ? "Space \(names[0])" : "Spaces " + names.joined(separator: ", ")
+        if items.isEmpty { return "Unassigned" }
+        return items.joined(separator: ", ")
     }
     
     var body: some View {

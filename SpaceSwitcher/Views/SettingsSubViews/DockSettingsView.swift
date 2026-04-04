@@ -18,7 +18,7 @@ struct DockSettingsView: View {
                 showingCreateSheet: $showingCreateSheet,
                 newSetName: $newSetName
             )
-            .frame(minWidth: 200, idealWidth: 250, maxWidth: 300)
+            .frame(minWidth: 180, idealWidth: 250, maxWidth: 300)
             .layoutPriority(0)
             
             // RIGHT: Detail Area

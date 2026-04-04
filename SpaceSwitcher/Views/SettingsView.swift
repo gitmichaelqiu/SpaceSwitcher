@@ -44,10 +44,8 @@ struct SettingsView: View {
     var body: some View {
         NavigationSplitView {
             sidebar
-                .layoutPriority(1)
         } detail: {
             detailView
-                .layoutPriority(0)
         }
         .navigationSplitViewStyle(.balanced)
         .navigationTitle("")
@@ -81,7 +79,7 @@ struct SettingsView: View {
         }
         .scrollDisabled(true)
         .modifier(SidebarToggleRemover())
-        .navigationSplitViewColumnWidth(min: sidebarWidth, ideal: sidebarWidth, max: sidebarWidth)
+        .navigationSplitViewColumnWidth(sidebarWidth)
         .edgesIgnoringSafeArea(.top)
     }
     
