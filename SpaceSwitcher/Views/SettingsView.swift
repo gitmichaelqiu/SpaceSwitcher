@@ -28,7 +28,7 @@ enum SettingsTab: String, CaseIterable, Identifiable {
 
 // Layout Constants - Standardized for macOSers bundle
 let sidebarWidth: CGFloat = 180
-let defaultSettingsWindowWidth = 1000
+let defaultSettingsWindowWidth = 1100
 let defaultSettingsWindowHeight = 650
 let sidebarRowHeight: CGFloat = 32
 let sidebarFontSize: CGFloat = 16
@@ -135,7 +135,7 @@ struct SettingsView: View {
                 }
             }
             .padding(.top, titleHeaderHeight)
-            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+            .frame(minWidth: 600, maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
             
             // 2. HEADER LAYER
             if let tab = selectedTab {

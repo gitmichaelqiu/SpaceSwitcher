@@ -73,7 +73,7 @@ struct DockSettingsView: View {
                     EmptySelectionView()
                 }
             }
-            .frame(minWidth: 500, maxWidth: .infinity, maxHeight: .infinity)
+            .frame(minWidth: 600, maxWidth: .infinity, maxHeight: .infinity)
             .layoutPriority(1)
             .background(Color(NSColor.windowBackgroundColor).opacity(0.1))
         }
