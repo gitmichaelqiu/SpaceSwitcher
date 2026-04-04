@@ -52,9 +52,9 @@ struct GeneralSettingsView: View {
                     }
                 }
                 
-                Spacer(minLength: 40)
+                Spacer()
             }
-            .padding(24)
+            .padding()
             .frame(maxWidth: .infinity, alignment: .topLeading)
         }
     }
