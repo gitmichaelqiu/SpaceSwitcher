@@ -49,6 +49,7 @@ struct SettingsView: View {
             detailView
                 .layoutPriority(0)
         }
+        .navigationSplitViewStyle(.balanced)
         .navigationTitle("")
         .modifier(ToolbarHider())
         .edgesIgnoringSafeArea(.top)

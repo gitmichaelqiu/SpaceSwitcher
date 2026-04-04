@@ -16,7 +16,7 @@ struct RulesView: View {
                 ScrollView {
                     VStack(spacing: 20) {
                         ForEach(ruleManager.rules) { rule in
-                            SettingsSection(rule.appName) {
+                            SettingsSection {
                                 RuleRow(
                                     rule: rule,
                                     availableSpaces: spaceManager.availableSpaces,
@@ -92,12 +92,16 @@ struct RuleRow: View {
     @State private var isHovering = false
     
     private func spacesString(for spaceIDs: Set<String>) -> String {
-        let numbers = spaceIDs.compactMap { id in
-            availableSpaces.first(where: { $0.id == id })?.number
+        let names = spaceIDs.compactMap { id -> String? in
+            if let space = availableSpaces.first(where: { $0.id == id }) {
+                // Return custom name if it doesn't look like generic "Space N" or "Desktop N"
+                // Actually, just return the name from SpaceManager; fallback to Space N if missing
+                return space.name.isEmpty ? "Space \(space.number)" : space.name
+            }
+            return nil
         }.sorted()
         
-        if numbers.isEmpty { return "Unassigned" }
-        let names = numbers.map { $0.description }
+        if names.isEmpty { return "Unassigned" }
         return names.count == 1 ? "Space \(names[0])" : "Spaces " + names.joined(separator: ", ")
     }
     
@@ -119,6 +123,10 @@ struct RuleRow: View {
                     }
                     
                     VStack(alignment: .leading, spacing: 3) {
+                        Text(rule.appName)
+                            .font(.system(size: 14, weight: .bold))
+                            .foregroundColor(.primary)
+                        
                         Text(rule.appBundleID)
                             .font(.system(size: 11, design: .monospaced))
                             .foregroundColor(.secondary.opacity(0.8))

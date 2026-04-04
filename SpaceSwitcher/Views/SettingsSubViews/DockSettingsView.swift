@@ -235,7 +235,7 @@ struct DockSpaceAssignmentView: View {
                         }
                         Spacer()
                     }
-                    .padding(.vertical, 30)
+                    .padding(.vertical, 16)
                 }
             }
         }
