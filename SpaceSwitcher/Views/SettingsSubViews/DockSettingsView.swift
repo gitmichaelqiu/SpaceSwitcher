@@ -12,7 +12,7 @@ struct DockSettingsView: View {
     
     var body: some View {
         HSplitView {
-            // LEFT: Sidebar
+            // LEFT: Sidebar (Restored and Refined)
             DockSidebarView(
                 dockManager: dockManager,
                 selectedSetID: $selectedSetID,
@@ -27,48 +27,56 @@ struct DockSettingsView: View {
                 if let selectedID = selectedSetID,
                    let index = dockManager.config.dockSets.firstIndex(where: { $0.id == selectedID }) {
                     
-                    VStack(alignment: .leading, spacing: 0) {
-                        // 1. Header (Name + Default Toggle)
-                        DockHeaderView(
-                            set: $dockManager.config.dockSets[index],
-                            config: $dockManager.config
-                        )
-                        
-                        Divider()
-                        
-                        ScrollView(.vertical, showsIndicators: true) {
-                            VStack(alignment: .leading, spacing: 28) {
+                    ScrollView(.vertical, showsIndicators: true) {
+                        VStack(alignment: .leading, spacing: 24) {
+                            // 1. Dock Set Configuration
+                            SettingsSection("Set Configuration") {
+                                SettingsRow("Name") {
+                                    TextField("Name", text: $dockManager.config.dockSets[index].name)
+                                        .textFieldStyle(.roundedBorder)
+                                        .frame(width: 150)
+                                }
                                 
-                                // 2. Space Assignments
-                                DockSpaceAssignmentView(
-                                    selectedSetID: selectedID,
-                                    dockManager: dockManager,
-                                    spaceManager: spaceManager
-                                )
+                                Divider()
                                 
-                                // 3. Dock Items List (Apps + Spacers)
-                                DockItemsListView(
-                                    dockManager: dockManager,
-                                    spaceManager: spaceManager,
-                                    selectedSetID: selectedID,
-                                    tiles: $dockManager.config.dockSets[index].tiles
-                                )
-                                
-                                Spacer(minLength: 40)
+                                SettingsRow("Default Set", helperText: "The default set is used for any space that doesn't have a specific assignment.") {
+                                    Toggle("", isOn: Binding(
+                                        get: { dockManager.config.defaultDockSetID == selectedID },
+                                        set: { if $0 { dockManager.config.defaultDockSetID = selectedID } }
+                                    ))
+                                    .labelsHidden()
+                                    .toggleStyle(.switch)
+                                    .disabled(dockManager.config.defaultDockSetID == selectedID)
+                                }
                             }
-                            .padding(24)
-                            .frame(maxWidth: .infinity, alignment: .leading)
+                            
+                            // 2. Space Assignments
+                            DockSpaceAssignmentView(
+                                selectedSetID: selectedID,
+                                dockManager: dockManager,
+                                spaceManager: spaceManager
+                            )
+                            
+                            // 3. Dock Items List
+                            DockItemsListView(
+                                dockManager: dockManager,
+                                spaceManager: spaceManager,
+                                selectedSetID: selectedID,
+                                tiles: $dockManager.config.dockSets[index].tiles
+                            )
+                            
+                            Spacer(minLength: 40)
                         }
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        .padding(24)
+                        .frame(maxWidth: .infinity, alignment: .leading)
                     }
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
                 } else {
                     EmptySelectionView()
                 }
             }
             .frame(minWidth: 500, maxWidth: .infinity, maxHeight: .infinity)
             .layoutPriority(1)
-            .background(Color(NSColor.windowBackgroundColor).opacity(0.3))
+            .background(Color(NSColor.windowBackgroundColor).opacity(0.1))
         }
         // Create Sheet Logic
         .sheet(isPresented: $showingCreateSheet) {
@@ -80,6 +88,18 @@ struct DockSettingsView: View {
         }
         .onAppear {
             if selectedSetID == nil { selectedSetID = dockManager.config.dockSets.first?.id }
+        }
+    }
+    
+    private func deleteSet(_ set: DockSet) {
+        withAnimation {
+            dockManager.config.dockSets.removeAll { $0.id == set.id }
+            let keys = dockManager.config.spaceAssignments.filter { $0.value == set.id }.map { $0.key }
+            keys.forEach { dockManager.config.spaceAssignments.removeValue(forKey: $0) }
+            if selectedSetID == set.id { selectedSetID = dockManager.config.dockSets.first?.id }
+            if dockManager.config.defaultDockSetID == set.id {
+                dockManager.config.defaultDockSetID = dockManager.config.dockSets.first?.id
+            }
         }
     }
     
@@ -107,7 +127,6 @@ struct DockSidebarView: View {
                 Section {
                     ForEach(dockManager.config.dockSets) { set in
                         HStack(spacing: 8) {
-                            // Status Indicator
                             Circle()
                                 .fill(dockManager.activeDockSetID == set.id ? Color.green : Color.clear)
                                 .frame(width: 6, height: 6)
@@ -147,18 +166,20 @@ struct DockSidebarView: View {
                 newSetName = "Dock Set \(dockManager.config.dockSets.count + 1)"
                 showingCreateSheet = true
             } label: {
-                HStack(spacing: 6) {
+                HStack(spacing: 8) {
                     Image(systemName: "plus.circle.fill")
+                        .font(.system(size: 14))
                     Text("New Dock Set")
+                        .font(.system(size: 13, weight: .semibold))
                 }
-                .font(.system(size: 13, weight: .semibold))
                 .foregroundColor(.accentColor)
-                .frame(maxWidth: .infinity)
                 .padding(.vertical, 12)
+                .frame(maxWidth: .infinity)
             }
             .buttonStyle(.plain)
-            .background(Color(NSColor.controlBackgroundColor).opacity(0.5))
+            .background(.regularMaterial)
         }
+        .background(.ultraThinMaterial)
     }
     
     private func deleteSet(_ set: DockSet) {
@@ -174,106 +195,93 @@ struct DockSidebarView: View {
     }
 }
 
-// MARK: - Component 2: Header (Name + Default)
-struct DockHeaderView: View {
-    @Binding var set: DockSet
-    @Binding var config: DockConfig
-    
-    var body: some View {
-        HStack(alignment: .center) {
-            TextField("Rename", text: $set.name)
-                .font(.system(size: 18, weight: .bold))
-                .textFieldStyle(.plain)
-                .padding(.leading, 8)
-            
-            Spacer()
-            
-            Toggle("Default", isOn: Binding(
-                get: { config.defaultDockSetID == set.id },
-                set: { if $0 { config.defaultDockSetID = set.id } }
-            ))
-            .toggleStyle(.switch)
-            .controlSize(.small)
-            .disabled(config.defaultDockSetID == set.id)
-        }
-        .padding(.horizontal, 24)
-        .padding(.vertical, 16)
-        .background(Color(NSColor.windowBackgroundColor).opacity(0.5))
-    }
-}
 
-// MARK: - Component 3: Space Assignments
+// MARK: - Component 2: Space Assignments
 struct DockSpaceAssignmentView: View {
     let selectedSetID: UUID
     @ObservedObject var dockManager: DockManager
     @ObservedObject var spaceManager: SpaceManager
     
     var body: some View {
-        SettingsSection("Apply to Spaces") {
-            if dockManager.config.defaultDockSetID != selectedSetID {
-                VStack(alignment: .leading, spacing: 10) {
-                    if spaceManager.availableSpaces.isEmpty {
-                        Text("No spaces detected.")
-                            .font(.system(size: 12))
-                            .foregroundColor(.secondary)
-                            .padding(12)
-                    } else {
-                        LazyVGrid(columns: [GridItem(.adaptive(minimum: 120))], spacing: 10) {
-                            ForEach(spaceManager.availableSpaces) { space in
-                                let assignedSetID = dockManager.config.spaceAssignments[space.id]
-                                let isAssignedHere = (assignedSetID == selectedSetID)
-                                let isAssignedElsewhere = (assignedSetID != nil && !isAssignedHere)
-                                
-                                Button {
-                                    if isAssignedHere {
-                                        dockManager.config.spaceAssignments.removeValue(forKey: space.id)
-                                    } else if !isAssignedElsewhere {
-                                        dockManager.config.spaceAssignments[space.id] = selectedSetID
-                                    }
-                                } label: {
-                                    VStack(alignment: .center, spacing: 2) {
-                                        Text("\(space.number)")
-                                            .font(.system(size: 14, weight: .bold))
-                                        Text(space.name)
-                                            .font(.system(size: 11))
-                                            .lineLimit(1)
-                                    }
-                                    .frame(maxWidth: .infinity)
-                                    .padding(.vertical, 8)
-                                    .background(
-                                        RoundedRectangle(cornerRadius: 10)
-                                            .fill(isAssignedHere ? Color.accentColor : Color.primary.opacity(0.05))
-                                            .overlay(
-                                                RoundedRectangle(cornerRadius: 10)
-                                                    .stroke(isAssignedElsewhere ? Color.secondary.opacity(0.1) : Color.clear, lineWidth: 1)
-                                            )
-                                    )
-                                    .foregroundColor(isAssignedHere ? .white : (isAssignedElsewhere ? .secondary.opacity(0.4) : .primary))
-                                }
-                                .buttonStyle(.plain)
-                                .disabled(isAssignedElsewhere)
-                            }
-                        }
-                        .padding(12)
-                    }
-                }
-            } else {
-                HStack(spacing: 8) {
-                    Image(systemName: "info.circle.fill")
-                        .foregroundColor(.secondary.opacity(0.5))
-                        .font(.system(size: 14))
-                    Text("This dock set is used automatically for all unassigned spaces.")
-                        .font(.system(size: 13))
+        let isDefault = dockManager.config.defaultDockSetID == selectedSetID
+        
+        SettingsSection(
+            "Apply to Spaces",
+            helperText: isDefault ? "This dock set is used automatically for all unassigned spaces." : nil
+        ) {
+            VStack(alignment: .leading, spacing: 10) {
+                if spaceManager.availableSpaces.isEmpty {
+                    Text("No spaces detected.")
+                        .font(.system(size: 12))
                         .foregroundColor(.secondary)
+                        .padding(12)
+                } else if !isDefault {
+                    LazyVGrid(columns: [GridItem(.adaptive(minimum: 110, maximum: 140))], spacing: 12) {
+                        ForEach(spaceManager.availableSpaces) { space in
+                            spaceButton(for: space)
+                        }
+                    }
+                    .padding(16)
+                } else {
+                    // Placeholder for default set (no explicit selection needed)
+                    HStack {
+                        Spacer()
+                        VStack(spacing: 12) {
+                            Image(systemName: "sparkles")
+                                .font(.system(size: 24))
+                                .foregroundColor(.accentColor.opacity(0.5))
+                            Text("Default Configuration Active")
+                                .font(.system(size: 12, weight: .medium))
+                                .foregroundColor(.secondary)
+                        }
+                        Spacer()
+                    }
+                    .padding(.vertical, 30)
                 }
-                .padding(16)
-                .frame(maxWidth: .infinity, alignment: .leading)
             }
         }
     }
+    
+    @ViewBuilder
+    private func spaceButton(for space: SpaceInfo) -> some View {
+        let assignedSetID = dockManager.config.spaceAssignments[space.id]
+        let isAssignedHere = (assignedSetID == selectedSetID)
+        let isAssignedElsewhere = (assignedSetID != nil && !isAssignedHere)
+        
+        Button {
+            withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                if isAssignedHere {
+                    dockManager.config.spaceAssignments.removeValue(forKey: space.id)
+                } else if !isAssignedElsewhere {
+                    dockManager.config.spaceAssignments[space.id] = selectedSetID
+                }
+            }
+        } label: {
+            VStack(alignment: .center, spacing: 2) {
+                Text("\(space.number)")
+                    .font(.system(size: 15, weight: .bold))
+                Text(space.name)
+                    .font(.system(size: 10))
+                    .lineLimit(1)
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 10)
+            .background(
+                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                    .fill(isAssignedHere ? Color.accentColor : Color.primary.opacity(0.04))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 10, style: .continuous)
+                            .stroke(isAssignedElsewhere ? Color.secondary.opacity(0.1) : Color.clear, lineWidth: 1)
+                    )
+            )
+            .foregroundColor(isAssignedHere ? .white : (isAssignedElsewhere ? .secondary.opacity(0.3) : .primary))
+        }
+        .buttonStyle(.plain)
+        .disabled(isAssignedElsewhere)
+    }
 }
 
-// MARK: - Component 4: Dock Items List
+// MARK: - Component 3: Dock Items List
 struct DockItemsListView: View {
     @ObservedObject var dockManager: DockManager
     @ObservedObject var spaceManager: SpaceManager
@@ -283,8 +291,8 @@ struct DockItemsListView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
-                Text("DOCK ITEMS")
-                    .font(.system(size: 11, weight: .bold))
+                Text("Dock Items")
+                    .font(.system(size: 13, weight: .semibold))
                     .foregroundColor(.secondary)
                 
                 Spacer()

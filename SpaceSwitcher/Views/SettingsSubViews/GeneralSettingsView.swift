@@ -34,7 +34,6 @@ struct GeneralSettingsView: View {
                             Text(spaceManager.isAPIEnabled ? "Connected" : "Disconnected")
                                 .font(.system(size: 13, weight: .medium))
                         }
-                        .padding(.vertical, 8)
                     }
                 }
                 

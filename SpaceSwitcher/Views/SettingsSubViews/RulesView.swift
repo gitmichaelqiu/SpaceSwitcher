@@ -8,13 +8,9 @@ struct RulesView: View {
     @State private var selectedRule: AppRule?
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 20) {
+        VStack(alignment: .leading, spacing: 16) {
             // Header with Action
             HStack {
-                Text("AUTOMATION RULES")
-                    .font(.headline)
-                    .foregroundColor(.secondary)
-                
                 Spacer()
                 
                 Button {
@@ -30,18 +26,27 @@ struct RulesView: View {
                 emptyState
             } else {
                 ScrollView {
-                    VStack(spacing: 12) {
-                        ForEach(ruleManager.rules) { rule in
-                            RuleRow(
-                                rule: rule,
-                                availableSpaces: spaceManager.availableSpaces,
-                                onEdit: { selectedRule = rule },
-                                onDelete: {
-                                    withAnimation {
-                                        ruleManager.deleteRule(rule)
+                    SettingsSection("Automation Rules") {
+                        VStack(spacing: 0) {
+                            let rules = ruleManager.rules
+                            ForEach(rules) { rule in
+                                let index = rules.firstIndex(where: { $0.id == rule.id }) ?? 0
+                                
+                                RuleRow(
+                                    rule: rule,
+                                    availableSpaces: spaceManager.availableSpaces,
+                                    onEdit: { selectedRule = rule },
+                                    onDelete: {
+                                        withAnimation {
+                                            ruleManager.deleteRule(rule)
+                                        }
                                     }
+                                )
+                                
+                                if index < rules.count - 1 {
+                                    Divider().padding(.leading, 12)
                                 }
-                            )
+                            }
                         }
                     }
                     .padding(.bottom, 20)
@@ -114,8 +119,8 @@ struct RuleRow: View {
     }
     
     var body: some View {
-        SettingsSection {
-            VStack(alignment: .leading, spacing: 14) {
+        VStack(alignment: .leading, spacing: 12) {
+            VStack(alignment: .leading, spacing: 12) {
                 HStack(spacing: 12) {
                     // App Icon
                     if let path = NSWorkspace.shared.urlForApplication(withBundleIdentifier: rule.appBundleID)?.path {
@@ -162,11 +167,10 @@ struct RuleRow: View {
                     .opacity(isHovering ? 1.0 : 0.0)
                 }
                 
-                // WORKFLOWS SUMMARY
                 if !rule.groups.isEmpty {
                     VStack(alignment: .leading, spacing: 10) {
                         HStack {
-                            Text("WORKFLOWS")
+                            Text("Workflows")
                                 .font(.system(size: 10, weight: .bold))
                                 .tracking(0.5)
                                 .foregroundColor(.secondary.opacity(0.8))
@@ -229,8 +233,9 @@ struct RuleRow: View {
                     )
                 }
             }
-            .padding(14)
+            .padding(12)
         }
+        .contentShape(Rectangle())
         .onHover { isHovering = $0 }
     }
 }

@@ -247,7 +247,7 @@
     "Automation API" : {
 
     },
-    "AUTOMATION RULES" : {
+    "Automation Rules" : {
 
     },
     "Bring to Front" : {
@@ -345,6 +345,9 @@
     "Default" : {
 
     },
+    "Default Configuration Active" : {
+
+    },
     "Default Dock Set" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -355,6 +358,9 @@
           }
         }
       }
+    },
+    "Default Set" : {
+
     },
     "Delete" : {
       "localizations" : {
@@ -398,7 +404,6 @@
       }
     },
     "Dock Items" : {
-      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -407,9 +412,6 @@
           }
         }
       }
-    },
-    "DOCK ITEMS" : {
-
     },
     "Dock Name" : {
       "extractionState" : "stale",
@@ -786,9 +788,6 @@
         }
       }
     },
-    "Rename" : {
-
-    },
     "Required for detecting active applications and space changes via the bundle API." : {
 
     },
@@ -892,6 +891,9 @@
           }
         }
       }
+    },
+    "Set Configuration" : {
+
     },
     "Settings" : {
       "extractionState" : "manual",
@@ -1279,6 +1281,9 @@
     "Switcher" : {
       "shouldTranslate" : false
     },
+    "The default set is used for any space that doesn't have a specific assignment." : {
+
+    },
     "This dock set is used automatically for all unassigned spaces." : {
 
     },
@@ -1353,7 +1358,7 @@
         }
       }
     },
-    "WORKFLOWS" : {
+    "Workflows" : {
 
     }
   },
