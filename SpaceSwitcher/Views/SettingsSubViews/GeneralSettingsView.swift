@@ -9,22 +9,36 @@ struct GeneralSettingsView: View {
     var body: some View {
         ScrollView(.vertical, showsIndicators: true) {
             VStack(alignment: .leading, spacing: 20) {
-                // General Settings
+                // 1. General
                 SettingsSection("General") {
                     SettingsRow("Launch at Login") {
                         Toggle("", isOn: $launchAtLogin)
                             .labelsHidden()
                             .toggleStyle(.switch)
                     }
-                    Divider()
+                }
+                
+                // 2. Updates - Standardized per macOSers bundle
+                SettingsSection("Updates") {
                     SettingsRow("Check for Updates Automatically") {
                         Toggle("", isOn: $autoCheckUpdate)
                             .labelsHidden()
                             .toggleStyle(.switch)
+                            .onChange(of: autoCheckUpdate) { value in
+                                UpdateManager.isAutoCheckEnabled = value
+                            }
+                    }
+                    Divider()
+                    SettingsRow("Check for Updates") {
+                        Button("Check Now") {
+                            Task {
+                                await UpdateManager.shared.checkForUpdate(from: nil)
+                            }
+                        }
                     }
                 }
                 
-                // Automation Status
+                // 3. Automation Status
                 SettingsSection("Automation API", helperText: "SpaceSwitcher uses the DesktopRenamer API to detect space changes. Ensure the API is enabled in DesktopRenamer.") {
                     SettingsRow("API Status") {
                         HStack(spacing: 8) {
@@ -34,20 +48,15 @@ struct GeneralSettingsView: View {
                             Text(spaceManager.isAPIEnabled ? "Connected" : "Disconnected")
                                 .font(.system(size: 13, weight: .medium))
                         }
+                        .frame(minHeight: 28) // Fixed height to match Toggles/Buttons
                     }
                 }
                 
-                // Advanced
+                // 4. Advanced
                 SettingsSection("Advanced") {
                     SettingsRow("Force Rule Refresh") {
                         Button("Refresh Now") {
                             spaceManager.refreshSpaceList()
-                        }
-                    }
-                    Divider()
-                    SettingsRow("Check for Updates") {
-                        Button("Check Now") {
-                            // Action
                         }
                     }
                 }
