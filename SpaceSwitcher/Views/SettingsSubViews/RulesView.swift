@@ -32,11 +32,16 @@ struct RulesView: View {
                 ScrollView {
                     VStack(spacing: 12) {
                         ForEach(ruleManager.rules) { rule in
-                            RuleRow(rule: rule, onEdit: { selectedRule = rule }, onDelete: {
-                                withAnimation {
-                                    ruleManager.deleteRule(rule)
+                            RuleRow(
+                                rule: rule,
+                                availableSpaces: spaceManager.availableSpaces,
+                                onEdit: { selectedRule = rule },
+                                onDelete: {
+                                    withAnimation {
+                                        ruleManager.deleteRule(rule)
+                                    }
                                 }
-                            })
+                            )
                         }
                     }
                     .padding(.bottom, 20)
@@ -92,34 +97,45 @@ struct RulesView: View {
 
 struct RuleRow: View {
     let rule: AppRule
+    let availableSpaces: [SpaceInfo]
     let onEdit: () -> Void
     let onDelete: () -> Void
     
     @State private var isHovering = false
     
+    private func spacesString(for spaceIDs: Set<String>) -> String {
+        let numbers = spaceIDs.compactMap { id in
+            availableSpaces.first(where: { $0.id == id })?.number
+        }.sorted()
+        
+        if numbers.isEmpty { return "Unassigned" }
+        let names = numbers.map { $0.description }
+        return names.count == 1 ? "Space \(names[0])" : "Spaces " + names.joined(separator: ", ")
+    }
+    
     var body: some View {
         SettingsSection {
-            VStack(alignment: .leading, spacing: 12) {
+            VStack(alignment: .leading, spacing: 14) {
                 HStack(spacing: 12) {
                     // App Icon
                     if let path = NSWorkspace.shared.urlForApplication(withBundleIdentifier: rule.appBundleID)?.path {
                         Image(nsImage: NSWorkspace.shared.icon(forFile: path))
                             .resizable()
-                            .frame(width: 40, height: 40)
+                            .frame(width: 44, height: 44)
                             .shadow(color: .black.opacity(0.1), radius: 2, x: 0, y: 1)
                     } else {
                         Image(systemName: "questionmark.app.dashed")
                             .resizable()
-                            .frame(width: 40, height: 40)
+                            .frame(width: 44, height: 44)
                             .foregroundColor(.secondary.opacity(0.5))
                     }
                     
-                    VStack(alignment: .leading, spacing: 2) {
+                    VStack(alignment: .leading, spacing: 3) {
                         Text(rule.appName)
-                            .font(.system(size: 15, weight: .bold))
+                            .font(.system(size: 16, weight: .bold))
                         Text(rule.appBundleID)
                             .font(.system(size: 11, design: .monospaced))
-                            .foregroundColor(.secondary)
+                            .foregroundColor(.secondary.opacity(0.8))
                     }
                     
                     Spacer()
@@ -146,55 +162,74 @@ struct RuleRow: View {
                     .opacity(isHovering ? 1.0 : 0.0)
                 }
                 
-                // RESTORED: Workflow Summary
+                // WORKFLOWS SUMMARY
                 if !rule.groups.isEmpty {
-                    VStack(alignment: .leading, spacing: 6) {
-                        Text("WORKFLOWS")
-                            .font(.system(size: 9, weight: .bold))
-                            .foregroundColor(.secondary.opacity(0.7))
-                        
-                        ForEach(rule.groups) { group in
-                            HStack(spacing: 6) {
-                                Image(systemName: "arrow.right.circle.fill")
-                                    .font(.system(size: 10))
-                                    .foregroundColor(.accentColor.opacity(0.6))
-                                
-                                Text("\(group.targetSpaceIDs.count) Spaces")
-                                    .font(.system(size: 11, weight: .semibold))
-                                
-                                Text("→")
-                                    .font(.system(size: 11))
-                                    .foregroundColor(.secondary.opacity(0.5))
-                                
-                                Text(group.actions.map { $0.value.localizedString }.joined(separator: ", "))
-                                    .font(.system(size: 11))
-                                    .foregroundColor(.secondary)
-                                    .lineLimit(1)
-                            }
+                    VStack(alignment: .leading, spacing: 10) {
+                        HStack {
+                            Text("WORKFLOWS")
+                                .font(.system(size: 10, weight: .bold))
+                                .tracking(0.5)
+                                .foregroundColor(.secondary.opacity(0.8))
+                            Spacer()
                         }
                         
-                        if !rule.elseActions.isEmpty {
-                            HStack(spacing: 6) {
-                                Image(systemName: "ellipsis.circle.fill")
-                                    .font(.system(size: 10))
-                                    .foregroundColor(.secondary.opacity(0.6))
+                        VStack(alignment: .leading, spacing: 8) {
+                            ForEach(rule.groups) { group in
+                                HStack(alignment: .top, spacing: 10) {
+                                    Image(systemName: "arrow.up.forward.app.fill")
+                                        .font(.system(size: 10))
+                                        .foregroundColor(.accentColor.opacity(0.8))
+                                        .padding(.top, 2)
+                                    
+                                    VStack(alignment: .leading, spacing: 2) {
+                                        Text(spacesString(for: group.targetSpaceIDs))
+                                            .font(.system(size: 11, weight: .bold))
+                                            .foregroundColor(.primary.opacity(0.9))
+                                        
+                                        Text(group.actions.map { $0.value.localizedString }.joined(separator: ", "))
+                                            .font(.system(size: 11))
+                                            .foregroundColor(.secondary)
+                                            .fixedSize(horizontal: false, vertical: true)
+                                    }
+                                }
+                            }
+                            
+                            if !rule.elseActions.isEmpty {
+                                Divider().opacity(0.2).padding(.vertical, 2)
                                 
-                                Text("Otherwise:")
-                                    .font(.system(size: 11, weight: .semibold))
-                                    .foregroundColor(.secondary)
-                                
-                                Text(rule.elseActions.map { $0.value.localizedString }.joined(separator: ", "))
-                                    .font(.system(size: 11))
-                                    .foregroundColor(.secondary)
-                                    .lineLimit(1)
+                                HStack(alignment: .top, spacing: 10) {
+                                    Image(systemName: "ellipsis.circle.fill")
+                                        .font(.system(size: 10))
+                                        .foregroundColor(.secondary.opacity(0.6))
+                                        .padding(.top, 2)
+                                    
+                                    VStack(alignment: .leading, spacing: 2) {
+                                        Text("Otherwise")
+                                            .font(.system(size: 11, weight: .bold))
+                                            .foregroundColor(.secondary)
+                                        
+                                        Text(rule.elseActions.map { $0.value.localizedString }.joined(separator: ", "))
+                                            .font(.system(size: 11))
+                                            .foregroundColor(.secondary)
+                                            .fixedSize(horizontal: false, vertical: true)
+                                            .multilineTextAlignment(.leading)
+                                    }
+                                }
                             }
                         }
                     }
-                    .padding(10)
-                    .background(RoundedRectangle(cornerRadius: 8).fill(Color.primary.opacity(0.03)))
+                    .padding(12)
+                    .background(
+                        RoundedRectangle(cornerRadius: 12)
+                            .fill(Color.primary.opacity(0.04))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 12)
+                                    .stroke(Color.primary.opacity(0.06), lineWidth: 0.5)
+                            )
+                    )
                 }
             }
-            .padding(12)
+            .padding(14)
         }
         .onHover { isHovering = $0 }
     }

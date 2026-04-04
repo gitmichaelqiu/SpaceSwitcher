@@ -19,10 +19,11 @@ struct DockSettingsView: View {
                 showingCreateSheet: $showingCreateSheet,
                 newSetName: $newSetName
             )
-            .frame(minWidth: 180, maxWidth: 220)
+            .frame(minWidth: 200, maxWidth: 300)
+            .layoutPriority(0)
             
             // RIGHT: Detail Area
-            Group {
+            ZStack {
                 if let selectedID = selectedSetID,
                    let index = dockManager.config.dockSets.firstIndex(where: { $0.id == selectedID }) {
                     
@@ -35,8 +36,8 @@ struct DockSettingsView: View {
                         
                         Divider()
                         
-                        ScrollView {
-                            VStack(alignment: .leading, spacing: 24) {
+                        ScrollView(.vertical, showsIndicators: true) {
+                            VStack(alignment: .leading, spacing: 28) {
                                 
                                 // 2. Space Assignments
                                 DockSpaceAssignmentView(
@@ -55,17 +56,18 @@ struct DockSettingsView: View {
                                 
                                 Spacer(minLength: 40)
                             }
-                            .padding(.top, 24)
-                            .padding(.bottom, 40)
-                            .padding(.horizontal, 24)
+                            .padding(24)
+                            .frame(maxWidth: .infinity, alignment: .leading)
                         }
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
                     }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
                 } else {
                     EmptySelectionView()
                 }
             }
+            .frame(minWidth: 500, maxWidth: .infinity, maxHeight: .infinity)
             .layoutPriority(1)
-            .frame(minWidth: 450)
             .background(Color(NSColor.windowBackgroundColor).opacity(0.3))
         }
         // Create Sheet Logic
@@ -333,20 +335,30 @@ struct DockItemsListView: View {
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 40)
                 } else {
-                    List {
+                    VStack(spacing: 0) {
                         ForEach(tiles) { tile in
-                            DockTileRow(tile: tile)
-                                .listRowInsets(EdgeInsets(top: 0, leading: 12, bottom: 0, trailing: 12))
-                        }
-                        .onMove { indices, newOffset in
-                            tiles.move(fromOffsets: indices, toOffset: newOffset)
-                        }
-                        .onDelete { indices in
-                            tiles.remove(atOffsets: indices)
+                            if let index = tiles.firstIndex(where: { $0.id == tile.id }) {
+                                DockTileRow(
+                                    tile: tile,
+                                    onDelete: {
+                                        tiles.remove(at: index)
+                                    },
+                                    moveUp: index > 0 ? {
+                                        tiles.move(fromOffsets: IndexSet(integer: index), toOffset: index - 1)
+                                    } : nil,
+                                    moveDown: index < tiles.count - 1 ? {
+                                        tiles.move(fromOffsets: IndexSet(integer: index), toOffset: index + 2)
+                                    } : nil
+                                )
+                                
+                                if index < tiles.count - 1 {
+                                    Divider().opacity(0.5)
+                                }
+                            }
                         }
                     }
-                    .listStyle(.plain)
-                    .frame(minHeight: 300, maxHeight: 500)
+                    .background(Color(NSColor.controlBackgroundColor).opacity(0.3))
+                    .cornerRadius(8)
                 }
             }
         }
@@ -387,23 +399,67 @@ struct DockItemsListView: View {
 
 struct DockTileRow: View {
     let tile: DockTile
+    let onDelete: () -> Void
+    var moveUp: (() -> Void)?
+    var moveDown: (() -> Void)?
+    
+    @State private var isHovering = false
     
     var body: some View {
-        HStack(spacing: 16) {
-            iconView
-                .frame(width: 28, height: 28)
-                .shadow(color: .black.opacity(0.1), radius: 2, x: 0, y: 1)
-            
-            Text(tile.label)
-                .font(.system(size: 14, weight: .medium))
+        HStack(spacing: 0) {
+            HStack(spacing: 12) {
+                iconView
+                    .frame(width: 24, height: 24)
+                    .shadow(color: .black.opacity(0.1), radius: 1, x: 0, y: 0.5)
+                
+                VStack(alignment: .leading, spacing: 1) {
+                    Text(tile.label)
+                        .font(.system(size: 13, weight: .medium))
+                    if let bid = tile.bundleIdentifier {
+                        Text(bid)
+                            .font(.system(size: 9))
+                            .foregroundColor(.secondary.opacity(0.7))
+                    }
+                }
+            }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 8)
             
             Spacer()
             
-            Image(systemName: "line.3.horizontal")
-                .font(.system(size: 12))
-                .foregroundColor(.secondary.opacity(0.3))
+            if isHovering {
+                HStack(spacing: 4) {
+                    if let moveUp = moveUp {
+                        Button(action: moveUp) {
+                            Image(systemName: "chevron.up")
+                                .frame(width: 20, height: 20)
+                        }
+                        .buttonStyle(.plain)
+                        .foregroundColor(.secondary)
+                    }
+                    
+                    if let moveDown = moveDown {
+                        Button(action: moveDown) {
+                            Image(systemName: "chevron.down")
+                                .frame(width: 20, height: 20)
+                        }
+                        .buttonStyle(.plain)
+                        .foregroundColor(.secondary)
+                    }
+                    
+                    Button(action: onDelete) {
+                        Image(systemName: "xmark.circle.fill")
+                            .frame(width: 20, height: 20)
+                    }
+                    .buttonStyle(.plain)
+                    .foregroundColor(.red.opacity(0.7))
+                }
+                .padding(.trailing, 8)
+                .transition(.opacity.combined(with: .move(edge: .trailing)))
+            }
         }
-        .padding(.vertical, 8)
+        .contentShape(Rectangle())
+        .onHover { isHovering = $0 }
     }
     
     @ViewBuilder

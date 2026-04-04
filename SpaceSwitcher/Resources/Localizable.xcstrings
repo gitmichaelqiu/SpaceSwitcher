@@ -10,9 +10,6 @@
     "%lld" : {
 
     },
-    "%lld Spaces" : {
-
-    },
     "%lld. %@" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -39,9 +36,6 @@
           }
         }
       }
-    },
-    "→" : {
-
     },
     "↺" : {
 
@@ -448,9 +442,6 @@
         }
       }
     },
-    "Duplicate Rule" : {
-
-    },
     "Else" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -741,7 +732,7 @@
         }
       }
     },
-    "Otherwise:" : {
+    "Otherwise" : {
 
     },
     "Permissions" : {

@@ -116,27 +116,25 @@ struct SettingsView: View {
     @ViewBuilder
     private var detailView: some View {
         ZStack(alignment: .top) {
-            // 1. CONTENT LAYER
-            ScrollView {
-                VStack(spacing: 0) {
-                    if let tab = selectedTab {
-                        switch tab {
-                        case .general:
-                            GeneralSettingsView(spaceManager: spaceManager)
-                        case .rules:
-                            RulesView(ruleManager: ruleManager, spaceManager: spaceManager)
-                        case .dock:
-                            DockSettingsView(dockManager: dockManager, spaceManager: spaceManager)
-                        case .permissions:
-                            PermissionsSettingsView()
-                        case .about:
-                            AboutView()
-                        }
+            // 1. CONTENT LAYER - Removed outer ScrollView to fix HSplitView collapse
+            VStack(spacing: 0) {
+                if let tab = selectedTab {
+                    switch tab {
+                    case .general:
+                        GeneralSettingsView(spaceManager: spaceManager)
+                    case .rules:
+                        RulesView(ruleManager: ruleManager, spaceManager: spaceManager)
+                    case .dock:
+                        DockSettingsView(dockManager: dockManager, spaceManager: spaceManager)
+                    case .permissions:
+                        PermissionsSettingsView()
+                    case .about:
+                        AboutView()
                     }
                 }
-                .padding(.top, titleHeaderHeight)
-                .frame(maxWidth: .infinity, alignment: .top)
             }
+            .padding(.top, titleHeaderHeight)
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
             
             // 2. HEADER LAYER
             if let tab = selectedTab {

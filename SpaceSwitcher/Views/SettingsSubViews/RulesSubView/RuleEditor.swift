@@ -243,15 +243,6 @@ struct RuleEditor: View {
             }
             
             Spacer()
-            
-            Menu {
-                Button("Duplicate Rule") { /* ... */ }
-            } label: {
-                Image(systemName: "ellipsis.circle")
-                    .font(.system(size: 16))
-                    .foregroundColor(.secondary)
-            }
-            .menuStyle(.borderlessButton)
         }
         .padding(.horizontal, 20)
         .padding(.vertical, 16)
