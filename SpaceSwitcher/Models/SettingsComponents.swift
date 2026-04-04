@@ -41,32 +41,77 @@ struct SettingsRow<Content: View>: View {
     }
 }
 
-struct SettingsSection<Content: View>: View {
+struct SettingsSection<Content: View, Accessory: View>: View {
     let title: LocalizedStringKey?
     let helperText: LocalizedStringKey?
+    let accessory: Accessory
     let content: Content
 
     init(
-        _ title: LocalizedStringKey? = nil, helperText: LocalizedStringKey? = nil,
+        _ title: String,
+        helperText: LocalizedStringKey? = nil,
+        @ViewBuilder accessory: () -> Accessory,
+        @ViewBuilder content: () -> Content
+    ) {
+        self.title = LocalizedStringKey(title)
+        self.helperText = helperText
+        self.accessory = accessory()
+        self.content = content()
+    }
+
+    init(
+        _ title: String,
+        helperText: LocalizedStringKey? = nil,
+        @ViewBuilder content: () -> Content
+    ) where Accessory == EmptyView {
+        self.title = LocalizedStringKey(title)
+        self.helperText = helperText
+        self.accessory = EmptyView()
+        self.content = content()
+    }
+
+    init(
+        _ title: LocalizedStringKey? = nil,
+        helperText: LocalizedStringKey? = nil,
+        @ViewBuilder accessory: () -> Accessory,
         @ViewBuilder content: () -> Content
     ) {
         self.title = title
         self.helperText = helperText
+        self.accessory = accessory()
+        self.content = content()
+    }
+
+    init(
+        _ title: LocalizedStringKey? = nil,
+        helperText: LocalizedStringKey? = nil,
+        @ViewBuilder content: () -> Content
+    ) where Accessory == EmptyView {
+        self.title = title
+        self.helperText = helperText
+        self.accessory = EmptyView()
         self.content = content()
     }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            if let title = title {
-                HStack(spacing: 4) {
-                    Text(title)
-                        .font(.headline)
+            if title != nil || helperText != nil {
+                HStack(alignment: .bottom, spacing: 4) {
+                    if let title = title {
+                        Text(title)
+                            .font(.headline)
+                    }
 
                     if let helperText = helperText {
                         HelperInfoButton(text: helperText)
                     }
+                    
+                    Spacer()
+                    
+                    accessory
                 }
                 .padding(.leading, 4)
+                .padding(.trailing, 2)
             }
 
             VStack(spacing: 0) {
@@ -81,7 +126,7 @@ struct SettingsSection<Content: View>: View {
                     )
             )
         }
-        .padding(.top, title == nil ? -10 : 0)
+        .padding(.top, (title == nil && helperText == nil) ? -10 : 0)
     }
 
     private var backgroundColor: Color {

@@ -185,9 +185,6 @@
         }
       }
     },
-    "Advanced" : {
-
-    },
     "API Connection" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -235,6 +232,7 @@
       }
     },
     "Apply to Spaces" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -243,12 +241,6 @@
           }
         }
       }
-    },
-    "Automation API" : {
-
-    },
-    "Automation Rules" : {
-
     },
     "Bring to Front" : {
       "localizations" : {
@@ -404,6 +396,7 @@
       }
     },
     "Dock Items" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -891,9 +884,6 @@
           }
         }
       }
-    },
-    "Set Configuration" : {
-
     },
     "Settings" : {
       "extractionState" : "manual",

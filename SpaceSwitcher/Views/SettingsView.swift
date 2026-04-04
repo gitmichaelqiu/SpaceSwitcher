@@ -44,8 +44,10 @@ struct SettingsView: View {
     var body: some View {
         NavigationSplitView {
             sidebar
+                .layoutPriority(1)
         } detail: {
             detailView
+                .layoutPriority(0)
         }
         .navigationTitle("")
         .modifier(ToolbarHider())
@@ -143,7 +145,12 @@ struct SettingsView: View {
                         Text(tab.localizedName)
                             .font(.system(size: 20, weight: .semibold))
                             .padding(.leading, 20)
+                        
                         Spacer()
+                        
+                        // Tab Specific Actions
+                        headerActions(for: tab)
+                            .padding(.trailing, 20)
                     }
                     .frame(height: titleHeaderHeight)
                     .background(.bar)
@@ -153,6 +160,22 @@ struct SettingsView: View {
             }
         }
         .edgesIgnoringSafeArea(.top)
+    }
+    
+    @ViewBuilder
+    private func headerActions(for tab: SettingsTab) -> some View {
+        switch tab {
+        case .rules:
+            Button {
+                NotificationCenter.default.post(name: NSNotification.Name("AddRuleRequest"), object: nil)
+            } label: {
+                Label("Add Rule", systemImage: "plus")
+            }
+            .buttonStyle(.bordered)
+            .controlSize(.small)
+        default:
+            EmptyView()
+        }
     }
 }
 

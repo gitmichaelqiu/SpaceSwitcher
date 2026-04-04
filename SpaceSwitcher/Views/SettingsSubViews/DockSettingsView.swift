@@ -12,14 +12,13 @@ struct DockSettingsView: View {
     
     var body: some View {
         HSplitView {
-            // LEFT: Sidebar (Restored and Refined)
             DockSidebarView(
                 dockManager: dockManager,
                 selectedSetID: $selectedSetID,
                 showingCreateSheet: $showingCreateSheet,
                 newSetName: $newSetName
             )
-            .frame(minWidth: 200, maxWidth: 300)
+            .frame(minWidth: 200, idealWidth: 250, maxWidth: 300)
             .layoutPriority(0)
             
             // RIGHT: Detail Area
@@ -289,14 +288,9 @@ struct DockItemsListView: View {
     @Binding var tiles: [DockTile]
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack {
-                Text("Dock Items")
-                    .font(.system(size: 13, weight: .semibold))
-                    .foregroundColor(.secondary)
-                
-                Spacer()
-                
+        SettingsSection(
+            "Dock Items",
+            accessory: {
                 HStack(spacing: 8) {
                     Button {
                         forceApply()
@@ -321,52 +315,47 @@ struct DockItemsListView: View {
                     .menuStyle(.borderlessButton)
                 }
             }
-            .padding(.horizontal, 4)
-            
-            SettingsSection {
-                if tiles.isEmpty {
-                    VStack(spacing: 12) {
-                        Image(systemName: "dock.rectangle")
-                            .font(.system(size: 32))
-                            .foregroundColor(.secondary.opacity(0.1))
-                        Text("No items assigned to this Dock set")
-                            .font(.system(size: 13))
-                            .foregroundColor(.secondary)
-                        
-                        Button { addAppToSelectedSet() } label: {
-                            Text("Add First Item")
-                                .font(.system(size: 11, weight: .semibold))
-                        }
-                        .buttonStyle(.bordered)
-                        .controlSize(.small)
+        ) {
+            if tiles.isEmpty {
+                VStack(spacing: 12) {
+                    Image(systemName: "dock.rectangle")
+                        .font(.system(size: 32))
+                        .foregroundColor(.secondary.opacity(0.1))
+                    Text("No items assigned to this Dock set")
+                        .font(.system(size: 13))
+                        .foregroundColor(.secondary)
+                    
+                    Button { addAppToSelectedSet() } label: {
+                        Text("Add First Item")
+                            .font(.system(size: 11, weight: .semibold))
                     }
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 40)
-                } else {
-                    VStack(spacing: 0) {
-                        ForEach(tiles) { tile in
-                            if let index = tiles.firstIndex(where: { $0.id == tile.id }) {
-                                DockTileRow(
-                                    tile: tile,
-                                    onDelete: {
-                                        tiles.remove(at: index)
-                                    },
-                                    moveUp: index > 0 ? {
-                                        tiles.move(fromOffsets: IndexSet(integer: index), toOffset: index - 1)
-                                    } : nil,
-                                    moveDown: index < tiles.count - 1 ? {
-                                        tiles.move(fromOffsets: IndexSet(integer: index), toOffset: index + 2)
-                                    } : nil
-                                )
-                                
-                                if index < tiles.count - 1 {
-                                    Divider().opacity(0.5)
-                                }
+                    .buttonStyle(.bordered)
+                    .controlSize(.small)
+                }
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 40)
+            } else {
+                VStack(spacing: 0) {
+                    ForEach(tiles) { tile in
+                        if let index = tiles.firstIndex(where: { $0.id == tile.id }) {
+                            DockTileRow(
+                                tile: tile,
+                                onDelete: {
+                                    tiles.remove(at: index)
+                                },
+                                moveUp: index > 0 ? {
+                                    tiles.move(fromOffsets: IndexSet(integer: index), toOffset: index - 1)
+                                } : nil,
+                                moveDown: index < tiles.count - 1 ? {
+                                    tiles.move(fromOffsets: IndexSet(integer: index), toOffset: index + 2)
+                                } : nil
+                            )
+                            
+                            if index < tiles.count - 1 {
+                                Divider().opacity(0.5)
                             }
                         }
                     }
-                    .background(Color(NSColor.controlBackgroundColor).opacity(0.3))
-                    .cornerRadius(8)
                 }
             }
         }

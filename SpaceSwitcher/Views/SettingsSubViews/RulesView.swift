@@ -8,30 +8,15 @@ struct RulesView: View {
     @State private var selectedRule: AppRule?
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            // Header with Action
-            HStack {
-                Spacer()
-                
-                Button {
-                    showingAddRule = true
-                } label: {
-                    Label("Add Rule", systemImage: "plus")
-                }
-                .buttonStyle(.bordered)
-            }
-            .padding(.horizontal, 4)
+        VStack(alignment: .leading, spacing: 0) {
             
             if ruleManager.rules.isEmpty {
                 emptyState
             } else {
                 ScrollView {
-                    SettingsSection("Automation Rules") {
-                        VStack(spacing: 0) {
-                            let rules = ruleManager.rules
-                            ForEach(rules) { rule in
-                                let index = rules.firstIndex(where: { $0.id == rule.id }) ?? 0
-                                
+                    VStack(spacing: 20) {
+                        ForEach(ruleManager.rules) { rule in
+                            SettingsSection(rule.appName) {
                                 RuleRow(
                                     rule: rule,
                                     availableSpaces: spaceManager.availableSpaces,
@@ -42,20 +27,18 @@ struct RulesView: View {
                                         }
                                     }
                                 )
-                                
-                                if index < rules.count - 1 {
-                                    Divider().padding(.leading, 12)
-                                }
                             }
                         }
                     }
-                    .padding(.bottom, 20)
+                    .padding(20)
                 }
             }
             
             Spacer()
         }
-        .padding()
+        .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("AddRuleRequest"))) { _ in
+            showingAddRule = true
+        }
         .sheet(isPresented: $showingAddRule) {
             RuleEditor(
                 rule: AppRule(appBundleID: "", appName: "", groups: [], elseActions: []),
@@ -136,8 +119,6 @@ struct RuleRow: View {
                     }
                     
                     VStack(alignment: .leading, spacing: 3) {
-                        Text(rule.appName)
-                            .font(.system(size: 16, weight: .bold))
                         Text(rule.appBundleID)
                             .font(.system(size: 11, design: .monospaced))
                             .foregroundColor(.secondary.opacity(0.8))
