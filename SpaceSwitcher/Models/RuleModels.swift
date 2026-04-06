@@ -148,13 +148,13 @@ enum ShortcutHelper {
 }
 
 // ... (RuleGroup, AppRule, SpaceInfo remain unchanged)
-struct RuleGroup: Identifiable, Codable {
+struct RuleGroup: Identifiable, Codable, Equatable {
     var id: UUID = UUID()
     var targetSpaceIDs: Set<String>
     var actions: [ActionItem]
 }
 
-struct AppRule: Identifiable, Codable {
+struct AppRule: Identifiable, Codable, Equatable {
     var id: UUID = UUID()
     var appBundleID: String
     var appName: String

@@ -343,13 +343,21 @@ struct DockItemsListView: View {
                             DockTileRow(
                                 tile: tile,
                                 onDelete: {
-                                    tiles.remove(at: index)
+                                    withAnimation(.easeInOut(duration: 0.2)) {
+                                        _tiles.wrappedValue = _tiles.wrappedValue.enumerated()
+                                            .filter { $0.offset != index }
+                                            .map { $0.element }
+                                    }
                                 },
                                 moveUp: index > 0 ? {
-                                    tiles.move(fromOffsets: IndexSet(integer: index), toOffset: index - 1)
+                                    withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                                        _tiles.wrappedValue.move(fromOffsets: IndexSet(integer: index), toOffset: index - 1)
+                                    }
                                 } : nil,
                                 moveDown: index < tiles.count - 1 ? {
-                                    tiles.move(fromOffsets: IndexSet(integer: index), toOffset: index + 2)
+                                    withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                                        _tiles.wrappedValue.move(fromOffsets: IndexSet(integer: index), toOffset: index + 2)
+                                    }
                                 } : nil
                             )
                             
@@ -359,6 +367,7 @@ struct DockItemsListView: View {
                         }
                     }
                 }
+                .animation(.spring(response: 0.3, dampingFraction: 0.7), value: tiles)
             }
         }
     }

@@ -27,9 +27,13 @@ struct RulesView: View {
                                 }
                             )
                         }
-                        .transition(.opacity.combined(with: .scale(scale: 0.98)))
+                        .transition(.asymmetric(
+                            insertion: .opacity.combined(with: .scale(scale: 0.98)),
+                            removal: .opacity.combined(with: .scale(scale: 0.95))
+                        ))
                     }
                 }
+                .animation(.easeInOut(duration: 0.2), value: ruleManager.rules)
                 .padding(24)
                 .frame(maxWidth: .infinity, alignment: .topLeading)
             }

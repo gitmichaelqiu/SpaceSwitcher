@@ -22,14 +22,12 @@ struct RuleEditor: View {
             
             Divider()
             
-            List {
-                Color.clear.frame(height: 12)
-                    .listRowInsets(EdgeInsets())
-                    .listRowSeparator(.hidden)
-                
-                // --- WORKFLOW GROUPS ---
-                ForEach(Array(workingRule.groups.enumerated()), id: \.element.id) { index, group in
-                    Section {
+            ScrollView(.vertical) {
+                VStack(alignment: .leading, spacing: 0) {
+                    Color.clear.frame(height: 12)
+                    
+                    // --- WORKFLOW GROUPS ---
+                    ForEach(Array(workingRule.groups.enumerated()), id: \.element.id) { index, group in
                         VStack(alignment: .leading, spacing: 0) {
                             SpaceConditionRow(
                                 groupIndex: index,
@@ -50,14 +48,16 @@ struct RuleEditor: View {
                                 actionMenu(for: index)
                             }
                         }
+                        .frame(maxWidth: .infinity, alignment: .topLeading)
                         .background(
                             RoundedRectangle(cornerRadius: 12, style: .continuous)
-                                .fill(Color(NSColor.controlBackgroundColor).opacity(0.4))
+                                .fill(Color(nsColor: .controlBackgroundColor).opacity(0.4) as Color)
                                 .overlay(
                                     RoundedRectangle(cornerRadius: 12, style: .continuous)
                                         .fill(.regularMaterial)
                                 )
                         )
+                        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
                         .padding(.horizontal, 20)
                         .padding(.bottom, 16)
                         .listRowInsets(EdgeInsets())
@@ -132,7 +132,11 @@ struct RuleEditor: View {
                                         index: i,
                                         item: $workingRule.elseActions[i],
                                         onDelete: {
-                                            workingRule.elseActions.remove(at: i)
+                                            withAnimation {
+                                                workingRule.elseActions = workingRule.elseActions.enumerated()
+                                                    .filter { $0.offset != i }
+                                                    .map { $0.element }
+                                            }
                                         }
                                     )
                                     .padding(.horizontal, 12)
@@ -149,9 +153,9 @@ struct RuleEditor: View {
                         
                         HStack {
                             Menu {
-                                Button("Show") { workingRule.elseActions.append(ActionItem(.show)) }
-                                Button("Hide") { workingRule.elseActions.append(ActionItem(.hide)) }
-                                Button("Minimize") { workingRule.elseActions.append(ActionItem(.minimize)) }
+                                Button("Show") { withAnimation { workingRule.elseActions.append(ActionItem(.show)) } }
+                                Button("Hide") { withAnimation { workingRule.elseActions.append(ActionItem(.hide)) } }
+                                Button("Minimize") { withAnimation { workingRule.elseActions.append(ActionItem(.minimize)) } }
                             } label: {
                                 Label("Add Action", systemImage: "plus")
                                     .font(.system(size: 12, weight: .semibold))
@@ -165,7 +169,7 @@ struct RuleEditor: View {
                     }
                     .background(
                         RoundedRectangle(cornerRadius: 12, style: .continuous)
-                            .fill(Color(NSColor.controlBackgroundColor).opacity(0.4))
+                            .fill(Color(nsColor: .controlBackgroundColor).opacity(0.4) as Color)
                             .overlay(
                                 RoundedRectangle(cornerRadius: 12, style: .continuous)
                                     .fill(.regularMaterial)
@@ -176,9 +180,9 @@ struct RuleEditor: View {
                     .listRowInsets(EdgeInsets())
                     .listRowSeparator(.hidden)
                 }
+                .padding(.vertical, 8)
             }
-            .listStyle(.plain)
-            .scrollContentBackground(.hidden)
+            .animation(.easeInOut(duration: 0.2), value: workingRule.groups)
             .background(Color(NSColor.windowBackgroundColor))
             
             Divider()
@@ -273,7 +277,9 @@ struct RuleEditor: View {
     // MARK: - Actions
     
     private func addActionToGroup(index: Int, action: WindowAction) {
-        workingRule.groups[index].actions.append(ActionItem(action))
+        withAnimation(.easeInOut(duration: 0.2)) {
+            workingRule.groups[index].actions.append(ActionItem(action))
+        }
     }
     
     @ViewBuilder private func actionMenu(for index: Int) -> some View {
@@ -403,7 +409,13 @@ struct ActionListRows: View {
                     ActionRowContent(
                         index: index,
                         item: $actions[index],
-                        onDelete: { actions.remove(at: index) }
+                        onDelete: { 
+                            withAnimation {
+                                _actions.wrappedValue = _actions.wrappedValue.enumerated()
+                                    .filter { $0.offset != index }
+                                    .map { $0.element }
+                            }
+                        }
                     )
                     .padding(.horizontal, 12)
                     .padding(.vertical, 8)
