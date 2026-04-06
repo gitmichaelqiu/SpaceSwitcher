@@ -27,6 +27,7 @@ struct RulesView: View {
                                 }
                             )
                         }
+                        .transition(.opacity.combined(with: .scale(scale: 0.98)))
                     }
                 }
                 .padding(24)
@@ -42,8 +43,10 @@ struct RulesView: View {
                 rule: AppRule(appBundleID: "", appName: "", groups: [], elseActions: []),
                 availableSpaces: spaceManager.availableSpaces,
                 onSave: { newRule in
-                    ruleManager.addRule(newRule)
-                    showingAddRule = false
+                    withAnimation {
+                        ruleManager.addRule(newRule)
+                        showingAddRule = false
+                    }
                 },
                 onCancel: { showingAddRule = false }
             )
@@ -53,8 +56,10 @@ struct RulesView: View {
                 rule: rule,
                 availableSpaces: spaceManager.availableSpaces,
                 onSave: { updatedRule in
-                    ruleManager.updateRule(updatedRule)
-                    selectedRule = nil
+                    withAnimation {
+                        ruleManager.updateRule(updatedRule)
+                        selectedRule = nil
+                    }
                 },
                 onCancel: { selectedRule = nil }
             )

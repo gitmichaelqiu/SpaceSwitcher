@@ -120,20 +120,26 @@ struct SettingsView: View {
             // 1. CONTENT LAYER - Removed outer ScrollView to fix HSplitView collapse
             VStack(alignment: .leading, spacing: 0) {
                 if let tab = selectedTab {
-                    switch tab {
-                    case .general:
-                        GeneralSettingsView(spaceManager: spaceManager)
-                    case .rules:
-                        RulesView(ruleManager: ruleManager, spaceManager: spaceManager)
-                    case .dock:
-                        DockSettingsView(dockManager: dockManager, spaceManager: spaceManager)
-                    case .permissions:
-                        PermissionsSettingsView()
-                    case .about:
-                        AboutView()
+                    // Use a top-aligned ZStack and smooth fade transition
+                    ZStack(alignment: .topLeading) {
+                        switch tab {
+                        case .general:
+                            GeneralSettingsView(spaceManager: spaceManager)
+                        case .rules:
+                            RulesView(ruleManager: ruleManager, spaceManager: spaceManager)
+                        case .dock:
+                            DockSettingsView(dockManager: dockManager, spaceManager: spaceManager)
+                        case .permissions:
+                            PermissionsSettingsView()
+                        case .about:
+                            AboutView()
+                        }
                     }
+                    .id(tab)
+                    .transition(.opacity)
                 }
             }
+            .animation(.easeInOut(duration: 0.18), value: selectedTab)
             .padding(.top, titleHeaderHeight)
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
             

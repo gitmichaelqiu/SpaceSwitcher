@@ -78,6 +78,7 @@ struct DockSettingsView: View {
             .layoutPriority(1)
             .background(Color(NSColor.windowBackgroundColor).opacity(0.1))
         }
+        .animation(.easeInOut(duration: 0.18), value: selectedSetID)
         // Create Sheet Logic
         .sheet(isPresented: $showingCreateSheet) {
             CreateDockSheet(
@@ -376,8 +377,10 @@ struct DockItemsListView: View {
                 for url in panel.urls {
                     let newTile = dockManager.createTile(from: url)
                     DispatchQueue.main.async {
-                        if let index = dockManager.config.dockSets.firstIndex(where: { $0.id == selectedSetID }) {
-                            dockManager.config.dockSets[index].tiles.append(newTile)
+                        withAnimation(.easeInOut(duration: 0.2)) {
+                            if let index = dockManager.config.dockSets.firstIndex(where: { $0.id == selectedSetID }) {
+                                dockManager.config.dockSets[index].tiles.append(newTile)
+                            }
                         }
                     }
                 }
@@ -388,8 +391,10 @@ struct DockItemsListView: View {
     private func addSpacerToSelectedSet(isSmall: Bool) {
         let spacer = dockManager.createSpacerTile(isSmall: isSmall)
         DispatchQueue.main.async {
-            if let index = dockManager.config.dockSets.firstIndex(where: { $0.id == selectedSetID }) {
-                dockManager.config.dockSets[index].tiles.append(spacer)
+            withAnimation(.easeInOut(duration: 0.2)) {
+                if let index = dockManager.config.dockSets.firstIndex(where: { $0.id == selectedSetID }) {
+                    dockManager.config.dockSets[index].tiles.append(spacer)
+                }
             }
         }
     }

@@ -16,7 +16,7 @@ struct RuleEditor: View {
     }
     
     var body: some View {
-        VStack(spacing: 0) {
+        VStack(alignment: .leading, spacing: 0) {
             appSelectorHeader
                 .zIndex(1)
             
@@ -30,7 +30,7 @@ struct RuleEditor: View {
                 // --- WORKFLOW GROUPS ---
                 ForEach(Array(workingRule.groups.enumerated()), id: \.element.id) { index, group in
                     Section {
-                        VStack(spacing: 0) {
+                        VStack(alignment: .leading, spacing: 0) {
                             SpaceConditionRow(
                                 groupIndex: index,
                                 group: $workingRule.groups[index],
@@ -396,9 +396,9 @@ struct ActionListRows: View {
     @Binding var actions: [ActionItem]
     
     var body: some View {
-        VStack(spacing: 0) {
+        VStack(alignment: .leading, spacing: 0) {
             ForEach(Array(actions.enumerated()), id: \.element.id) { index, item in
-                VStack(spacing: 0) {
+                VStack(alignment: .leading, spacing: 0) {
                     Divider().opacity(0.3)
                     ActionRowContent(
                         index: index,
