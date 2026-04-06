@@ -95,13 +95,11 @@ struct SettingsSection<Content: View, Accessory: View>: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            if title != nil || helperText != nil {
-                HStack(alignment: .bottom, spacing: 4) {
-                    if let title = title {
-                        Text(title)
-                            .font(.headline)
-                    }
-
+            if let title = title {
+                HStack(spacing: 4) {
+                    Text(title)
+                        .font(.headline)
+                        
                     if let helperText = helperText {
                         HelperInfoButton(text: helperText)
                     }
@@ -111,14 +109,11 @@ struct SettingsSection<Content: View, Accessory: View>: View {
                     accessory
                 }
                 .padding(.leading, 4)
-                .padding(.trailing, 2)
             }
 
             VStack(spacing: 0) {
                 content
-                    .frame(maxWidth: .infinity, alignment: .leading)
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
             .background(
                 RoundedRectangle(cornerRadius: 12, style: .continuous)
                     .fill(backgroundColor.opacity(0.6))
@@ -128,7 +123,7 @@ struct SettingsSection<Content: View, Accessory: View>: View {
                     )
             )
         }
-        .padding(.top, (title == nil && helperText == nil) ? -10 : 0)
+        .padding(.top, (title == nil) ? -10 : 0)
     }
 
     private var backgroundColor: Color {
