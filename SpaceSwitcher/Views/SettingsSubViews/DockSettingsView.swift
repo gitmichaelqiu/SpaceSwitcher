@@ -10,6 +10,13 @@ struct DockSettingsView: View {
     @State private var showingCreateSheet = false
     @State private var newSetName = ""
     
+    init(dockManager: DockManager, spaceManager: SpaceManager) {
+        self.dockManager = dockManager
+        self.spaceManager = spaceManager
+        // Pre-select the first dock set immediately to avoid flicker
+        _selectedSetID = State(initialValue: dockManager.config.dockSets.first?.id)
+    }
+    
     var body: some View {
         HSplitView {
             DockSidebarView(
@@ -86,9 +93,6 @@ struct DockSettingsView: View {
                 onCancel: { showingCreateSheet = false },
                 onCreate: saveNewSet
             )
-        }
-        .onAppear {
-            if selectedSetID == nil { selectedSetID = dockManager.config.dockSets.first?.id }
         }
     }
     
