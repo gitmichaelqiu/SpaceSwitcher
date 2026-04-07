@@ -156,6 +156,10 @@ struct RuleEditor: View {
                                 Button("Show") { withAnimation { workingRule.elseActions.append(ActionItem(.show)) } }
                                 Button("Hide") { withAnimation { workingRule.elseActions.append(ActionItem(.hide)) } }
                                 Button("Minimize") { withAnimation { workingRule.elseActions.append(ActionItem(.minimize)) } }
+                                Button("Bring to Front") { withAnimation { workingRule.elseActions.append(ActionItem(.bringToFront)) } }
+                                Divider()
+                                Button("App Shortcut...") { withAnimation { workingRule.elseActions.append(ActionItem(.hotkey(keyCode: -1, modifiers: 0, restoreWindow: false, waitFrontmost: true))) } }
+                                Button("Global Shortcut...") { withAnimation { workingRule.elseActions.append(ActionItem(.globalHotkey(keyCode: -1, modifiers: 0))) } }
                             } label: {
                                 Label("Add Action", systemImage: "plus")
                                     .font(.system(size: 12, weight: .semibold))
@@ -288,7 +292,8 @@ struct RuleEditor: View {
         Button("Minimize") { addActionToGroup(index: index, action: .minimize) }
         Button("Bring to Front") { addActionToGroup(index: index, action: .bringToFront) }
         Divider()
-        Button("Hot Key...") { addActionToGroup(index: index, action: .hotkey(keyCode: -1, modifiers: 0, restoreWindow: false, waitFrontmost: true)) }
+        Button("App Shortcut...") { addActionToGroup(index: index, action: .hotkey(keyCode: -1, modifiers: 0, restoreWindow: false, waitFrontmost: true)) }
+        Button("Global Shortcut...") { addActionToGroup(index: index, action: .globalHotkey(keyCode: -1, modifiers: 0)) }
     }
     
     private func selectApp(name: String, id: String) {
@@ -532,23 +537,35 @@ struct ActionRowContent: View {
             }
             
             if case .hotkey(let c, let m, let r, let w) = item.value, isExpanded {
-                VStack(alignment: .leading, spacing: 6) {
-                    Toggle("Manual activation", isOn: Binding(
-                        get: { w },
-                        set: { item.value = .hotkey(keyCode: c, modifiers: m, restoreWindow: $0 ? false : r, waitFrontmost: $0) }
-                    ))
-                    .font(.system(size: 11))
-                    .toggleStyle(.switch)
-                    .controlSize(.mini)
-                    
-                    if !w {
-                        Toggle("Restore window", isOn: Binding(
-                            get: { r },
-                            set: { item.value = .hotkey(keyCode: c, modifiers: m, restoreWindow: $0, waitFrontmost: m == 0 ? false : w) }
+                VStack(alignment: .leading, spacing: 12) {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Toggle("Manual activation", isOn: Binding(
+                            get: { w },
+                            set: { item.value = .hotkey(keyCode: c, modifiers: m, restoreWindow: $0 ? false : r, waitFrontmost: $0) }
                         ))
                         .font(.system(size: 11))
                         .toggleStyle(.switch)
                         .controlSize(.mini)
+                        
+                        Text("Wait for the application to be frontmost before simulating keys.")
+                            .font(.system(size: 9))
+                            .foregroundColor(.secondary.opacity(0.8))
+                    }
+                    
+                    if !w {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Toggle("Restore window", isOn: Binding(
+                                get: { r },
+                                set: { item.value = .hotkey(keyCode: c, modifiers: m, restoreWindow: $0, waitFrontmost: m == 0 ? false : w) }
+                            ))
+                            .font(.system(size: 11))
+                            .toggleStyle(.switch)
+                            .controlSize(.mini)
+                            
+                            Text("Return focus to the previous application after simulating keys.")
+                                .font(.system(size: 9))
+                                .foregroundColor(.secondary.opacity(0.8))
+                        }
                     }
                 }
                 .padding(.leading, 32)

@@ -210,6 +210,9 @@
         }
       }
     },
+    "App Shortcut..." : {
+
+    },
     "App will wait until you manually switch to it." : {
       "extractionState" : "stale",
       "localizations" : {
@@ -500,6 +503,9 @@
         }
       }
     },
+    "Global Shortcut..." : {
+
+    },
     "Grant" : {
       "localizations" : {
         "zh-Hans" : {
@@ -534,9 +540,6 @@
           }
         }
       }
-    },
-    "Hot Key..." : {
-
     },
     "If the Settings show that the permission is granted but the app still does not have the permission, remove the app row in Settings and re-grant." : {
       "extractionState" : "stale",
@@ -806,6 +809,9 @@
       }
     },
     "Restore window" : {
+
+    },
+    "Return focus to the previous application after simulating keys." : {
 
     },
     "Rules" : {
@@ -1336,6 +1342,9 @@
           }
         }
       }
+    },
+    "Wait for the application to be frontmost before simulating keys." : {
+
     },
     "Workflow Group %lld" : {
       "extractionState" : "stale",
