@@ -139,7 +139,6 @@ struct SettingsView: View {
                     .transition(.opacity)
                 }
             }
-            .animation(.easeInOut(duration: 0.18), value: selectedTab)
             .padding(.top, titleHeaderHeight)
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
             
