@@ -30,7 +30,27 @@
   </tr>
 </table>
 
-**SpaceSwitcher** is a macOS workspace enhancer that lets you control **which app and dock to show** in each workspace. Especially for apps that you have **assigned to all desktops**.
+**SpaceSwitcher** is a macOS workspace enhancer that lets you control **which app and dock to show** in each workspace. Especially for apps that you have **assigned to all desktops**. Update checker will **NOT** work because of this.
+
+> [!NOTE]
+> SpaceSwitcher is still in the early beta. All releases for now are marked as non-production-ready. Therefore, you need to go into the Releases page to download.
+
+## Added
+
+- Added Permissions page
+
+## Changed
+
+- Increase Settings window height
+
+## Fixed
+
+- Missing localization
+- Dock will not be refreshed if two desktops share the same dock€
+
+---
+
+**Full Changelog**: https://github.com/gitmichaelqiu/SpaceSwitcher/compare/v0.2.0-beta.1...v0.3.0-beta.1
 
 ## 📦 Installation
 
