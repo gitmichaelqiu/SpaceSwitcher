@@ -1,0 +1,72 @@
+name: Update Homebrew Tap
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      tag_name:
+        description: 'Tag to update (leave empty to fetch latest)'
+        required: false
+        default: ''
+
+jobs:
+  update-cask:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Get Release Info and Calculate Hash
+        id: info
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          # 1. Determine the Tag
+          # Check manual input first, then release event
+          TAG="${{ github.event.inputs.tag_name }}${{ github.event.release.tag_name }}"
+          
+          # If both are empty, fetch the latest from GitHub API
+          if [ -z "$TAG" ]; then
+            echo "No tag provided. Fetching latest release tag from GitHub..."
+            # Added --repo flag so it doesn't need a local .git folder
+            TAG=$(gh release view --repo ${{ github.repository }} --json tagName --jq .tagName)
+          fi
+
+          echo "Using Tag: $TAG"
+          VERSION=$(echo $TAG | sed 's/^v//')
+          
+          # 2. Construct the URL
+          URL="https://github.com/gitmichaelqiu/spaceswitcher/releases/download/$TAG/spaceswitcher.$VERSION.dmg"
+          
+          # 3. Download and Hash
+          # -f makes curl fail on 404 so the workflow stops if the URL is wrong
+          curl -Lf -o release.dmg "$URL"
+          SHA=$(shasum -a 256 release.dmg | awk '{print $1}')
+          
+          # 4. Export variables
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "sha=$SHA" >> $GITHUB_OUTPUT
+          echo "url=$URL" >> $GITHUB_OUTPUT
+
+      - name: Checkout Tap Repo
+        uses: actions/checkout@v4
+        with:
+          repository: gitmichaelqiu/homebrew-tap
+          token: ${{ secrets.HOMEBREW_TAP_TOKEN }}
+
+      - name: Update Cask File
+        run: |
+          CASK_PATH="Casks/spaceswitcher.rb"
+          sed -i "s/version \".*\"/version \"${{ steps.info.outputs.version }}\"/" $CASK_PATH
+          sed -i "s/sha256 \".*\"/sha256 \"${{ steps.info.outputs.sha }}\"/" $CASK_PATH
+
+      - name: Commit and Push to Tap
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add Casks/spaceswitcher.rb
+          
+          # Avoid failing if the version is already up to date
+          if git diff --staged --quiet; then
+            echo "No changes detected. Cask is already at version ${{ steps.info.outputs.version }}."
+          else
+            git commit -m "chore: update spaceswitcher to ${{ steps.info.outputs.version }}"
+            git push
+          fi
