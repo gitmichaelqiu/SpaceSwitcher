@@ -35,32 +35,28 @@
 > [!NOTE]
 > SpaceSwitcher is still in the early beta. All releases for now are marked as non-production-ready. Therefore, you need to go into the Releases page to download.
 
-## Added
-
-- Added Permissions page
-
-## Changed
-
-- Increase Settings window height
-
-## Fixed
-
-- Missing localization
-- Dock will not be refreshed if two desktops share the same dock€
-
----
-
-**Full Changelog**: https://github.com/gitmichaelqiu/SpaceSwitcher/compare/v0.2.0-beta.1...v0.3.0-beta.1
-
 ## 📦 Installation
 
 Requires **macOS 13.0 Ventura** or above.
+
+### Direct Download
 
 1. If you haven't, install [DesktopRenamer](https://github.com/gitmichaelqiu/DesktopRenamer/releases/), which provides necessary SpaceAPI to inform SpaceSwitcher the current space info
 2. Start SpaceAPI in DesktopRenamer Settings → General
 3. Download the SpaceSwitcher from [Releases](https://github.com/gitmichaelqiu/SpaceSwitcher/releases/)
 4. Drag the app to the *Applications* folder
 5. All set!
+
+### Homebrew
+
+You can also choose to download it from Homebrew:
+
+```bash
+brew install --cask gitmichaelqiu/tap/desktoprenamer
+brew install --cask gitmichaelqiu/tap/spaceswitcher
+```
+
+### Open App
 
 Because I do **NOT** have an Apple developer account for the app releases, you may receive alerts such as "Developer is not verified".
 
