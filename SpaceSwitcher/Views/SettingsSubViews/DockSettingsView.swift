@@ -37,10 +37,10 @@ struct DockSettingsView: View {
                         VStack(alignment: .leading, spacing: 24) {
                             // 1. Dock Set Configuration
                             SettingsSection("Set Configuration") {
-                                SettingsRow("Name") {
                                     TextField("Name", text: $dockManager.config.dockSets[index].name)
                                         .textFieldStyle(.roundedBorder)
                                         .frame(width: 150)
+                                        .disabled(!dockManager.config.isAutomationEnabled)
                                 }
                                 
                                 Divider()
@@ -52,7 +52,7 @@ struct DockSettingsView: View {
                                     ))
                                     .labelsHidden()
                                     .toggleStyle(.switch)
-                                    .disabled(dockManager.config.defaultDockSetID == selectedID)
+                                    .disabled(dockManager.config.defaultDockSetID == selectedID || !dockManager.config.isAutomationEnabled)
                                 }
                             }
                             
@@ -158,9 +158,17 @@ struct DockSidebarView: View {
                         }
                     }
                 } header: {
-                    Text("Dock Sets")
-                        .font(.system(size: 11, weight: .bold))
-                        .foregroundColor(.secondary)
+                    HStack {
+                        Text("Dock Sets")
+                            .font(.system(size: 11, weight: .bold))
+                            .foregroundColor(.secondary)
+                        Spacer()
+                        Toggle("", isOn: $dockManager.config.isAutomationEnabled)
+                            .toggleStyle(.switch)
+                            .scaleEffect(0.6)
+                            .labelsHidden()
+                            .help("Automatically switch dock")
+                    }
                 }
             }
             .listStyle(.sidebar)
@@ -282,7 +290,7 @@ struct DockSpaceAssignmentView: View {
             .foregroundColor(isAssignedHere ? .white : (isAssignedElsewhere ? .secondary.opacity(0.3) : .primary))
         }
         .buttonStyle(.plain)
-        .disabled(isAssignedElsewhere)
+        .disabled(isAssignedElsewhere || !dockManager.config.isAutomationEnabled)
     }
 }
 

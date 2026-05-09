@@ -85,4 +85,5 @@ struct DockConfig: Codable {
     var dockSets: [DockSet] = []
     var defaultDockSetID: UUID?
     var spaceAssignments: [String: UUID] = [:]
+    var isAutomationEnabled: Bool = true
 }

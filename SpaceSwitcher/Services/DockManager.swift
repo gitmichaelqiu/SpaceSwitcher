@@ -42,7 +42,9 @@ class DockManager: ObservableObject {
             .removeDuplicates()
             .sink { [weak self] spaceID in
                 guard let self = self, let spaceID = spaceID else { return }
-                self.applyDockForSpace(spaceID)
+                if self.config.isAutomationEnabled {
+                    self.applyDockForSpace(spaceID)
+                }
             }
             .store(in: &cancellables)
     }
