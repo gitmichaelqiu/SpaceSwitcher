@@ -79,6 +79,31 @@ class DockManager: ObservableObject {
         }
     }
     
+    /// Manually applies a specific dock set by its ID.
+    func applyDockSetByID(_ id: UUID) {
+        dockTask?.cancel()
+        dockTask = Task {
+            let activity = ProcessInfo.processInfo.beginActivity(
+                options: [.userInitiated, .latencyCritical],
+                reason: "ManualDockSwitch-\(id)"
+            )
+            defer { ProcessInfo.processInfo.endActivity(activity) }
+            
+            guard let set = config.dockSets.first(where: { $0.id == id }) else { return }
+            
+            logger.info(">>> MANUAL SWITCH: '\(set.name)'")
+            let success = await applyDockSetVerified(set)
+            
+            if success {
+                await MainActor.run {
+                    self.lastAppliedDockSetID = set.id
+                    self.activeDockSetID = set.id
+                }
+                logger.info("<<< SUCCESS: Manually switched to '\(set.name)'")
+            }
+        }
+    }
+    
     @MainActor
     private func performDockSwitch(for spaceID: String, force: Bool) async {
         let targetSetID = config.spaceAssignments[spaceID] ?? config.defaultDockSetID
