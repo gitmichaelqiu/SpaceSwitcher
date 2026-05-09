@@ -7,6 +7,7 @@ struct RuleEditor: View {
     let onSave: (AppRule) -> Void
     let onCancel: () -> Void
     @State private var runningApps: [(name: String, id: String, icon: NSImage)] = []
+    @State private var showingLegend = true
     
     init(rule: AppRule, availableSpaces: [SpaceInfo], onSave: @escaping (AppRule) -> Void, onCancel: @escaping () -> Void) {
         self._workingRule = State(wrappedValue: rule)
@@ -22,33 +23,137 @@ struct RuleEditor: View {
             
             Divider()
             
-            ScrollView(.vertical) {
-                VStack(alignment: .leading, spacing: 0) {
-                    Color.clear.frame(height: 12)
-                    
-                    // --- WORKFLOW GROUPS ---
-                    ForEach(Array(workingRule.groups.enumerated()), id: \.element.id) { index, group in
-                        VStack(alignment: .leading, spacing: 0) {
-                            SpaceConditionRow(
-                                groupIndex: index,
-                                group: $workingRule.groups[index],
-                                availableSpaces: availableSpaces,
-                                onRemove: {
-                                    withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-                                        _ = workingRule.groups.remove(at: index)
+            HSplitView {
+                ScrollView(.vertical) {
+                    VStack(alignment: .leading, spacing: 0) {
+                        Color.clear.frame(height: 12)
+                        
+                        // --- WORKFLOW GROUPS ---
+                        ForEach(Array(workingRule.groups.enumerated()), id: \.element.id) { index, group in
+                            VStack(alignment: .leading, spacing: 0) {
+                                SpaceConditionRow(
+                                    groupIndex: index,
+                                    group: $workingRule.groups[index],
+                                    availableSpaces: availableSpaces,
+                                    onRemove: {
+                                        withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                                            _ = workingRule.groups.remove(at: index)
+                                        }
                                     }
+                                )
+                                
+                                ActionListRows(actions: $workingRule.groups[index].actions)
+                                
+                                AddActionRow {
+                                    addActionToGroup(index: index, action: .show)
+                                } menuContent: {
+                                    actionMenu(for: index)
                                 }
-                            )
-                            
-                            ActionListRows(actions: $workingRule.groups[index].actions)
-                            
-                            AddActionRow {
-                                addActionToGroup(index: index, action: .show)
-                            } menuContent: {
-                                actionMenu(for: index)
                             }
+                            .frame(maxWidth: .infinity, alignment: .topLeading)
+                            .background(
+                                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                    .fill(Color(nsColor: .controlBackgroundColor).opacity(0.4) as Color)
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                            .fill(.regularMaterial)
+                                    )
+                            )
+                            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                            .padding(.horizontal, 20)
+                            .padding(.bottom, 16)
+                            .listRowInsets(EdgeInsets())
+                            .listRowSeparator(.hidden)
                         }
-                        .frame(maxWidth: .infinity, alignment: .topLeading)
+                    }
+                    
+                    // --- ADD GROUP BUTTON ---
+                    Section {
+                        Button {
+                            withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                                workingRule.groups.append(RuleGroup(targetSpaceIDs: [], actions: []))
+                            }
+                        } label: {
+                            HStack(spacing: 8) {
+                                Image(systemName: "plus.circle.fill")
+                                Text("Add Workflow Group")
+                            }
+                            .font(.system(size: 13, weight: .semibold))
+                            .foregroundColor(.accentColor)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 8)
+                            .background(
+                                RoundedRectangle(cornerRadius: 10)
+                                    .fill(Color.accentColor.opacity(0.05))
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: 10)
+                                            .stroke(Color.accentColor.opacity(0.1), lineWidth: 1)
+                                    )
+                            )
+                        }
+                        .buttonStyle(.plain)
+                        .padding(.horizontal, 20)
+                        .padding(.bottom, 24)
+                        .listRowInsets(EdgeInsets())
+                        .listRowSeparator(.hidden)
+                    }
+                    
+                    // --- FALLBACK SECTION ---
+                    Section {
+                        VStack(alignment: .leading, spacing: 0) {
+                            HStack {
+                                Text("Fallback Behavior")
+                                    .font(.system(size: 11, weight: .bold))
+                                    .foregroundColor(.secondary)
+                                    .textCase(.uppercase)
+                                Spacer()
+                                Text("Default")
+                                    .font(.system(size: 11))
+                                    .foregroundColor(.secondary.opacity(0.4))
+                            }
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 8)
+                            .background(Color.primary.opacity(0.02))
+                            
+                            Divider().opacity(0.3)
+                            
+                            if workingRule.elseActions.isEmpty {
+                                HStack {
+                                    Spacer()
+                                    Text("No automatic actions")
+                                        .font(.system(size: 13))
+                                        .foregroundColor(.secondary)
+                                        .italic()
+                                    Spacer()
+                                }
+                                .padding(16)
+                            } else {
+                                ActionListRows(actions: $workingRule.elseActions)
+                            }
+                            
+                            Divider().opacity(0.3)
+                            
+                            HStack {
+                                Menu {
+                                    Button("Show") { withAnimation { workingRule.elseActions.append(ActionItem(.show)) } }
+                                    Button("Restore") { withAnimation { workingRule.elseActions.append(ActionItem(.restore)) } }
+                                    Button("Hide") { withAnimation { workingRule.elseActions.append(ActionItem(.hide)) } }
+                                    Button("Minimize") { withAnimation { workingRule.elseActions.append(ActionItem(.minimize)) } }
+                                    Button("Bring to Front") { withAnimation { workingRule.elseActions.append(ActionItem(.bringToFront)) } }
+                                    Divider()
+                                    Button("App Shortcut...") { withAnimation { workingRule.elseActions.append(ActionItem(.hotkey(keyCode: -1, modifiers: 0, restoreWindow: false, waitFrontmost: true))) } }
+                                    Button("Global Shortcut...") { withAnimation { workingRule.elseActions.append(ActionItem(.globalHotkey(keyCode: -1, modifiers: 0))) } }
+                                } label: {
+                                    Label("Add Action", systemImage: "plus")
+                                        .font(.system(size: 12, weight: .semibold))
+                                }
+                                .menuStyle(.borderlessButton)
+                                .foregroundColor(.accentColor)
+                                .fixedSize()
+                                Spacer()
+                            }
+                            .padding(8)
+                        }
                         .background(
                             RoundedRectangle(cornerRadius: 12, style: .continuous)
                                 .fill(Color(nsColor: .controlBackgroundColor).opacity(0.4) as Color)
@@ -57,156 +162,29 @@ struct RuleEditor: View {
                                         .fill(.regularMaterial)
                                 )
                         )
-                        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
                         .padding(.horizontal, 20)
-                        .padding(.bottom, 16)
+                        .padding(.bottom, 32)
                         .listRowInsets(EdgeInsets())
                         .listRowSeparator(.hidden)
                     }
+                    .padding(.vertical, 8)
                 }
+                .animation(.easeInOut(duration: 0.2), value: workingRule.groups)
+                .background(Color(NSColor.windowBackgroundColor))
+                .layoutPriority(1)
                 
-                // --- ADD GROUP BUTTON ---
-                Section {
-                    Button {
-                        withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-                            workingRule.groups.append(RuleGroup(targetSpaceIDs: [], actions: []))
-                        }
-                    } label: {
-                        HStack(spacing: 8) {
-                            Image(systemName: "plus.circle.fill")
-                            Text("Add Workflow Group")
-                        }
-                        .font(.system(size: 13, weight: .semibold))
-                        .foregroundColor(.accentColor)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 8)
-                        .background(
-                            RoundedRectangle(cornerRadius: 10)
-                                .fill(Color.accentColor.opacity(0.05))
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: 10)
-                                        .stroke(Color.accentColor.opacity(0.1), lineWidth: 1)
-                                )
-                        )
-                    }
-                    .buttonStyle(.plain)
-                    .padding(.horizontal, 20)
-                    .padding(.bottom, 24)
-                    .listRowInsets(EdgeInsets())
-                    .listRowSeparator(.hidden)
+                if showingLegend {
+                    legendSidebar
+                        .frame(minWidth: 220, maxWidth: 300)
+                        .transition(.move(edge: .trailing))
                 }
-                
-                // --- FALLBACK SECTION ---
-                Section {
-                    VStack(alignment: .leading, spacing: 0) {
-                        HStack {
-                            Text("Fallback Behavior")
-                                .font(.system(size: 11, weight: .bold))
-                                .foregroundColor(.secondary)
-                                .textCase(.uppercase)
-                            Spacer()
-                            Text("Default")
-                                .font(.system(size: 11))
-                                .foregroundColor(.secondary.opacity(0.4))
-                        }
-                        .padding(.horizontal, 12)
-                        .padding(.vertical, 8)
-                        .background(Color.primary.opacity(0.02))
-                        
-                        Divider().opacity(0.3)
-                        
-                        if workingRule.elseActions.isEmpty {
-                            HStack {
-                                Spacer()
-                                Text("No automatic actions")
-                                    .font(.system(size: 13))
-                                    .foregroundColor(.secondary)
-                                    .italic()
-                                Spacer()
-                            }
-                            .padding(16)
-                        } else {
-                            ActionListRows(actions: $workingRule.elseActions)
-                        }
-                        
-                        Divider().opacity(0.3)
-                        
-                        HStack {
-                            Menu {
-                                Button("Show") { withAnimation { workingRule.elseActions.append(ActionItem(.show)) } }
-                                Button("Restore") { withAnimation { workingRule.elseActions.append(ActionItem(.restore)) } }
-                                Button("Hide") { withAnimation { workingRule.elseActions.append(ActionItem(.hide)) } }
-                                Button("Minimize") { withAnimation { workingRule.elseActions.append(ActionItem(.minimize)) } }
-                                Button("Bring to Front") { withAnimation { workingRule.elseActions.append(ActionItem(.bringToFront)) } }
-                                Divider()
-                                Button("App Shortcut...") { withAnimation { workingRule.elseActions.append(ActionItem(.hotkey(keyCode: -1, modifiers: 0, restoreWindow: false, waitFrontmost: true))) } }
-                                Button("Global Shortcut...") { withAnimation { workingRule.elseActions.append(ActionItem(.globalHotkey(keyCode: -1, modifiers: 0))) } }
-                            } label: {
-                                Label("Add Action", systemImage: "plus")
-                                    .font(.system(size: 12, weight: .semibold))
-                            }
-                            .menuStyle(.borderlessButton)
-                            .foregroundColor(.accentColor)
-                            .fixedSize()
-                            Spacer()
-                        }
-                        .padding(8)
-                    }
-                    .background(
-                        RoundedRectangle(cornerRadius: 12, style: .continuous)
-                            .fill(Color(nsColor: .controlBackgroundColor).opacity(0.4) as Color)
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 12, style: .continuous)
-                                    .fill(.regularMaterial)
-                            )
-                    )
-                    .padding(.horizontal, 20)
-                    .padding(.bottom, 32)
-                    .listRowInsets(EdgeInsets())
-                    .listRowSeparator(.hidden)
-                }
-                .padding(.vertical, 8)
             }
-            .animation(.easeInOut(duration: 0.2), value: workingRule.groups)
-            .background(Color(NSColor.windowBackgroundColor))
-            
-            // --- ACTION LEGEND ---
-            VStack(alignment: .leading, spacing: 16) {
-                Divider().opacity(0.5)
-                
-                VStack(alignment: .leading, spacing: 12) {
-                    HStack(spacing: 8) {
-                        Image(systemName: "info.circle.fill")
-                            .foregroundColor(.secondary)
-                        Text("Action Definitions")
-                            .font(.system(size: 12, weight: .bold))
-                            .foregroundColor(.secondary)
-                    }
-                    
-                    Grid(alignment: .leading, horizontalSpacing: 24, verticalSpacing: 10) {
-                        GridRow {
-                            legendItem(name: "Show", desc: "Always unhides and unminimizes the application.")
-                            legendItem(name: "Restore", desc: "Intelligent. Only reverses actions triggered by SpaceSwitcher.")
-                        }
-                        GridRow {
-                            legendItem(name: "Hide", desc: "Standard macOS hide (Cmd+H) for the application.")
-                            legendItem(name: "Minimize", desc: "Minimizes all windows of the application.")
-                        }
-                        GridRow {
-                            legendItem(name: "Front", desc: "Brings the application and its windows to the foreground.")
-                        }
-                    }
-                }
-                .padding(.horizontal, 24)
-                .padding(.bottom, 24)
-            }
-            .background(Color(NSColor.windowBackgroundColor))
             
             Divider()
             
             footerView
         }
-        .frame(width: 600, height: 500)
+        .frame(width: 820, height: 620)
         .onAppear { loadRunningApps() }
     }
     
@@ -264,6 +242,20 @@ struct RuleEditor: View {
             }
             
             Spacer()
+            
+            Button {
+                withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                    showingLegend.toggle()
+                }
+            } label: {
+                Image(systemName: showingLegend ? "info.circle.fill" : "info.circle")
+                    .font(.system(size: 18))
+                    .foregroundColor(showingLegend ? .accentColor : .secondary)
+                    .padding(8)
+                    .background(Circle().fill(showingLegend ? Color.accentColor.opacity(0.1) : Color.clear))
+            }
+            .buttonStyle(.plain)
+            .help("Action Definitions")
         }
         .padding(.horizontal, 20)
         .padding(.vertical, 16)
@@ -347,16 +339,47 @@ struct RuleEditor: View {
     }
     
     @ViewBuilder
+    private var legendSidebar: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            HStack(spacing: 8) {
+                Image(systemName: "info.circle.fill")
+                    .foregroundColor(.accentColor)
+                Text("Action Definitions")
+                    .font(.system(size: 13, weight: .bold))
+            }
+            .padding(.top, 20)
+            
+            Divider()
+            
+            ScrollView(.vertical) {
+                VStack(alignment: .leading, spacing: 20) {
+                    legendItem(name: "Show", desc: "Forcefully unhides and unminimizes the application, regardless of its previous state.")
+                    legendItem(name: "Restore", desc: "Intelligent reversal. Only unhides/unminimizes if SpaceSwitcher was the one that hid it earlier.")
+                    legendItem(name: "Hide", desc: "Performs a standard macOS hide (Cmd+H) on the target application.")
+                    legendItem(name: "Minimize", desc: "Minimizes all windows of the application to the Dock.")
+                    legendItem(name: "Front", desc: "Activates the application and brings its windows to the foreground.")
+                }
+                .padding(.trailing, 8)
+            }
+        }
+        .padding(.horizontal, 16)
+        .background(Color(NSColor.controlBackgroundColor).opacity(0.3))
+    }
+    
+    @ViewBuilder
     private func legendItem(name: String, desc: String) -> some View {
-        HStack(alignment: .top, spacing: 6) {
+        VStack(alignment: .leading, spacing: 4) {
             Text(name)
                 .font(.system(size: 11, weight: .bold, design: .monospaced))
                 .foregroundColor(.primary)
-                .frame(width: 54, alignment: .trailing)
+                .padding(.horizontal, 6)
+                .padding(.vertical, 2)
+                .background(RoundedRectangle(cornerRadius: 4).fill(Color.primary.opacity(0.05)))
             
             Text(desc)
                 .font(.system(size: 11))
                 .foregroundColor(.secondary)
+                .lineSpacing(2)
         }
     }
 }
