@@ -66,7 +66,9 @@ struct DockTile: Identifiable, Codable, Hashable {
     }
     
     func hash(into hasher: inout Hasher) {
-        hasher.combine(id)
+        hasher.combine(label)
+        hasher.combine(bundleIdentifier)
+        hasher.combine(fileURL)
     }
 }
 
