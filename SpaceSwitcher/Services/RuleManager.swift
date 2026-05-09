@@ -79,7 +79,7 @@ class RuleManager: ObservableObject {
             
             switch item.value {
             case .hide:
-                if !isAppEffectivelyHidden(app) {
+                if !app.isHidden {
                     managedHides.insert(bundleID)
                 }
                 app.hide()
