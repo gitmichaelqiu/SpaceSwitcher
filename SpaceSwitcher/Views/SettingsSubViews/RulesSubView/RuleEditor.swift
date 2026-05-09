@@ -410,6 +410,9 @@ struct ActionListRows: View {
                 .onDrag {
                     self.draggingItem = item
                     return NSItemProvider(object: item.id.uuidString as NSString)
+                } preview: {
+                    // Return an empty/clear view to hide the ghost row that follows the cursor
+                    Color.clear.frame(width: 1, height: 1)
                 }
                 .onDrop(of: [.text], delegate: ActionDropDelegate(item: item, actions: $actions, draggingItem: $draggingItem))
             }
