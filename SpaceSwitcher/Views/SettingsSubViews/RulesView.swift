@@ -45,6 +45,28 @@ struct RulesView: View {
                             removal: .opacity.combined(with: .scale(scale: 0.95))
                         ))
                     }
+                    
+                    // Add Rule Button
+                    Button {
+                        showingAddRule = true
+                    } label: {
+                        HStack(spacing: 8) {
+                            Image(systemName: "plus.circle.fill")
+                                .font(.system(size: 14))
+                            Text("Add New Rule")
+                                .font(.system(size: 13, weight: .semibold))
+                        }
+                        .foregroundColor(.accentColor)
+                        .padding(.vertical, 10)
+                        .padding(.horizontal, 20)
+                        .background(
+                            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                                .fill(Color.accentColor.opacity(0.1))
+                        )
+                    }
+                    .buttonStyle(.plain)
+                    .padding(.top, 10)
+                    .frame(maxWidth: .infinity, alignment: .center)
                 }
                 .animation(.easeInOut(duration: 0.2), value: ruleManager.rules)
                 .padding(24)

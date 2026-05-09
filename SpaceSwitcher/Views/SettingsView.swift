@@ -168,18 +168,7 @@ struct SettingsView: View {
     
     @ViewBuilder
     private func headerActions(for tab: SettingsTab) -> some View {
-        switch tab {
-        case .rules:
-            Button {
-                NotificationCenter.default.post(name: NSNotification.Name("AddRuleRequest"), object: nil)
-            } label: {
-                Label("Add Rule", systemImage: "plus")
-            }
-            .buttonStyle(.bordered)
-            .controlSize(.small)
-        default:
-            EmptyView()
-        }
+        EmptyView()
     }
 }
 
