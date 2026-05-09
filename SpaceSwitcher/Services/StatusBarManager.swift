@@ -57,7 +57,13 @@ class StatusBarManager: NSObject {
             .map { $0.isAutomationEnabled }
             .removeDuplicates()
             .receive(on: DispatchQueue.main)
-            .sink { [weak self] (isEnabled: Bool) in self?.updateMenu() }
+            .sink { [weak self] _ in self?.updateMenu() }
+            .store(in: &cancellables)
+            
+        // Monitor Active Dock Set to update checkmarks in manual list
+        dockManager?.$activeDockSetID
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in self?.updateMenu() }
             .store(in: &cancellables)
     }
     
