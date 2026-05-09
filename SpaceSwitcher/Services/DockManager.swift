@@ -3,25 +3,17 @@ import Combine
 import AppKit
 import os.log
 
-@MainActor
 class DockManager: ObservableObject {
-    @Published var config: DockConfig = DockConfig() {
+    @MainActor @Published var config: DockConfig = DockConfig() {
         didSet {
             saveConfig()
-            // Reset optimization cache if default changes
             if config.defaultDockSetID != oldValue.defaultDockSetID {
                 lastAppliedDockSetID = nil
-                // If the default changed, we might want to reflect that the currently active set
-                // might no longer match the "logic" of what should be active, though we don't
-                // force a switch immediately to avoid jarring UX.
             }
         }
     }
     
-    // UI STATE: Exposed for Sidebar Highlighting
-    @Published var activeDockSetID: UUID?
-    
-    // OPTIMIZATION: Tracks what we *think* the Dock is currently showing
+    @MainActor @Published var activeDockSetID: UUID?
     private var lastAppliedDockSetID: UUID?
     
     // CONCURRENCY: Tracks the current switching task
@@ -73,17 +65,15 @@ class DockManager: ObservableObject {
     /// - Parameters:
     ///   - spaceID: The UUID string of the target space.
     ///   - force: If true, bypasses debounce and optimization checks (used for "Apply" button).
+    @MainActor
     func applyDockForSpace(_ spaceID: String, force: Bool = false) {
         // 1. Cancel any pending switch to handle rapid swiping
         dockTask?.cancel()
         
-        dockTask = Task {
-            // 2. Prevent App Nap: Tell macOS this is critical user-initiated work
-            let activity = ProcessInfo.processInfo.beginActivity(
-                options: [.userInitiated, .latencyCritical],
-                reason: "DockSwitch-\(spaceID)"
-            )
-            defer { ProcessInfo.processInfo.endActivity(activity) }
+        // 2. Use a detached task to avoid blocking the Main Actor (UI Thread)
+        // This is CRITICAL to prevent "Connection interrupted" errors
+        dockTask = Task.detached(priority: .userInitiated) { [weak self] in
+            guard let self = self else { return }
             
             // 3. Debounce: Wait for user to settle (only if not forced)
             if !force {
@@ -92,8 +82,8 @@ class DockManager: ObservableObject {
             
             if Task.isCancelled { return }
             
-            // 4. Perform
-            await performDockSwitch(for: spaceID, force: force)
+            // 4. Perform Switch
+            await self.performDockSwitch(for: spaceID, force: force)
         }
     }
     
@@ -122,21 +112,22 @@ class DockManager: ObservableObject {
         }
     }
     
-    @MainActor
     private func performDockSwitch(for spaceID: String, force: Bool) async {
-        let targetSetID = config.spaceAssignments[spaceID] ?? config.defaultDockSetID
-        
-        guard let setID = targetSetID, 
-              let set = config.dockSets.first(where: { $0.id == setID }) else {
-            return
+        // 1. Get configuration from MainActor
+        let (targetSet, isAutomationOn) = await MainActor.run {
+            let setID = config.spaceAssignments[spaceID] ?? config.defaultDockSetID
+            let set = config.dockSets.first(where: { $0.id == setID })
+            return (set, config.isAutomationEnabled)
         }
         
-        // 1. Check ACTUAL system state (Don't rely on cached lastAppliedDockSetID)
+        guard let set = targetSet else { return }
+        
+        // 2. Check ACTUAL system state (Off Main Thread)
         if !force {
             if let currentRaw = getSystemDockPersistentApps() {
                 let currentTiles = parseRawDockData(currentRaw)
                 if set.tiles == currentTiles {
-                    if activeDockSetID != set.id { activeDockSetID = set.id }
+                    await MainActor.run { if activeDockSetID != set.id { activeDockSetID = set.id } }
                     return
                 }
             }
@@ -144,12 +135,13 @@ class DockManager: ObservableObject {
         
         logger.info(">>> \(force ? "FORCED" : "STARTING") SWITCH: '\(set.name)' for Space \(spaceID)")
         
-        // Run the heavy I/O and Process logic
         let success = await applyDockSetVerified(set)
         
         if success {
-            self.lastAppliedDockSetID = set.id
-            self.activeDockSetID = set.id
+            await MainActor.run {
+                self.lastAppliedDockSetID = set.id
+                self.activeDockSetID = set.id
+            }
             logger.info("<<< SUCCESS: Switched to '\(set.name)'")
         } else {
             logger.error("<<< FAILURE: Could not verify dock write for '\(set.name)'")
