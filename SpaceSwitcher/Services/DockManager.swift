@@ -165,57 +165,60 @@ class DockManager: ObservableObject {
         // 1. Prepare Data
         let newAppData = await self.buildRawDockData(from: set.tiles)
         
-        // 2. Read FULL Current Preferences (To preserve others, size, etc.)
-        CFPreferencesAppSynchronize(appID as CFString)
-        guard let currentPrefs = CFPreferencesCopyMultiple(nil, appID as CFString, kCFPreferencesCurrentUser, kCFPreferencesAnyHost) as? [String: Any] else {
-            self.logger.error("Failed to read current Dock preferences.")
-            return false
+        // 2. Retry Loop (Max 3 attempts) - This is what made Turn 74 reliable
+        for attempt in 1...3 {
+            if Task.isCancelled { return false }
+            
+            // A. Read FULL Current Preferences (To preserve folders, trash, etc.)
+            CFPreferencesAppSynchronize(appID as CFString)
+            guard let currentPrefs = CFPreferencesCopyMultiple(nil, appID as CFString, kCFPreferencesCurrentUser, kCFPreferencesAnyHost) as? [String: Any] else {
+                continue
+            }
+            
+            // B. Merge & Write
+            var updatedPrefs = currentPrefs
+            updatedPrefs[key] = newAppData
+            
+            let tempFile = FileManager.default.temporaryDirectory.appendingPathComponent("com.apple.dock.full.\(attempt).plist")
+            do {
+                let data = try PropertyListSerialization.data(fromPropertyList: updatedPrefs, format: .binary, options: 0)
+                try data.write(to: tempFile)
+            } catch { continue }
+            defer { try? FileManager.default.removeItem(at: tempFile) }
+            
+            // C. IMPORT
+            let importTask = Process()
+            importTask.launchPath = "/usr/bin/defaults"
+            importTask.arguments = ["import", appID, tempFile.path]
+            importTask.launch()
+            importTask.waitUntilExit()
+            
+            // D. SYNC & WAIT (0.3s before kill)
+            CFPreferencesAppSynchronize(appID as CFString)
+            try? await Task.sleep(nanoseconds: 300_000_000)
+            
+            // E. KILL DOCK
+            let killTask = Process()
+            killTask.launchPath = "/usr/bin/killall"
+            killTask.arguments = ["Dock"]
+            killTask.launch()
+            killTask.waitUntilExit()
+            
+            // F. VERIFY (Wait 0.6s for Dock to respawn and check)
+            try? await Task.sleep(nanoseconds: 600_000_000)
+            CFPreferencesAppSynchronize(appID as CFString)
+            
+            if let readVal = CFPreferencesCopyAppValue(key as CFString, appID as CFString) as? [Any] {
+                if readVal.count == newAppData.count {
+                    self.logger.info("Attempt \(attempt): Dock verification PASSED.")
+                    return true
+                }
+            }
+            
+            self.logger.warning("Attempt \(attempt): Dock verification FAILED. Retrying...")
         }
         
-        // 3. Merge: Update ONLY the apps list
-        var updatedPrefs = currentPrefs
-        updatedPrefs[key] = newAppData
-        
-        // 4. Write to temporary plist for import
-        let tempFile = FileManager.default.temporaryDirectory.appendingPathComponent("com.apple.dock.full.plist")
-        do {
-            let data = try PropertyListSerialization.data(fromPropertyList: updatedPrefs, format: .binary, options: 0)
-            try data.write(to: tempFile)
-        } catch {
-            self.logger.error("Failed to serialize full preferences.")
-            return false
-        }
-        defer { try? FileManager.default.removeItem(at: tempFile) }
-        
-        // 5. IMPORT (The reliable way)
-        let importTask = Process()
-        importTask.launchPath = "/usr/bin/defaults"
-        importTask.arguments = ["import", appID, tempFile.path]
-        importTask.launch()
-        importTask.waitUntilExit()
-        
-        // 6. SYNC & POKE
-        CFPreferencesAppSynchronize(appID as CFString)
-        let readTask = Process()
-        readTask.launchPath = "/usr/bin/defaults"
-        readTask.arguments = ["read", appID, key]
-        readTask.launch()
-        readTask.waitUntilExit()
-        
-        // 7. RELIABILITY BUFFER (1.0s)
-        try? await Task.sleep(nanoseconds: 1_000_000_000)
-        
-        if Task.isCancelled { return false }
-        
-        // 8. RESTART DOCK
-        self.logger.info("Restarting Dock with FULL preference preservation.")
-        let killTask = Process()
-        killTask.launchPath = "/usr/bin/killall"
-        killTask.arguments = ["Dock"]
-        killTask.launch()
-        killTask.waitUntilExit()
-        
-        return true
+        return false
     }
     
     // MARK: - Data Management & Spacers
