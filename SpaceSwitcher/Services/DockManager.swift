@@ -183,20 +183,16 @@ class DockManager: ObservableObject {
         importTask.launch()
         importTask.waitUntilExit()
         
-        // 4. PURGE USER CACHE (Targeted for high reliability)
-        let purgeTask = Process()
-        purgeTask.launchPath = "/usr/bin/killall"
-        purgeTask.arguments = ["-u", NSUserName(), "cfprefsd"]
-        purgeTask.launch()
-        purgeTask.waitUntilExit()
+        // 4. SYNC PUSH
+        CFPreferencesAppSynchronize(appID as CFString)
         
-        // 5. STABILITY WAIT (0.5s)
-        try? await Task.sleep(nanoseconds: 500_000_000)
+        // 5. STABILITY WAIT (0.4s)
+        try? await Task.sleep(nanoseconds: 400_000_000)
         
         if Task.isCancelled { return false }
         
-        // 6. SINGLE RESTART
-        self.logger.info("Triggering targeted high-stability Dock restart.")
+        // 6. RESTART DOCK
+        self.logger.info("Restarting Dock with proven import method.")
         let killTask = Process()
         killTask.launchPath = "/usr/bin/killall"
         killTask.arguments = ["Dock"]
