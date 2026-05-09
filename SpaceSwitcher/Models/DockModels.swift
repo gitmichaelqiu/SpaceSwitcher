@@ -1,5 +1,4 @@
 import Foundation
-import AppKit
 
 // MARK: - Dock Tile Model
 struct DockTile: Identifiable, Codable, Hashable, @unchecked Sendable {

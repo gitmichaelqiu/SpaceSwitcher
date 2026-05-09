@@ -207,7 +207,7 @@ class DockManager: ObservableObject {
             
             // Verify the new state via the API
             try? await Task.sleep(nanoseconds: 600_000_000)
-            if let verifyApps = DockManager.getSystemDockPersistentApps() as? [Any] {
+            if let verifyApps = DockManager.getSystemDockPersistentApps() {
                 // We compare the count as a quick verification of success
                 if verifyApps.count == newAppData.count {
                     return true
