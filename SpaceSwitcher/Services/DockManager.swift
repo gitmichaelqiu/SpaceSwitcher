@@ -35,6 +35,23 @@ class DockManager: ObservableObject {
     
     init() {
         loadConfig()
+        detectActiveDockSet()
+    }
+    
+    /// Scans the system Dock and updates activeDockSetID if a match is found.
+    func detectActiveDockSet() {
+        guard let rawApps = getSystemDockPersistentApps() else { return }
+        let currentTiles = parseRawDockData(rawApps)
+        
+        // Find a set that matches the current system tiles
+        if let match = config.dockSets.first(where: { $0.tiles == currentTiles }) {
+            self.activeDockSetID = match.id
+            self.lastAppliedDockSetID = match.id
+        } else {
+            // Fallback: if we just applied one or automation is on, 
+            // it will eventually be set by applyDockForSpace.
+            // If not, we keep it nil to indicate 'Custom/Modified' state.
+        }
     }
     
     private func setupBindings() {
