@@ -159,68 +159,41 @@ class DockManager: ObservableObject {
     private func applyDockSetVerified(_ set: DockSet) async -> Bool {
         let appID = "com.apple.dock"
         let key = "persistent-apps"
-        let plistPath = (NSHomeDirectory() as NSString).appendingPathComponent("Library/Preferences/com.apple.dock.plist")
-        let plistURL = URL(fileURLWithPath: plistPath)
         
         // 1. Prepare Data
         let rawData = await self.buildRawDockData(from: set.tiles)
         
-        // 2. Read existing plist to preserve all other system settings (others, icon size, etc.)
-        var plistDict: [String: Any] = [:]
-        if let data = try? Data(contentsOf: plistURL),
-           let dict = try? PropertyListSerialization.propertyList(from: data, options: .mutableContainersAndLeaves, format: nil) as? [String: Any] {
-            plistDict = dict
-        }
-        
-        // 3. Update only the apps array
-        plistDict[key] = rawData
-        
-        // 4. Atomic Write to Disk
+        // 2. Write to temporary plist
+        let tempFile = FileManager.default.temporaryDirectory.appendingPathComponent("com.apple.dock.import.plist")
         do {
-            let updatedData = try PropertyListSerialization.data(fromPropertyList: plistDict, format: .binary, options: 0)
-            try updatedData.write(to: plistURL, options: .atomic)
+            let data = try PropertyListSerialization.data(fromPropertyList: [key: rawData], format: .binary, options: 0)
+            try data.write(to: tempFile)
         } catch {
-            self.logger.error("Failed to write plist directly: \(error.localizedDescription)")
-            // Fallback to defaults import if direct write fails
-            return await applyDockSetViaDefaults(rawData)
+            self.logger.error("Failed to create temporary plist: \(error.localizedDescription)")
+            return false
         }
-        
-        // 5. Force System to Synchronize (Fast Poke)
-        // Reading the defaults forces cfprefsd to sync its cache with the disk file
-        let syncTask = Process()
-        syncTask.launchPath = "/usr/bin/defaults"
-        syncTask.arguments = ["read", appID, key]
-        syncTask.launch()
-        syncTask.waitUntilExit()
-        
-        // 6. Minimal Settle & Kill
-        try? await Task.sleep(nanoseconds: 100_000_000) // 0.1s
-        
-        let killTask = Process()
-        killTask.launchPath = "/usr/bin/killall"
-        killTask.arguments = ["Dock"]
-        killTask.launch()
-        killTask.waitUntilExit()
-        
-        return true
-    }
-    
-    private func applyDockSetViaDefaults(_ rawData: [Any]) async -> Bool {
-        let appID = "com.apple.dock"
-        let key = "persistent-apps"
-        
-        let tempFile = FileManager.default.temporaryDirectory.appendingPathComponent("com.apple.dock.fallback.plist")
-        try? PropertyListSerialization.data(fromPropertyList: [key: rawData], format: .binary, options: 0).write(to: tempFile)
         defer { try? FileManager.default.removeItem(at: tempFile) }
         
+        // 3. IMPORT (The most reliable way)
         let importTask = Process()
         importTask.launchPath = "/usr/bin/defaults"
         importTask.arguments = ["import", appID, tempFile.path]
         importTask.launch()
         importTask.waitUntilExit()
         
+        // 4. SYNC POKE
+        // Reading forces cfprefsd to acknowledge the imported data
+        let readTask = Process()
+        readTask.launchPath = "/usr/bin/defaults"
+        readTask.arguments = ["read", appID, key]
+        readTask.launch()
+        readTask.waitUntilExit()
+        
+        // 5. RELIABILITY BUFFER (0.3s)
+        // This is the "sweet spot" for reliability found in Turn 74
         try? await Task.sleep(nanoseconds: 300_000_000)
         
+        // 6. RESTART DOCK
         let killTask = Process()
         killTask.launchPath = "/usr/bin/killall"
         killTask.arguments = ["Dock"]
