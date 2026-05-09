@@ -1,22 +1,19 @@
 import Foundation
 
 // MARK: - Dock Tile Model
-struct DockTile: Identifiable, Codable, Hashable, @unchecked Sendable {
+struct DockTile: Identifiable, Codable, Hashable, Sendable {
     var id = UUID()
     var label: String
     var bundleIdentifier: String?
     var fileURL: URL?
     
-    // We store the raw dictionary to preserve system data (aliases, folder settings, etc.)
-    var rawData: [String: Any]
+    // We store the raw dictionary as a binary Data blob to ensure Sendability 
+    // and avoid MainActor isolation issues common with [String: Any].
+    var rawDataBlob: Data
     
     enum CodingKeys: String, CodingKey {
-        case id, label, bundleIdentifier, fileURL, rawData
+        case id, label, bundleIdentifier, fileURL, rawDataBlob
     }
-    
-    // MARK: - Safe Serialization Fix
-    // We use PropertyListSerialization because Dock data contains binary Data types (aliases)
-    // which causes JSONSerialization to crash with "Invalid type in JSON write (__NSCFData)"
     
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
@@ -24,17 +21,7 @@ struct DockTile: Identifiable, Codable, Hashable, @unchecked Sendable {
         label = try container.decode(String.self, forKey: .label)
         bundleIdentifier = try container.decodeIfPresent(String.self, forKey: .bundleIdentifier)
         fileURL = try container.decodeIfPresent(URL.self, forKey: .fileURL)
-        
-        // Decode the binary blob
-        let data = try container.decode(Data.self, forKey: .rawData)
-        
-        // Deserialize using PropertyList for Data/Date safety
-        var format = PropertyListSerialization.PropertyListFormat.binary
-        if let dict = try PropertyListSerialization.propertyList(from: data, options: [], format: &format) as? [String: Any] {
-            rawData = dict
-        } else {
-            rawData = [:]
-        }
+        rawDataBlob = try container.decode(Data.self, forKey: .rawDataBlob)
     }
     
     func encode(to encoder: Encoder) throws {
@@ -43,19 +30,14 @@ struct DockTile: Identifiable, Codable, Hashable, @unchecked Sendable {
         try container.encode(label, forKey: .label)
         try container.encode(bundleIdentifier, forKey: .bundleIdentifier)
         try container.encode(fileURL, forKey: .fileURL)
-        
-        // Serialize using PropertyList to support Data types
-        let data = try PropertyListSerialization.data(fromPropertyList: rawData, format: .binary, options: 0)
-        
-        // Encode the safe property list blob
-        try container.encode(data, forKey: .rawData)
+        try container.encode(rawDataBlob, forKey: .rawDataBlob)
     }
     
-    nonisolated init(label: String, bundleIdentifier: String?, fileURL: URL?, rawData: [String: Any]) {
+    init(label: String, bundleIdentifier: String?, fileURL: URL?, rawDataBlob: Data) {
         self.label = label
         self.bundleIdentifier = bundleIdentifier
         self.fileURL = fileURL
-        self.rawData = rawData
+        self.rawDataBlob = rawDataBlob
     }
     
     static func == (lhs: DockTile, rhs: DockTile) -> Bool {
@@ -72,7 +54,7 @@ struct DockTile: Identifiable, Codable, Hashable, @unchecked Sendable {
 }
 
 // MARK: - Dock Set
-struct DockSet: Identifiable, Codable, Equatable, @unchecked Sendable {
+struct DockSet: Identifiable, Codable, Equatable, Sendable {
     let id: UUID
     var name: String
     var dateCreated: Date
@@ -84,11 +66,26 @@ struct DockSet: Identifiable, Codable, Equatable, @unchecked Sendable {
 }
 
 // MARK: - Config
-struct DockConfig: Codable, Equatable, @unchecked Sendable {
+struct DockConfig: Codable, Equatable, Sendable {
     var dockSets: [DockSet] = []
     var defaultDockSetID: UUID?
     var spaceAssignments: [String: UUID] = [:]
     var isAutomationEnabled: Bool = true
+    
+    enum CodingKeys: String, CodingKey {
+        case dockSets, defaultDockSetID, spaceAssignments, isAutomationEnabled
+    }
+    
+    init() {}
+    
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        dockSets = try container.decodeIfPresent([DockSet].self, forKey: .dockSets) ?? []
+        defaultDockSetID = try container.decodeIfPresent(UUID.self, forKey: .defaultDockSetID)
+        spaceAssignments = try container.decodeIfPresent([String: UUID].self, forKey: .spaceAssignments) ?? [:]
+        isAutomationEnabled = try container.decodeIfPresent(Bool.self, forKey: .isAutomationEnabled) ?? true
+    }
+}
     
     enum CodingKeys: String, CodingKey {
         case dockSets, defaultDockSetID, spaceAssignments, isAutomationEnabled

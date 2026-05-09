@@ -239,32 +239,31 @@ class DockManager: ObservableObject {
             "bundle-identifier": bundleID ?? "",
             "file-type": 41
         ]
-        let raw: [String: Any] = ["tile-data": tileData, "tile-type": "file-tile"]
-        return DockTile(label: name, bundleIdentifier: bundleID, fileURL: url, rawData: raw)
+        let rawDict: [String: Any] = ["tile-data": tileData, "tile-type": "file-tile"]
+        let blob = (try? PropertyListSerialization.data(fromPropertyList: rawDict, format: .binary, options: 0)) ?? Data()
+        
+        return DockTile(label: name, bundleIdentifier: bundleID, fileURL: url, rawDataBlob: blob)
     }
 
-    /// Creates a spacer tile.
-    /// - Parameter isSmall: If true, creates a small spacer (often used as a separator).
     func createSpacerTile(isSmall: Bool) -> DockTile {
         let type = isSmall ? "small-spacer-tile" : "spacer-tile"
         let label = isSmall ? "Small Spacer" : "Large Spacer"
         
-        let rawData: [String: Any] = [
-            "tile-data": [:], // Spacers have empty data
+        let rawDict: [String: Any] = [
+            "tile-data": [:],
             "tile-type": type
         ]
+        let blob = (try? PropertyListSerialization.data(fromPropertyList: rawDict, format: .binary, options: 0)) ?? Data()
         
-        return DockTile(label: label, bundleIdentifier: nil, fileURL: nil, rawData: rawData)
+        return DockTile(label: label, bundleIdentifier: nil, fileURL: nil, rawDataBlob: blob)
     }
     
     
     nonisolated static private func parseRawDockData(_ rawArray: [Any]) -> [DockTile] {
         var tiles: [DockTile] = []
         for case let itemDict as [String: Any] in rawArray {
-            // Detect tile type
             let tileType = itemDict["tile-type"] as? String
             
-            // Extract metadata
             var label = "Unknown"
             var bundleID: String? = nil
             var url: URL? = nil
@@ -284,18 +283,23 @@ class DockManager: ObservableObject {
                 }
             }
             
+            let blob = (try? PropertyListSerialization.data(fromPropertyList: itemDict, format: .binary, options: 0)) ?? Data()
+            
             tiles.append(DockTile(
                 label: label,
                 bundleIdentifier: bundleID,
                 fileURL: url,
-                rawData: itemDict
+                rawDataBlob: blob
             ))
         }
         return tiles
     }
     
     nonisolated static private func buildRawDockData(from tiles: [DockTile]) -> [Any] {
-        return tiles.map { $0.rawData }
+        return tiles.compactMap { tile in
+            var format = PropertyListSerialization.PropertyListFormat.binary
+            return try? PropertyListSerialization.propertyList(from: tile.rawDataBlob, options: [], format: &format)
+        }
     }
     
     private func loadConfig() {
