@@ -35,6 +35,15 @@ struct DockSettingsView: View {
                     
                     ScrollView(.vertical, showsIndicators: true) {
                         VStack(alignment: .leading, spacing: 24) {
+                            // 0. Automation Control
+                            SettingsSection("Automation") {
+                                SettingsRow("Automatically switch dock") {
+                                    Toggle("", isOn: $dockManager.config.isAutomationEnabled)
+                                        .toggleStyle(.switch)
+                                        .labelsHidden()
+                                }
+                            }
+                            
                             // 1. Dock Set Configuration
                             SettingsSection("Set Configuration") {
                                 SettingsRow("Name") {
@@ -102,8 +111,12 @@ struct DockSettingsView: View {
             dockManager.config.dockSets.removeAll { $0.id == set.id }
             let keys = dockManager.config.spaceAssignments.filter { $0.value == set.id }.map { $0.key }
             keys.forEach { dockManager.config.spaceAssignments.removeValue(forKey: $0) }
+            
+            // Selection fix
             if selectedSetID == set.id { selectedSetID = dockManager.config.dockSets.first?.id }
-            if dockManager.config.defaultDockSetID == set.id {
+            
+            // Default set fix: Always ensure one exists if sets are available
+            if dockManager.config.defaultDockSetID == set.id || dockManager.config.defaultDockSetID == nil {
                 dockManager.config.defaultDockSetID = dockManager.config.dockSets.first?.id
             }
         }
@@ -159,17 +172,9 @@ struct DockSidebarView: View {
                         }
                     }
                 } header: {
-                    HStack {
-                        Text("Dock Sets")
-                            .font(.system(size: 11, weight: .bold))
-                            .foregroundColor(.secondary)
-                        Spacer()
-                        Toggle("", isOn: $dockManager.config.isAutomationEnabled)
-                            .toggleStyle(.switch)
-                            .scaleEffect(0.6)
-                            .labelsHidden()
-                            .help("Automatically switch dock")
-                    }
+                    Text("Dock Sets")
+                        .font(.system(size: 11, weight: .bold))
+                        .foregroundColor(.secondary)
                 }
             }
             .listStyle(.sidebar)
@@ -201,8 +206,12 @@ struct DockSidebarView: View {
             dockManager.config.dockSets.removeAll { $0.id == set.id }
             let keys = dockManager.config.spaceAssignments.filter { $0.value == set.id }.map { $0.key }
             keys.forEach { dockManager.config.spaceAssignments.removeValue(forKey: $0) }
+            
+            // Selection fix
             if selectedSetID == set.id { selectedSetID = dockManager.config.dockSets.first?.id }
-            if dockManager.config.defaultDockSetID == set.id {
+            
+            // Default set fix: Always ensure one exists if sets are available
+            if dockManager.config.defaultDockSetID == set.id || dockManager.config.defaultDockSetID == nil {
                 dockManager.config.defaultDockSetID = dockManager.config.dockSets.first?.id
             }
         }
