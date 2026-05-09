@@ -50,7 +50,6 @@ struct DockSettingsView: View {
                                     TextField("Name", text: $dockManager.config.dockSets[index].name)
                                         .textFieldStyle(.roundedBorder)
                                         .frame(width: 150)
-                                        .disabled(!dockManager.config.isAutomationEnabled)
                                 }
                                 
                                 Divider()
@@ -62,7 +61,7 @@ struct DockSettingsView: View {
                                     ))
                                     .labelsHidden()
                                     .toggleStyle(.switch)
-                                    .disabled(dockManager.config.defaultDockSetID == selectedID || !dockManager.config.isAutomationEnabled)
+                                    .disabled(dockManager.config.defaultDockSetID == selectedID)
                                 }
                             }
                             
