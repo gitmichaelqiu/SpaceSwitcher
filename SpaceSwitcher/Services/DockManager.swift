@@ -254,12 +254,6 @@ class DockManager: ObservableObject {
         return DockTile(label: label, bundleIdentifier: nil, fileURL: nil, rawData: rawData)
     }
     
-    // MARK: - Internal Helpers
-    
-    private func getSystemDockPersistentApps() -> [Any]? {
-        let defaults = UserDefaults(suiteName: "com.apple.dock")
-        return defaults?.array(forKey: "persistent-apps")
-    }
     
     private func parseRawDockData(_ rawArray: [Any]) -> [DockTile] {
         var tiles: [DockTile] = []
