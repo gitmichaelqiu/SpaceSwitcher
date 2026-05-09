@@ -131,12 +131,15 @@ class DockManager: ObservableObject {
             return
         }
         
-        // OPTIMIZATION: Skip if already active (unless forced)
-        if !force && setID == lastAppliedDockSetID {
-            logger.debug("Already on Dock Set \(setID), skipping.")
-            // Ensure UI is in sync even if we skipped the work
-            if activeDockSetID != setID { activeDockSetID = setID }
-            return
+        // 1. Check ACTUAL system state (Don't rely on cached lastAppliedDockSetID)
+        if !force {
+            if let currentRaw = getSystemDockPersistentApps() {
+                let currentTiles = parseRawDockData(currentRaw)
+                if set.tiles == currentTiles {
+                    if activeDockSetID != set.id { activeDockSetID = set.id }
+                    return
+                }
+            }
         }
         
         guard let set = config.dockSets.first(where: { $0.id == setID }) else { return }
@@ -182,23 +185,20 @@ class DockManager: ObservableObject {
         importTask.launch()
         importTask.waitUntilExit()
         
-        // 4. SYNC POKE & PUSH
-        CFPreferencesAppSynchronize(appID as CFString)
-        let readTask = Process()
-        readTask.launchPath = "/usr/bin/defaults"
-        readTask.arguments = ["read", appID, key]
-        readTask.launch()
-        readTask.waitUntilExit()
+        // 4. PURGE USER CACHE (Targeted for high reliability)
+        let purgeTask = Process()
+        purgeTask.launchPath = "/usr/bin/killall"
+        purgeTask.arguments = ["-u", NSUserName(), "cfprefsd"]
+        purgeTask.launch()
+        purgeTask.waitUntilExit()
         
-        // 5. STABILITY WAIT (0.8s)
-        // This is the "Magic Window": 0.8s is the threshold where macOS reliably 
-        // flushes preference cache to the disk location the Dock reads on launch.
-        try? await Task.sleep(nanoseconds: 800_000_000)
+        // 5. STABILITY WAIT (0.5s)
+        try? await Task.sleep(nanoseconds: 500_000_000)
         
         if Task.isCancelled { return false }
         
         // 6. SINGLE RESTART
-        self.logger.info("Triggering single high-stability Dock restart.")
+        self.logger.info("Triggering targeted high-stability Dock restart.")
         let killTask = Process()
         killTask.launchPath = "/usr/bin/killall"
         killTask.arguments = ["Dock"]
