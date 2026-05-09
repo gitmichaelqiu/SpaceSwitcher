@@ -150,58 +150,63 @@ class DockManager: ObservableObject {
     
     // MARK: - Core System Logic (Verified Write + Force Kill)
     
+    private func getSystemDockPersistentApps() -> [Any]? {
+        let plistPath = (NSHomeDirectory() as NSString).appendingPathComponent("Library/Preferences/com.apple.dock.plist")
+        let plistURL = URL(fileURLWithPath: plistPath)
+        
+        guard let data = try? Data(contentsOf: plistURL),
+              let dict = try? PropertyListSerialization.propertyList(from: data, options: [], format: nil) as? [String: Any],
+              let apps = dict["persistent-apps"] as? [Any] else {
+            return nil
+        }
+        return apps
+    }
+    
     private func applyDockSetVerified(_ set: DockSet) async -> Bool {
         let appID = "com.apple.dock"
         let key = "persistent-apps"
+        let plistPath = (NSHomeDirectory() as NSString).appendingPathComponent("Library/Preferences/com.apple.dock.plist")
+        let plistURL = URL(fileURLWithPath: plistPath)
         
         // 1. Prepare Data
-        let newAppData = await self.buildRawDockData(from: set.tiles)
+        let newAppData = self.buildRawDockData(from: set.tiles)
         
-        // 2. Persistent Attempt Loop (Max 2)
-        for attempt in 1...2 {
+        // 2. Perform 2 clean attempts by writing directly to disk
+        // This avoids "Connection interrupted" errors because we don't talk to cfprefsd
+        for _ in 1...2 {
             if Task.isCancelled { return false }
             
-            // A. Read FULL Current Preferences (To preserve folders, trash, etc.)
-            CFPreferencesAppSynchronize(appID as CFString)
-            guard let currentPrefs = CFPreferencesCopyMultiple(nil, appID as CFString, kCFPreferencesCurrentUser, kCFPreferencesAnyHost) as? [String: Any] else {
+            // A. Read current state from disk
+            guard let data = try? Data(contentsOf: plistURL),
+                  var dict = try? PropertyListSerialization.propertyList(from: data, options: .mutableContainersAndLeaves, format: nil) as? [String: Any] else {
                 continue
             }
             
-            // B. Merge & Write
-            var updatedPrefs = currentPrefs
-            updatedPrefs[key] = newAppData
+            // B. Update in memory
+            dict[key] = newAppData
             
-            let tempFile = FileManager.default.temporaryDirectory.appendingPathComponent("com.apple.dock.full.plist")
+            // C. Write back to disk (Atomic)
             do {
-                let data = try PropertyListSerialization.data(fromPropertyList: updatedPrefs, format: .binary, options: 0)
-                try data.write(to: tempFile)
-            } catch { continue }
-            defer { try? FileManager.default.removeItem(at: tempFile) }
+                let updatedData = try PropertyListSerialization.data(fromPropertyList: dict, format: .binary, options: 0)
+                try updatedData.write(to: plistURL, options: .atomic)
+            } catch {
+                continue
+            }
             
-            // C. IMPORT (The official, safe way)
-            let importTask = Process()
-            importTask.launchPath = "/usr/bin/defaults"
-            importTask.arguments = ["import", appID, tempFile.path]
-            importTask.launch()
-            importTask.waitUntilExit()
+            // D. Wait for disk flush (0.5s)
+            try? await Task.sleep(nanoseconds: 500_000_000)
             
-            // D. SYNC & WAIT (0.8s before kill)
-            CFPreferencesAppSynchronize(appID as CFString)
-            try? await Task.sleep(nanoseconds: 800_000_000)
-            
-            // E. RESTART DOCK (Polite kill)
+            // E. Restart Dock
             let killTask = Process()
             killTask.launchPath = "/usr/bin/killall"
             killTask.arguments = ["Dock"]
             killTask.launch()
             killTask.waitUntilExit()
             
-            // F. VERIFY (Wait 0.5s for respawn)
+            // F. Verify (Read from disk again)
             try? await Task.sleep(nanoseconds: 500_000_000)
-            CFPreferencesAppSynchronize(appID as CFString)
-            
-            if let readVal = CFPreferencesCopyAppValue(key as CFString, appID as CFString) as? [Any] {
-                if readVal.count == newAppData.count {
+            if let verifyApps = getSystemDockPersistentApps() {
+                if verifyApps.count == newAppData.count {
                     return true
                 }
             }
