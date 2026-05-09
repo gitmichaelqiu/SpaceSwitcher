@@ -60,7 +60,9 @@ struct DockTile: Identifiable, Codable, Hashable {
     }
     
     static func == (lhs: DockTile, rhs: DockTile) -> Bool {
-        lhs.id == rhs.id
+        lhs.label == rhs.label && 
+        lhs.bundleIdentifier == rhs.bundleIdentifier && 
+        lhs.fileURL == rhs.fileURL
     }
     
     func hash(into hasher: inout Hasher) {
