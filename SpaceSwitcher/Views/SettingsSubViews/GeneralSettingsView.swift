@@ -21,8 +21,8 @@ struct GeneralSettingsView: View {
                 }
                 
                 // 2. Updates - Standardized per macOSers bundle
-                SettingsSection("Settings.General.Updates") {
-                    SettingsRow("Settings.General.Updates.AutoCheckUpdate") {
+                SettingsSection("Updates") {
+                    SettingsRow("Check for Updates Automatically") {
                         Toggle("", isOn: $autoCheckUpdate)
                             .labelsHidden()
                             .toggleStyle(.switch)
@@ -45,8 +45,8 @@ struct GeneralSettingsView: View {
                         Divider()
                     }
                     
-                    SettingsRow("Settings.General.Updates.ManualCheck") {
-                        Button(NSLocalizedString("Settings.General.Updates.Button", comment: "")) {
+                    SettingsRow("Check for Updates") {
+                        Button("Check Now") {
                             UpdateManager.shared.updaterController.checkForUpdates(nil)
                         }
                     }
@@ -80,5 +80,6 @@ struct GeneralSettingsView: View {
             .padding()
             .frame(maxWidth: .infinity, alignment: .topLeading)
         }
+        .animation(.easeInOut(duration: 0.2), value: autoCheckUpdate)
     }
 }
