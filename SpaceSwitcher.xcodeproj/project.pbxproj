@@ -8,17 +8,28 @@
 
 /* Begin PBXBuildFile section */
 		46624E022FAEFE8C0081A9A3 /* Sparkle in Frameworks */ = {isa = PBXBuildFile; productRef = 46624E012FAEFE8C0081A9A3 /* Sparkle */; };
-		46624EDD2FAF693F0081A9A3 /* info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 46624EDC2FAF693B0081A9A3 /* info.plist */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
 		4626DBF82ECDF2730061E05F /* SpaceSwitcher.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = SpaceSwitcher.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		46624EDC2FAF693B0081A9A3 /* info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = info.plist; sourceTree = "<group>"; };
 /* End PBXFileReference section */
+
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		46624F242FAF6BA50081A9A3 /* Exceptions for "SpaceSwitcher" folder in "SpaceSwitcher" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = 4626DBF72ECDF2730061E05F /* SpaceSwitcher */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		4626DBFA2ECDF2730061E05F /* SpaceSwitcher */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				46624F242FAF6BA50081A9A3 /* Exceptions for "SpaceSwitcher" folder in "SpaceSwitcher" target */,
+			);
 			path = SpaceSwitcher;
 			sourceTree = "<group>";
 		};
@@ -39,7 +50,6 @@
 		4626DBEF2ECDF2730061E05F = {
 			isa = PBXGroup;
 			children = (
-				46624EDC2FAF693B0081A9A3 /* info.plist */,
 				4626DBFA2ECDF2730061E05F /* SpaceSwitcher */,
 				4626DBF92ECDF2730061E05F /* Products */,
 			);
@@ -122,7 +132,6 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				46624EDD2FAF693F0081A9A3 /* info.plist in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -283,6 +292,7 @@
 				ENABLE_RESOURCE_ACCESS_LOCATION = NO;
 				ENABLE_RESOURCE_ACCESS_PHOTO_LIBRARY = NO;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = SpaceSwitcher/Info.plist;
 				INFOPLIST_KEY_ATSApplicationFontsPath = Fonts;
 				INFOPLIST_KEY_CFBundleDisplayName = SpaceSwitcher;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
@@ -335,6 +345,7 @@
 				ENABLE_RESOURCE_ACCESS_LOCATION = NO;
 				ENABLE_RESOURCE_ACCESS_PHOTO_LIBRARY = NO;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = SpaceSwitcher/Info.plist;
 				INFOPLIST_KEY_ATSApplicationFontsPath = Fonts;
 				INFOPLIST_KEY_CFBundleDisplayName = SpaceSwitcher;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
