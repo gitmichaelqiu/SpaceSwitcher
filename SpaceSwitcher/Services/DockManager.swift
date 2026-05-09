@@ -162,61 +162,53 @@ class DockManager: ObservableObject {
     // MARK: - Core System Logic (Verified Write + Force Kill)
     
     private func getSystemDockPersistentApps() -> [Any]? {
-        let plistPath = (NSHomeDirectory() as NSString).appendingPathComponent("Library/Preferences/com.apple.dock.plist")
-        let plistURL = URL(fileURLWithPath: plistPath)
+        let appID = "com.apple.dock" as CFString
+        let key = "persistent-apps" as CFString
         
-        guard let data = try? Data(contentsOf: plistURL),
-              let dict = try? PropertyListSerialization.propertyList(from: data, options: [], format: nil) as? [String: Any],
-              let apps = dict["persistent-apps"] as? [Any] else {
+        // Use CFPreferences to read from the system's preference cache (cfprefsd)
+        // This is the standard macOS way and is more robust than direct file I/O.
+        guard let apps = CFPreferencesCopyAppValue(key, appID) as? [Any] else {
             return nil
         }
         return apps
     }
     
     private func applyDockSetVerified(_ set: DockSet) async -> Bool {
-        let appID = "com.apple.dock"
-        let key = "persistent-apps"
-        let plistPath = (NSHomeDirectory() as NSString).appendingPathComponent("Library/Preferences/com.apple.dock.plist")
-        let plistURL = URL(fileURLWithPath: plistPath)
+        let appID = "com.apple.dock" as CFString
+        let key = "persistent-apps" as CFString
         
         // 1. Prepare Data
         let newAppData = self.buildRawDockData(from: set.tiles)
         
-        // 2. Perform 2 clean attempts by writing directly to disk
-        // This avoids "Connection interrupted" errors because we don't talk to cfprefsd
-        for _ in 1...2 {
+        // 2. Perform attempts using standard CFPreferences API
+        // This is the proper way to modify system preferences and handles cfprefsd synchronization.
+        for attempt in 1...3 {
             if Task.isCancelled { return false }
             
-            // A. Read current state from disk
-            guard let data = try? Data(contentsOf: plistURL),
-                  var dict = try? PropertyListSerialization.propertyList(from: data, options: .mutableContainersAndLeaves, format: nil) as? [String: Any] else {
+            // A. Set the value in the preference cache
+            CFPreferencesSetAppValue(key, newAppData as CFPropertyList, appID, kCFPreferencesCurrentUser, kCFPreferencesAnyHost)
+            
+            // B. Synchronize to ensure the changes are committed to the daemon and disk
+            if !CFPreferencesAppSynchronize(appID) {
+                logger.error("Attempt \(attempt): CFPreferencesAppSynchronize failed")
+                try? await Task.sleep(nanoseconds: 200_000_000)
                 continue
             }
             
-            // B. Update in memory
-            dict[key] = newAppData
+            // C. Wait for system to process the update (0.3s)
+            try? await Task.sleep(nanoseconds: 300_000_000)
             
-            // C. Write back to disk (Atomic)
-            do {
-                let updatedData = try PropertyListSerialization.data(fromPropertyList: dict, format: .binary, options: 0)
-                try updatedData.write(to: plistURL, options: .atomic)
-            } catch {
-                continue
-            }
-            
-            // D. Wait for disk flush (0.5s)
-            try? await Task.sleep(nanoseconds: 500_000_000)
-            
-            // E. Restart Dock
+            // D. Restart Dock to pick up new preferences
             let killTask = Process()
             killTask.launchPath = "/usr/bin/killall"
             killTask.arguments = ["Dock"]
             killTask.launch()
             killTask.waitUntilExit()
             
-            // F. Verify (Read from disk again)
-            try? await Task.sleep(nanoseconds: 500_000_000)
-            if let verifyApps = getSystemDockPersistentApps() {
+            // E. Verify (Read back via the API)
+            try? await Task.sleep(nanoseconds: 600_000_000)
+            if let verifyApps = CFPreferencesCopyAppValue(key, appID) as? [Any] {
+                // We compare the count as a quick verification of success
                 if verifyApps.count == newAppData.count {
                     return true
                 }
