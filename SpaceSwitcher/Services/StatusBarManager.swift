@@ -73,36 +73,37 @@ class StatusBarManager: NSObject {
     private func createMenu() -> NSMenu {
         let menu = NSMenu()
 
-        // 1. Settings
-        let settingsItem = NSMenuItem(title: NSLocalizedString("Settings", comment: ""),
-                                      action: #selector(AppDelegate.openSettingsWindow),
-                                      keyEquivalent: ",")
-        settingsItem.target = appDelegate
-        menu.addItem(settingsItem)
-
-        menu.addItem(NSMenuItem.separator())
-        
-        // 2. Automation Toggles
-        let rulesItem = NSMenuItem(title: NSLocalizedString("Automated rules", comment: ""),
-                                   action: #selector(toggleRules),
-                                   keyEquivalent: "")
+        let rulesItem = NSMenuItem(title: NSLocalizedString("Rule Automation", comment: ""),
+                            action: #selector(toggleRules),
+                            keyEquivalent: "")
         rulesItem.target = self
         rulesItem.state = (ruleManager?.isAutomationEnabled ?? false) ? .on : .off
+        rulesItem.image = NSImage(systemSymbolName: "list.bullet.below.rectangle", accessibilityDescription: nil)
         menu.addItem(rulesItem)
         
-        let docksItem = NSMenuItem(title: NSLocalizedString("Automated docks", comment: ""),
+        let docksItem = NSMenuItem(title: NSLocalizedString("Dock Automation", comment: ""),
                                    action: #selector(toggleDocks),
                                    keyEquivalent: "")
         docksItem.target = self
         docksItem.state = (dockManager?.config.isAutomationEnabled ?? false) ? .on : .off
+        docksItem.image = NSImage(systemSymbolName: "dock.rectangle", accessibilityDescription: nil)
         menu.addItem(docksItem)
 
         menu.addItem(NSMenuItem.separator())
 
-        // 3. Quit
+        let settingsItem = NSMenuItem(title: NSLocalizedString("Settings", comment: ""),
+                                      action: #selector(AppDelegate.openSettingsWindow),
+                                      keyEquivalent: ",")
+        settingsItem.image = NSImage(systemSymbolName: "gear", accessibilityDescription: nil)
+        settingsItem.target = appDelegate
+        menu.addItem(settingsItem)
+
+        menu.addItem(NSMenuItem.separator())
+
         let quitItem = NSMenuItem(title: NSLocalizedString("Quit", comment: ""),
                                   action: #selector(AppDelegate.quitApp),
                                   keyEquivalent: "q")
+        quitItem.image = NSImage(systemSymbolName: "xmark.rectangle", accessibilityDescription: nil)
         quitItem.target = appDelegate
         menu.addItem(quitItem)
         
