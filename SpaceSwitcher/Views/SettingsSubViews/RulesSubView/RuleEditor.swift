@@ -126,27 +126,7 @@ struct RuleEditor: View {
                             }
                             .padding(16)
                         } else {
-                            ForEach(Array(workingRule.elseActions.enumerated()), id: \.element.id) { i, item in
-                                VStack(spacing: 0) {
-                                    ActionRowContent(
-                                        index: i,
-                                        item: $workingRule.elseActions[i],
-                                        onDelete: {
-                                            withAnimation {
-                                                workingRule.elseActions = workingRule.elseActions.enumerated()
-                                                    .filter { $0.offset != i }
-                                                    .map { $0.element }
-                                            }
-                                        }
-                                    )
-                                    .padding(.horizontal, 12)
-                                    .padding(.vertical, 8)
-                                    
-                                    if i < workingRule.elseActions.count - 1 {
-                                        Divider().padding(.leading, 32).opacity(0.2)
-                                    }
-                                }
-                            }
+                            ActionListRows(actions: $workingRule.elseActions)
                         }
                         
                         Divider().opacity(0.3)
