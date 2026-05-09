@@ -22,7 +22,7 @@ struct GeneralSettingsView: View {
                 
                 // 2. Updates - Standardized per macOSers bundle
                 SettingsSection("Updates") {
-                    SettingsRow("Check for Updates Automatically") {
+                    SettingsRow("Automatically check for updates") {
                         Toggle("", isOn: $autoCheckUpdate)
                             .labelsHidden()
                             .toggleStyle(.switch)
@@ -53,8 +53,8 @@ struct GeneralSettingsView: View {
                 }
                 
                 // 3. Automation Status
-                SettingsSection("Automation API", helperText: "SpaceSwitcher uses the DesktopRenamer API to detect space changes. Ensure the API is enabled in DesktopRenamer.") {
-                    SettingsRow("API Status") {
+                SettingsSection("SpaceAPI", helperText: "SpaceSwitcher uses the DesktopRenamer API to detect space changes. Ensure the API is enabled in DesktopRenamer.") {
+                    SettingsRow("SpaceAPI Status") {
                         HStack(spacing: 8) {
                             Circle()
                                 .fill(spaceManager.isAPIEnabled ? Color.green : Color.red)
@@ -68,7 +68,7 @@ struct GeneralSettingsView: View {
                 
                 // 4. Advanced
                 SettingsSection("Advanced") {
-                    SettingsRow("Force Rule Refresh") {
+                    SettingsRow("Force rule refresh") {
                         Button("Refresh Now") {
                             spaceManager.refreshSpaceList()
                         }
