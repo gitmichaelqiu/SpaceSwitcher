@@ -177,10 +177,9 @@ class DockManager: ObservableObject {
             
             defer { try? FileManager.default.removeItem(at: tempFile) }
             
-            // 3. Single-Kill Strategy (High Reliability)
-            // We use a single attempt with a generous synchronization delay.
-            // This prevents the "double-flash" caused by retry loops while ensuring
-            // the preference daemon has enough time to commit the changes to disk.
+            // 3. Ultra-Reliable Single-Kill Strategy
+            // We force the system to purge its preference cache by restarting cfprefsd.
+            // This is the most reliable way to ensure the Dock sees the new plist on restart.
             if Task.isCancelled { return false }
             
             // A. IMPORT
@@ -190,23 +189,21 @@ class DockManager: ObservableObject {
             importTask.launch()
             importTask.waitUntilExit()
             
-            // B. POKE & SYNC
-            // Forces cfprefsd to recognize and flush the new settings
-            CFPreferencesAppSynchronize(appID as CFString)
-            let readTask = Process()
-            readTask.launchPath = "/usr/bin/defaults"
-            readTask.arguments = ["read", appID, "persistent-apps"]
-            readTask.launch()
-            readTask.waitUntilExit()
+            // B. PURGE CACHE (Crucial for reliability)
+            // Restarting cfprefsd forces it to reload from the newly imported defaults
+            let purgeTask = Process()
+            purgeTask.launchPath = "/usr/bin/killall"
+            purgeTask.arguments = ["cfprefsd"]
+            purgeTask.launch()
+            purgeTask.waitUntilExit()
             
-            // C. CRITICAL WAIT (0.5s)
-            // This is the most reliable way to ensure the Dock reads the new data on restart
-            try? Thread.sleep(forTimeInterval: 0.5)
+            // C. WAIT (Give the system a moment to settle)
+            try? Thread.sleep(forTimeInterval: 0.3)
             
             if Task.isCancelled { return false }
             
-            // D. SINGLE RESTART
-            self.logger.info("Triggering single Dock restart.")
+            // D. RESTART DOCK
+            self.logger.info("Triggering ultra-reliable Dock restart.")
             let killTask = Process()
             killTask.launchPath = "/usr/bin/killall"
             killTask.arguments = ["Dock"]
