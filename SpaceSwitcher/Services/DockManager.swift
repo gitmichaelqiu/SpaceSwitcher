@@ -183,16 +183,22 @@ class DockManager: ObservableObject {
         importTask.launch()
         importTask.waitUntilExit()
         
-        // 4. SYNC PUSH
-        CFPreferencesAppSynchronize(appID as CFString)
+        // 4. SYNC POKE
+        // Reading forces cfprefsd to flush its cache to disk
+        let syncTask = Process()
+        syncTask.launchPath = "/usr/bin/defaults"
+        syncTask.arguments = ["read", appID, key]
+        syncTask.launch()
+        syncTask.waitUntilExit()
         
-        // 5. STABILITY WAIT (0.4s)
-        try? await Task.sleep(nanoseconds: 400_000_000)
+        // 5. STABILITY WAIT (1.0s)
+        // 1.0s is the safest threshold for macOS to guarantee the preference is on disk
+        try? await Task.sleep(nanoseconds: 1_000_000_000)
         
         if Task.isCancelled { return false }
         
         // 6. RESTART DOCK
-        self.logger.info("Restarting Dock with proven import method.")
+        self.logger.info("Restarting Dock with 1.0s reliability buffer.")
         let killTask = Process()
         killTask.launchPath = "/usr/bin/killall"
         killTask.arguments = ["Dock"]
