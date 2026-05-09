@@ -16,14 +16,14 @@ class DockManager: ObservableObject {
     @MainActor @Published var activeDockSetID: UUID?
     private var lastAppliedDockSetID: UUID?
     
-    // CONCURRENCY: Tracks the current switching task
+    // Tracks the current switching task
     private var dockTask: Task<Void, Never>?
     
     weak var spaceManager: SpaceManager? { didSet { setupBindings() } }
     private var cancellables = Set<AnyCancellable>()
     private let configKey = "SpaceSwitcherDockConfig"
     
-    // LOGGER: Debugging
+    // Logger for debugging
     private let logger = Logger(subsystem: "com.michaelqiu.SpaceSwitcher", category: "DockManager")
     
     init() {
@@ -34,7 +34,7 @@ class DockManager: ObservableObject {
     /// Scans the system Dock and updates activeDockSetID if a match is found.
     func detectActiveDockSet() {
         Task {
-            // 1. Move heavy disk I/O and parsing to a background thread
+            // Move heavy disk I/O and parsing to a background thread
             let (matchFound, matchedID) = await Task.detached(priority: .background) {
                 guard let rawApps = self.getSystemDockPersistentApps() else { return (false, nil) }
                 let currentTiles = self.parseRawDockData(rawApps)
@@ -48,7 +48,7 @@ class DockManager: ObservableObject {
                 }
             }.value
             
-            // 2. Update Published properties on MainActor
+            // Update Published properties on MainActor
             if matchFound, let id = matchedID {
                 await MainActor.run {
                     self.activeDockSetID = id
@@ -78,22 +78,22 @@ class DockManager: ObservableObject {
     ///   - force: If true, bypasses debounce and optimization checks (used for "Apply" button).
     @MainActor
     func applyDockForSpace(_ spaceID: String, force: Bool = false) {
-        // 1. Cancel any pending switch to handle rapid swiping
+        // Cancel any pending switch to handle rapid swiping
         dockTask?.cancel()
         
-        // 2. Use a detached task to avoid blocking the Main Actor (UI Thread)
-        // This is CRITICAL to prevent "Connection interrupted" errors
+        // Use a detached task to prevent blocking the Main Actor.
+        // Prevents "Connection interrupted" errors during rapid switches.
         dockTask = Task.detached(priority: .userInitiated) { [weak self] in
             guard let self = self else { return }
             
-            // 3. Debounce: Wait for user to settle (only if not forced)
+            // Debounce to allow space transitions to settle
             if !force {
                 try? await Task.sleep(nanoseconds: 350_000_000) // 0.35s
             }
             
             if Task.isCancelled { return }
             
-            // 4. Perform Switch
+            // Perform the Dock switch
             await self.performDockSwitch(for: spaceID, force: force)
         }
     }
@@ -124,7 +124,7 @@ class DockManager: ObservableObject {
     }
     
     private func performDockSwitch(for spaceID: String, force: Bool) async {
-        // 1. Get configuration from MainActor
+        // Get configuration from MainActor
         let (targetSet, isAutomationOn) = await MainActor.run {
             let setID = config.spaceAssignments[spaceID] ?? config.defaultDockSetID
             let set = config.dockSets.first(where: { $0.id == setID })
@@ -133,7 +133,7 @@ class DockManager: ObservableObject {
         
         guard let set = targetSet else { return }
         
-        // 2. Check ACTUAL system state (Off Main Thread)
+        // Check system state off the main thread
         if !force {
             if let currentRaw = getSystemDockPersistentApps() {
                 let currentTiles = parseRawDockData(currentRaw)
@@ -177,35 +177,35 @@ class DockManager: ObservableObject {
         let appID = "com.apple.dock" as CFString
         let key = "persistent-apps" as CFString
         
-        // 1. Prepare Data
+        // Prepare Dock tile data
         let newAppData = self.buildRawDockData(from: set.tiles)
         
-        // 2. Perform attempts using standard CFPreferences API
-        // This is the proper way to modify system preferences and handles cfprefsd synchronization.
+        // Perform attempts using standard CFPreferences API.
+        // This handles cfprefsd synchronization correctly.
         for attempt in 1...3 {
             if Task.isCancelled { return false }
             
-            // A. Set the value in the preference cache
+            // Update the preference cache
             CFPreferencesSetValue(key, newAppData as CFPropertyList, appID, kCFPreferencesCurrentUser, kCFPreferencesAnyHost)
             
-            // B. Synchronize to ensure the changes are committed to the daemon and disk
+            // Synchronize with the preference daemon
             if !CFPreferencesAppSynchronize(appID) {
                 logger.error("Attempt \(attempt): CFPreferencesAppSynchronize failed")
                 try? await Task.sleep(nanoseconds: 200_000_000)
                 continue
             }
             
-            // C. Wait for system to process the update (0.3s)
+            // Wait for system to process the update
             try? await Task.sleep(nanoseconds: 300_000_000)
             
-            // D. Restart Dock to pick up new preferences
+            // Restart Dock to pick up new preferences
             let killTask = Process()
             killTask.executableURL = URL(fileURLWithPath: "/usr/bin/killall")
             killTask.arguments = ["Dock"]
             try? killTask.run()
             killTask.waitUntilExit()
             
-            // E. Verify (Read back via the API)
+            // Verify the new state via the API
             try? await Task.sleep(nanoseconds: 600_000_000)
             if let verifyApps = CFPreferencesCopyAppValue(key, appID) as? [Any] {
                 // We compare the count as a quick verification of success
@@ -261,10 +261,10 @@ class DockManager: ObservableObject {
     private func parseRawDockData(_ rawArray: [Any]) -> [DockTile] {
         var tiles: [DockTile] = []
         for case let itemDict as [String: Any] in rawArray {
-            // 1. Detect Type
+            // Detect tile type
             let tileType = itemDict["tile-type"] as? String
             
-            // 2. Extract Data
+            // Extract metadata
             var label = "Unknown"
             var bundleID: String? = nil
             var url: URL? = nil

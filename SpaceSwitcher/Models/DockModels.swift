@@ -26,10 +26,10 @@ struct DockTile: Identifiable, Codable, Hashable {
         bundleIdentifier = try container.decodeIfPresent(String.self, forKey: .bundleIdentifier)
         fileURL = try container.decodeIfPresent(URL.self, forKey: .fileURL)
         
-        // 1. Decode the blob
+        // Decode the binary blob
         let data = try container.decode(Data.self, forKey: .rawData)
         
-        // 2. Deserialize using PropertyList (Handles Data/Date types safely)
+        // Deserialize using PropertyList for Data/Date safety
         var format = PropertyListSerialization.PropertyListFormat.binary
         if let dict = try PropertyListSerialization.propertyList(from: data, options: [], format: &format) as? [String: Any] {
             rawData = dict
@@ -45,10 +45,10 @@ struct DockTile: Identifiable, Codable, Hashable {
         try container.encode(bundleIdentifier, forKey: .bundleIdentifier)
         try container.encode(fileURL, forKey: .fileURL)
         
-        // 1. Serialize using PropertyList to support NSData/Date types
+        // Serialize using PropertyList to support Data types
         let data = try PropertyListSerialization.data(fromPropertyList: rawData, format: .binary, options: 0)
         
-        // 2. Encode the safe blob
+        // Encode the safe property list blob
         try container.encode(data, forKey: .rawData)
     }
     

@@ -17,11 +17,11 @@ class RuleManager: ObservableObject {
     private var cancellables = Set<AnyCancellable>()
     private let rulesKey = "SpaceSwitcherRules"
     
-    // TRACKING: Managed visibility states
+    // Managed visibility states
     private var managedHides = Set<String>()
     private var managedMinimizes = Set<String>()
     
-    // MASTER TASK: Tracks the current rule enforcement process
+    // Tracks the current rule enforcement process
     private var enforcementTask: Task<Void, Never>?
     
     init() { 
@@ -46,10 +46,10 @@ class RuleManager: ObservableObject {
     }
     
     private func applyRules(for spaceID: String) {
-        // 1. Cancel any existing enforcement (Fixes the "Stale Action" bug)
+        // Cancel existing enforcement to prevent stale actions
         enforcementTask?.cancel()
         
-        // 2. Start new enforcement task
+        // Start new enforcement task
         enforcementTask = Task {
             guard isAutomationEnabled else { return }
             
@@ -66,7 +66,7 @@ class RuleManager: ObservableObject {
         }
     }
     
-    // UPDATED: Now an async function called by the Master Task (No internal Task creation)
+    // Async function called by the master enforcement task
     private func perform(actions: [ActionItem], on bundleID: String) async {
         // Loosely check app existence
         guard let app = NSRunningApplication.runningApplications(withBundleIdentifier: bundleID).first else { return }
@@ -126,7 +126,7 @@ class RuleManager: ObservableObject {
             case .hotkey(let k, let m, let restoreWindow, let waitFrontmost):
                 
                 if waitFrontmost {
-                    // MODE A: WAIT
+                    // Wait mode
                     var retries = 0
                     // Poll for 5 seconds
                     while !app.isActive && retries < 100 {
@@ -139,7 +139,7 @@ class RuleManager: ObservableObject {
                     try? await Task.sleep(nanoseconds: 200_000_000)
                     
                 } else {
-                    // MODE B: FORCE
+                    // Force mode
                     var attempts = 0
                     while !app.isActive && attempts < 5 {
                         if Task.isCancelled { return }
