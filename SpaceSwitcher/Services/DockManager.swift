@@ -200,9 +200,9 @@ class DockManager: ObservableObject {
             
             // D. Restart Dock to pick up new preferences
             let killTask = Process()
-            killTask.launchPath = "/usr/bin/killall"
+            killTask.executableURL = URL(fileURLWithPath: "/usr/bin/killall")
             killTask.arguments = ["Dock"]
-            killTask.launch()
+            try? killTask.run()
             killTask.waitUntilExit()
             
             // E. Verify (Read back via the API)
