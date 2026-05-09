@@ -36,8 +36,8 @@ class DockManager: ObservableObject {
         Task {
             // Move heavy disk I/O and parsing to a background thread
             let (matchFound, matchedID): (Bool, UUID?) = await Task.detached(priority: .background) {
-                guard let rawApps = self.getSystemDockPersistentApps() else { return (false, nil) }
-                let currentTiles = self.parseRawDockData(rawApps)
+                guard let rawApps = DockManager.getSystemDockPersistentApps() else { return (false, nil) }
+                let currentTiles = DockManager.parseRawDockData(rawApps)
                 
                 // We need to access config from MainActor for the comparison
                 return await MainActor.run {
@@ -135,8 +135,8 @@ class DockManager: ObservableObject {
         
         // Check system state off the main thread
         if !force {
-            if let currentRaw = getSystemDockPersistentApps() {
-                let currentTiles = parseRawDockData(currentRaw)
+            if let currentRaw = DockManager.getSystemDockPersistentApps() {
+                let currentTiles = DockManager.parseRawDockData(currentRaw)
                 if set.tiles == currentTiles {
                     await MainActor.run { if activeDockSetID != set.id { activeDockSetID = set.id } }
                     return
@@ -161,7 +161,7 @@ class DockManager: ObservableObject {
     
     // MARK: - Core System Logic (Verified Write + Force Kill)
     
-    nonisolated private func getSystemDockPersistentApps() -> [Any]? {
+    nonisolated static private func getSystemDockPersistentApps() -> [Any]? {
         let appID = "com.apple.dock" as CFString
         let key = "persistent-apps" as CFString
         
@@ -178,7 +178,7 @@ class DockManager: ObservableObject {
         let key = "persistent-apps" as CFString
         
         // Prepare Dock tile data
-        let newAppData = self.buildRawDockData(from: set.tiles)
+        let newAppData = DockManager.buildRawDockData(from: set.tiles)
         
         // Perform attempts using standard CFPreferences API.
         // This handles cfprefsd synchronization correctly.
@@ -207,7 +207,7 @@ class DockManager: ObservableObject {
             
             // Verify the new state via the API
             try? await Task.sleep(nanoseconds: 600_000_000)
-            if let verifyApps = CFPreferencesCopyAppValue(key, appID) as? [Any] {
+            if let verifyApps = DockManager.getSystemDockPersistentApps() as? [Any] {
                 // We compare the count as a quick verification of success
                 if verifyApps.count == newAppData.count {
                     return true
@@ -221,8 +221,8 @@ class DockManager: ObservableObject {
     // MARK: - Data Management & Spacers
     
     func createNewDockSet(name: String) {
-        guard let rawApps = getSystemDockPersistentApps() else { return }
-        let tiles = parseRawDockData(rawApps)
+        guard let rawApps = DockManager.getSystemDockPersistentApps() else { return }
+        let tiles = DockManager.parseRawDockData(rawApps)
         DispatchQueue.main.async {
             let newSet = DockSet(id: UUID(), name: name, dateCreated: Date(), tiles: tiles)
             self.config.dockSets.append(newSet)
@@ -258,7 +258,7 @@ class DockManager: ObservableObject {
     }
     
     
-    nonisolated private func parseRawDockData(_ rawArray: [Any]) -> [DockTile] {
+    nonisolated static private func parseRawDockData(_ rawArray: [Any]) -> [DockTile] {
         var tiles: [DockTile] = []
         for case let itemDict as [String: Any] in rawArray {
             // Detect tile type
@@ -294,7 +294,7 @@ class DockManager: ObservableObject {
         return tiles
     }
     
-    nonisolated private func buildRawDockData(from tiles: [DockTile]) -> [Any] {
+    nonisolated static private func buildRawDockData(from tiles: [DockTile]) -> [Any] {
         return tiles.map { $0.rawData }
     }
     
