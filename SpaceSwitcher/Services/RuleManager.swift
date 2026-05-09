@@ -11,7 +11,7 @@ enum RuleSortOption: String, CaseIterable, Identifiable {
 
 class RuleManager: ObservableObject {
     @Published var rules: [AppRule] = [] { didSet { saveRules() } }
-    @Published var isAutomationEnabled: Bool = true { didSet { UserDefaults.standard.set(isAutomationEnabled, forKey: "isAutomationEnabled") ; saveRules() } }
+    @Published var isAutomationEnabled: Bool = true { didSet { UserDefaults.standard.set(isAutomationEnabled, forKey: "isAutomationEnabled") } }
     @Published var sortOption: RuleSortOption = .name
     weak var spaceManager: SpaceManager? { didSet { setupBindings() } }
     private var cancellables = Set<AnyCancellable>()
@@ -25,8 +25,8 @@ class RuleManager: ObservableObject {
     private var enforcementTask: Task<Void, Never>?
     
     init() { 
-        self.isAutomationEnabled = UserDefaults.standard.object(forKey: "isAutomationEnabled") as? Bool ?? true
         loadRules() 
+        self.isAutomationEnabled = UserDefaults.standard.object(forKey: "isAutomationEnabled") as? Bool ?? true
     }
     
     private func setupBindings() {
