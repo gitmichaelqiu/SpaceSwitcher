@@ -325,10 +325,10 @@ struct DockItemsListView: View {
                     .controlSize(.small)
                     
                     Menu {
-                        Button { addAppToSelectedSet() } label: { Label("Add Application...", systemImage: "app.badge.plus") }
+                        Button { addAppToSelectedSet() } label: { Label("Add Application...", systemImage: "plus.app") }
                         Divider()
-                        Button { addSpacerToSelectedSet(isSmall: false) } label: { Label("Add Large Spacer", systemImage: "spacer") }
-                        Button { addSpacerToSelectedSet(isSmall: true) } label: { Label("Add Small Spacer", systemImage: "command") }
+                        Button { addSpacerToSelectedSet(isSmall: false) } label: { Label("Add Large Spacer", systemImage: "square") }
+                        Button { addSpacerToSelectedSet(isSmall: true) } label: { Label("Add Small Spacer", systemImage: "square.dashed") }
                     } label: {
                         Image(systemName: "plus")
                             .font(.system(size: 12, weight: .semibold))
