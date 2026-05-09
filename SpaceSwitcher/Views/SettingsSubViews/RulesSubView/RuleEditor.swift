@@ -154,6 +154,7 @@ struct RuleEditor: View {
                         HStack {
                             Menu {
                                 Button("Show") { withAnimation { workingRule.elseActions.append(ActionItem(.show)) } }
+                                Button("Restore") { withAnimation { workingRule.elseActions.append(ActionItem(.restore)) } }
                                 Button("Hide") { withAnimation { workingRule.elseActions.append(ActionItem(.hide)) } }
                                 Button("Minimize") { withAnimation { workingRule.elseActions.append(ActionItem(.minimize)) } }
                                 Button("Bring to Front") { withAnimation { workingRule.elseActions.append(ActionItem(.bringToFront)) } }
@@ -288,6 +289,7 @@ struct RuleEditor: View {
     
     @ViewBuilder private func actionMenu(for index: Int) -> some View {
         Button("Show") { addActionToGroup(index: index, action: .show) }
+        Button("Restore") { addActionToGroup(index: index, action: .restore) }
         Button("Hide") { addActionToGroup(index: index, action: .hide) }
         Button("Minimize") { addActionToGroup(index: index, action: .minimize) }
         Button("Bring to Front") { addActionToGroup(index: index, action: .bringToFront) }
