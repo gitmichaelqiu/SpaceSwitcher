@@ -65,9 +65,6 @@ struct GeneralSettingsView: View {
                         .frame(minHeight: 24)
                     }
                 }
-                
-
-                
                 Spacer()
             }
             .padding()
