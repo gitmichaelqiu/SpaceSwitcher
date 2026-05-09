@@ -259,12 +259,18 @@ struct RuleEditor: View {
             .layoutPriority(1)
             
             if showingLegend {
-                legendSidebar
-                    .frame(minWidth: 220, maxWidth: 300)
-                    .transition(.move(edge: .trailing).combined(with: .opacity))
+                // Wrapper container helps SwiftUI handle HSplitView entry transitions better
+                VStack(spacing: 0) {
+                    legendSidebar
+                }
+                .frame(minWidth: 220, maxWidth: 300)
+                .transition(.asymmetric(
+                    insertion: .move(edge: .trailing).combined(with: .opacity),
+                    removal: .move(edge: .trailing).combined(with: .opacity)
+                ))
             }
         }
-        .animation(.easeInOut(duration: 0.3), value: showingLegend)
+        .animation(.easeInOut(duration: 0.35), value: showingLegend)
     }
     
     private var footerView: some View {
