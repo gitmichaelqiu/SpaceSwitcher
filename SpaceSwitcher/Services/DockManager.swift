@@ -185,16 +185,16 @@ class DockManager: ObservableObject {
             return await applyDockSetViaDefaults(rawData)
         }
         
-        // 5. Force System to Reload from Disk
-        // Purging cfprefsd ensures the cache is cleared and reloaded from our file
-        let purgeTask = Process()
-        purgeTask.launchPath = "/usr/bin/killall"
-        purgeTask.arguments = ["cfprefsd"]
-        purgeTask.launch()
-        purgeTask.waitUntilExit()
+        // 5. Force System to Synchronize (Fast Poke)
+        // Reading the defaults forces cfprefsd to sync its cache with the disk file
+        let syncTask = Process()
+        syncTask.launchPath = "/usr/bin/defaults"
+        syncTask.arguments = ["read", appID, key]
+        syncTask.launch()
+        syncTask.waitUntilExit()
         
-        // 6. Settle & Kill
-        try? await Task.sleep(nanoseconds: 200_000_000) // 0.2s
+        // 6. Minimal Settle & Kill
+        try? await Task.sleep(nanoseconds: 100_000_000) // 0.1s
         
         let killTask = Process()
         killTask.launchPath = "/usr/bin/killall"
