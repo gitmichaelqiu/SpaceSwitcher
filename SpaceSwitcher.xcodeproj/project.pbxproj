@@ -280,6 +280,9 @@
 				ENABLE_RESOURCE_ACCESS_PHOTO_LIBRARY = NO;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_ATSApplicationFontsPath = Fonts;
+				INFOPLIST_KEY_LSUIElement = YES;
+				INFOPLIST_KEY_SUFeedURL = "https://raw.githubusercontent.com/gitmichaelqiu/SpaceSwitcher/main/appcast.xml";
+				INFOPLIST_KEY_SUPublicEDKey = "e9YKamydRddgnYK6Kq41W0vPbwI4F9XJAhks/9rzT0w=";
 				INFOPLIST_KEY_CFBundleDisplayName = SpaceSwitcher;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
 				INFOPLIST_KEY_NSAppleEventsUsageDescription = Need;
@@ -329,6 +332,9 @@
 				ENABLE_RESOURCE_ACCESS_PHOTO_LIBRARY = NO;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_ATSApplicationFontsPath = Fonts;
+				INFOPLIST_KEY_LSUIElement = YES;
+				INFOPLIST_KEY_SUFeedURL = "https://raw.githubusercontent.com/gitmichaelqiu/SpaceSwitcher/main/appcast.xml";
+				INFOPLIST_KEY_SUPublicEDKey = "e9YKamydRddgnYK6Kq41W0vPbwI4F9XJAhks/9rzT0w=";
 				INFOPLIST_KEY_CFBundleDisplayName = SpaceSwitcher;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
 				INFOPLIST_KEY_NSAppleEventsUsageDescription = Need;

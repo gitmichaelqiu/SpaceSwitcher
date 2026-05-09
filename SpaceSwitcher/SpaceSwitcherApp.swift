@@ -98,12 +98,10 @@ class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCenterDele
         )
         
         UNUserNotificationCenter.current().delegate = self
-        if UpdateManager.isAutoCheckEnabled {
-            DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
-                Task {
-                    await UpdateManager.shared.checkForUpdate(from: nil, suppressUpToDateAlert: true)
-                }
-            }
+        
+        // Start Sparkle
+        DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
+            _ = UpdateManager.shared
         }
     }
     
@@ -112,12 +110,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCenterDele
         didReceive response: UNNotificationResponse,
         withCompletionHandler completionHandler: @escaping () -> Void
     ) {
-        defer { completionHandler() }
-        if response.actionIdentifier == "openRelease",
-           let url = URL(string: UpdateManager.shared.latestReleaseURL.trimmingCharacters(in: .whitespacesAndNewlines)) {
-            NSWorkspace.shared.open(url)
-            NSApp.perform(#selector(NSApp.terminate), with: nil, afterDelay: 0.5)
-        }
+        completionHandler()
     }
 }
 

@@ -4,7 +4,6 @@ struct GeneralSettingsView: View {
     @ObservedObject var spaceManager: SpaceManager
     
     @State private var launchAtLogin: Bool = false
-    @State private var autoCheckUpdate: Bool = true
     
     var body: some View {
         ScrollView(.vertical, showsIndicators: true) {
@@ -21,19 +20,31 @@ struct GeneralSettingsView: View {
                 // 2. Updates - Standardized per macOSers bundle
                 SettingsSection("Updates") {
                     SettingsRow("Check for Updates Automatically") {
-                        Toggle("", isOn: $autoCheckUpdate)
+                        Toggle("", isOn: Binding(
+                            get: { UpdateManager.shared.updaterController.updater.automaticallyChecksForUpdates },
+                            set: { UpdateManager.shared.updaterController.updater.automaticallyChecksForUpdates = $0 }
+                        ))
+                        .labelsHidden()
+                        .toggleStyle(.switch)
+                    }
+                    
+                    Divider()
+                    
+                    if UpdateManager.shared.updaterController.updater.automaticallyChecksForUpdates {
+                        SettingsRow("Automatically download updates") {
+                            Toggle("", isOn: Binding(
+                                get: { UpdateManager.shared.updaterController.updater.automaticallyDownloadsUpdates },
+                                set: { UpdateManager.shared.updaterController.updater.automaticallyDownloadsUpdates = $0 }
+                            ))
                             .labelsHidden()
                             .toggleStyle(.switch)
-                            .onChange(of: autoCheckUpdate) { value in
-                                UpdateManager.isAutoCheckEnabled = value
-                            }
+                        }
+                        Divider()
                     }
-                    Divider()
+                    
                     SettingsRow("Check for Updates") {
                         Button("Check Now") {
-                            Task {
-                                await UpdateManager.shared.checkForUpdate(from: nil)
-                            }
+                            UpdateManager.shared.updaterController.checkForUpdates(nil)
                         }
                     }
                 }
