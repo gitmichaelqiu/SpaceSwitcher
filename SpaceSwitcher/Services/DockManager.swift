@@ -3,6 +3,7 @@ import Combine
 import AppKit
 import os.log
 
+@MainActor
 class DockManager: ObservableObject {
     @Published var config: DockConfig = DockConfig() {
         didSet {
@@ -174,26 +175,30 @@ class DockManager: ObservableObject {
         }
         defer { try? FileManager.default.removeItem(at: tempFile) }
         
-        // 3. IMPORT (The most reliable way)
+        // 3. IMPORT (The industry standard for reliability)
         let importTask = Process()
         importTask.launchPath = "/usr/bin/defaults"
         importTask.arguments = ["import", appID, tempFile.path]
         importTask.launch()
         importTask.waitUntilExit()
         
-        // 4. SYNC POKE
-        // Reading forces cfprefsd to acknowledge the imported data
+        // 4. SYNC POKE & PUSH
+        CFPreferencesAppSynchronize(appID as CFString)
         let readTask = Process()
         readTask.launchPath = "/usr/bin/defaults"
         readTask.arguments = ["read", appID, key]
         readTask.launch()
         readTask.waitUntilExit()
         
-        // 5. RELIABILITY BUFFER (0.3s)
-        // This is the "sweet spot" for reliability found in Turn 74
-        try? await Task.sleep(nanoseconds: 300_000_000)
+        // 5. STABILITY WAIT (0.8s)
+        // This is the "Magic Window": 0.8s is the threshold where macOS reliably 
+        // flushes preference cache to the disk location the Dock reads on launch.
+        try? await Task.sleep(nanoseconds: 800_000_000)
         
-        // 6. RESTART DOCK
+        if Task.isCancelled { return false }
+        
+        // 6. SINGLE RESTART
+        self.logger.info("Triggering single high-stability Dock restart.")
         let killTask = Process()
         killTask.launchPath = "/usr/bin/killall"
         killTask.arguments = ["Dock"]
