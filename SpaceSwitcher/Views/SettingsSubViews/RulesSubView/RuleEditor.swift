@@ -23,162 +23,7 @@ struct RuleEditor: View {
             
             Divider()
             
-            HSplitView {
-                ScrollView(.vertical) {
-                    VStack(alignment: .leading, spacing: 0) {
-                        Color.clear.frame(height: 12)
-                        
-                        // --- WORKFLOW GROUPS ---
-                        ForEach(Array(workingRule.groups.enumerated()), id: \.element.id) { index, group in
-                            VStack(alignment: .leading, spacing: 0) {
-                                SpaceConditionRow(
-                                    groupIndex: index,
-                                    group: $workingRule.groups[index],
-                                    availableSpaces: availableSpaces,
-                                    onRemove: {
-                                        withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-                                            _ = workingRule.groups.remove(at: index)
-                                        }
-                                    }
-                                )
-                                
-                                ActionListRows(actions: $workingRule.groups[index].actions)
-                                
-                                AddActionRow {
-                                    addActionToGroup(index: index, action: .show)
-                                } menuContent: {
-                                    actionMenu(for: index)
-                                }
-                            }
-                            .frame(maxWidth: .infinity, alignment: .topLeading)
-                            .background(
-                                RoundedRectangle(cornerRadius: 12, style: .continuous)
-                                    .fill(Color(nsColor: .controlBackgroundColor).opacity(0.4) as Color)
-                                    .overlay(
-                                        RoundedRectangle(cornerRadius: 12, style: .continuous)
-                                            .fill(.regularMaterial)
-                                    )
-                            )
-                            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-                            .padding(.horizontal, 20)
-                            .padding(.bottom, 16)
-                            .listRowInsets(EdgeInsets())
-                            .listRowSeparator(.hidden)
-                        }
-                    }
-                    
-                    // --- ADD GROUP BUTTON ---
-                    Section {
-                        Button {
-                            withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-                                workingRule.groups.append(RuleGroup(targetSpaceIDs: [], actions: []))
-                            }
-                        } label: {
-                            HStack(spacing: 8) {
-                                Image(systemName: "plus.circle.fill")
-                                Text("Add Workflow Group")
-                            }
-                            .font(.system(size: 13, weight: .semibold))
-                            .foregroundColor(.accentColor)
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 8)
-                            .background(
-                                RoundedRectangle(cornerRadius: 10)
-                                    .fill(Color.accentColor.opacity(0.05))
-                                    .overlay(
-                                        RoundedRectangle(cornerRadius: 10)
-                                            .stroke(Color.accentColor.opacity(0.1), lineWidth: 1)
-                                    )
-                            )
-                        }
-                        .buttonStyle(.plain)
-                        .padding(.horizontal, 20)
-                        .padding(.bottom, 24)
-                        .listRowInsets(EdgeInsets())
-                        .listRowSeparator(.hidden)
-                    }
-                    
-                    // --- FALLBACK SECTION ---
-                    Section {
-                        VStack(alignment: .leading, spacing: 0) {
-                            HStack {
-                                Text("Fallback Behavior")
-                                    .font(.system(size: 11, weight: .bold))
-                                    .foregroundColor(.secondary)
-                                    .textCase(.uppercase)
-                                Spacer()
-                                Text("Default")
-                                    .font(.system(size: 11))
-                                    .foregroundColor(.secondary.opacity(0.4))
-                            }
-                            .padding(.horizontal, 12)
-                            .padding(.vertical, 8)
-                            .background(Color.primary.opacity(0.02))
-                            
-                            Divider().opacity(0.3)
-                            
-                            if workingRule.elseActions.isEmpty {
-                                HStack {
-                                    Spacer()
-                                    Text("No automatic actions")
-                                        .font(.system(size: 13))
-                                        .foregroundColor(.secondary)
-                                        .italic()
-                                    Spacer()
-                                }
-                                .padding(16)
-                            } else {
-                                ActionListRows(actions: $workingRule.elseActions)
-                            }
-                            
-                            Divider().opacity(0.3)
-                            
-                            HStack {
-                                Menu {
-                                    Button("Show") { withAnimation { workingRule.elseActions.append(ActionItem(.show)) } }
-                                    Button("Restore") { withAnimation { workingRule.elseActions.append(ActionItem(.restore)) } }
-                                    Button("Hide") { withAnimation { workingRule.elseActions.append(ActionItem(.hide)) } }
-                                    Button("Minimize") { withAnimation { workingRule.elseActions.append(ActionItem(.minimize)) } }
-                                    Button("Bring to Front") { withAnimation { workingRule.elseActions.append(ActionItem(.bringToFront)) } }
-                                    Divider()
-                                    Button("App Shortcut...") { withAnimation { workingRule.elseActions.append(ActionItem(.hotkey(keyCode: -1, modifiers: 0, restoreWindow: false, waitFrontmost: true))) } }
-                                    Button("Global Shortcut...") { withAnimation { workingRule.elseActions.append(ActionItem(.globalHotkey(keyCode: -1, modifiers: 0))) } }
-                                } label: {
-                                    Label("Add Action", systemImage: "plus")
-                                        .font(.system(size: 12, weight: .semibold))
-                                }
-                                .menuStyle(.borderlessButton)
-                                .foregroundColor(.accentColor)
-                                .fixedSize()
-                                Spacer()
-                            }
-                            .padding(8)
-                        }
-                        .background(
-                            RoundedRectangle(cornerRadius: 12, style: .continuous)
-                                .fill(Color(nsColor: .controlBackgroundColor).opacity(0.4) as Color)
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: 12, style: .continuous)
-                                        .fill(.regularMaterial)
-                                )
-                        )
-                        .padding(.horizontal, 20)
-                        .padding(.bottom, 32)
-                        .listRowInsets(EdgeInsets())
-                        .listRowSeparator(.hidden)
-                    }
-                    .padding(.vertical, 8)
-                }
-                .animation(.easeInOut(duration: 0.2), value: workingRule.groups)
-                .background(Color(NSColor.windowBackgroundColor))
-                .layoutPriority(1)
-                
-                if showingLegend {
-                    legendSidebar
-                        .frame(minWidth: 220, maxWidth: 300)
-                        .transition(.move(edge: .trailing))
-                }
-            }
+            mainSplitView
             
             Divider()
             
@@ -244,7 +89,7 @@ struct RuleEditor: View {
             Spacer()
             
             Button {
-                withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                withAnimation(.easeInOut(duration: 0.3)) {
                     showingLegend.toggle()
                 }
             } label: {
@@ -260,6 +105,166 @@ struct RuleEditor: View {
         .padding(.horizontal, 20)
         .padding(.vertical, 16)
         .background(Color(NSColor.windowBackgroundColor))
+    }
+    
+    private var mainSplitView: some View {
+        HSplitView {
+            ScrollView(.vertical) {
+                VStack(alignment: .leading, spacing: 0) {
+                    Color.clear.frame(height: 12)
+                    
+                    // --- WORKFLOW GROUPS ---
+                    ForEach(Array(workingRule.groups.enumerated()), id: \.element.id) { index, group in
+                        VStack(alignment: .leading, spacing: 0) {
+                            SpaceConditionRow(
+                                groupIndex: index,
+                                group: $workingRule.groups[index],
+                                availableSpaces: availableSpaces,
+                                onRemove: {
+                                    withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                                        _ = workingRule.groups.remove(at: index)
+                                    }
+                                }
+                            )
+                            
+                            ActionListRows(actions: $workingRule.groups[index].actions)
+                            
+                            AddActionRow {
+                                addActionToGroup(index: index, action: .show)
+                            } menuContent: {
+                                actionMenu(for: index)
+                            }
+                        }
+                        .frame(maxWidth: .infinity, alignment: .topLeading)
+                        .background(
+                            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                .fill(Color(nsColor: .controlBackgroundColor).opacity(0.4) as Color)
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                        .fill(.regularMaterial)
+                                )
+                        )
+                        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                        .padding(.horizontal, 20)
+                        .padding(.bottom, 16)
+                        .listRowInsets(EdgeInsets())
+                        .listRowSeparator(.hidden)
+                    }
+                }
+                
+                // --- ADD GROUP BUTTON ---
+                Section {
+                    Button {
+                        withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                            workingRule.groups.append(RuleGroup(targetSpaceIDs: [], actions: []))
+                        }
+                    } label: {
+                        HStack(spacing: 8) {
+                            Image(systemName: "plus.circle.fill")
+                            Text("Add Workflow Group")
+                        }
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundColor(.accentColor)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 8)
+                        .background(
+                            RoundedRectangle(cornerRadius: 10)
+                                .fill(Color.accentColor.opacity(0.05))
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 10)
+                                        .stroke(Color.accentColor.opacity(0.1), lineWidth: 1)
+                                )
+                        )
+                    }
+                    .buttonStyle(.plain)
+                    .padding(.horizontal, 20)
+                    .padding(.bottom, 24)
+                    .listRowInsets(EdgeInsets())
+                    .listRowSeparator(.hidden)
+                }
+                
+                // --- FALLBACK SECTION ---
+                Section {
+                    VStack(alignment: .leading, spacing: 0) {
+                        HStack {
+                            Text("Fallback Behavior")
+                                .font(.system(size: 11, weight: .bold))
+                                .foregroundColor(.secondary)
+                                .textCase(.uppercase)
+                            Spacer()
+                            Text("Default")
+                                .font(.system(size: 11))
+                                .foregroundColor(.secondary.opacity(0.4))
+                        }
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 8)
+                        .background(Color.primary.opacity(0.02))
+                        
+                        Divider().opacity(0.3)
+                        
+                        if workingRule.elseActions.isEmpty {
+                            HStack {
+                                Spacer()
+                                Text("No automatic actions")
+                                    .font(.system(size: 13))
+                                    .foregroundColor(.secondary)
+                                    .italic()
+                                Spacer()
+                            }
+                            .padding(16)
+                        } else {
+                            ActionListRows(actions: $workingRule.elseActions)
+                        }
+                        
+                        Divider().opacity(0.3)
+                        
+                        HStack {
+                            Menu {
+                                Button("Show") { withAnimation { workingRule.elseActions.append(ActionItem(.show)) } }
+                                Button("Restore") { withAnimation { workingRule.elseActions.append(ActionItem(.restore)) } }
+                                Button("Hide") { withAnimation { workingRule.elseActions.append(ActionItem(.hide)) } }
+                                Button("Minimize") { withAnimation { workingRule.elseActions.append(ActionItem(.minimize)) } }
+                                Button("Bring to Front") { withAnimation { workingRule.elseActions.append(ActionItem(.bringToFront)) } }
+                                Divider()
+                                Button("App Shortcut...") { withAnimation { workingRule.elseActions.append(ActionItem(.hotkey(keyCode: -1, modifiers: 0, restoreWindow: false, waitFrontmost: true))) } }
+                                Button("Global Shortcut...") { withAnimation { workingRule.elseActions.append(ActionItem(.globalHotkey(keyCode: -1, modifiers: 0))) } }
+                            } label: {
+                                Label("Add Action", systemImage: "plus")
+                                    .font(.system(size: 12, weight: .semibold))
+                            }
+                            .menuStyle(.borderlessButton)
+                            .foregroundColor(.accentColor)
+                            .fixedSize()
+                            Spacer()
+                        }
+                        .padding(8)
+                    }
+                    .background(
+                        RoundedRectangle(cornerRadius: 12, style: .continuous)
+                            .fill(Color(nsColor: .controlBackgroundColor).opacity(0.4) as Color)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                    .fill(.regularMaterial)
+                            )
+                    )
+                    .padding(.horizontal, 20)
+                    .padding(.bottom, 32)
+                    .listRowInsets(EdgeInsets())
+                    .listRowSeparator(.hidden)
+                }
+                .padding(.vertical, 8)
+            }
+            .animation(.easeInOut(duration: 0.3), value: workingRule.groups)
+            .background(Color(NSColor.windowBackgroundColor))
+            .layoutPriority(1)
+            
+            if showingLegend {
+                legendSidebar
+                    .frame(minWidth: 220, maxWidth: 300)
+                    .transition(.move(edge: .trailing).combined(with: .opacity))
+            }
+        }
+        .animation(.easeInOut(duration: 0.3), value: showingLegend)
     }
     
     private var footerView: some View {
