@@ -5,27 +5,10 @@
       "shouldTranslate" : false
     },
     "..." : {
-
+      "shouldTranslate" : false
     },
     "%lld" : {
-
-    },
-    "%lld. %@" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "%1$lld. %2$@"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%1$lld. %2$@"
-          }
-        }
-      }
+      "shouldTranslate" : false
     },
     "© %@ Michael Yicheng Qiu" : {
       "localizations" : {
@@ -38,21 +21,17 @@
       }
     },
     "↺" : {
-
+      "shouldTranslate" : false
     },
-    "+ Add Rule" : {
-      "extractionState" : "stale",
+    "A powerful utility for macOS that gives you per-space control over your applications and Dock. Part of the macOSers productivity bundle." : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "+ 添加规则"
+            "value" : "一款强大的 macOS 效率工具，可让您针对每个桌面空间独立控制应用程序和 Dock。macOSers 生产力套件的一部分。"
           }
         }
       }
-    },
-    "A powerful utility for macOS that gives you per-space control over your applications and Dock. Part of the macOSers productivity bundle." : {
-
     },
     "About" : {
       "localizations" : {
@@ -79,54 +58,27 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "辅助"
+            "value" : "辅助功能"
           }
         }
       }
     },
     "Acknowledgements" : {
-
-    },
-    "Active in:" : {
-      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "活跃于："
+            "value" : "致谢"
           }
         }
       }
     },
-    "Add a large gap" : {
-      "extractionState" : "stale",
+    "Action Definitions" : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "添加大间隔"
-          }
-        }
-      }
-    },
-    "Add a rule to control app visibility across spaces." : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "控制 App 在每个空间的显示/隐藏"
-          }
-        }
-      }
-    },
-    "Add a small gap" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "添加小间隔"
+            "value" : "操作定义"
           }
         }
       }
@@ -141,85 +93,72 @@
         }
       }
     },
-    "Add an application" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "添加 App"
-          }
-        }
-      }
-    },
-    "Add App" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "添加 App"
-          }
-        }
-      }
-    },
     "Add Application..." : {
-
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "添加应用…"
+          }
+        }
+      }
     },
     "Add First Item" : {
-
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "添加项目"
+          }
+        }
+      }
     },
     "Add Large Spacer" : {
-
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "添加大间距"
+          }
+        }
+      }
     },
     "Add New Rule" : {
-
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "添加新规则"
+          }
+        }
+      }
     },
     "Add Small Spacer" : {
-
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "添加小间距"
+          }
+        }
+      }
     },
     "Add Workflow Group" : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "添加桌面组"
-          }
-        }
-      }
-    },
-    "API Connection" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "API 连接"
-          }
-        }
-      }
-    },
-    "App Rules" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "App 规则"
+            "value" : "添加工作流组"
           }
         }
       }
     },
     "App Shortcut..." : {
-
-    },
-    "App will wait until you manually switch to it." : {
-      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "App 等待你手动切换"
+            "value" : "App 快捷键…"
           }
         }
       }
@@ -234,28 +173,45 @@
         }
       }
     },
-    "Apply to Spaces" : {
-      "extractionState" : "stale",
+    "Automatically check for updates" : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "应用于桌面"
+            "value" : "自动检查更新"
           }
         }
       }
     },
-    "Automatically check for updates" : {
-
-    },
     "Automatically download updates" : {
-
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "自动下载更新"
+          }
+        }
+      }
     },
     "Automatically switch dock" : {
-
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "自动切换 Dock"
+          }
+        }
+      }
     },
     "Automation" : {
-
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "自动化"
+          }
+        }
+      }
     },
     "Bring to Front" : {
       "localizations" : {
@@ -278,21 +234,31 @@
       }
     },
     "Check for Updates" : {
-
-    },
-    "Check Now" : {
-
-    },
-    "Choose from Applications..." : {
-
-    },
-    "Choose other app..." : {
-      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "选择另一个 App"
+            "value" : "检查更新"
+          }
+        }
+      }
+    },
+    "Check Now" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "立即检查"
+          }
+        }
+      }
+    },
+    "Choose from Applications..." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "从应用程序中选择…"
           }
         }
       }
@@ -307,64 +273,55 @@
         }
       }
     },
-    "Create" : {
-      "extractionState" : "stale",
+    "Create First Rule" : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "创建"
+            "value" : "创建第一个规则"
           }
         }
       }
-    },
-    "Create First Rule" : {
-
     },
     "Create Set" : {
-
-    },
-    "Current Space" : {
-      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "当前桌面"
-          }
-        }
-      }
-    },
-    "Currently Active Dock" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "当前 Dock"
+            "value" : "创建组"
           }
         }
       }
     },
     "Default" : {
-
-    },
-    "Default Configuration Active" : {
-
-    },
-    "Default Dock Set" : {
-      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "默认 Dock"
+            "value" : "默认"
+          }
+        }
+      }
+    },
+    "Default Configuration Active" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "默认配置已激活"
           }
         }
       }
     },
     "Default Set" : {
-
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "默认组"
+          }
+        }
+      }
     },
     "Delete" : {
       "localizations" : {
@@ -376,58 +333,22 @@
         }
       }
     },
-    "DesktopRenamer API Status" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Space API Status"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Space API 状态"
-          }
-        }
-      }
-    },
     "Disconnected" : {
-
-    },
-    "Do Nothing" : {
-      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "无操作"
+            "value" : "未连接"
           }
         }
       }
     },
     "Dock Automation" : {
-
-    },
-    "Dock Items" : {
-      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Dock 软件"
-          }
-        }
-      }
-    },
-    "Dock Name" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Dock 名称"
+            "value" : "Dock 自动化"
           }
         }
       }
@@ -452,38 +373,12 @@
         }
       }
     },
-    "Else" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "其他"
-          }
-        }
-      }
-    },
-    "Fallback (All Other Spaces)" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "其他空间"
-          }
-        }
-      }
-    },
     "Fallback Behavior" : {
-
-    },
-    "Force apply this dock configuration immediately" : {
-      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "强制启用这套 Dock"
+            "value" : "兜底行为"
           }
         }
       }
@@ -498,19 +393,15 @@
         }
       }
     },
-    "Global Key:" : {
-      "extractionState" : "stale",
+    "Global Shortcut..." : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "全局快捷键："
+            "value" : "全局快捷键…"
           }
         }
       }
-    },
-    "Global Shortcut..." : {
-
     },
     "Grant" : {
       "localizations" : {
@@ -522,19 +413,15 @@
         }
       }
     },
-    "Granted" : {
-      "extractionState" : "stale",
+    "Group %lld" : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "已授权"
+            "value" : "组 %lld"
           }
         }
       }
-    },
-    "Group %lld" : {
-
     },
     "Hide" : {
       "comment" : "Action: Hide Window",
@@ -547,58 +434,17 @@
         }
       }
     },
-    "If the Settings show that the permission is granted but the app still does not have the permission, remove the app row in Settings and re-grant." : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "如果设置显示权限已获取但是 App 显示未获取，在设置权限中移除 App 并重新获取权限。"
-          }
-        }
-      }
-    },
     "If the status shows 'Granted' but automation isn't working, try removing SpaceSwitcher from the list in System Settings and re-adding it." : {
-
-    },
-    "In" : {
-      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "于"
-          }
-        }
-      }
-    },
-    "Large spacer" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "大间隔"
-          }
-        }
-      }
-    },
-    "Launch" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "启动"
+            "value" : "如果状态显示“已授权”但自动化未正常工作，请尝试在系统设置列表中移除 SpaceSwitcher 并重新添加。"
           }
         }
       }
     },
     "Launch at Login" : {
-
-    },
-    "Launch At Login" : {
-      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -609,13 +455,34 @@
       }
     },
     "Let you right-click with the Option key." : {
-
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "允许使用 Option 键进行右键点击。"
+          }
+        }
+      }
     },
     "Links" : {
-
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "链接"
+          }
+        }
+      }
     },
     "Manual activation" : {
-
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "手动激活"
+          }
+        }
+      }
     },
     "Minimize" : {
       "comment" : "Action: Minimize Window",
@@ -639,10 +506,24 @@
       }
     },
     "My GitHub" : {
-
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "我的 GitHub"
+          }
+        }
+      }
     },
     "My website" : {
-
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "我的网站"
+          }
+        }
+      }
     },
     "Name" : {
       "localizations" : {
@@ -665,21 +546,31 @@
       }
     },
     "No automatic actions" : {
-
-    },
-    "No automation rules yet." : {
-
-    },
-    "No items assigned to this Dock set" : {
-
-    },
-    "No Rules Configured" : {
-      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "无规则添加"
+            "value" : "无自动化操作"
+          }
+        }
+      }
+    },
+    "No automation rules yet." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "尚无自动化规则。"
+          }
+        }
+      }
+    },
+    "No items assigned to this Dock set" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "此 Dock 组未分配任何项目"
           }
         }
       }
@@ -704,52 +595,15 @@
         }
       }
     },
-    "Not Connected" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "未连接"
-          }
-        }
-      }
-    },
-    "Not Granted" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "未授权"
-          }
-        }
-      }
-    },
-    "Open DesktopRenamer and enable API" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "打开 DesktopRenamer 并启用API"
-          }
-        }
-      }
-    },
-    "Open Settings" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "打开设置呢"
-          }
-        }
-      }
-    },
     "Otherwise" : {
-
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "其他"
+          }
+        }
+      }
     },
     "Permissions" : {
       "localizations" : {
@@ -788,22 +642,25 @@
         }
       }
     },
-    "Refresh Spaces" : {
-      "extractionState" : "stale",
+    "Report an issue" : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "刷新空间"
+            "value" : "报告问题"
           }
         }
       }
     },
-    "Report an issue" : {
-
-    },
     "Required for detecting active applications and space changes via the bundle API." : {
-
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "通过 Bundle API 检测活动应用程序和桌面更改时需要。"
+          }
+        }
+      }
     },
     "Reset to default" : {
       "localizations" : {
@@ -816,27 +673,44 @@
       }
     },
     "Restore" : {
-
-    },
-    "Restore Previously Active Window" : {
-      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "恢复原本最顶的窗口"
+            "value" : "恢复"
           }
         }
       }
     },
     "Restore window" : {
-
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "恢复窗口"
+          }
+        }
+      }
     },
     "Return focus to the previous application after simulating keys." : {
-
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "模拟按键后将焦点返回到之前的应用程序。"
+          }
+        }
+      }
     },
     "Rule Automation" : {
-
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "规则自动化"
+          }
+        }
+      }
     },
     "Rules" : {
       "localizations" : {
@@ -868,49 +742,12 @@
         }
       }
     },
-    "Select a category" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "选择分类"
-          }
-        }
-      }
-    },
-    "Select a Dock Set" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "选择 Dock 组"
-          }
-        }
-      }
-    },
     "Select a Dock Set to edit its configuration" : {
-
-    },
-    "Select Target App" : {
-      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "选择目标 App"
-          }
-        }
-      }
-    },
-    "Set as Default" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "设为默认"
+            "value" : "选择一个 Dock 组以编辑其配置"
           }
         }
       }
@@ -932,297 +769,6 @@
         }
       }
     },
-    "Settings.About.Description" : {
-      "comment" : "Description",
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "SpaceSwitcher is an app that lets you furthur customize app behaviors in different spaces."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "SpaceSwitcher 让你进一步自定义 App 在每个桌面的行为。"
-          }
-        }
-      }
-    },
-    "Settings.About.Repo" : {
-      "comment" : "GitHub Repo",
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "GitHub Repository"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "GitHub 仓库"
-          }
-        }
-      }
-    },
-    "Settings.General.Update" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Update"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "更新"
-          }
-        }
-      }
-    },
-    "Settings.General.Update.AutoCheck" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Automatically check for updates"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "自动检查更新"
-          }
-        }
-      }
-    },
-    "Settings.General.Update.Available.Button.Cancel" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Cancel"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "取消"
-          }
-        }
-      }
-    },
-    "Settings.General.Update.Available.Button.Update" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Update"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "更新"
-          }
-        }
-      }
-    },
-    "Settings.General.Update.Available.Msg" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "v%@ → v%@ is available.\\nOpen the release page to download and install?"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "v%@ → v%@ 已就绪。\\n是否打开发布页面下载并安装？"
-          }
-        }
-      }
-    },
-    "Settings.General.Update.Available.Notif.Msg" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "v%@ → v%@ is available. Click to open the release page."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "v%@ → v%@ 已就绪。点击以打开发布页面"
-          }
-        }
-      }
-    },
-    "Settings.General.Update.Available.Notif.Title" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "SpaceSwitcher Update Available"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "SpaceSwitcher  有可用更新"
-          }
-        }
-      }
-    },
-    "Settings.General.Update.Available.Title" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Update Available"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "更新可用"
-          }
-        }
-      }
-    },
-    "Settings.General.Update.Failed.Msg" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "SpaceSwitcher could not connect to the update server. Please check your network."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "SpaceSwitcher 无法连接至更新服务器，请检查网络连接。"
-          }
-        }
-      }
-    },
-    "Settings.General.Update.Failed.Notif.Msg" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Could not connect to the update server. Please check your network."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "无法连接至更新服务器，请检查网络连接。"
-          }
-        }
-      }
-    },
-    "Settings.General.Update.Failed.Notif.Title" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "SpaceSwitcher Update Check Failed"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "SpaceSwitcher 检查更新失败"
-          }
-        }
-      }
-    },
-    "Settings.General.Update.Failed.Title" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Update Check Failed"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "检查更新失败"
-          }
-        }
-      }
-    },
-    "Settings.General.Update.ManualCheck" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Check for updates"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "检查更新"
-          }
-        }
-      }
-    },
-    "Settings.General.Update.UpToDate.Msg" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "You are running the latest version (%@)."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "您正在使用最新版本 (%@)。"
-          }
-        }
-      }
-    },
-    "Settings.General.Update.UpToDate.Title" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Up to Date"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "已是最新版"
-          }
-        }
-      }
-    },
     "Show" : {
       "comment" : "Action: Show Window",
       "localizations" : {
@@ -1240,55 +786,18 @@
         }
       }
     },
-    "Simulate App Hotkey..." : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "模拟 App 快捷键…"
-          }
-        }
-      }
-    },
-    "Simulate Global Hotkey..." : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "模拟全局快捷键..."
-          }
-        }
-      }
-    },
-    "Small spacer" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "小间隔"
-          }
-        }
-      }
-    },
-    "Sort by %@" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "以%@排序"
-          }
-        }
-      }
-    },
     "Space" : {
       "shouldTranslate" : false
     },
     "SpaceAPI Status" : {
-
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "SpaceAPI 状态"
+          }
+        }
+      }
     },
     "SpaceCount" : {
       "extractionState" : "manual",
@@ -1308,58 +817,74 @@
       }
     },
     "Spaces:" : {
-
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "桌面："
+          }
+        }
+      }
     },
     "SpaceSwitcher uses the DesktopRenamer API to detect space changes. Ensure the API is enabled in DesktopRenamer." : {
-
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "SpaceSwitcher 使用 DesktopRenamer API 检测桌面更改。请确保 DesktopRenamer 中的 API 已启用。"
+          }
+        }
+      }
     },
     "SpaceSwitcher's GitHub" : {
-
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "SpaceSwitcher 的 GitHub"
+          }
+        }
+      }
     },
     "SpaceSwitcher's website" : {
-
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "SpaceSwitcher 的网站"
+          }
+        }
+      }
     },
     "Switcher" : {
       "shouldTranslate" : false
     },
     "The default set is used for any space that doesn't have a specific assignment." : {
-
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "默认组用于任何没有特定分配的桌面。"
+          }
+        }
+      }
     },
     "The essential tool for naming and organizing your desktop spaces." : {
-
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "命名和组织桌面空间的必备工具。"
+          }
+        }
+      }
     },
     "This dock set is used automatically for all unassigned spaces." : {
-
-    },
-    "This is the default dock. It applies to all spaces not assigned to other sets." : {
-      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "默认 Dock 自动应用至未分配桌面。"
-          }
-        }
-      }
-    },
-    "Type" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "类型"
-          }
-        }
-      }
-    },
-    "Used in other set" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "已分配"
+            "value" : "此 Dock 组将自动用于所有未分配的桌面。"
           }
         }
       }
@@ -1380,36 +905,35 @@
         }
       }
     },
-    "Wait for Manual Activation" : {
-      "extractionState" : "stale",
+    "Wait for the application to be frontmost before simulating keys." : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "等待手动切换"
+            "value" : "在模拟按键之前等待应用程序处于最前台。"
           }
         }
       }
     },
-    "Wait for the application to be frontmost before simulating keys." : {
-
-    },
     "When disabled, all automation rules will be ignored." : {
-
-    },
-    "Workflow Group %lld" : {
-      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "桌面组 %lld"
+            "value" : "禁用时，所有自动化规则将被忽略。"
           }
         }
       }
     },
     "Workflows" : {
-
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "工作流"
+          }
+        }
+      }
     }
   },
   "version" : "1.1"
