@@ -170,6 +170,38 @@ struct RuleEditor: View {
             .animation(.easeInOut(duration: 0.2), value: workingRule.groups)
             .background(Color(NSColor.windowBackgroundColor))
             
+            // --- ACTION LEGEND ---
+            VStack(alignment: .leading, spacing: 16) {
+                Divider().opacity(0.5)
+                
+                VStack(alignment: .leading, spacing: 12) {
+                    HStack(spacing: 8) {
+                        Image(systemName: "info.circle.fill")
+                            .foregroundColor(.secondary)
+                        Text("Action Definitions")
+                            .font(.system(size: 12, weight: .bold))
+                            .foregroundColor(.secondary)
+                    }
+                    
+                    Grid(alignment: .leading, horizontalSpacing: 24, verticalSpacing: 10) {
+                        GridRow {
+                            legendItem(name: "Show", desc: "Always unhides and unminimizes the application.")
+                            legendItem(name: "Restore", desc: "Intelligent. Only reverses actions triggered by SpaceSwitcher.")
+                        }
+                        GridRow {
+                            legendItem(name: "Hide", desc: "Standard macOS hide (Cmd+H) for the application.")
+                            legendItem(name: "Minimize", desc: "Minimizes all windows of the application.")
+                        }
+                        GridRow {
+                            legendItem(name: "Front", desc: "Brings the application and its windows to the foreground.")
+                        }
+                    }
+                }
+                .padding(.horizontal, 24)
+                .padding(.bottom, 24)
+            }
+            .background(Color(NSColor.windowBackgroundColor))
+            
             Divider()
             
             footerView
@@ -312,6 +344,20 @@ struct RuleEditor: View {
             id: $0.bundleIdentifier ?? "",
             icon: $0.icon ?? NSImage()
         ) }.sorted { $0.name < $1.name }
+    }
+    
+    @ViewBuilder
+    private func legendItem(name: String, desc: String) -> some View {
+        HStack(alignment: .top, spacing: 6) {
+            Text(name)
+                .font(.system(size: 11, weight: .bold, design: .monospaced))
+                .foregroundColor(.primary)
+                .frame(width: 54, alignment: .trailing)
+            
+            Text(desc)
+                .font(.system(size: 11))
+                .foregroundColor(.secondary)
+        }
     }
 }
 
