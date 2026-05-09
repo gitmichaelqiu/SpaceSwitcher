@@ -163,42 +163,52 @@ class DockManager: ObservableObject {
         let key = "persistent-apps"
         
         // 1. Prepare Data
-        let rawData = await self.buildRawDockData(from: set.tiles)
+        let newAppData = await self.buildRawDockData(from: set.tiles)
         
-        // 2. Write to temporary plist
-        let tempFile = FileManager.default.temporaryDirectory.appendingPathComponent("com.apple.dock.import.plist")
+        // 2. Read FULL Current Preferences (To preserve others, size, etc.)
+        CFPreferencesAppSynchronize(appID as CFString)
+        guard let currentPrefs = CFPreferencesCopyMultiple(nil, appID as CFString, kCFPreferencesCurrentUser, kCFPreferencesAnyHost) as? [String: Any] else {
+            self.logger.error("Failed to read current Dock preferences.")
+            return false
+        }
+        
+        // 3. Merge: Update ONLY the apps list
+        var updatedPrefs = currentPrefs
+        updatedPrefs[key] = newAppData
+        
+        // 4. Write to temporary plist for import
+        let tempFile = FileManager.default.temporaryDirectory.appendingPathComponent("com.apple.dock.full.plist")
         do {
-            let data = try PropertyListSerialization.data(fromPropertyList: [key: rawData], format: .binary, options: 0)
+            let data = try PropertyListSerialization.data(fromPropertyList: updatedPrefs, format: .binary, options: 0)
             try data.write(to: tempFile)
         } catch {
-            self.logger.error("Failed to create temporary plist: \(error.localizedDescription)")
+            self.logger.error("Failed to serialize full preferences.")
             return false
         }
         defer { try? FileManager.default.removeItem(at: tempFile) }
         
-        // 3. IMPORT (The industry standard for reliability)
+        // 5. IMPORT (The reliable way)
         let importTask = Process()
         importTask.launchPath = "/usr/bin/defaults"
         importTask.arguments = ["import", appID, tempFile.path]
         importTask.launch()
         importTask.waitUntilExit()
         
-        // 4. SYNC POKE
-        // Reading forces cfprefsd to flush its cache to disk
-        let syncTask = Process()
-        syncTask.launchPath = "/usr/bin/defaults"
-        syncTask.arguments = ["read", appID, key]
-        syncTask.launch()
-        syncTask.waitUntilExit()
+        // 6. SYNC & POKE
+        CFPreferencesAppSynchronize(appID as CFString)
+        let readTask = Process()
+        readTask.launchPath = "/usr/bin/defaults"
+        readTask.arguments = ["read", appID, key]
+        readTask.launch()
+        readTask.waitUntilExit()
         
-        // 5. STABILITY WAIT (1.0s)
-        // 1.0s is the safest threshold for macOS to guarantee the preference is on disk
+        // 7. RELIABILITY BUFFER (1.0s)
         try? await Task.sleep(nanoseconds: 1_000_000_000)
         
         if Task.isCancelled { return false }
         
-        // 6. RESTART DOCK
-        self.logger.info("Restarting Dock with 1.0s reliability buffer.")
+        // 8. RESTART DOCK
+        self.logger.info("Restarting Dock with FULL preference preservation.")
         let killTask = Process()
         killTask.launchPath = "/usr/bin/killall"
         killTask.arguments = ["Dock"]
