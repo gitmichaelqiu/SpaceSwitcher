@@ -8,12 +8,17 @@ class StatusBarManager: NSObject {
     
     // SpaceSwitcher specific dependencies
     private var spaceManager: SpaceManager?
-    // Store the Combine subscription to keep it active
-    private var connectionCancellable: AnyCancellable?
+    private var ruleManager: RuleManager?
+    private var dockManager: DockManager?
+    
+    // Store Combine subscriptions to keep them active
+    private var cancellables = Set<AnyCancellable>()
 
-    init(appDelegate: AppDelegate, spaceManager: SpaceManager) {
+    init(appDelegate: AppDelegate, spaceManager: SpaceManager, ruleManager: RuleManager, dockManager: DockManager) {
         self.appDelegate = appDelegate
         self.spaceManager = spaceManager
+        self.ruleManager = ruleManager
+        self.dockManager = dockManager
         super.init()
         
         setupStatusBar()
@@ -33,14 +38,29 @@ class StatusBarManager: NSObject {
     }
     
     private func setupCombineObservation() {
-        // FIX: Use Combine to monitor changes to the @Published property
-        connectionCancellable = spaceManager?.$availableSpaces
-            .receive(on: DispatchQueue.main) // Ensure updates are on the main thread
+        // Monitor connection status
+        spaceManager?.$availableSpaces
+            .receive(on: DispatchQueue.main)
             .sink { [weak self] spaces in
-                // Check if availableSpaces array is non-empty to determine connection status
-                let isConnected = !spaces.isEmpty
-                self?.updateStatusToolTip(isConnected: isConnected)
+                self?.updateStatusToolTip(isConnected: !spaces.isEmpty)
             }
+            .store(in: &cancellables)
+            
+        // Monitor Rule automation status to update menu
+        ruleManager?.$isAutomationEnabled
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in self?.updateMenu() }
+            .store(in: &cancellables)
+            
+        // Monitor Dock automation status to update menu
+        dockManager?.config.$isAutomationEnabled
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in self?.updateMenu() }
+            .store(in: &cancellables)
+    }
+    
+    private func updateMenu() {
+        statusBarItem.menu = createMenu()
     }
     
     private func updateStatusToolTip(isConnected: Bool) {
@@ -51,6 +71,7 @@ class StatusBarManager: NSObject {
     private func createMenu() -> NSMenu {
         let menu = NSMenu()
 
+        // 1. Settings
         let settingsItem = NSMenuItem(title: NSLocalizedString("Settings", comment: ""),
                                       action: #selector(AppDelegate.openSettingsWindow),
                                       keyEquivalent: ",")
@@ -58,7 +79,25 @@ class StatusBarManager: NSObject {
         menu.addItem(settingsItem)
 
         menu.addItem(NSMenuItem.separator())
+        
+        // 2. Automation Toggles
+        let rulesItem = NSMenuItem(title: NSLocalizedString("Automated rules", comment: ""),
+                                   action: #selector(toggleRules),
+                                   keyEquivalent: "")
+        rulesItem.target = self
+        rulesItem.state = (ruleManager?.isAutomationEnabled ?? false) ? .on : .off
+        menu.addItem(rulesItem)
+        
+        let docksItem = NSMenuItem(title: NSLocalizedString("Automated docks", comment: ""),
+                                   action: #selector(toggleDocks),
+                                   keyEquivalent: "")
+        docksItem.target = self
+        docksItem.state = (dockManager?.config.isAutomationEnabled ?? false) ? .on : .off
+        menu.addItem(docksItem)
 
+        menu.addItem(NSMenuItem.separator())
+
+        // 3. Quit
         let quitItem = NSMenuItem(title: NSLocalizedString("Quit", comment: ""),
                                   action: #selector(AppDelegate.quitApp),
                                   keyEquivalent: "q")
@@ -68,7 +107,17 @@ class StatusBarManager: NSObject {
         return menu
     }
     
+    @objc private func toggleRules() {
+        guard let rm = ruleManager else { return }
+        rm.isAutomationEnabled.toggle()
+    }
+    
+    @objc private func toggleDocks() {
+        guard let dm = dockManager else { return }
+        dm.config.isAutomationEnabled.toggle()
+    }
+    
     deinit {
-        connectionCancellable?.cancel()
+        cancellables.forEach { $0.cancel() }
     }
 }
