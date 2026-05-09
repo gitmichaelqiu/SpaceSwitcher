@@ -2,7 +2,7 @@ import Foundation
 import AppKit
 
 // MARK: - Dock Tile Model
-struct DockTile: Identifiable, Codable, Hashable {
+struct DockTile: Identifiable, Codable, Hashable, @unchecked Sendable {
     var id = UUID()
     var label: String
     var bundleIdentifier: String?
@@ -73,7 +73,7 @@ struct DockTile: Identifiable, Codable, Hashable {
 }
 
 // MARK: - Dock Set
-struct DockSet: Identifiable, Codable, Equatable {
+struct DockSet: Identifiable, Codable, Equatable, @unchecked Sendable {
     let id: UUID
     var name: String
     var dateCreated: Date
@@ -85,7 +85,7 @@ struct DockSet: Identifiable, Codable, Equatable {
 }
 
 // MARK: - Config
-struct DockConfig: Codable, Equatable {
+struct DockConfig: Codable, Equatable, @unchecked Sendable {
     var dockSets: [DockSet] = []
     var defaultDockSetID: UUID?
     var spaceAssignments: [String: UUID] = [:]
