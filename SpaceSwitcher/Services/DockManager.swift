@@ -186,7 +186,7 @@ class DockManager: ObservableObject {
             if Task.isCancelled { return false }
             
             // A. Set the value in the preference cache
-            CFPreferencesSetAppValue(key, newAppData as CFPropertyList, appID, kCFPreferencesCurrentUser, kCFPreferencesAnyHost)
+            CFPreferencesSetValue(key, newAppData as CFPropertyList, appID, kCFPreferencesCurrentUser, kCFPreferencesAnyHost)
             
             // B. Synchronize to ensure the changes are committed to the daemon and disk
             if !CFPreferencesAppSynchronize(appID) {
