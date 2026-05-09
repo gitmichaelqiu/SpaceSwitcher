@@ -51,7 +51,7 @@ struct DockTile: Identifiable, Codable, Hashable, @unchecked Sendable {
         try container.encode(data, forKey: .rawData)
     }
     
-    init(label: String, bundleIdentifier: String?, fileURL: URL?, rawData: [String: Any]) {
+    nonisolated init(label: String, bundleIdentifier: String?, fileURL: URL?, rawData: [String: Any]) {
         self.label = label
         self.bundleIdentifier = bundleIdentifier
         self.fileURL = fileURL
