@@ -147,17 +147,7 @@ class StatusBarManager: NSObject {
         guard let setID = sender.representedObject as? UUID,
               let dm = dockManager else { return }
         
-        // Use the manual apply logic which bypasses automation checks
-        // We use a dummy spaceID "manual" or just find the current one if possible
-        let spaceID = spaceManager?.currentSpaceID ?? "manual"
-        
-        // We need to force apply this specific set ID
-        // I'll check if DockManager has a way to apply by ID directly
-        // Looking at DockManager.swift: performDockSwitch(for:force:) is private.
-        // But applyDockForSpace calls it. 
-        // Wait, applyDockForSpace uses the config's spaceAssignments.
-        
-        // I should probably add a public method to DockManager to apply a specific set by ID.
+        // Manually apply the selected dock set
         dm.applyDockSetByID(setID)
     }
     
