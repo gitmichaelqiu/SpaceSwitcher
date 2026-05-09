@@ -289,7 +289,7 @@
 				INFOPLIST_KEY_LSUIElement = YES;
 				INFOPLIST_KEY_NSAppleEventsUsageDescription = Need;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
-				INFOPLIST_KEY_SUFeedURL = "https://raw.githubusercontent.com/gitmichaelqiu/SpaceSwitcher/main/appcast.xml";
+				INFOPLIST_KEY_SUFeedURL = "https://raw.githubusercontent.com/gitmichaelqiu/SpaceSwitcher/dev/appcast.xml";
 				INFOPLIST_KEY_SUPublicEDKey = "e9YKamydRddgnYK6Kq41W0vPbwI4F9XJAhks/9rzT0w=";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -341,7 +341,7 @@
 				INFOPLIST_KEY_LSUIElement = YES;
 				INFOPLIST_KEY_NSAppleEventsUsageDescription = Need;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
-				INFOPLIST_KEY_SUFeedURL = "https://raw.githubusercontent.com/gitmichaelqiu/SpaceSwitcher/main/appcast.xml";
+				INFOPLIST_KEY_SUFeedURL = "https://raw.githubusercontent.com/gitmichaelqiu/SpaceSwitcher/dev/appcast.xml";
 				INFOPLIST_KEY_SUPublicEDKey = "e9YKamydRddgnYK6Kq41W0vPbwI4F9XJAhks/9rzT0w=";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
