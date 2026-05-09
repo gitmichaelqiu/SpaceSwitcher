@@ -48,7 +48,6 @@ struct GeneralSettingsView: View {
                             Text(spaceManager.isAPIEnabled ? "Connected" : "Disconnected")
                                 .font(.system(size: 13, weight: .medium))
                         }
-                        .frame(minHeight: 28) // Fixed height to match Toggles/Buttons
                     }
                 }
                 
