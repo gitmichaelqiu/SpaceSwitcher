@@ -5,7 +5,9 @@ struct GeneralSettingsView: View {
     @ObservedObject var spaceManager: SpaceManager
     
     @State private var launchAtLogin: Bool = false
-    
+    @State private var autoCheckUpdate: Bool = UpdateManager.shared.updaterController.updater.automaticallyChecksForUpdates
+    @State private var autoDownloadUpdate: Bool = UpdateManager.shared.updaterController.updater.automaticallyDownloadsUpdates
+
     var body: some View {
         ScrollView(.vertical, showsIndicators: true) {
             VStack(alignment: .leading, spacing: 20) {
@@ -19,32 +21,32 @@ struct GeneralSettingsView: View {
                 }
                 
                 // 2. Updates - Standardized per macOSers bundle
-                SettingsSection("Updates") {
-                    SettingsRow("Check for Updates Automatically") {
-                        Toggle("", isOn: Binding(
-                            get: { UpdateManager.shared.updaterController.updater.automaticallyChecksForUpdates },
-                            set: { UpdateManager.shared.updaterController.updater.automaticallyChecksForUpdates = $0 }
-                        ))
-                        .labelsHidden()
-                        .toggleStyle(.switch)
+                SettingsSection("Settings.General.Updates") {
+                    SettingsRow("Settings.General.Updates.AutoCheckUpdate") {
+                        Toggle("", isOn: $autoCheckUpdate)
+                            .labelsHidden()
+                            .toggleStyle(.switch)
+                            .onChange(of: autoCheckUpdate) { value in
+                                UpdateManager.shared.updaterController.updater.automaticallyChecksForUpdates = value
+                            }
                     }
                     
                     Divider()
                     
-                    if UpdateManager.shared.updaterController.updater.automaticallyChecksForUpdates {
+                    if autoCheckUpdate {
                         SettingsRow("Automatically download updates") {
-                            Toggle("", isOn: Binding(
-                                get: { UpdateManager.shared.updaterController.updater.automaticallyDownloadsUpdates },
-                                set: { UpdateManager.shared.updaterController.updater.automaticallyDownloadsUpdates = $0 }
-                            ))
-                            .labelsHidden()
-                            .toggleStyle(.switch)
+                            Toggle("", isOn: $autoDownloadUpdate)
+                                .labelsHidden()
+                                .toggleStyle(.switch)
+                                .onChange(of: autoDownloadUpdate) { value in
+                                    UpdateManager.shared.updaterController.updater.automaticallyDownloadsUpdates = value
+                                }
                         }
                         Divider()
                     }
                     
-                    SettingsRow("Check for Updates") {
-                        Button("Check Now") {
+                    SettingsRow("Settings.General.Updates.ManualCheck") {
+                        Button(NSLocalizedString("Settings.General.Updates.Button", comment: "")) {
                             UpdateManager.shared.updaterController.checkForUpdates(nil)
                         }
                     }
