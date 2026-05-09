@@ -7,7 +7,7 @@ struct RuleEditor: View {
     let onSave: (AppRule) -> Void
     let onCancel: () -> Void
     @State private var runningApps: [(name: String, id: String, icon: NSImage)] = []
-    @State private var showingLegend = true
+    @State private var showingLegend = false
     @State private var legendWidth: CGFloat = 260
     
     init(rule: AppRule, availableSpaces: [SpaceInfo], onSave: @escaping (AppRule) -> Void, onCancel: @escaping () -> Void) {
