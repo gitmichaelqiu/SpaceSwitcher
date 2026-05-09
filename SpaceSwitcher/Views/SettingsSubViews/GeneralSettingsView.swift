@@ -66,14 +66,7 @@ struct GeneralSettingsView: View {
                     }
                 }
                 
-                // 4. Advanced
-                SettingsSection("Advanced") {
-                    SettingsRow("Force rule refresh") {
-                        Button("Refresh Now") {
-                            spaceManager.refreshSpaceList()
-                        }
-                    }
-                }
+
                 
                 Spacer()
             }
