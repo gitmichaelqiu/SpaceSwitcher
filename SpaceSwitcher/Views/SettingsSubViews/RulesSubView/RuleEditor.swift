@@ -407,33 +407,72 @@ struct SpaceConditionRow: View {
 
 struct ActionListRows: View {
     @Binding var actions: [ActionItem]
+    @State private var draggingItem: ActionItem?
     
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            ForEach(Array(actions.enumerated()), id: \.element.id) { index, item in
+            ForEach(actions) { item in
                 VStack(alignment: .leading, spacing: 0) {
                     Divider().opacity(0.3)
                     ActionRowContent(
-                        index: index,
-                        item: $actions[index],
-                        onDelete: { 
+                        index: actions.firstIndex(where: { $0.id == item.id }) ?? 0,
+                        item: binding(for: item),
+                        onDelete: {
                             withAnimation {
-                                _actions.wrappedValue = _actions.wrappedValue.enumerated()
-                                    .filter { $0.offset != index }
-                                    .map { $0.element }
+                                actions.removeAll { $0.id == item.id }
                             }
                         }
                     )
                     .padding(.horizontal, 12)
                     .padding(.vertical, 8)
+                    .background(Color(NSColor.controlBackgroundColor).opacity(draggingItem?.id == item.id ? 0.2 : 0.01))
                 }
-            }
-            .onMove { indices, newOffset in
-                actions.move(fromOffsets: indices, toOffset: newOffset)
+                .onDrag {
+                    self.draggingItem = item
+                    return NSItemProvider(object: item.id.uuidString as NSString)
+                }
+                .onDrop(of: [.text], delegate: ActionDropDelegate(item: item, actions: $actions, draggingItem: $draggingItem))
             }
         }
     }
+    
+    private func binding(for item: ActionItem) -> Binding<ActionItem> {
+        guard let index = actions.firstIndex(where: { $0.id == item.id }) else {
+            return .constant(item)
+        }
+        return $actions[index]
+    }
 }
+
+struct ActionDropDelegate: DropDelegate {
+    let item: ActionItem
+    @Binding var actions: [ActionItem]
+    @Binding var draggingItem: ActionItem?
+
+    func performDrop(info: DropInfo) -> Bool {
+        draggingItem = nil
+        return true
+    }
+
+    func dropEntered(info: DropInfo) {
+        guard let draggingItem = draggingItem,
+              draggingItem.id != item.id,
+              let from = actions.firstIndex(where: { $0.id == draggingItem.id }),
+              let to = actions.firstIndex(where: { $0.id == item.id })
+        else { return }
+
+        if actions[to].id != draggingItem.id {
+            withAnimation(.snappy(duration: 0.2)) {
+                actions.move(fromOffsets: IndexSet(integer: from), toOffset: to > from ? to + 1 : to)
+            }
+        }
+    }
+    
+    func dropUpdated(info: DropInfo) -> DropProposal? {
+        return DropProposal(operation: .move)
+    }
+}
+
 
 struct AddActionRow<Content: View>: View {
     let action: () -> Void
