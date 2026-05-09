@@ -87,10 +87,10 @@ struct SettingsView: View {
         VStack(alignment: .leading, spacing: 0) {
             Color.clear.frame(height: 45)
             Text("Space")
-                .font(.system(size: 28, weight: .heavy))
+                .font(.custom("Syncopate-Bold", size: 21))
                 .foregroundStyle(.primary)
             Text("Switcher")
-                .font(.system(size: 28, weight: .heavy))
+                .font(.custom("Syncopate-Bold", size: 21))
                 .foregroundStyle(.primary)
                 .padding(.bottom, 20)
         }
