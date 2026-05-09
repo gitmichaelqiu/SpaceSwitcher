@@ -177,52 +177,43 @@ class DockManager: ObservableObject {
             
             defer { try? FileManager.default.removeItem(at: tempFile) }
             
-            // 3. Import and Kill Strategy: 
-            // We verify the preference is correctly written BEFORE killing the Dock.
-            // This avoids "double-killing" and the resulting double-flashing.
-            var writeVerified = false
-            for attempt in 1...5 {
-                if Task.isCancelled { return false }
-                
-                // A. IMPORT
-                let importTask = Process()
-                importTask.launchPath = "/usr/bin/defaults"
-                importTask.arguments = ["import", appID, tempFile.path]
-                importTask.launch()
-                importTask.waitUntilExit()
-                
-                // B. SYNC & WAIT (Wait for cfprefsd to acknowledge)
-                try? Thread.sleep(forTimeInterval: 0.1 * Double(attempt))
-                CFPreferencesAppSynchronize(appID as CFString)
-                
-                // C. VERIFY PREFERENCE
-                if let readVal = CFPreferencesCopyAppValue("persistent-apps" as CFString, appID as CFString) as? [Any] {
-                    if readVal.count == rawData.count {
-                        writeVerified = true
-                        break
-                    }
-                }
-                
-                self.logger.warning("Attempt \(attempt): Preference write not yet verified. Retrying import...")
-            }
+            // 3. Single-Kill Strategy (High Reliability)
+            // We use a single attempt with a generous synchronization delay.
+            // This prevents the "double-flash" caused by retry loops while ensuring
+            // the preference daemon has enough time to commit the changes to disk.
+            if Task.isCancelled { return false }
             
-            if writeVerified {
-                if Task.isCancelled { return false }
-                
-                // D. SINGLE KILL
-                // Now that we are CERTAIN the preferences are correct, one kill is enough.
-                self.logger.info("Preference verified. Restarting Dock once.")
-                let killTask = Process()
-                killTask.launchPath = "/usr/bin/killall"
-                killTask.arguments = ["Dock"]
-                killTask.launch()
-                killTask.waitUntilExit()
-                
-                return true
-            }
+            // A. IMPORT
+            let importTask = Process()
+            importTask.launchPath = "/usr/bin/defaults"
+            importTask.arguments = ["import", appID, tempFile.path]
+            importTask.launch()
+            importTask.waitUntilExit()
             
-            self.logger.error("Failed to verify preference write after 5 attempts. Aborting switch.")
-            return false
+            // B. POKE & SYNC
+            // Forces cfprefsd to recognize and flush the new settings
+            CFPreferencesAppSynchronize(appID as CFString)
+            let readTask = Process()
+            readTask.launchPath = "/usr/bin/defaults"
+            readTask.arguments = ["read", appID, "persistent-apps"]
+            readTask.launch()
+            readTask.waitUntilExit()
+            
+            // C. CRITICAL WAIT (0.5s)
+            // This is the most reliable way to ensure the Dock reads the new data on restart
+            try? Thread.sleep(forTimeInterval: 0.5)
+            
+            if Task.isCancelled { return false }
+            
+            // D. SINGLE RESTART
+            self.logger.info("Triggering single Dock restart.")
+            let killTask = Process()
+            killTask.launchPath = "/usr/bin/killall"
+            killTask.arguments = ["Dock"]
+            killTask.launch()
+            killTask.waitUntilExit()
+            
+            return true
             
             return false
         }.value
