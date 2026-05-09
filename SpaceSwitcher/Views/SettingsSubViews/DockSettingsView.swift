@@ -37,6 +37,7 @@ struct DockSettingsView: View {
                         VStack(alignment: .leading, spacing: 24) {
                             // 1. Dock Set Configuration
                             SettingsSection("Set Configuration") {
+                                SettingsRow("Name") {
                                     TextField("Name", text: $dockManager.config.dockSets[index].name)
                                         .textFieldStyle(.roundedBorder)
                                         .frame(width: 150)
