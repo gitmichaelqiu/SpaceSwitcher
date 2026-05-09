@@ -8,6 +8,7 @@ struct RuleEditor: View {
     let onCancel: () -> Void
     @State private var runningApps: [(name: String, id: String, icon: NSImage)] = []
     @State private var showingLegend = true
+    @State private var legendWidth: CGFloat = 260
     
     init(rule: AppRule, availableSpaces: [SpaceInfo], onSave: @escaping (AppRule) -> Void, onCancel: @escaping () -> Void) {
         self._workingRule = State(wrappedValue: rule)
@@ -89,7 +90,7 @@ struct RuleEditor: View {
             Spacer()
             
             Button {
-                withAnimation(.easeInOut(duration: 0.3)) {
+                withAnimation(.easeInOut(duration: 0.35)) {
                     showingLegend.toggle()
                 }
             } label: {
@@ -108,7 +109,7 @@ struct RuleEditor: View {
     }
     
     private var mainSplitView: some View {
-        HSplitView {
+        HStack(spacing: 0) {
             ScrollView(.vertical) {
                 VStack(alignment: .leading, spacing: 0) {
                     Color.clear.frame(height: 12)
@@ -254,20 +255,35 @@ struct RuleEditor: View {
                 }
                 .padding(.vertical, 8)
             }
-            .animation(.easeInOut(duration: 0.3), value: workingRule.groups)
+            .animation(.easeInOut(duration: 0.35), value: workingRule.groups)
             .background(Color(NSColor.windowBackgroundColor))
-            .layoutPriority(1)
             
+            // Custom Draggable Divider & Sidebar
             if showingLegend {
-                // Wrapper container helps SwiftUI handle HSplitView entry transitions better
-                VStack(spacing: 0) {
-                    legendSidebar
-                }
-                .frame(minWidth: 220, maxWidth: 300)
-                .transition(.asymmetric(
-                    insertion: .move(edge: .trailing).combined(with: .opacity),
-                    removal: .move(edge: .trailing).combined(with: .opacity)
-                ))
+                Rectangle()
+                    .fill(Color.primary.opacity(0.1))
+                    .frame(width: 1)
+                    .overlay(
+                        Color.clear
+                            .frame(width: 8)
+                            .contentShape(Rectangle())
+                    )
+                    .onHover { inside in
+                        if inside { NSCursor.resizeLeftRight.push() }
+                        else { NSCursor.pop() }
+                    }
+                    .gesture(
+                        DragGesture()
+                            .onChanged { value in
+                                let delta = value.translation.width
+                                let newWidth = legendWidth - delta
+                                legendWidth = max(200, min(400, newWidth))
+                            }
+                    )
+                
+                legendSidebar
+                    .frame(width: legendWidth)
+                    .transition(.move(edge: .trailing).combined(with: .opacity))
             }
         }
         .animation(.easeInOut(duration: 0.35), value: showingLegend)
