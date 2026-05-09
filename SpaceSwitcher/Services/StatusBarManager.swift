@@ -52,9 +52,8 @@ class StatusBarManager: NSObject {
             .sink { [weak self] (isEnabled: Bool) in self?.updateMenu() }
             .store(in: &cancellables)
             
-        // Monitor Dock automation status to update menu
+        // Monitor Dock configuration changes (Automation status, Dock Sets, etc.)
         dockManager?.$config
-            .map { $0.isAutomationEnabled }
             .removeDuplicates()
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in self?.updateMenu() }
