@@ -94,7 +94,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCenterDele
         
         statusBarManager = StatusBarManager(
             appDelegate: self,
-            spaceManager: appState.spaceManager
+            spaceManager: appState.spaceManager,
+            ruleManager: appState.ruleManager,
+            dockManager: appState.dockManager
         )
         
         UNUserNotificationCenter.current().delegate = self
