@@ -89,6 +89,23 @@ class StatusBarManager: NSObject {
         docksItem.image = NSImage(systemSymbolName: "dock.rectangle", accessibilityDescription: nil)
         menu.addItem(docksItem)
 
+        // 2.1 Manual Dock Switching (if automation is disabled)
+        if let dm = dockManager, !dm.config.isAutomationEnabled {
+            menu.addItem(NSMenuItem.separator())
+            
+            for set in dm.config.dockSets {
+                let setItem = NSMenuItem(title: set.name,
+                                         action: #selector(switchDockSet(_:)),
+                                         keyEquivalent: "")
+                setItem.target = self
+                setItem.representedObject = set.id
+                setItem.state = (dm.activeDockSetID == set.id) ? .on : .off
+                // Add a small dock icon to each set item
+                setItem.image = NSImage(systemSymbolName: "square.grid.3x1.below.line.grid.1x2", accessibilityDescription: nil)
+                menu.addItem(setItem)
+            }
+        }
+
         menu.addItem(NSMenuItem.separator())
 
         let settingsItem = NSMenuItem(title: NSLocalizedString("Settings", comment: ""),
@@ -118,6 +135,24 @@ class StatusBarManager: NSObject {
     @objc private func toggleDocks() {
         guard let dm = dockManager else { return }
         dm.config.isAutomationEnabled.toggle()
+    }
+    
+    @objc private func switchDockSet(_ sender: NSMenuItem) {
+        guard let setID = sender.representedObject as? UUID,
+              let dm = dockManager else { return }
+        
+        // Use the manual apply logic which bypasses automation checks
+        // We use a dummy spaceID "manual" or just find the current one if possible
+        let spaceID = spaceManager?.currentSpaceID ?? "manual"
+        
+        // We need to force apply this specific set ID
+        // I'll check if DockManager has a way to apply by ID directly
+        // Looking at DockManager.swift: performDockSwitch(for:force:) is private.
+        // But applyDockForSpace calls it. 
+        // Wait, applyDockForSpace uses the config's spaceAssignments.
+        
+        // I should probably add a public method to DockManager to apply a specific set by ID.
+        dm.applyDockSetByID(setID)
     }
     
     deinit {
