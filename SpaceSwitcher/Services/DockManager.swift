@@ -35,7 +35,7 @@ class DockManager: ObservableObject {
     func detectActiveDockSet() {
         Task {
             // Move heavy disk I/O and parsing to a background thread
-            let (matchFound, matchedID) = await Task.detached(priority: .background) {
+            let (matchFound, matchedID): (Bool, UUID?) = await Task.detached(priority: .background) {
                 guard let rawApps = self.getSystemDockPersistentApps() else { return (false, nil) }
                 let currentTiles = self.parseRawDockData(rawApps)
                 
@@ -125,7 +125,7 @@ class DockManager: ObservableObject {
     
     private func performDockSwitch(for spaceID: String, force: Bool) async {
         // Get configuration from MainActor
-        let (targetSet, isAutomationOn) = await MainActor.run {
+        let (targetSet, _) = await MainActor.run {
             let setID = config.spaceAssignments[spaceID] ?? config.defaultDockSetID
             let set = config.dockSets.first(where: { $0.id == setID })
             return (set, config.isAutomationEnabled)
