@@ -126,8 +126,8 @@ class DockManager: ObservableObject {
     private func performDockSwitch(for spaceID: String, force: Bool) async {
         let targetSetID = config.spaceAssignments[spaceID] ?? config.defaultDockSetID
         
-        guard let setID = targetSetID else {
-            logger.debug("No dock assigned for space \(spaceID), and no default set.")
+        guard let setID = targetSetID, 
+              let set = config.dockSets.first(where: { $0.id == setID }) else {
             return
         }
         
@@ -141,8 +141,6 @@ class DockManager: ObservableObject {
                 }
             }
         }
-        
-        guard let set = config.dockSets.first(where: { $0.id == setID }) else { return }
         
         logger.info(">>> \(force ? "FORCED" : "STARTING") SWITCH: '\(set.name)' for Space \(spaceID)")
         
