@@ -161,64 +161,52 @@ class DockManager: ObservableObject {
     private func applyDockSetVerified(_ set: DockSet) async -> Bool {
         let appID = "com.apple.dock"
         let key = "persistent-apps"
+        let plistPath = (NSHomeDirectory() as NSString).appendingPathComponent("Library/Preferences/com.apple.dock.plist")
+        let plistURL = URL(fileURLWithPath: plistPath)
         
         // 1. Prepare Data
         let newAppData = await self.buildRawDockData(from: set.tiles)
         
-        // 2. Retry Loop (Max 3 attempts) - This is what made Turn 74 reliable
-        for attempt in 1...3 {
-            if Task.isCancelled { return false }
-            
-            // A. Read FULL Current Preferences (To preserve folders, trash, etc.)
-            CFPreferencesAppSynchronize(appID as CFString)
-            guard let currentPrefs = CFPreferencesCopyMultiple(nil, appID as CFString, kCFPreferencesCurrentUser, kCFPreferencesAnyHost) as? [String: Any] else {
-                continue
-            }
-            
-            // B. Merge & Write
-            var updatedPrefs = currentPrefs
-            updatedPrefs[key] = newAppData
-            
-            let tempFile = FileManager.default.temporaryDirectory.appendingPathComponent("com.apple.dock.full.\(attempt).plist")
-            do {
-                let data = try PropertyListSerialization.data(fromPropertyList: updatedPrefs, format: .binary, options: 0)
-                try data.write(to: tempFile)
-            } catch { continue }
-            defer { try? FileManager.default.removeItem(at: tempFile) }
-            
-            // C. IMPORT
-            let importTask = Process()
-            importTask.launchPath = "/usr/bin/defaults"
-            importTask.arguments = ["import", appID, tempFile.path]
-            importTask.launch()
-            importTask.waitUntilExit()
-            
-            // D. SYNC & WAIT (0.3s before kill)
-            CFPreferencesAppSynchronize(appID as CFString)
-            try? await Task.sleep(nanoseconds: 300_000_000)
-            
-            // E. KILL DOCK
-            let killTask = Process()
-            killTask.launchPath = "/usr/bin/killall"
-            killTask.arguments = ["Dock"]
-            killTask.launch()
-            killTask.waitUntilExit()
-            
-            // F. VERIFY (Wait 0.6s for Dock to respawn and check)
-            try? await Task.sleep(nanoseconds: 600_000_000)
-            CFPreferencesAppSynchronize(appID as CFString)
-            
-            if let readVal = CFPreferencesCopyAppValue(key as CFString, appID as CFString) as? [Any] {
-                if readVal.count == newAppData.count {
-                    self.logger.info("Attempt \(attempt): Dock verification PASSED.")
-                    return true
-                }
-            }
-            
-            self.logger.warning("Attempt \(attempt): Dock verification FAILED. Retrying...")
+        // 2. Read FULL Current Preferences directly from disk (No Cache)
+        var plistDict: [String: Any] = [:]
+        if let data = try? Data(contentsOf: plistURL),
+           let dict = try? PropertyListSerialization.propertyList(from: data, options: .mutableContainersAndLeaves, format: nil) as? [String: Any] {
+            plistDict = dict
+        } else {
+            self.logger.error("Failed to read Dock plist from disk.")
+            return false
         }
         
-        return false
+        // 3. Update the apps list
+        plistDict[key] = newAppData
+        
+        // 4. Force Write to Disk
+        do {
+            let updatedData = try PropertyListSerialization.data(fromPropertyList: plistDict, format: .binary, options: 0)
+            try updatedData.write(to: plistURL, options: .atomic)
+        } catch {
+            self.logger.error("Failed to write plist to disk.")
+            return false
+        }
+        
+        // 5. BRUTE FORCE CACHE PURGE
+        // We kill cfprefsd with -9 to ensure it doesn't try to write back its stale cache.
+        // We target only the current user's daemon to avoid system-wide stalls.
+        let purgeTask = Process()
+        purgeTask.launchPath = "/usr/bin/killall"
+        purgeTask.arguments = ["-9", "-u", NSUserName(), "cfprefsd"]
+        purgeTask.launch()
+        purgeTask.waitUntilExit()
+        
+        // 6. IMMEDIATE RESTART
+        let killTask = Process()
+        killTask.launchPath = "/usr/bin/killall"
+        killTask.arguments = ["-9", "Dock"]
+        killTask.launch()
+        killTask.waitUntilExit()
+        
+        self.logger.info("Brute-force Dock switch completed.")
+        return true
     }
     
     // MARK: - Data Management & Spacers
