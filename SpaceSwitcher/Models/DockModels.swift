@@ -86,4 +86,18 @@ struct DockConfig: Codable {
     var defaultDockSetID: UUID?
     var spaceAssignments: [String: UUID] = [:]
     var isAutomationEnabled: Bool = true
+    
+    enum CodingKeys: String, CodingKey {
+        case dockSets, defaultDockSetID, spaceAssignments, isAutomationEnabled
+    }
+    
+    init() {}
+    
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        dockSets = try container.decodeIfPresent([DockSet].self, forKey: .dockSets) ?? []
+        defaultDockSetID = try container.decodeIfPresent(UUID.self, forKey: .defaultDockSetID)
+        spaceAssignments = try container.decodeIfPresent([String: UUID].self, forKey: .spaceAssignments) ?? [:]
+        isAutomationEnabled = try container.decodeIfPresent(Bool.self, forKey: .isAutomationEnabled) ?? true
+    }
 }

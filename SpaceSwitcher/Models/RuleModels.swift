@@ -180,7 +180,7 @@ struct AppRule: Identifiable, Codable, Equatable {
         id = try container.decode(UUID.self, forKey: .id)
         appBundleID = try container.decode(String.self, forKey: .appBundleID)
         appName = try container.decode(String.self, forKey: .appName)
-        isEnabled = try container.decode(Bool.self, forKey: .isEnabled)
+        isEnabled = try container.decodeIfPresent(Bool.self, forKey: .isEnabled) ?? true
         
         if let g = try? container.decode([RuleGroup].self, forKey: .groups) { groups = g } else { groups = [] }
         if let arr = try? container.decode([ActionItem].self, forKey: .elseActions) { elseActions = arr } else { elseActions = [] }
