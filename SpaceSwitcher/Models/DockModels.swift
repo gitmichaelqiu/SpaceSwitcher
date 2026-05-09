@@ -81,7 +81,7 @@ struct DockSet: Identifiable, Codable, Equatable {
 }
 
 // MARK: - Config
-struct DockConfig: Codable {
+struct DockConfig: Codable, Equatable {
     var dockSets: [DockSet] = []
     var defaultDockSetID: UUID?
     var spaceAssignments: [String: UUID] = [:]
