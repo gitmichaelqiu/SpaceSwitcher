@@ -8,10 +8,12 @@
 
 /* Begin PBXBuildFile section */
 		46624E022FAEFE8C0081A9A3 /* Sparkle in Frameworks */ = {isa = PBXBuildFile; productRef = 46624E012FAEFE8C0081A9A3 /* Sparkle */; };
+		46624EDD2FAF693F0081A9A3 /* info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 46624EDC2FAF693B0081A9A3 /* info.plist */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
 		4626DBF82ECDF2730061E05F /* SpaceSwitcher.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = SpaceSwitcher.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		46624EDC2FAF693B0081A9A3 /* info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = info.plist; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -37,6 +39,7 @@
 		4626DBEF2ECDF2730061E05F = {
 			isa = PBXGroup;
 			children = (
+				46624EDC2FAF693B0081A9A3 /* info.plist */,
 				4626DBFA2ECDF2730061E05F /* SpaceSwitcher */,
 				4626DBF92ECDF2730061E05F /* Products */,
 			);
@@ -119,6 +122,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				46624EDD2FAF693F0081A9A3 /* info.plist in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
