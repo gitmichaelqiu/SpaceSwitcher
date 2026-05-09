@@ -49,13 +49,15 @@ class StatusBarManager: NSObject {
         // Monitor Rule automation status to update menu
         ruleManager?.$isAutomationEnabled
             .receive(on: DispatchQueue.main)
-            .sink { [weak self] _ in self?.updateMenu() }
+            .sink { [weak self] (isEnabled: Bool) in self?.updateMenu() }
             .store(in: &cancellables)
             
         // Monitor Dock automation status to update menu
-        dockManager?.config.$isAutomationEnabled
+        dockManager?.$config
+            .map { $0.isAutomationEnabled }
+            .removeDuplicates()
             .receive(on: DispatchQueue.main)
-            .sink { [weak self] _ in self?.updateMenu() }
+            .sink { [weak self] (isEnabled: Bool) in self?.updateMenu() }
             .store(in: &cancellables)
     }
     
