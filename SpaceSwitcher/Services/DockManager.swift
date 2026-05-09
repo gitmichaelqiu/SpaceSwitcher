@@ -188,27 +188,32 @@ class DockManager: ObservableObject {
                 importTask.launch()
                 importTask.waitUntilExit()
                 
-                // B. QUICK SYNC
-                CFPreferencesAppSynchronize(appID as CFString)
+                if Task.isCancelled { return false }
                 
-                // C. VERIFY PREFERENCE (Before Kill)
-                // This ensures cfprefsd has the correct data before we restart the Dock
+                // B. SYNC & WAIT
+                // Giving cfprefsd enough time to flush the imported plist to disk
+                CFPreferencesAppSynchronize(appID as CFString)
+                try? Thread.sleep(forTimeInterval: 0.2)
+                
+                // C. KILL DOCK
+                let killTask = Process()
+                killTask.launchPath = "/usr/bin/killall"
+                killTask.arguments = ["Dock"]
+                killTask.launch()
+                killTask.waitUntilExit()
+                
+                // D. VERIFY (Wait for Dock to respawn and check preferences)
+                try? Thread.sleep(forTimeInterval: 0.4)
+                
+                CFPreferencesAppSynchronize(appID as CFString)
                 if let readVal = CFPreferencesCopyAppValue("persistent-apps" as CFString, appID as CFString) as? [Any] {
                     if readVal.count == rawData.count {
-                        // Success! Now kill and finish.
-                        let killTask = Process()
-                        killTask.launchPath = "/usr/bin/killall"
-                        killTask.arguments = ["Dock"]
-                        killTask.launch()
-                        killTask.waitUntilExit()
-                        
-                        self.logger.info("Attempt \(attempt): Optimization PASSED. Dock restarted.")
+                        self.logger.info("Attempt \(attempt): Verification PASSED.")
                         return true
                     }
                 }
                 
-                // If it failed, wait a bit longer before retrying
-                try? Thread.sleep(forTimeInterval: 0.1 * Double(attempt))
+                self.logger.warning("Attempt \(attempt): Verification FAILED. Retrying...")
             }
             
             return false
