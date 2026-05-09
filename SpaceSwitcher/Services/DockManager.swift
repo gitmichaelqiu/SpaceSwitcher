@@ -161,7 +161,7 @@ class DockManager: ObservableObject {
     
     // MARK: - Core System Logic (Verified Write + Force Kill)
     
-    private func getSystemDockPersistentApps() -> [Any]? {
+    nonisolated private func getSystemDockPersistentApps() -> [Any]? {
         let appID = "com.apple.dock" as CFString
         let key = "persistent-apps" as CFString
         
@@ -258,7 +258,7 @@ class DockManager: ObservableObject {
     }
     
     
-    private func parseRawDockData(_ rawArray: [Any]) -> [DockTile] {
+    nonisolated private func parseRawDockData(_ rawArray: [Any]) -> [DockTile] {
         var tiles: [DockTile] = []
         for case let itemDict as [String: Any] in rawArray {
             // Detect tile type
@@ -294,7 +294,7 @@ class DockManager: ObservableObject {
         return tiles
     }
     
-    private func buildRawDockData(from tiles: [DockTile]) -> [Any] {
+    nonisolated private func buildRawDockData(from tiles: [DockTile]) -> [Any] {
         return tiles.map { $0.rawData }
     }
     
