@@ -16,6 +16,10 @@ class RuleManager: ObservableObject {
     private var cancellables = Set<AnyCancellable>()
     private let rulesKey = "SpaceSwitcherRules"
     
+    // TRACKING: Managed visibility states
+    private var managedHides = Set<String>()
+    private var managedMinimizes = Set<String>()
+    
     // MASTER TASK: Tracks the current rule enforcement process
     private var enforcementTask: Task<Void, Never>?
     
@@ -69,15 +73,33 @@ class RuleManager: ObservableObject {
             
             switch item.value {
             case .hide:
+                managedHides.insert(bundleID)
                 app.hide()
                 
             case .show:
+                managedHides.remove(bundleID)
+                managedMinimizes.remove(bundleID)
                 let wasHidden = app.isHidden
                 unhideAppWithoutActivation(app)
                 unminimizeAppWindows(app)
                 if wasHidden { try? await Task.sleep(nanoseconds: 200_000_000) }
+
+            case .restore:
+                let shouldUnhide = managedHides.contains(bundleID)
+                let shouldUnminimize = managedMinimizes.contains(bundleID)
+                managedHides.remove(bundleID)
+                managedMinimizes.remove(bundleID)
+                
+                if shouldUnhide {
+                    unhideAppWithoutActivation(app)
+                }
+                if shouldUnminimize {
+                    unminimizeAppWindows(app)
+                }
+                if shouldUnhide { try? await Task.sleep(nanoseconds: 200_000_000) }
                 
             case .minimize:
+                managedMinimizes.insert(bundleID)
                 minimizeAppWindows(app)
                 
             case .bringToFront:
