@@ -19,7 +19,7 @@ enum SettingsTab: String, CaseIterable, Identifiable {
         switch self {
         case .general: return "gearshape"
         case .rules: return "list.bullet.below.rectangle"
-        case .dock: return "dock.rectangle"
+        case .dock: return "dock.arrow.up.rectangle"
         case .permissions: return "lock.shield"
         case .about: return "info.circle"
         }
