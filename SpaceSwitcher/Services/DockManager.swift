@@ -163,39 +163,45 @@ class DockManager: ObservableObject {
         // 1. Prepare Data
         let rawData = await self.buildRawDockData(from: set.tiles)
         
-        // 2. Write using UserDefaults Suite (Native and Fast)
-        guard let defaults = UserDefaults(suiteName: appID) else {
-            self.logger.error("Could not access Dock defaults suite.")
+        // 2. Write to temporary plist
+        let tempDir = FileManager.default.temporaryDirectory
+        let tempFile = tempDir.appendingPathComponent("com.apple.dock.temp.\(UUID().uuidString).plist")
+        
+        do {
+            let plistData = try PropertyListSerialization.data(fromPropertyList: [key: rawData], format: .binary, options: 0)
+            try plistData.write(to: tempFile)
+        } catch {
+            self.logger.error("Failed to create temporary plist: \(error.localizedDescription)")
             return false
         }
+        defer { try? FileManager.default.removeItem(at: tempFile) }
         
-        defaults.set(rawData, forKey: key)
-        defaults.synchronize()
+        // 3. Import (Most reliable way to update cfprefsd)
+        let importTask = Process()
+        importTask.launchPath = "/usr/bin/defaults"
+        importTask.arguments = ["import", appID, tempFile.path]
+        importTask.launch()
+        importTask.waitUntilExit()
         
-        // 3. Small buffer for system to acknowledge
-        try? await Task.sleep(nanoseconds: 100_000_000) // 0.1s
+        // 4. Force Sync (Known trick: reading forces a flush/sync)
+        let syncTask = Process()
+        syncTask.launchPath = "/usr/bin/defaults"
+        syncTask.arguments = ["read", appID, key]
+        syncTask.launch()
+        syncTask.waitUntilExit()
         
-        // 4. Kill Dock
+        // 5. Moderate buffer for system to settle
+        try? await Task.sleep(nanoseconds: 200_000_000) // 0.2s
+        
+        // 6. Kill Dock
         let killTask = Process()
         killTask.launchPath = "/usr/bin/killall"
         killTask.arguments = ["Dock"]
         killTask.launch()
         killTask.waitUntilExit()
         
-        // 5. Verification buffer (Short)
-        try? await Task.sleep(nanoseconds: 200_000_000) // 0.2s
-        
-        // 6. Verify once
-        CFPreferencesAppSynchronize(appID as CFString)
-        if let readVal = CFPreferencesCopyAppValue(key as CFString, appID as CFString) as? [Any] {
-            if readVal.count == rawData.count {
-                self.logger.info("Dock switch verified successfully.")
-                return true
-            }
-        }
-        
-        self.logger.warning("Initial verification failed, but Dock may still update.")
-        return true // Return true anyway to update UI, we assume it worked or will settle
+        self.logger.info("Dock switch triggered with import + sync.")
+        return true // We assume success for UI snappiness
     }
     
     // MARK: - Data Management & Spacers
