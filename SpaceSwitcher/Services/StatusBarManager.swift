@@ -91,7 +91,7 @@ class StatusBarManager: NSObject {
                                    keyEquivalent: "")
         docksItem.target = self
         docksItem.state = (dockManager?.config.isAutomationEnabled ?? false) ? .on : .off
-        docksItem.image = NSImage(systemSymbolName: "dock.rectangle", accessibilityDescription: nil)
+        docksItem.image = NSImage(systemSymbolName: "dock.arrow.up.rectangle", accessibilityDescription: nil)
         menu.addItem(docksItem)
 
         // 2.1 Manual Dock Switching (if automation is disabled)
@@ -106,7 +106,7 @@ class StatusBarManager: NSObject {
                 setItem.representedObject = set.id
                 setItem.state = (dm.activeDockSetID == set.id) ? .on : .off
                 // Add a small dock icon to each set item
-                setItem.image = NSImage(systemSymbolName: "square.grid.3x1.below.line.grid.1x2", accessibilityDescription: nil)
+                setItem.image = NSImage(systemSymbolName: "dock.rectangle", accessibilityDescription: nil)
                 menu.addItem(setItem)
             }
         }
