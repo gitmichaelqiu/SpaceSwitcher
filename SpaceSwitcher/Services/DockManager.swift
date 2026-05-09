@@ -181,8 +181,6 @@ class DockManager: ObservableObject {
             for attempt in 1...3 {
                 if Task.isCancelled { return false }
                 
-                self.logger.info("Attempt \(attempt): Importing dock configuration...")
-                
                 // A. IMPORT
                 let importTask = Process()
                 importTask.launchPath = "/usr/bin/defaults"
@@ -190,30 +188,27 @@ class DockManager: ObservableObject {
                 importTask.launch()
                 importTask.waitUntilExit()
                 
-                if Task.isCancelled { return false }
-                
-                // B. SYNC & WAIT
+                // B. QUICK SYNC
                 CFPreferencesAppSynchronize(appID as CFString)
-                try? Thread.sleep(forTimeInterval: 0.2)
                 
-                // C. KILL DOCK
-                let killTask = Process()
-                killTask.launchPath = "/usr/bin/killall"
-                killTask.arguments = ["Dock"]
-                killTask.launch()
-                killTask.waitUntilExit()
-                
-                // D. VERIFY (Wait for Dock to respawn and check preferences)
-                try? Thread.sleep(forTimeInterval: 0.5)
-                
-                CFPreferencesAppSynchronize(appID as CFString)
+                // C. VERIFY PREFERENCE (Before Kill)
+                // This ensures cfprefsd has the correct data before we restart the Dock
                 if let readVal = CFPreferencesCopyAppValue("persistent-apps" as CFString, appID as CFString) as? [Any] {
                     if readVal.count == rawData.count {
-                        self.logger.info("Attempt \(attempt): Verification PASSED.")
+                        // Success! Now kill and finish.
+                        let killTask = Process()
+                        killTask.launchPath = "/usr/bin/killall"
+                        killTask.arguments = ["Dock"]
+                        killTask.launch()
+                        killTask.waitUntilExit()
+                        
+                        self.logger.info("Attempt \(attempt): Optimization PASSED. Dock restarted.")
                         return true
                     }
-                    self.logger.warning("Attempt \(attempt): Verification FAILED. Read \(readVal.count), expected \(rawData.count).")
                 }
+                
+                // If it failed, wait a bit longer before retrying
+                try? Thread.sleep(forTimeInterval: 0.1 * Double(attempt))
             }
             
             return false
