@@ -33,17 +33,28 @@ class DockManager: ObservableObject {
     
     /// Scans the system Dock and updates activeDockSetID if a match is found.
     func detectActiveDockSet() {
-        guard let rawApps = getSystemDockPersistentApps() else { return }
-        let currentTiles = parseRawDockData(rawApps)
-        
-        // Find a set that matches the current system tiles
-        if let match = config.dockSets.first(where: { $0.tiles == currentTiles }) {
-            self.activeDockSetID = match.id
-            self.lastAppliedDockSetID = match.id
-        } else {
-            // Fallback: if we just applied one or automation is on, 
-            // it will eventually be set by applyDockForSpace.
-            // If not, we keep it nil to indicate 'Custom/Modified' state.
+        Task {
+            // 1. Move heavy disk I/O and parsing to a background thread
+            let (matchFound, matchedID) = await Task.detached(priority: .background) {
+                guard let rawApps = self.getSystemDockPersistentApps() else { return (false, nil) }
+                let currentTiles = self.parseRawDockData(rawApps)
+                
+                // We need to access config from MainActor for the comparison
+                return await MainActor.run {
+                    if let match = self.config.dockSets.first(where: { $0.tiles == currentTiles }) {
+                        return (true, match.id)
+                    }
+                    return (false, nil)
+                }
+            }.value
+            
+            // 2. Update Published properties on MainActor
+            if matchFound, let id = matchedID {
+                await MainActor.run {
+                    self.activeDockSetID = id
+                    self.lastAppliedDockSetID = id
+                }
+            }
         }
     }
     
