@@ -15,7 +15,7 @@ struct DockTile: Identifiable, Codable, Hashable, Sendable {
         case id, label, bundleIdentifier, fileURL, rawDataBlob
     }
     
-    init(from decoder: Decoder) throws {
+    nonisolated init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         id = try container.decode(UUID.self, forKey: .id)
         label = try container.decode(String.self, forKey: .label)
@@ -33,7 +33,7 @@ struct DockTile: Identifiable, Codable, Hashable, Sendable {
         try container.encode(rawDataBlob, forKey: .rawDataBlob)
     }
     
-    init(label: String, bundleIdentifier: String?, fileURL: URL?, rawDataBlob: Data) {
+    nonisolated init(label: String, bundleIdentifier: String?, fileURL: URL?, rawDataBlob: Data) {
         self.label = label
         self.bundleIdentifier = bundleIdentifier
         self.fileURL = fileURL
