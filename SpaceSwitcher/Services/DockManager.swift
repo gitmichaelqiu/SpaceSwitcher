@@ -159,49 +159,75 @@ class DockManager: ObservableObject {
     private func applyDockSetVerified(_ set: DockSet) async -> Bool {
         let appID = "com.apple.dock"
         let key = "persistent-apps"
+        let plistPath = (NSHomeDirectory() as NSString).appendingPathComponent("Library/Preferences/com.apple.dock.plist")
+        let plistURL = URL(fileURLWithPath: plistPath)
         
         // 1. Prepare Data
         let rawData = await self.buildRawDockData(from: set.tiles)
         
-        // 2. Write to temporary plist
-        let tempDir = FileManager.default.temporaryDirectory
-        let tempFile = tempDir.appendingPathComponent("com.apple.dock.temp.\(UUID().uuidString).plist")
-        
-        do {
-            let plistData = try PropertyListSerialization.data(fromPropertyList: [key: rawData], format: .binary, options: 0)
-            try plistData.write(to: tempFile)
-        } catch {
-            self.logger.error("Failed to create temporary plist: \(error.localizedDescription)")
-            return false
+        // 2. Read existing plist to preserve all other system settings (others, icon size, etc.)
+        var plistDict: [String: Any] = [:]
+        if let data = try? Data(contentsOf: plistURL),
+           let dict = try? PropertyListSerialization.propertyList(from: data, options: .mutableContainersAndLeaves, format: nil) as? [String: Any] {
+            plistDict = dict
         }
-        defer { try? FileManager.default.removeItem(at: tempFile) }
         
-        // 3. Import (Most reliable way to update cfprefsd)
-        let importTask = Process()
-        importTask.launchPath = "/usr/bin/defaults"
-        importTask.arguments = ["import", appID, tempFile.path]
-        importTask.launch()
-        importTask.waitUntilExit()
+        // 3. Update only the apps array
+        plistDict[key] = rawData
         
-        // 4. Force Sync (Known trick: reading forces a flush/sync)
-        let syncTask = Process()
-        syncTask.launchPath = "/usr/bin/defaults"
-        syncTask.arguments = ["read", appID, key]
-        syncTask.launch()
-        syncTask.waitUntilExit()
+        // 4. Atomic Write to Disk
+        do {
+            let updatedData = try PropertyListSerialization.data(fromPropertyList: plistDict, format: .binary, options: 0)
+            try updatedData.write(to: plistURL, options: .atomic)
+        } catch {
+            self.logger.error("Failed to write plist directly: \(error.localizedDescription)")
+            // Fallback to defaults import if direct write fails
+            return await applyDockSetViaDefaults(rawData)
+        }
         
-        // 5. Moderate buffer for system to settle
+        // 5. Force System to Reload from Disk
+        // Purging cfprefsd ensures the cache is cleared and reloaded from our file
+        let purgeTask = Process()
+        purgeTask.launchPath = "/usr/bin/killall"
+        purgeTask.arguments = ["cfprefsd"]
+        purgeTask.launch()
+        purgeTask.waitUntilExit()
+        
+        // 6. Settle & Kill
         try? await Task.sleep(nanoseconds: 200_000_000) // 0.2s
         
-        // 6. Kill Dock
         let killTask = Process()
         killTask.launchPath = "/usr/bin/killall"
         killTask.arguments = ["Dock"]
         killTask.launch()
         killTask.waitUntilExit()
         
-        self.logger.info("Dock switch triggered with import + sync.")
-        return true // We assume success for UI snappiness
+        return true
+    }
+    
+    private func applyDockSetViaDefaults(_ rawData: [Any]) async -> Bool {
+        let appID = "com.apple.dock"
+        let key = "persistent-apps"
+        
+        let tempFile = FileManager.default.temporaryDirectory.appendingPathComponent("com.apple.dock.fallback.plist")
+        try? PropertyListSerialization.data(fromPropertyList: [key: rawData], format: .binary, options: 0).write(to: tempFile)
+        defer { try? FileManager.default.removeItem(at: tempFile) }
+        
+        let importTask = Process()
+        importTask.launchPath = "/usr/bin/defaults"
+        importTask.arguments = ["import", appID, tempFile.path]
+        importTask.launch()
+        importTask.waitUntilExit()
+        
+        try? await Task.sleep(nanoseconds: 300_000_000)
+        
+        let killTask = Process()
+        killTask.launchPath = "/usr/bin/killall"
+        killTask.arguments = ["Dock"]
+        killTask.launch()
+        killTask.waitUntilExit()
+        
+        return true
     }
     
     // MARK: - Data Management & Spacers
