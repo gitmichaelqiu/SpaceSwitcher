@@ -73,7 +73,7 @@ class RuleManager: ObservableObject {
             
             switch item.value {
             case .hide:
-                if !app.isHidden {
+                if !isAppEffectivelyHidden(app) {
                     managedHides.insert(bundleID)
                 }
                 app.hide()
@@ -101,8 +101,14 @@ class RuleManager: ObservableObject {
                 if shouldUnhide { try? await Task.sleep(nanoseconds: 200_000_000) }
                 
             case .minimize:
-                if minimizeAppWindows(app) {
-                    managedMinimizes.insert(bundleID)
+                if !isAppEffectivelyHidden(app) {
+                    if minimizeAppWindows(app) {
+                        managedMinimizes.insert(bundleID)
+                    }
+                } else {
+                    // Even if already hidden/minimized, we still run the minimize command 
+                    // to ensure consistency, but we don't 'claim' it as managed.
+                    minimizeAppWindows(app)
                 }
                 
             case .bringToFront:
@@ -188,6 +194,27 @@ class RuleManager: ObservableObject {
         return AXIsProcessTrustedWithOptions(options)
     }
 
+    private func isAppEffectivelyHidden(_ app: NSRunningApplication) -> Bool {
+        if app.isHidden { return true }
+        
+        // If not hidden, check if all windows are minimized
+        if !checkAccessibility() { return false }
+        let pid = app.processIdentifier; let appElement = AXUIElementCreateApplication(pid); var windowsRef: AnyObject?
+        if AXUIElementCopyAttributeValue(appElement, kAXWindowsAttribute as CFString, &windowsRef) == .success, let windows = windowsRef as? [AXUIElement] {
+            if windows.isEmpty { return false }
+            for window in windows { 
+                var isMin: AnyObject?
+                if AXUIElementCopyAttributeValue(window, kAXMinimizedAttribute as CFString, &isMin) == .success, let minBool = isMin as? Bool {
+                    if !minBool { return false } // Found a visible window
+                } else {
+                    return false // Could not determine, assume visible
+                }
+            }
+            return true // All windows are minimized
+        }
+        return false
+    }
+    
     private func unhideAppWithoutActivation(_ app: NSRunningApplication) {
         if !checkAccessibility() { print("RULE: Accessibility permission missing, skipping unhide") ; return }
         let pid = app.processIdentifier; let appElement = AXUIElementCreateApplication(pid)
