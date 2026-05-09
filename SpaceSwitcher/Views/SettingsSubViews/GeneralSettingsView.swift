@@ -1,4 +1,5 @@
 import SwiftUI
+import Sparkle
 
 struct GeneralSettingsView: View {
     @ObservedObject var spaceManager: SpaceManager
