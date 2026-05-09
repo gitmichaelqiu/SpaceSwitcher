@@ -83,7 +83,7 @@
         }
       }
     },
-    "Activates the application and brings its windows to the foreground." : {
+    "Activate the application and bring its windows to the foreground." : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -188,7 +188,7 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "应用于桌面"
+            "value" : "应用"
           }
         }
       }
@@ -373,6 +373,16 @@
         }
       }
     },
+    "Dock Items" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dock项目"
+          }
+        }
+      }
+    },
     "Dock Sets" : {
       "localizations" : {
         "zh-Hans" : {
@@ -403,7 +413,7 @@
         }
       }
     },
-    "Forcefully unhides and unminimizes the application, regardless of its previous state." : {
+    "Forcefully unhide and unminimize the application, regardless of its previous state." : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -474,6 +484,16 @@
         }
       }
     },
+    "Hide the application." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "隐藏应用程序。"
+          }
+        }
+      }
+    },
     "If the status shows 'Granted' but automation isn't working, try removing SpaceSwitcher from the list in System Settings and re-adding it." : {
       "localizations" : {
         "zh-Hans" : {
@@ -484,7 +504,7 @@
         }
       }
     },
-    "Intelligent reversal. Only unhides/unminimizes if SpaceSwitcher was the one that hid it earlier." : {
+    "Intelligent reversal. Only unhide and unminimize if SpaceSwitcher was the one that hid it earlier." : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -545,12 +565,12 @@
         }
       }
     },
-    "Minimizes all windows of the application to the Dock." : {
+    "Minimize all windows of the application." : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "将该应用程序的所有窗口最小化到 Dock。"
+            "value" : "最小化所有窗口。"
           }
         }
       }
@@ -661,16 +681,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "其他"
-          }
-        }
-      }
-    },
-    "Performs a standard macOS hide (Cmd+H) on the target application." : {
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "对目标应用程序执行标准的 macOS 隐藏 (Cmd+H)。"
           }
         }
       }
@@ -827,7 +837,7 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Dock 组配置"
+            "value" : "Dock组设置"
           }
         }
       }

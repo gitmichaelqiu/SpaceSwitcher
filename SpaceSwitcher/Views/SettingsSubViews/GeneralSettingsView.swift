@@ -21,7 +21,7 @@ struct GeneralSettingsView: View {
                 }
                 
                 // 2. Updates - Standardized per macOSers bundle
-                SettingsSection("Updates") {
+                SettingsSection(NSLocalizedString("Updates", comment: "")) {
                     SettingsRow("Automatically check for updates") {
                         Toggle("", isOn: $autoCheckUpdate)
                             .labelsHidden()

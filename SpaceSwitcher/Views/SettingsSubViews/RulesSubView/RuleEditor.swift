@@ -380,11 +380,11 @@ struct RuleEditor: View {
             
             ScrollView(.vertical) {
                 VStack(alignment: .leading, spacing: 20) {
-                    legendItem(name: "Show", desc: "Forcefully unhides and unminimizes the application, regardless of its previous state.")
-                    legendItem(name: "Restore", desc: "Intelligent reversal. Only unhides/unminimizes if SpaceSwitcher was the one that hid it earlier.")
-                    legendItem(name: "Hide", desc: "Performs a standard macOS hide (Cmd+H) on the target application.")
-                    legendItem(name: "Minimize", desc: "Minimizes all windows of the application to the Dock.")
-                    legendItem(name: "Front", desc: "Activates the application and brings its windows to the foreground.")
+                    legendItem(name: "Show", desc: "Forcefully unhide and unminimize the application, regardless of its previous state.")
+                    legendItem(name: "Restore", desc: "Intelligent reversal. Only unhide and unminimize if SpaceSwitcher was the one that hid it earlier.")
+                    legendItem(name: "Hide", desc: "Hide the application.")
+                    legendItem(name: "Minimize", desc: "Minimize all windows of the application.")
+                    legendItem(name: "Front", desc: "Activate the application and bring its windows to the foreground.")
                 }
                 .padding(.trailing, 8)
             }

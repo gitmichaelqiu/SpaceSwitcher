@@ -45,7 +45,7 @@ struct DockSettingsView: View {
                             }
                             
                             // 1. Dock Set Configuration
-                            SettingsSection("Set Configuration") {
+                            SettingsSection(NSLocalizedString("Set Configuration", comment: "")) {
                                 SettingsRow("Name") {
                                     TextField("Name", text: $dockManager.config.dockSets[index].name)
                                         .textFieldStyle(.roundedBorder)
@@ -228,7 +228,7 @@ struct DockSpaceAssignmentView: View {
         let isDefault = dockManager.config.defaultDockSetID == selectedSetID
         
         SettingsSection(
-            "Apply to Spaces",
+            NSLocalizedString("Apply to Spaces", comment: ""),
             helperText: isDefault ? "This dock set is used automatically for all unassigned spaces." : nil
         ) {
             VStack(alignment: .leading, spacing: 10) {
@@ -312,7 +312,7 @@ struct DockItemsListView: View {
     
     var body: some View {
         SettingsSection(
-            "Dock Items",
+            NSLocalizedString("Dock Items", comment: ""),
             accessory: {
                 HStack(spacing: 8) {
                     Button {
