@@ -158,80 +158,65 @@ class DockManager: ObservableObject {
     
     private func applyDockSetVerified(_ set: DockSet) async -> Bool {
         return await Task.detached(priority: .userInitiated) {
-            let key = "persistent-apps" as CFString
-            let appID = "com.apple.dock" as CFString
+            let appID = "com.apple.dock"
             
             // 1. Prepare Data
             let rawData = await self.buildRawDockData(from: set.tiles)
-            let targetCount = rawData.count
             
-            // 2. Write & Verify Loop (Max 5 attempts)
-            var verified = false
-            for attempt in 1...5 {
-                if Task.isCancelled { return false }
-                
-                // A. WRITE
-                CFPreferencesSetAppValue(key, rawData as CFPropertyList, appID)
-                let syncResult = CFPreferencesAppSynchronize(appID)
-                
-                if !syncResult {
-                    self.logger.error("Attempt \(attempt): CFPreferencesAppSynchronize returned FALSE")
-                }
-                
-                // B. WAIT (Give cfprefsd time to flush) - Increases with attempts
-                let delay = UInt32(150_000 + (attempt * 50_000))
-                usleep(delay)
-                
-                if Task.isCancelled { return false }
-                
-                // C. READ BACK (Verification)
-                CFPreferencesAppSynchronize(appID) // Force re-sync before read
-                
-                if let readVal = CFPreferencesCopyAppValue(key, appID) as? [Any] {
-                    // Simple count check usually suffices, but we check first item for robustness
-                    if readVal.count == targetCount {
-                        if targetCount == 0 {
-                            // Empty dock matched
-                            self.logger.info("Attempt \(attempt): Verification PASSED (Empty Dock).")
-                            verified = true
-                            break
-                        }
-                        
-                        // Check first item label
-                        if let firstTarget = rawData.first as? [String: Any],
-                           let firstRead = readVal.first as? [String: Any],
-                           let targetLabel = (firstTarget["tile-data"] as? [String: Any])?["file-label"] as? String,
-                           let readLabel = (firstRead["tile-data"] as? [String: Any])?["file-label"] as? String,
-                           targetLabel == readLabel {
-                            
-                            self.logger.info("Attempt \(attempt): Verification PASSED. (Items: \(targetCount))")
-                            verified = true
-                            break
-                        }
-                    }
-                    self.logger.warning("Attempt \(attempt): Verification FAILED. Read \(readVal.count), expected \(targetCount). Retrying...")
-                } else {
-                    self.logger.warning("Attempt \(attempt): Read-back returned nil.")
-                }
-            }
+            // 2. Write to temporary plist
+            let tempDir = FileManager.default.temporaryDirectory
+            let tempFile = tempDir.appendingPathComponent("com.apple.dock.temp.\(UUID().uuidString).plist")
             
-            if !verified {
-                self.logger.fault("CRITICAL: Failed to verify dock preferences after 5 attempts. Aborting kill.")
+            do {
+                let data = try PropertyListSerialization.data(fromPropertyList: ["persistent-apps": rawData], format: .binary, options: 0)
+                try data.write(to: tempFile)
+            } catch {
+                self.logger.error("Failed to create temporary plist: \(error.localizedDescription)")
                 return false
             }
             
-            if Task.isCancelled { return false }
+            defer { try? FileManager.default.removeItem(at: tempFile) }
             
-            // 3. KILL DOCK
-            // Standard kill signal (SIGTERM) allows the Dock to cleanly exit.
-            self.logger.info("Restarting Dock process...")
-            let task = Process()
-            task.launchPath = "/usr/bin/killall"
-            task.arguments = ["Dock"]
-            task.launch()
-            task.waitUntilExit()
+            // 3. Import and Kill Loop (Max 3 attempts)
+            for attempt in 1...3 {
+                if Task.isCancelled { return false }
+                
+                self.logger.info("Attempt \(attempt): Importing dock configuration...")
+                
+                // A. IMPORT
+                let importTask = Process()
+                importTask.launchPath = "/usr/bin/defaults"
+                importTask.arguments = ["import", appID, tempFile.path]
+                importTask.launch()
+                importTask.waitUntilExit()
+                
+                if Task.isCancelled { return false }
+                
+                // B. SYNC & WAIT
+                CFPreferencesAppSynchronize(appID as CFString)
+                try? Thread.sleep(forTimeInterval: 0.2)
+                
+                // C. KILL DOCK
+                let killTask = Process()
+                killTask.launchPath = "/usr/bin/killall"
+                killTask.arguments = ["Dock"]
+                killTask.launch()
+                killTask.waitUntilExit()
+                
+                // D. VERIFY (Wait for Dock to respawn and check preferences)
+                try? Thread.sleep(forTimeInterval: 0.5)
+                
+                CFPreferencesAppSynchronize(appID as CFString)
+                if let readVal = CFPreferencesCopyAppValue("persistent-apps" as CFString, appID as CFString) as? [Any] {
+                    if readVal.count == rawData.count {
+                        self.logger.info("Attempt \(attempt): Verification PASSED.")
+                        return true
+                    }
+                    self.logger.warning("Attempt \(attempt): Verification FAILED. Read \(readVal.count), expected \(rawData.count).")
+                }
+            }
             
-            return true
+            return false
         }.value
     }
     
