@@ -394,7 +394,7 @@ struct RuleEditor: View {
     }
     
     @ViewBuilder
-    private func legendItem(name: String, desc: String) -> some View {
+    private func legendItem(name: LocalizedStringKey, desc: LocalizedStringKey) -> some View {
         VStack(alignment: .leading, spacing: 4) {
             Text(name)
                 .font(.system(size: 11, weight: .bold, design: .monospaced))

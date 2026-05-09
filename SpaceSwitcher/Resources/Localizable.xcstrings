@@ -83,6 +83,16 @@
         }
       }
     },
+    "Activates the application and brings its windows to the foreground." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "激活该应用程序并将其窗口移至最前台。"
+          }
+        }
+      }
+    },
     "Add Action" : {
       "localizations" : {
         "zh-Hans" : {
@@ -169,6 +179,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "立即应用"
+          }
+        }
+      }
+    },
+    "Apply to Spaces" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "应用于桌面"
           }
         }
       }
@@ -383,6 +403,26 @@
         }
       }
     },
+    "Forcefully unhides and unminimizes the application, regardless of its previous state." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "无论之前的状态如何，强制取消隐藏并取消最小化该应用程序。"
+          }
+        }
+      }
+    },
+    "Front" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "前台"
+          }
+        }
+      }
+    },
     "General" : {
       "localizations" : {
         "zh-Hans" : {
@@ -444,6 +484,16 @@
         }
       }
     },
+    "Intelligent reversal. Only unhides/unminimizes if SpaceSwitcher was the one that hid it earlier." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "智能反转。只有当 SpaceSwitcher 之前隐藏了该应用程序时，才会取消隐藏/取消最小化。"
+          }
+        }
+      }
+    },
     "Launch at Login" : {
       "localizations" : {
         "zh-Hans" : {
@@ -491,6 +541,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "最小化"
+          }
+        }
+      }
+    },
+    "Minimizes all windows of the application to the Dock." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "将该应用程序的所有窗口最小化到 Dock。"
           }
         }
       }
@@ -601,6 +661,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "其他"
+          }
+        }
+      }
+    },
+    "Performs a standard macOS hide (Cmd+H) on the target application." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "对目标应用程序执行标准的 macOS 隐藏 (Cmd+H)。"
           }
         }
       }
@@ -752,6 +822,16 @@
         }
       }
     },
+    "Set Configuration" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dock 组配置"
+          }
+        }
+      }
+    },
     "Settings" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -885,6 +965,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "此 Dock 组将自动用于所有未分配的桌面。"
+          }
+        }
+      }
+    },
+    "Updates" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "更新"
           }
         }
       }
