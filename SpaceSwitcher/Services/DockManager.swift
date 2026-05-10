@@ -16,6 +16,9 @@ class DockManager: ObservableObject {
     @MainActor @Published var activeDockSetID: UUID?
     private var lastAppliedDockSetID: UUID?
     
+    // Serializes access to applyDockSetVerified to prevent concurrent Dock restarts
+    private let switchLock = NSLock()
+
     // Tracks the current switching task
     private var dockTask: Task<Void, Never>?
     
@@ -174,47 +177,50 @@ class DockManager: ObservableObject {
     }
     
     private func applyDockSetVerified(_ set: DockSet) async -> Bool {
+        // Serialize: only one dock switch at a time prevents concurrent
+        // CFPreferences writes and killall Dock calls from corrupting state.
+        switchLock.lock()
+        defer { switchLock.unlock() }
+
+        // If this task was superseded while waiting for the lock, bail out
+        // so the next request can acquire the lock immediately.
+        if Task.isCancelled { return false }
+
         let appID = "com.apple.dock" as CFString
         let key = "persistent-apps" as CFString
-        
-        // Prepare Dock tile data
+
         let newAppData = DockManager.buildRawDockData(from: set.tiles)
-        
-        // Perform attempts using standard CFPreferences API.
-        // This handles cfprefsd synchronization correctly.
+
         for attempt in 1...3 {
             if Task.isCancelled { return false }
-            
-            // Update the preference cache
+
             CFPreferencesSetValue(key, newAppData as CFPropertyList, appID, kCFPreferencesCurrentUser, kCFPreferencesAnyHost)
-            
-            // Synchronize with the preference daemon
+
             if !CFPreferencesAppSynchronize(appID) {
                 logger.error("Attempt \(attempt): CFPreferencesAppSynchronize failed")
                 try? await Task.sleep(nanoseconds: 200_000_000)
                 continue
             }
-            
+
             // Wait for system to process the update
             try? await Task.sleep(nanoseconds: 300_000_000)
-            
+
             // Restart Dock to pick up new preferences
             let killTask = Process()
             killTask.executableURL = URL(fileURLWithPath: "/usr/bin/killall")
             killTask.arguments = ["Dock"]
             try? killTask.run()
             killTask.waitUntilExit()
-            
+
             // Verify the new state via the API
             try? await Task.sleep(nanoseconds: 600_000_000)
             if let verifyApps = DockManager.getSystemDockPersistentApps() {
-                // We compare the count as a quick verification of success
                 if verifyApps.count == newAppData.count {
                     return true
                 }
             }
         }
-        
+
         return false
     }
     
