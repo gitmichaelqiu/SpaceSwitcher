@@ -167,23 +167,29 @@ class DockManager: ObservableObject {
     nonisolated static private func getSystemDockPersistentApps() -> [Any]? {
         let appID = "com.apple.dock" as CFString
         let key = "persistent-apps" as CFString
-        
-        // Use CFPreferences to read from the system's preference cache (cfprefsd)
-        // This is the standard macOS way and is more robust than direct file I/O.
+
         guard let apps = CFPreferencesCopyAppValue(key, appID) as? [Any] else {
             return nil
         }
         return apps
     }
+
+    /// Reads persistent-apps directly from the Dock plist file, bypassing cfprefsd.
+    /// Used for verification after Dock restart when cfprefsd XPC connections
+    /// may be broken (producing "Connection interrupted" errors).
+    nonisolated static private func readPersistentAppsFromDisk() -> [Any]? {
+        let path = NSHomeDirectory() + "/Library/Preferences/com.apple.dock.plist"
+        guard let data = try? Data(contentsOf: URL(fileURLWithPath: path)),
+              let plist = try? PropertyListSerialization.propertyList(from: data, options: [], format: nil) as? [String: Any],
+              let apps = plist["persistent-apps"] as? [Any]
+        else { return nil }
+        return apps
+    }
     
     private func applyDockSetVerified(_ set: DockSet) async -> Bool {
-        // Serialize: only one dock switch at a time prevents concurrent
-        // CFPreferences writes and killall Dock calls from corrupting state.
         switchLock.lock()
         defer { switchLock.unlock() }
 
-        // If this task was superseded while waiting for the lock, bail out
-        // so the next request can acquire the lock immediately.
         if Task.isCancelled { return false }
 
         let appID = "com.apple.dock" as CFString
@@ -202,8 +208,8 @@ class DockManager: ObservableObject {
                 continue
             }
 
-            // Wait for system to process the update
-            try? await Task.sleep(nanoseconds: 300_000_000)
+            // Wait for cfprefsd to flush the write to disk
+            try? await Task.sleep(nanoseconds: 500_000_000)
 
             // Restart Dock to pick up new preferences
             let killTask = Process()
@@ -217,17 +223,46 @@ class DockManager: ObservableObject {
                 killTask.terminate()
             }
 
-            // Don't waste time verifying if superseded
             if Task.isCancelled { return false }
 
-            // Verify the new state by comparing tile content, not just count
-            try? await Task.sleep(nanoseconds: 600_000_000)
-            if let verifyApps = DockManager.getSystemDockPersistentApps() {
-                let verifyTiles = DockManager.parseRawDockData(verifyApps)
-                if verifyTiles == set.tiles {
-                    return true
+            // Wait for Dock process to reappear (launchd restarts it)
+            var dockRestarted = false
+            for _ in 0..<20 {
+                if !NSRunningApplication.runningApplications(withBundleIdentifier: "com.apple.dock").isEmpty {
+                    dockRestarted = true
+                    break
+                }
+                try? await Task.sleep(nanoseconds: 200_000_000)
+                if Task.isCancelled { return false }
+            }
+
+            if !dockRestarted {
+                logger.error("Attempt \(attempt): Dock did not restart")
+                continue
+            }
+
+            // Let the Dock settle before reading back
+            try? await Task.sleep(nanoseconds: 500_000_000)
+
+            // Verify via direct plist reads (bypasses cfprefsd XPC to avoid
+            // "Connection interrupted" errors during Dock restart).
+            // Retry reads without re-killing the Dock.
+            for readAttempt in 1...4 {
+                if Task.isCancelled { return false }
+
+                if let apps = DockManager.readPersistentAppsFromDisk() {
+                    let tiles = DockManager.parseRawDockData(apps)
+                    if tiles == set.tiles {
+                        return true
+                    }
+                }
+
+                if readAttempt < 4 {
+                    try? await Task.sleep(nanoseconds: UInt64(readAttempt) * 400_000_000)
                 }
             }
+
+            logger.error("Attempt \(attempt): verification reads exhausted, will retry full cycle")
         }
 
         return false
