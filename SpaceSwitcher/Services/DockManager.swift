@@ -228,6 +228,13 @@ class DockManager: ObservableObject {
                 continue
             }
 
+            // Capture the current Dock PIDs so we can confirm the old Dock
+            // actually died and distinguish the restarted process from a
+            // stale process that survived a failed killall.
+            let oldDockPIDs = Set(NSRunningApplication
+                .runningApplications(withBundleIdentifier: "com.apple.dock")
+                .map { $0.processIdentifier })
+
             // Kill the Dock immediately after writing so the new Dock picks up
             // the updated plist on restart. Killing right away minimises the
             // window where the dying Dock's termination handler could revert
@@ -251,10 +258,25 @@ class DockManager: ObservableObject {
 
             if Task.isCancelled { return false }
 
-            // Wait for Dock process to reappear (launchd restarts it)
+            // Wait for old Dock PIDs to disappear, confirming the kill
+            // actually took effect. Without this, a failed killall or a
+            // slow-to-die Dock could be mistaken for a successful restart.
+            for _ in 0..<10 {
+                let currentPIDs = Set(NSRunningApplication
+                    .runningApplications(withBundleIdentifier: "com.apple.dock")
+                    .map { $0.processIdentifier })
+                if oldDockPIDs.isDisjoint(with: currentPIDs) {
+                    break
+                }
+                try? await Task.sleep(nanoseconds: 200_000_000)
+                if Task.isCancelled { return false }
+            }
+
+            // Wait for a *new* Dock process (different PID) to appear
             var dockRestarted = false
             for _ in 0..<20 {
-                if !NSRunningApplication.runningApplications(withBundleIdentifier: "com.apple.dock").isEmpty {
+                let current = NSRunningApplication.runningApplications(withBundleIdentifier: "com.apple.dock")
+                if current.contains(where: { !oldDockPIDs.contains($0.processIdentifier) }) {
                     dockRestarted = true
                     break
                 }
@@ -267,8 +289,11 @@ class DockManager: ObservableObject {
                 continue
             }
 
-            // Let the Dock settle before reading back
-            try? await Task.sleep(nanoseconds: 500_000_000)
+            // Let the Dock settle before reading back.
+            // Extend settle time on the final attempt to give the Dock
+            // more time to fully initialize and read the plist.
+            let settleNs: UInt64 = attempt == 3 ? 1_000_000_000 : 500_000_000
+            try? await Task.sleep(nanoseconds: settleNs)
 
             // Verify via direct plist reads (bypasses cfprefsd XPC to avoid
             // "Connection interrupted" errors during Dock restart).
@@ -279,8 +304,11 @@ class DockManager: ObservableObject {
                 if let apps = DockManager.readPersistentAppsFromDisk() {
                     let tiles = DockManager.parseRawDockData(apps)
                     if tiles == set.tiles {
+                        logger.info("Verification passed on read #\(readAttempt)")
                         return true
                     }
+                } else {
+                    logger.warning("Verification read #\(readAttempt): could not read plist from disk")
                 }
 
                 if readAttempt < 4 {
