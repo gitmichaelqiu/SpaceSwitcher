@@ -212,10 +212,11 @@ class DockManager: ObservableObject {
             try? killTask.run()
             killTask.waitUntilExit()
 
-            // Verify the new state via the API
+            // Verify the new state by comparing tile content, not just count
             try? await Task.sleep(nanoseconds: 600_000_000)
             if let verifyApps = DockManager.getSystemDockPersistentApps() {
-                if verifyApps.count == newAppData.count {
+                let verifyTiles = DockManager.parseRawDockData(verifyApps)
+                if verifyTiles == set.tiles {
                     return true
                 }
             }
