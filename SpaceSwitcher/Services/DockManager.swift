@@ -263,10 +263,18 @@ class DockManager: ObservableObject {
             if Task.isCancelled { return false }
 
             // 4. Write to cfprefsd (updates the in-memory cache the new
-            //    Dock queries on startup) + plist directly as backup
+            //    Dock queries on startup) + plist directly as backup.
+            //    Must check the synchronize return value: if it fails,
+            //    cfprefsd never gets our data and the Dock will read stale
+            //    values regardless of what the local cache says.
             CFPreferencesSetValue(key, newAppData as CFPropertyList, appID,
                                    kCFPreferencesCurrentUser, kCFPreferencesAnyHost)
-            CFPreferencesAppSynchronize(appID)
+
+            if !CFPreferencesAppSynchronize(appID) {
+                logger.error("Attempt \(attempt): CFPreferencesAppSynchronize failed")
+                try? await Task.sleep(nanoseconds: 500_000_000)
+                continue
+            }
 
             do {
                 try DockManager.writePersistentAppsToDisk(newAppData)
@@ -296,30 +304,31 @@ class DockManager: ObservableObject {
             // 6. Let Dock settle
             try? await Task.sleep(nanoseconds: 500_000_000)
 
-            // 7. Verify — read from cfprefsd first (what the Dock actually
-            //    sees), fall back to plist if cfprefsd is temporarily down
+            // 7. Verify via plist (disk ground truth, avoids the misleading
+            //    process-local CFPreferences cache). Fall back to cfprefsd
+            //    only if the plist file is unreadable.
             for readAttempt in 1...4 {
                 if Task.isCancelled { return false }
 
                 var matched = false
                 var source = "none"
 
-                if let apps = DockManager.getSystemDockPersistentApps() {
+                if let apps = DockManager.readPersistentAppsFromDisk() {
                     let tiles = DockManager.parseRawDockData(apps)
                     matched = tiles == set.tiles
-                    source = "cfprefsd"
-                    if !matched {
-                        logger.warning("Read #\(readAttempt) cfprefsd: got \(tiles.map(\.label)), expected \(expectedLabels)")
-                    }
-                } else if let apps = DockManager.readPersistentAppsFromDisk() {
-                    let tiles = DockManager.parseRawDockData(apps)
-                    matched = tiles == set.tiles
-                    source = "plist-fallback"
+                    source = "plist"
                     if !matched {
                         logger.warning("Read #\(readAttempt) plist: got \(tiles.map(\.label)), expected \(expectedLabels)")
                     }
+                } else if let apps = DockManager.getSystemDockPersistentApps() {
+                    let tiles = DockManager.parseRawDockData(apps)
+                    matched = tiles == set.tiles
+                    source = "cfprefsd-fallback"
+                    if !matched {
+                        logger.warning("Read #\(readAttempt) cfprefsd: got \(tiles.map(\.label)), expected \(expectedLabels)")
+                    }
                 } else {
-                    logger.warning("Read #\(readAttempt): could not read from cfprefsd or plist")
+                    logger.warning("Read #\(readAttempt): could not read from plist or cfprefsd")
                 }
 
                 if matched {
