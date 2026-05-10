@@ -4,6 +4,7 @@ import AppKit
 // MARK: - Actions
 enum WindowAction: Identifiable, Codable, Equatable, Hashable {
     case show
+    case restore
     case hide
     case minimize
     case bringToFront
@@ -15,6 +16,7 @@ enum WindowAction: Identifiable, Codable, Equatable, Hashable {
     var id: String {
         switch self {
         case .show: return "show"
+        case .restore: return "restore"
         case .hide: return "hide"
         case .minimize: return "minimize"
         case .bringToFront: return "bringToFront"
@@ -26,6 +28,7 @@ enum WindowAction: Identifiable, Codable, Equatable, Hashable {
     var localizedString: String {
         switch self {
         case .show: return NSLocalizedString("Show", comment: "")
+        case .restore: return NSLocalizedString("Restore", comment: "")
         case .hide: return NSLocalizedString("Hide", comment: "")
         case .minimize: return NSLocalizedString("Minimize", comment: "")
         case .bringToFront: return NSLocalizedString("Bring to Front", comment: "")
@@ -43,6 +46,7 @@ enum WindowAction: Identifiable, Codable, Equatable, Hashable {
         let type = try container.decode(String.self, forKey: .type)
         switch type {
         case "show": self = .show
+        case "restore": self = .restore
         case "hide": self = .hide
         case "minimize": self = .minimize
         case "bringToFront": self = .bringToFront
@@ -64,6 +68,7 @@ enum WindowAction: Identifiable, Codable, Equatable, Hashable {
         var container = encoder.container(keyedBy: CodingKeys.self)
         switch self {
         case .show: try container.encode("show", forKey: .type)
+        case .restore: try container.encode("restore", forKey: .type)
         case .hide: try container.encode("hide", forKey: .type)
         case .minimize: try container.encode("minimize", forKey: .type)
         case .bringToFront: try container.encode("bringToFront", forKey: .type)
@@ -175,7 +180,7 @@ struct AppRule: Identifiable, Codable, Equatable {
         id = try container.decode(UUID.self, forKey: .id)
         appBundleID = try container.decode(String.self, forKey: .appBundleID)
         appName = try container.decode(String.self, forKey: .appName)
-        isEnabled = try container.decode(Bool.self, forKey: .isEnabled)
+        isEnabled = try container.decodeIfPresent(Bool.self, forKey: .isEnabled) ?? true
         
         if let g = try? container.decode([RuleGroup].self, forKey: .groups) { groups = g } else { groups = [] }
         if let arr = try? container.decode([ActionItem].self, forKey: .elseActions) { elseActions = arr } else { elseActions = [] }

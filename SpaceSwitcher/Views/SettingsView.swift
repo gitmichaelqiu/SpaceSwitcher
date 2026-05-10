@@ -18,8 +18,8 @@ enum SettingsTab: String, CaseIterable, Identifiable {
     var iconName: String {
         switch self {
         case .general: return "gearshape"
-        case .rules: return "list.bullet.rectangle.portrait"
-        case .dock: return "dock.rectangle"
+        case .rules: return "list.bullet.below.rectangle"
+        case .dock: return "dock.arrow.up.rectangle"
         case .permissions: return "lock.shield"
         case .about: return "info.circle"
         }
@@ -87,10 +87,10 @@ struct SettingsView: View {
         VStack(alignment: .leading, spacing: 0) {
             Color.clear.frame(height: 45)
             Text("Space")
-                .font(.system(size: 28, weight: .heavy))
+                .font(.custom("Syncopate-Bold", size: 21))
                 .foregroundStyle(.primary)
             Text("Switcher")
-                .font(.system(size: 28, weight: .heavy))
+                .font(.custom("Syncopate-Bold", size: 21))
                 .foregroundStyle(.primary)
                 .padding(.bottom, 20)
         }
@@ -168,18 +168,7 @@ struct SettingsView: View {
     
     @ViewBuilder
     private func headerActions(for tab: SettingsTab) -> some View {
-        switch tab {
-        case .rules:
-            Button {
-                NotificationCenter.default.post(name: NSNotification.Name("AddRuleRequest"), object: nil)
-            } label: {
-                Label("Add Rule", systemImage: "plus")
-            }
-            .buttonStyle(.bordered)
-            .controlSize(.small)
-        default:
-            EmptyView()
-        }
+        EmptyView()
     }
 }
 

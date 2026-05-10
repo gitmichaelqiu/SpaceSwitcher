@@ -1,11 +1,13 @@
 import SwiftUI
+import Sparkle
 
 struct GeneralSettingsView: View {
     @ObservedObject var spaceManager: SpaceManager
     
     @State private var launchAtLogin: Bool = false
-    @State private var autoCheckUpdate: Bool = true
-    
+    @State private var autoCheckUpdate: Bool = UpdateManager.shared.updaterController.updater.automaticallyChecksForUpdates
+    @State private var autoDownloadUpdate: Bool = UpdateManager.shared.updaterController.updater.automaticallyDownloadsUpdates
+
     var body: some View {
         ScrollView(.vertical, showsIndicators: true) {
             VStack(alignment: .leading, spacing: 20) {
@@ -19,28 +21,40 @@ struct GeneralSettingsView: View {
                 }
                 
                 // 2. Updates - Standardized per macOSers bundle
-                SettingsSection("Updates") {
-                    SettingsRow("Check for Updates Automatically") {
+                SettingsSection(NSLocalizedString("Updates", comment: "")) {
+                    SettingsRow("Automatically check for updates") {
                         Toggle("", isOn: $autoCheckUpdate)
                             .labelsHidden()
                             .toggleStyle(.switch)
                             .onChange(of: autoCheckUpdate) { value in
-                                UpdateManager.isAutoCheckEnabled = value
+                                UpdateManager.shared.updaterController.updater.automaticallyChecksForUpdates = value
                             }
                     }
+                    
                     Divider()
+                    
+                    if autoCheckUpdate {
+                        SettingsRow("Automatically download updates") {
+                            Toggle("", isOn: $autoDownloadUpdate)
+                                .labelsHidden()
+                                .toggleStyle(.switch)
+                                .onChange(of: autoDownloadUpdate) { value in
+                                    UpdateManager.shared.updaterController.updater.automaticallyDownloadsUpdates = value
+                                }
+                        }
+                        Divider()
+                    }
+                    
                     SettingsRow("Check for Updates") {
                         Button("Check Now") {
-                            Task {
-                                await UpdateManager.shared.checkForUpdate(from: nil)
-                            }
+                            UpdateManager.shared.updaterController.checkForUpdates(nil)
                         }
                     }
                 }
                 
                 // 3. Automation Status
-                SettingsSection("Automation API", helperText: "SpaceSwitcher uses the DesktopRenamer API to detect space changes. Ensure the API is enabled in DesktopRenamer.") {
-                    SettingsRow("API Status") {
+                SettingsSection("SpaceAPI", helperText: "SpaceSwitcher uses the DesktopRenamer API to detect space changes. Ensure the API is enabled in DesktopRenamer.") {
+                    SettingsRow("SpaceAPI Status") {
                         HStack(spacing: 8) {
                             Circle()
                                 .fill(spaceManager.isAPIEnabled ? Color.green : Color.red)
@@ -48,23 +62,14 @@ struct GeneralSettingsView: View {
                             Text(spaceManager.isAPIEnabled ? "Connected" : "Disconnected")
                                 .font(.system(size: 13, weight: .medium))
                         }
-                        .frame(minHeight: 28) // Fixed height to match Toggles/Buttons
+                        .frame(minHeight: 24)
                     }
                 }
-                
-                // 4. Advanced
-                SettingsSection("Advanced") {
-                    SettingsRow("Force Rule Refresh") {
-                        Button("Refresh Now") {
-                            spaceManager.refreshSpaceList()
-                        }
-                    }
-                }
-                
                 Spacer()
             }
             .padding()
             .frame(maxWidth: .infinity, alignment: .topLeading)
         }
+        .animation(.easeInOut(duration: 0.2), value: autoCheckUpdate)
     }
 }

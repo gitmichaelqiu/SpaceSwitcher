@@ -7,6 +7,8 @@ struct RuleEditor: View {
     let onSave: (AppRule) -> Void
     let onCancel: () -> Void
     @State private var runningApps: [(name: String, id: String, icon: NSImage)] = []
+    @State private var showingLegend = false
+    @State private var legendWidth: CGFloat = 260
     
     init(rule: AppRule, availableSpaces: [SpaceInfo], onSave: @escaping (AppRule) -> Void, onCancel: @escaping () -> Void) {
         self._workingRule = State(wrappedValue: rule)
@@ -22,6 +24,92 @@ struct RuleEditor: View {
             
             Divider()
             
+            mainSplitView
+            
+            Divider()
+            
+            footerView
+        }
+        .frame(width: 820, height: 620)
+        .onAppear { loadRunningApps() }
+    }
+    
+    // MARK: - Components
+    
+    private var appSelectorHeader: some View {
+        HStack(alignment: .center, spacing: 16) {
+            // Icon
+            Menu {
+                if !runningApps.isEmpty {
+                    Section("Running Applications") {
+                        ForEach(runningApps, id: \.id) { app in
+                            Button { selectApp(name: app.name, id: app.id) } label: {
+                                HStack {
+                                    Image(nsImage: app.icon)
+                                    Text(app.name)
+                                }
+                            }
+                        }
+                    }
+                }
+                Divider()
+                Button("Choose from Applications...") { pickOtherApp() }
+            } label: {
+                ZStack {
+                    RoundedRectangle(cornerRadius: 12)
+                        .fill(Color(NSColor.controlBackgroundColor))
+                        .shadow(color: .black.opacity(0.05), radius: 2)
+                    
+                    if !workingRule.appBundleID.isEmpty, let path = NSWorkspace.shared.urlForApplication(withBundleIdentifier: workingRule.appBundleID)?.path {
+                        Image(nsImage: NSWorkspace.shared.icon(forFile: path))
+                            .resizable()
+                            .aspectRatio(contentMode: .fit)
+                            .padding(8)
+                    } else {
+                        Image(systemName: "app.dashed")
+                            .resizable()
+                            .aspectRatio(contentMode: .fit)
+                            .foregroundColor(.secondary.opacity(0.5))
+                            .padding(10)
+                    }
+                }
+                .frame(width: 54, height: 54)
+            }
+            .menuStyle(.borderlessButton)
+            
+            // Text Info
+            VStack(alignment: .leading, spacing: 2) {
+                Text(workingRule.appBundleID.isEmpty ? "Select Application" : workingRule.appName)
+                    .font(.system(size: 18, weight: .bold))
+                
+                Text(workingRule.appBundleID.isEmpty ? "No selection" : workingRule.appBundleID)
+                    .font(.system(size: 11, design: .monospaced))
+                    .foregroundColor(.secondary.opacity(0.8))
+            }
+            
+            Spacer()
+            
+            Button {
+                withAnimation(.easeInOut(duration: 0.35)) {
+                    showingLegend.toggle()
+                }
+            } label: {
+                Image(systemName: showingLegend ? "info.circle.fill" : "info.circle")
+                    .font(.system(size: 18))
+                    .foregroundColor(showingLegend ? .accentColor : .secondary)
+                    .padding(8)
+                    .background(Circle().fill(showingLegend ? Color.accentColor.opacity(0.1) : Color.clear))
+            }
+            .buttonStyle(.plain)
+            .help("Action Definitions")
+        }
+        .padding(.horizontal, 20)
+        .padding(.vertical, 16)
+        .background(Color(NSColor.windowBackgroundColor))
+    }
+    
+    private var mainSplitView: some View {
+        HStack(spacing: 0) {
             ScrollView(.vertical) {
                 VStack(alignment: .leading, spacing: 0) {
                     Color.clear.frame(height: 12)
@@ -126,27 +214,7 @@ struct RuleEditor: View {
                             }
                             .padding(16)
                         } else {
-                            ForEach(Array(workingRule.elseActions.enumerated()), id: \.element.id) { i, item in
-                                VStack(spacing: 0) {
-                                    ActionRowContent(
-                                        index: i,
-                                        item: $workingRule.elseActions[i],
-                                        onDelete: {
-                                            withAnimation {
-                                                workingRule.elseActions = workingRule.elseActions.enumerated()
-                                                    .filter { $0.offset != i }
-                                                    .map { $0.element }
-                                            }
-                                        }
-                                    )
-                                    .padding(.horizontal, 12)
-                                    .padding(.vertical, 8)
-                                    
-                                    if i < workingRule.elseActions.count - 1 {
-                                        Divider().padding(.leading, 32).opacity(0.2)
-                                    }
-                                }
-                            }
+                            ActionListRows(actions: $workingRule.elseActions)
                         }
                         
                         Divider().opacity(0.3)
@@ -154,6 +222,7 @@ struct RuleEditor: View {
                         HStack {
                             Menu {
                                 Button("Show") { withAnimation { workingRule.elseActions.append(ActionItem(.show)) } }
+                                Button("Restore") { withAnimation { workingRule.elseActions.append(ActionItem(.restore)) } }
                                 Button("Hide") { withAnimation { workingRule.elseActions.append(ActionItem(.hide)) } }
                                 Button("Minimize") { withAnimation { workingRule.elseActions.append(ActionItem(.minimize)) } }
                                 Button("Bring to Front") { withAnimation { workingRule.elseActions.append(ActionItem(.bringToFront)) } }
@@ -186,75 +255,38 @@ struct RuleEditor: View {
                 }
                 .padding(.vertical, 8)
             }
-            .animation(.easeInOut(duration: 0.2), value: workingRule.groups)
+            .animation(.easeInOut(duration: 0.35), value: workingRule.groups)
             .background(Color(NSColor.windowBackgroundColor))
             
-            Divider()
-            
-            footerView
-        }
-        .frame(width: 600, height: 500)
-        .onAppear { loadRunningApps() }
-    }
-    
-    // MARK: - Components
-    
-    private var appSelectorHeader: some View {
-        HStack(alignment: .center, spacing: 16) {
-            // Icon
-            Menu {
-                if !runningApps.isEmpty {
-                    Section("Running Applications") {
-                        ForEach(runningApps, id: \.id) { app in
-                            Button { selectApp(name: app.name, id: app.id) } label: {
-                                HStack {
-                                    Image(nsImage: app.icon)
-                                    Text(app.name)
-                                }
+            // Custom Draggable Divider & Sidebar
+            if showingLegend {
+                Rectangle()
+                    .fill(Color.primary.opacity(0.1))
+                    .frame(width: 1)
+                    .overlay(
+                        Color.clear
+                            .frame(width: 8)
+                            .contentShape(Rectangle())
+                    )
+                    .onHover { inside in
+                        if inside { NSCursor.resizeLeftRight.push() }
+                        else { NSCursor.pop() }
+                    }
+                    .gesture(
+                        DragGesture()
+                            .onChanged { value in
+                                let delta = value.translation.width
+                                let newWidth = legendWidth - delta
+                                legendWidth = max(200, min(400, newWidth))
                             }
-                        }
-                    }
-                }
-                Divider()
-                Button("Choose from Applications...") { pickOtherApp() }
-            } label: {
-                ZStack {
-                    RoundedRectangle(cornerRadius: 12)
-                        .fill(Color(NSColor.controlBackgroundColor))
-                        .shadow(color: .black.opacity(0.05), radius: 2)
-                    
-                    if !workingRule.appBundleID.isEmpty, let path = NSWorkspace.shared.urlForApplication(withBundleIdentifier: workingRule.appBundleID)?.path {
-                        Image(nsImage: NSWorkspace.shared.icon(forFile: path))
-                            .resizable()
-                            .aspectRatio(contentMode: .fit)
-                            .padding(8)
-                    } else {
-                        Image(systemName: "app.dashed")
-                            .resizable()
-                            .aspectRatio(contentMode: .fit)
-                            .foregroundColor(.secondary.opacity(0.5))
-                            .padding(10)
-                    }
-                }
-                .frame(width: 54, height: 54)
-            }
-            .menuStyle(.borderlessButton)
-            
-            // Text Info
-            VStack(alignment: .leading, spacing: 2) {
-                Text(workingRule.appBundleID.isEmpty ? "Select Application" : workingRule.appName)
-                    .font(.system(size: 18, weight: .bold))
+                    )
                 
-                Text(workingRule.appBundleID.isEmpty ? "No selection" : workingRule.appBundleID)
-                    .font(.system(size: 11, design: .monospaced))
-                    .foregroundColor(.secondary.opacity(0.8))
+                legendSidebar
+                    .frame(width: legendWidth)
+                    .transition(.move(edge: .trailing).combined(with: .opacity))
             }
-            
-            Spacer()
         }
-        .padding(.horizontal, 20)
-        .padding(.vertical, 16)
-        .background(Color(NSColor.windowBackgroundColor))
+        .animation(.easeInOut(duration: 0.35), value: showingLegend)
     }
     
     private var footerView: some View {
@@ -288,6 +320,7 @@ struct RuleEditor: View {
     
     @ViewBuilder private func actionMenu(for index: Int) -> some View {
         Button("Show") { addActionToGroup(index: index, action: .show) }
+        Button("Restore") { addActionToGroup(index: index, action: .restore) }
         Button("Hide") { addActionToGroup(index: index, action: .hide) }
         Button("Minimize") { addActionToGroup(index: index, action: .minimize) }
         Button("Bring to Front") { addActionToGroup(index: index, action: .bringToFront) }
@@ -330,6 +363,51 @@ struct RuleEditor: View {
             id: $0.bundleIdentifier ?? "",
             icon: $0.icon ?? NSImage()
         ) }.sorted { $0.name < $1.name }
+    }
+    
+    @ViewBuilder
+    private var legendSidebar: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            HStack(spacing: 8) {
+                Image(systemName: "info.circle.fill")
+                    .foregroundColor(.accentColor)
+                Text("Action Definitions")
+                    .font(.system(size: 13, weight: .bold))
+            }
+            .padding(.top, 20)
+            
+            Divider()
+            
+            ScrollView(.vertical) {
+                VStack(alignment: .leading, spacing: 20) {
+                    legendItem(name: "Show", desc: "Forcefully unhide and unminimize the application, regardless of its previous state.")
+                    legendItem(name: "Restore", desc: "Intelligent reversal. Only unhide and unminimize if SpaceSwitcher was the one that hid it earlier.")
+                    legendItem(name: "Hide", desc: "Hide the application.")
+                    legendItem(name: "Minimize", desc: "Minimize all windows of the application.")
+                    legendItem(name: "Front", desc: "Activate the application and bring its windows to the foreground.")
+                }
+                .padding(.trailing, 8)
+            }
+        }
+        .padding(.horizontal, 16)
+        .background(Color(NSColor.controlBackgroundColor).opacity(0.3))
+    }
+    
+    @ViewBuilder
+    private func legendItem(name: LocalizedStringKey, desc: LocalizedStringKey) -> some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text(name)
+                .font(.system(size: 11, weight: .bold, design: .monospaced))
+                .foregroundColor(.primary)
+                .padding(.horizontal, 6)
+                .padding(.vertical, 2)
+                .background(RoundedRectangle(cornerRadius: 4).fill(Color.primary.opacity(0.05)))
+            
+            Text(desc)
+                .font(.system(size: 11))
+                .foregroundColor(.secondary)
+                .lineSpacing(2)
+        }
     }
 }
 
@@ -405,33 +483,75 @@ struct SpaceConditionRow: View {
 
 struct ActionListRows: View {
     @Binding var actions: [ActionItem]
+    @State private var draggingItem: ActionItem?
     
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            ForEach(Array(actions.enumerated()), id: \.element.id) { index, item in
+            ForEach(actions) { item in
                 VStack(alignment: .leading, spacing: 0) {
                     Divider().opacity(0.3)
                     ActionRowContent(
-                        index: index,
-                        item: $actions[index],
-                        onDelete: { 
+                        index: actions.firstIndex(where: { $0.id == item.id }) ?? 0,
+                        item: binding(for: item),
+                        onDelete: {
                             withAnimation {
-                                _actions.wrappedValue = _actions.wrappedValue.enumerated()
-                                    .filter { $0.offset != index }
-                                    .map { $0.element }
+                                actions.removeAll { $0.id == item.id }
                             }
                         }
                     )
                     .padding(.horizontal, 12)
                     .padding(.vertical, 8)
+                    .background(Color(NSColor.controlBackgroundColor).opacity(draggingItem?.id == item.id ? 0.2 : 0.01))
                 }
-            }
-            .onMove { indices, newOffset in
-                actions.move(fromOffsets: indices, toOffset: newOffset)
+                .onDrag {
+                    self.draggingItem = item
+                    return NSItemProvider(object: item.id.uuidString as NSString)
+                } preview: {
+                    // Return an empty/clear view to hide the ghost row that follows the cursor
+                    Color.clear.frame(width: 1, height: 1)
+                }
+                .onDrop(of: [.text], delegate: ActionDropDelegate(item: item, actions: $actions, draggingItem: $draggingItem))
             }
         }
     }
+    
+    private func binding(for item: ActionItem) -> Binding<ActionItem> {
+        guard let index = actions.firstIndex(where: { $0.id == item.id }) else {
+            return .constant(item)
+        }
+        return $actions[index]
+    }
 }
+
+struct ActionDropDelegate: DropDelegate {
+    let item: ActionItem
+    @Binding var actions: [ActionItem]
+    @Binding var draggingItem: ActionItem?
+
+    func performDrop(info: DropInfo) -> Bool {
+        draggingItem = nil
+        return true
+    }
+
+    func dropEntered(info: DropInfo) {
+        guard let draggingItem = draggingItem,
+              draggingItem.id != item.id,
+              let from = actions.firstIndex(where: { $0.id == draggingItem.id }),
+              let to = actions.firstIndex(where: { $0.id == item.id })
+        else { return }
+
+        if actions[to].id != draggingItem.id {
+            withAnimation(.snappy(duration: 0.2)) {
+                actions.move(fromOffsets: IndexSet(integer: from), toOffset: to > from ? to + 1 : to)
+            }
+        }
+    }
+    
+    func dropUpdated(info: DropInfo) -> DropProposal? {
+        return DropProposal(operation: .move)
+    }
+}
+
 
 struct AddActionRow<Content: View>: View {
     let action: () -> Void

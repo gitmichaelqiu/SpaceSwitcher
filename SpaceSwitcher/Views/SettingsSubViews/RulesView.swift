@@ -14,16 +14,29 @@ struct RulesView: View {
                     .frame(maxWidth: .infinity, minHeight: 400)
             } else {
                 VStack(spacing: 20) {
+                    // Global Toggle
+                    SettingsSection {
+                        SettingsRow("Automation", helperText: "When disabled, all automation rules will be ignored.") {
+                            Toggle("", isOn: $ruleManager.isAutomationEnabled)
+                                .toggleStyle(.switch)
+                                .labelsHidden()
+                        }
+                    }
+                    
                     ForEach(ruleManager.rules) { rule in
                         SettingsSection {
                             RuleRow(
                                 rule: rule,
                                 availableSpaces: spaceManager.availableSpaces,
+                                isGlobalEnabled: ruleManager.isAutomationEnabled,
                                 onEdit: { selectedRule = rule },
                                 onDelete: {
                                     withAnimation {
                                         ruleManager.deleteRule(rule)
                                     }
+                                },
+                                onToggle: { updatedRule in
+                                    ruleManager.updateRule(updatedRule)
                                 }
                             )
                         }
@@ -32,6 +45,28 @@ struct RulesView: View {
                             removal: .opacity.combined(with: .scale(scale: 0.95))
                         ))
                     }
+                    
+                    // Add Rule Button
+                    Button {
+                        showingAddRule = true
+                    } label: {
+                        HStack(spacing: 8) {
+                            Image(systemName: "plus.circle.fill")
+                                .font(.system(size: 14))
+                            Text("Add New Rule")
+                                .font(.system(size: 13, weight: .semibold))
+                        }
+                        .foregroundColor(.accentColor)
+                        .padding(.vertical, 10)
+                        .padding(.horizontal, 20)
+                        .background(
+                            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                                .fill(Color.accentColor.opacity(0.1))
+                        )
+                    }
+                    .buttonStyle(.plain)
+                    .padding(.top, 10)
+                    .frame(maxWidth: .infinity, alignment: .center)
                 }
                 .animation(.easeInOut(duration: 0.2), value: ruleManager.rules)
                 .padding(24)
@@ -93,8 +128,10 @@ struct RulesView: View {
 struct RuleRow: View {
     let rule: AppRule
     let availableSpaces: [SpaceInfo]
+    let isGlobalEnabled: Bool
     let onEdit: () -> Void
     let onDelete: () -> Void
+    let onToggle: (AppRule) -> Void
     
     @State private var isHovering = false
     
@@ -140,7 +177,7 @@ struct RuleRow: View {
                     
                     Spacer()
                     
-                    HStack(spacing: 8) {
+                    HStack(spacing: 12) {
                         Button(action: onEdit) {
                             Image(systemName: "pencil")
                                 .font(.system(size: 13, weight: .semibold))
@@ -160,6 +197,18 @@ struct RuleRow: View {
                         .foregroundColor(.red)
                     }
                     .opacity(isHovering ? 1.0 : 0.0)
+                    
+                    Toggle("", isOn: Binding(
+                        get: { rule.isEnabled },
+                        set: { value in
+                            var newRule = rule
+                            newRule.isEnabled = value
+                            onToggle(newRule)
+                        }
+                    ))
+                    .toggleStyle(.switch)
+                    .labelsHidden()
+                    .disabled(!isGlobalEnabled)
                 }
                 
                 if !rule.groups.isEmpty {

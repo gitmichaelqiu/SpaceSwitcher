@@ -35,8 +35,17 @@ struct DockSettingsView: View {
                     
                     ScrollView(.vertical, showsIndicators: true) {
                         VStack(alignment: .leading, spacing: 24) {
+                            // 0. Automation Control
+                            SettingsSection("Automation") {
+                                SettingsRow("Automatically switch dock") {
+                                    Toggle("", isOn: $dockManager.config.isAutomationEnabled)
+                                        .toggleStyle(.switch)
+                                        .labelsHidden()
+                                }
+                            }
+                            
                             // 1. Dock Set Configuration
-                            SettingsSection("Set Configuration") {
+                            SettingsSection(NSLocalizedString("Set Configuration", comment: "")) {
                                 SettingsRow("Name") {
                                     TextField("Name", text: $dockManager.config.dockSets[index].name)
                                         .textFieldStyle(.roundedBorder)
@@ -101,8 +110,12 @@ struct DockSettingsView: View {
             dockManager.config.dockSets.removeAll { $0.id == set.id }
             let keys = dockManager.config.spaceAssignments.filter { $0.value == set.id }.map { $0.key }
             keys.forEach { dockManager.config.spaceAssignments.removeValue(forKey: $0) }
+            
+            // Selection fix
             if selectedSetID == set.id { selectedSetID = dockManager.config.dockSets.first?.id }
-            if dockManager.config.defaultDockSetID == set.id {
+            
+            // Default set fix: Always ensure one exists if sets are available
+            if dockManager.config.defaultDockSetID == set.id || dockManager.config.defaultDockSetID == nil {
                 dockManager.config.defaultDockSetID = dockManager.config.dockSets.first?.id
             }
         }
@@ -192,8 +205,12 @@ struct DockSidebarView: View {
             dockManager.config.dockSets.removeAll { $0.id == set.id }
             let keys = dockManager.config.spaceAssignments.filter { $0.value == set.id }.map { $0.key }
             keys.forEach { dockManager.config.spaceAssignments.removeValue(forKey: $0) }
+            
+            // Selection fix
             if selectedSetID == set.id { selectedSetID = dockManager.config.dockSets.first?.id }
-            if dockManager.config.defaultDockSetID == set.id {
+            
+            // Default set fix: Always ensure one exists if sets are available
+            if dockManager.config.defaultDockSetID == set.id || dockManager.config.defaultDockSetID == nil {
                 dockManager.config.defaultDockSetID = dockManager.config.dockSets.first?.id
             }
         }
@@ -211,7 +228,7 @@ struct DockSpaceAssignmentView: View {
         let isDefault = dockManager.config.defaultDockSetID == selectedSetID
         
         SettingsSection(
-            "Apply to Spaces",
+            NSLocalizedString("Apply to Spaces", comment: ""),
             helperText: isDefault ? "This dock set is used automatically for all unassigned spaces." : nil
         ) {
             VStack(alignment: .leading, spacing: 10) {
@@ -282,7 +299,7 @@ struct DockSpaceAssignmentView: View {
             .foregroundColor(isAssignedHere ? .white : (isAssignedElsewhere ? .secondary.opacity(0.3) : .primary))
         }
         .buttonStyle(.plain)
-        .disabled(isAssignedElsewhere)
+        .disabled(isAssignedElsewhere || !dockManager.config.isAutomationEnabled)
     }
 }
 
@@ -295,7 +312,7 @@ struct DockItemsListView: View {
     
     var body: some View {
         SettingsSection(
-            "Dock Items",
+            NSLocalizedString("Dock Items", comment: ""),
             accessory: {
                 HStack(spacing: 8) {
                     Button {
@@ -308,10 +325,10 @@ struct DockItemsListView: View {
                     .controlSize(.small)
                     
                     Menu {
-                        Button { addAppToSelectedSet() } label: { Label("Add Application...", systemImage: "app.badge.plus") }
+                        Button { addAppToSelectedSet() } label: { Label("Add Application...", systemImage: "plus.app") }
                         Divider()
-                        Button { addSpacerToSelectedSet(isSmall: false) } label: { Label("Add Large Spacer", systemImage: "spacer") }
-                        Button { addSpacerToSelectedSet(isSmall: true) } label: { Label("Add Small Spacer", systemImage: "command") }
+                        Button { addSpacerToSelectedSet(isSmall: false) } label: { Label("Add Large Spacer", systemImage: "square") }
+                        Button { addSpacerToSelectedSet(isSmall: true) } label: { Label("Add Small Spacer", systemImage: "square.dashed") }
                     } label: {
                         Image(systemName: "plus")
                             .font(.system(size: 12, weight: .semibold))

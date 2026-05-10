@@ -11,15 +11,23 @@ enum RuleSortOption: String, CaseIterable, Identifiable {
 
 class RuleManager: ObservableObject {
     @Published var rules: [AppRule] = [] { didSet { saveRules() } }
+    @Published var isAutomationEnabled: Bool = true { didSet { UserDefaults.standard.set(isAutomationEnabled, forKey: "isAutomationEnabled") } }
     @Published var sortOption: RuleSortOption = .name
     weak var spaceManager: SpaceManager? { didSet { setupBindings() } }
     private var cancellables = Set<AnyCancellable>()
     private let rulesKey = "SpaceSwitcherRules"
     
-    // MASTER TASK: Tracks the current rule enforcement process
+    // Managed visibility states
+    private var managedHides = Set<String>()
+    private var managedMinimizes = Set<String>()
+    
+    // Tracks the current rule enforcement process
     private var enforcementTask: Task<Void, Never>?
     
-    init() { loadRules() }
+    init() { 
+        loadRules() 
+        self.isAutomationEnabled = UserDefaults.standard.object(forKey: "isAutomationEnabled") as? Bool ?? true
+    }
     
     private func setupBindings() {
         spaceManager?.$currentSpaceID
@@ -38,11 +46,13 @@ class RuleManager: ObservableObject {
     }
     
     private func applyRules(for spaceID: String) {
-        // 1. Cancel any existing enforcement (Fixes the "Stale Action" bug)
+        // Cancel existing enforcement to prevent stale actions
         enforcementTask?.cancel()
         
-        // 2. Start new enforcement task
+        // Start new enforcement task
         enforcementTask = Task {
+            guard isAutomationEnabled else { return }
+            
             for rule in rules where rule.isEnabled {
                 // Check cancellation before every rule
                 if Task.isCancelled { return }
@@ -56,7 +66,7 @@ class RuleManager: ObservableObject {
         }
     }
     
-    // UPDATED: Now an async function called by the Master Task (No internal Task creation)
+    // Async function called by the master enforcement task
     private func perform(actions: [ActionItem], on bundleID: String) async {
         // Loosely check app existence
         guard let app = NSRunningApplication.runningApplications(withBundleIdentifier: bundleID).first else { return }
@@ -69,16 +79,43 @@ class RuleManager: ObservableObject {
             
             switch item.value {
             case .hide:
+                if !app.isHidden {
+                    managedHides.insert(bundleID)
+                }
                 app.hide()
                 
             case .show:
+                managedHides.remove(bundleID)
+                managedMinimizes.remove(bundleID)
                 let wasHidden = app.isHidden
                 unhideAppWithoutActivation(app)
                 unminimizeAppWindows(app)
                 if wasHidden { try? await Task.sleep(nanoseconds: 200_000_000) }
+
+            case .restore:
+                let shouldUnhide = managedHides.contains(bundleID)
+                let shouldUnminimize = managedMinimizes.contains(bundleID)
+                managedHides.remove(bundleID)
+                managedMinimizes.remove(bundleID)
+                
+                if shouldUnhide {
+                    unhideAppWithoutActivation(app)
+                }
+                if shouldUnminimize {
+                    unminimizeAppWindows(app)
+                }
+                if shouldUnhide { try? await Task.sleep(nanoseconds: 200_000_000) }
                 
             case .minimize:
-                minimizeAppWindows(app)
+                if !isAppEffectivelyHidden(app) {
+                    if minimizeAppWindows(app) {
+                        managedMinimizes.insert(bundleID)
+                    }
+                } else {
+                    // Even if already hidden/minimized, we still run the minimize command 
+                    // to ensure consistency, but we don't 'claim' it as managed.
+                    minimizeAppWindows(app)
+                }
                 
             case .bringToFront:
                 app.activate(options: .activateIgnoringOtherApps)
@@ -89,7 +126,7 @@ class RuleManager: ObservableObject {
             case .hotkey(let k, let m, let restoreWindow, let waitFrontmost):
                 
                 if waitFrontmost {
-                    // MODE A: WAIT
+                    // Wait mode
                     var retries = 0
                     // Poll for 5 seconds
                     while !app.isActive && retries < 100 {
@@ -102,7 +139,7 @@ class RuleManager: ObservableObject {
                     try? await Task.sleep(nanoseconds: 200_000_000)
                     
                 } else {
-                    // MODE B: FORCE
+                    // Force mode
                     var attempts = 0
                     while !app.isActive && attempts < 5 {
                         if Task.isCancelled { return }
@@ -163,21 +200,55 @@ class RuleManager: ObservableObject {
         return AXIsProcessTrustedWithOptions(options)
     }
 
+    private func isAppEffectivelyHidden(_ app: NSRunningApplication) -> Bool {
+        if app.isHidden { return true }
+        
+        // If not hidden, check if all windows are minimized
+        if !checkAccessibility() { return false }
+        let pid = app.processIdentifier; let appElement = AXUIElementCreateApplication(pid); var windowsRef: AnyObject?
+        if AXUIElementCopyAttributeValue(appElement, kAXWindowsAttribute as CFString, &windowsRef) == .success, let windows = windowsRef as? [AXUIElement] {
+            if windows.isEmpty { return false }
+            for window in windows { 
+                var isMin: AnyObject?
+                if AXUIElementCopyAttributeValue(window, kAXMinimizedAttribute as CFString, &isMin) == .success, let minBool = isMin as? Bool {
+                    if !minBool { return false } // Found a visible window
+                } else {
+                    return false // Could not determine, assume visible
+                }
+            }
+            return true // All windows are minimized
+        }
+        return false
+    }
+    
     private func unhideAppWithoutActivation(_ app: NSRunningApplication) {
         if !checkAccessibility() { print("RULE: Accessibility permission missing, skipping unhide") ; return }
         let pid = app.processIdentifier; let appElement = AXUIElementCreateApplication(pid)
         let result = AXUIElementSetAttributeValue(appElement, kAXHiddenAttribute as CFString, kCFBooleanFalse)
         if result != .success { print("RULE: Failed to unhide \(app.localizedName ?? "Unknown"): \(result.rawValue)") }
     }
-    private func minimizeAppWindows(_ app: NSRunningApplication) {
-        if !checkAccessibility() { print("RULE: Accessibility permission missing, skipping minimize") ; return }
+    @discardableResult
+    private func minimizeAppWindows(_ app: NSRunningApplication) -> Bool {
+        if !checkAccessibility() { print("RULE: Accessibility permission missing, skipping minimize") ; return false }
         let pid = app.processIdentifier; let appElement = AXUIElementCreateApplication(pid); var windowsRef: AnyObject?
+        var didMinimizeSomething = false
+        
         if AXUIElementCopyAttributeValue(appElement, kAXWindowsAttribute as CFString, &windowsRef) == .success, let windows = windowsRef as? [AXUIElement] {
             for window in windows { 
-                let result = AXUIElementSetAttributeValue(window, kAXMinimizedAttribute as CFString, kCFBooleanTrue)
-                if result != .success { print("RULE: Failed to minimize window: \(result.rawValue)") }
+                var isMin: AnyObject?
+                if AXUIElementCopyAttributeValue(window, kAXMinimizedAttribute as CFString, &isMin) == .success, let minBool = isMin as? Bool {
+                    if !minBool {
+                        let result = AXUIElementSetAttributeValue(window, kAXMinimizedAttribute as CFString, kCFBooleanTrue)
+                        if result == .success {
+                            didMinimizeSomething = true
+                        } else {
+                            print("RULE: Failed to minimize window: \(result.rawValue)")
+                        }
+                    }
+                }
             }
         }
+        return didMinimizeSomething
     }
     private func unminimizeAppWindows(_ app: NSRunningApplication) {
         if !checkAccessibility() { print("RULE: Accessibility permission missing, skipping unminimize") ; return }
