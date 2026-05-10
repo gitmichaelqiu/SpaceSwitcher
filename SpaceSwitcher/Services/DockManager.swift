@@ -185,6 +185,27 @@ class DockManager: ObservableObject {
         else { return nil }
         return apps
     }
+
+    /// Writes persistent-apps directly to the Dock plist file, bypassing cfprefsd.
+    /// Ensures the new tile data is physically on disk before the Dock is killed,
+    /// eliminating race conditions with cfprefsd async sync and the "Connection interrupted"
+    /// errors that occur when the Dock is restarted while cfprefsd XPC is broken.
+    nonisolated static private func writePersistentAppsToDisk(_ apps: [Any]) throws {
+        let path = NSHomeDirectory() + "/Library/Preferences/com.apple.dock.plist"
+
+        // Preserve existing Dock settings (orientation, magnify, etc.) by
+        // reading the current plist and only replacing the persistent-apps key.
+        var plist: [String: Any] = [:]
+        if let data = try? Data(contentsOf: URL(fileURLWithPath: path)),
+           let existing = try? PropertyListSerialization.propertyList(from: data, options: [], format: nil) as? [String: Any] {
+            plist = existing
+        }
+
+        plist["persistent-apps"] = apps
+
+        let newData = try PropertyListSerialization.data(fromPropertyList: plist, format: .binary, options: 0)
+        try newData.write(to: URL(fileURLWithPath: path), options: .atomic)
+    }
     
     private func applyDockSetVerified(_ set: DockSet) async -> Bool {
         switchLock.lock()
@@ -192,26 +213,25 @@ class DockManager: ObservableObject {
 
         if Task.isCancelled { return false }
 
-        let appID = "com.apple.dock" as CFString
-        let key = "persistent-apps" as CFString
-
         let newAppData = DockManager.buildRawDockData(from: set.tiles)
 
         for attempt in 1...3 {
             if Task.isCancelled { return false }
 
-            CFPreferencesSetValue(key, newAppData as CFPropertyList, appID, kCFPreferencesCurrentUser, kCFPreferencesAnyHost)
-
-            if !CFPreferencesAppSynchronize(appID) {
-                logger.error("Attempt \(attempt): CFPreferencesAppSynchronize failed")
+            // Write directly to the plist file to bypass cfprefsd and avoid
+            // "Connection interrupted" errors during Dock restart.
+            do {
+                try DockManager.writePersistentAppsToDisk(newAppData)
+            } catch {
+                logger.error("Attempt \(attempt): plist write failed: \(error.localizedDescription)")
                 try? await Task.sleep(nanoseconds: 200_000_000)
                 continue
             }
 
-            // Wait for cfprefsd to flush the write to disk
-            try? await Task.sleep(nanoseconds: 500_000_000)
-
-            // Restart Dock to pick up new preferences
+            // Kill the Dock immediately after writing so the new Dock picks up
+            // the updated plist on restart. Killing right away minimises the
+            // window where the dying Dock's termination handler could revert
+            // our changes by syncing its in-memory (old) state back to disk.
             let killTask = Process()
             killTask.executableURL = URL(fileURLWithPath: "/usr/bin/killall")
             killTask.arguments = ["Dock"]
@@ -221,6 +241,12 @@ class DockManager: ObservableObject {
                 killTask.waitUntilExit()
             } onCancel: {
                 killTask.terminate()
+            }
+
+            if killTask.terminationStatus != 0 {
+                logger.error("Attempt \(attempt): killall Dock failed (exit \(killTask.terminationStatus))")
+                try? await Task.sleep(nanoseconds: 200_000_000)
+                continue
             }
 
             if Task.isCancelled { return false }
