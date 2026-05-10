@@ -16,7 +16,7 @@ class DockManager: ObservableObject {
     @MainActor @Published var activeDockSetID: UUID?
     private var lastAppliedDockSetID: UUID?
     
-    // Serializes access to applyDockSetVerified to prevent concurrent Dock restarts
+    // Serializes Dock restart to prevent concurrent killall + verify cycles
     private let switchLock = NSLock()
 
     // Tracks the current switching task
@@ -74,34 +74,79 @@ class DockManager: ObservableObject {
     }
     
     // MARK: - Application Logic
-    
+
     /// Triggers a dock switch for a specific space.
+    ///
+    /// Two-phase approach to handle rapid space switching:
+    ///   Phase 1 (immediate): Write tiles to plist + cfprefsd + kill cfprefsd.
+    ///     This is fast (~1s) and ensures the plist is always up to date.
+    ///   Phase 2 (debounced): Kill Dock, wait for restart, verify.
+    ///     This is slow (~6s) and only runs after the user pauses switching.
     /// - Parameters:
     ///   - spaceID: The UUID string of the target space.
     ///   - force: If true, bypasses debounce and optimization checks (used for "Apply" button).
     @MainActor
     func applyDockForSpace(_ spaceID: String, force: Bool = false) {
-        // Cancel any pending switch to handle rapid swiping
         dockTask?.cancel()
-        
-        // Use a detached task to prevent blocking the Main Actor.
-        // Prevents "Connection interrupted" errors during rapid switches.
+
         dockTask = Task.detached(priority: .userInitiated) { [weak self] in
             guard let self = self else { return }
-            
-            // Debounce to allow space transitions to settle
-            if !force {
-                try? await Task.sleep(nanoseconds: 350_000_000) // 0.35s
+
+            // Get target set from MainActor
+            let targetSet: DockSet? = await MainActor.run {
+                let setID = self.config.spaceAssignments[spaceID] ?? self.config.defaultDockSetID
+                return self.config.dockSets.first(where: { $0.id == setID })
             }
-            
+            guard let set = targetSet else { return }
+            let setName = set.name
+
+            // Skip if already matching
+            if !force {
+                if let currentRaw = DockManager.getSystemDockPersistentApps() {
+                    if DockManager.parseRawDockData(currentRaw) == set.tiles {
+                        await MainActor.run { if self.activeDockSetID != set.id { self.activeDockSetID = set.id } }
+                        return
+                    }
+                }
+            }
+
+            // Phase 1: Write plist immediately (fast, no debounce).
+            // Even if cancelled during Phase 2, the plist stays correct.
+            let phase1OK = await self.phase1WriteToDisk(set)
             if Task.isCancelled { return }
-            
-            // Perform the Dock switch
-            await self.performDockSwitch(for: spaceID, force: force)
+
+            // Debounce before Phase 2 — rapid space switching only
+            // re-runs Phase 1. The Dock is only killed when the user
+            // pauses long enough.
+            if !phase1OK {
+                // Phase 2 won't succeed if Phase 1 failed
+                logger.error("Phase 1 write failed for '\(setName)'")
+                return
+            }
+
+            if !force {
+                try? await Task.sleep(nanoseconds: 1_500_000_000) // 1.5s
+            }
+            if Task.isCancelled { return }
+
+            // Phase 2: Restart Dock and verify
+            logger.info(">>> \(force ? "FORCED" : "STARTING") SWITCH: '\(setName)' for Space \(spaceID)")
+            let success = await self.phase2RestartDockAndVerify(set)
+
+            if success {
+                await MainActor.run {
+                    self.lastAppliedDockSetID = set.id
+                    self.activeDockSetID = set.id
+                }
+                logger.info("<<< SUCCESS: Switched to '\(setName)'")
+            } else {
+                logger.error("<<< FAILURE: Could not verify dock write for '\(setName)'")
+            }
         }
     }
-    
+
     /// Manually applies a specific dock set by its ID.
+    /// Uses the full synchronous flow (no debounce).
     func applyDockSetByID(_ id: UUID) {
         dockTask?.cancel()
         dockTask = Task {
@@ -110,12 +155,12 @@ class DockManager: ObservableObject {
                 reason: "ManualDockSwitch-\(id)"
             )
             defer { ProcessInfo.processInfo.endActivity(activity) }
-            
+
             guard let set = config.dockSets.first(where: { $0.id == id }) else { return }
-            
+
             logger.info(">>> MANUAL SWITCH: '\(set.name)'")
             let success = await applyDockSetVerified(set)
-            
+
             if success {
                 await MainActor.run {
                     self.lastAppliedDockSetID = set.id
@@ -125,45 +170,300 @@ class DockManager: ObservableObject {
             }
         }
     }
-    
-    private func performDockSwitch(for spaceID: String, force: Bool) async {
-        // Get configuration from MainActor
-        let (targetSet, _) = await MainActor.run {
-            let setID = config.spaceAssignments[spaceID] ?? config.defaultDockSetID
-            let set = config.dockSets.first(where: { $0.id == setID })
-            return (set, config.isAutomationEnabled)
+
+    // MARK: - Two-Phase Dock Switch
+
+    /// Phase 1: Write tiles to plist + cfprefsd, then kill cfprefsd to force
+    /// a fresh read from disk. Fast (~1s), non-disruptive (Dock stays alive).
+    private func phase1WriteToDisk(_ set: DockSet) async -> Bool {
+        let appID = "com.apple.dock" as CFString
+        let key = "persistent-apps" as CFString
+        let newAppData = DockManager.buildRawDockData(from: set.tiles)
+
+        // Write to plist (disk ground truth)
+        do {
+            try DockManager.writePersistentAppsToDisk(newAppData)
+        } catch {
+            logger.error("Phase 1: plist write failed: \(error.localizedDescription)")
+            return false
         }
-        
-        guard let set = targetSet else { return }
-        
-        // Check system state off the main thread
-        if !force {
-            if let currentRaw = DockManager.getSystemDockPersistentApps() {
-                let currentTiles = DockManager.parseRawDockData(currentRaw)
-                if set.tiles == currentTiles {
-                    await MainActor.run { if activeDockSetID != set.id { activeDockSetID = set.id } }
-                    return
+
+        // Write to cfprefsd so the cache matches
+        CFPreferencesSetValue(key, newAppData as CFPropertyList, appID,
+                               kCFPreferencesCurrentUser, kCFPreferencesAnyHost)
+        CFPreferencesAppSynchronize(appID)
+
+        // Kill cfprefsd to force restart from fresh plist.
+        // This prevents cfprefsd from serving stale cached data.
+        let oldSet = DockManager.pidsByName("cfprefsd")
+        if !oldSet.isEmpty {
+            logger.info("Phase 1: killing cfprefsd (PIDs: \(oldSet))")
+
+            let killTask = Process()
+            killTask.executableURL = URL(fileURLWithPath: "/usr/bin/killall")
+            killTask.arguments = ["-u", NSUserName(), "cfprefsd"]
+
+            await withTaskCancellationHandler {
+                try? killTask.run()
+                killTask.waitUntilExit()
+            } onCancel: {
+                killTask.terminate()
+            }
+
+            // Wait for old PIDs to disappear
+            for _ in 0..<10 {
+                if Task.isCancelled { return false }
+                let current = DockManager.pidsByName("cfprefsd")
+                if oldSet.isDisjoint(with: current) { break }
+                try? await Task.sleep(nanoseconds: 200_000_000)
+            }
+
+            // Wait for new cfprefsd to restart
+            for _ in 0..<10 {
+                if Task.isCancelled { return false }
+                let current = DockManager.pidsByName("cfprefsd")
+                if !current.isEmpty && oldSet.isDisjoint(with: current) { break }
+                try? await Task.sleep(nanoseconds: 200_000_000)
+            }
+            logger.info("Phase 1: cfprefsd restarted")
+        }
+
+        return true
+    }
+
+    /// Phase 2: Kill Dock, wait for death, then RE-APPLY the plist + cfprefsd
+    /// write (because the dying Dock flushes its stale state to cfprefsd during
+    /// shutdown, overwriting our Phase 1 data). Then wait for Dock restart and verify.
+    private func phase2RestartDockAndVerify(_ set: DockSet) async -> Bool {
+        switchLock.lock()
+        defer { switchLock.unlock() }
+
+        if Task.isCancelled { return false }
+
+        let appID = "com.apple.dock" as CFString
+        let key = "persistent-apps" as CFString
+        let newAppData = DockManager.buildRawDockData(from: set.tiles)
+        let expectedLabels = set.tiles.map { $0.label }
+
+        for attempt in 1...3 {
+            if Task.isCancelled { return false }
+
+            // 1. Kill Dock — its shutdown will flush stale state to cfprefsd,
+            //    overwriting our Phase 1 data. We'll re-write after it's dead.
+            let oldDockPIDs = Set(NSRunningApplication
+                .runningApplications(withBundleIdentifier: "com.apple.dock")
+                .map { $0.processIdentifier })
+
+            logger.info("Phase 2 attempt \(attempt): killing Dock (PIDs: \(oldDockPIDs))")
+
+            let killTask = Process()
+            killTask.executableURL = URL(fileURLWithPath: "/usr/bin/killall")
+            killTask.arguments = ["Dock"]
+
+            await withTaskCancellationHandler {
+                try? killTask.run()
+                killTask.waitUntilExit()
+            } onCancel: {
+                killTask.terminate()
+            }
+
+            if killTask.terminationStatus != 0 {
+                logger.error("Phase 2 attempt \(attempt): killall Dock failed")
+                try? await Task.sleep(nanoseconds: 200_000_000)
+                continue
+            }
+
+            if Task.isCancelled { return false }
+
+            // 2. Wait for old Dock PIDs to fully disappear (shutdown complete)
+            for _ in 0..<10 {
+                let currentPIDs = Set(NSRunningApplication
+                    .runningApplications(withBundleIdentifier: "com.apple.dock")
+                    .map { $0.processIdentifier })
+                if oldDockPIDs.isDisjoint(with: currentPIDs) { break }
+                try? await Task.sleep(nanoseconds: 200_000_000)
+                if Task.isCancelled { return false }
+            }
+
+            // Give the old Dock's cfprefsd flush time to land
+            try? await Task.sleep(nanoseconds: 500_000_000)
+            if Task.isCancelled { return false }
+
+            // 3. Re-write plist + cfprefsd, then kill cfprefsd.
+            //    This overwrites the stale data the dying Dock just flushed.
+            do {
+                try DockManager.writePersistentAppsToDisk(newAppData)
+            } catch {
+                logger.error("Phase 2 attempt \(attempt): plist re-write failed: \(error.localizedDescription)")
+                try? await Task.sleep(nanoseconds: 500_000_000)
+                continue
+            }
+
+            CFPreferencesSetValue(key, newAppData as CFPropertyList, appID,
+                                   kCFPreferencesCurrentUser, kCFPreferencesAnyHost)
+            CFPreferencesAppSynchronize(appID)
+
+            let oldCfpPIDs = DockManager.pidsByName("cfprefsd")
+            if !oldCfpPIDs.isEmpty {
+                logger.info("Phase 2 attempt \(attempt): re-killing cfprefsd (PIDs: \(oldCfpPIDs))")
+
+                let killCfp = Process()
+                killCfp.executableURL = URL(fileURLWithPath: "/usr/bin/killall")
+                killCfp.arguments = ["-u", NSUserName(), "cfprefsd"]
+
+                await withTaskCancellationHandler {
+                    try? killCfp.run()
+                    killCfp.waitUntilExit()
+                } onCancel: {
+                    killCfp.terminate()
+                }
+
+                for _ in 0..<10 {
+                    if Task.isCancelled { return false }
+                    let current = DockManager.pidsByName("cfprefsd")
+                    if oldCfpPIDs.isDisjoint(with: current) { break }
+                    try? await Task.sleep(nanoseconds: 200_000_000)
+                }
+                for _ in 0..<10 {
+                    if Task.isCancelled { return false }
+                    let current = DockManager.pidsByName("cfprefsd")
+                    if !current.isEmpty && oldCfpPIDs.isDisjoint(with: current) { break }
+                    try? await Task.sleep(nanoseconds: 200_000_000)
+                }
+                logger.info("Phase 2 attempt \(attempt): cfprefsd restarted")
+            }
+
+            // 4. Wait for new Dock
+            var newPIDs: Set<pid_t> = []
+            for _ in 0..<20 {
+                let current = NSRunningApplication.runningApplications(withBundleIdentifier: "com.apple.dock")
+                let fresh = Set(current.map { $0.processIdentifier }).subtracting(oldDockPIDs)
+                if !fresh.isEmpty { newPIDs = fresh; break }
+                try? await Task.sleep(nanoseconds: 200_000_000)
+                if Task.isCancelled { return false }
+            }
+
+            if newPIDs.isEmpty {
+                logger.error("Phase 2 attempt \(attempt): Dock did not restart")
+                continue
+            }
+
+            logger.info("Phase 2 attempt \(attempt): Dock restarted (new PIDs: \(newPIDs))")
+
+            // 5. Let Dock initialize
+            try? await Task.sleep(nanoseconds: 2_000_000_000)
+
+            // 6. Verify both plist and cfprefsd
+            for readAttempt in 1...4 {
+                if Task.isCancelled { return false }
+
+                let plistMatch: Bool = {
+                    if let apps = DockManager.readPersistentAppsFromDisk() {
+                        return DockManager.parseRawDockData(apps) == set.tiles
+                    }
+                    return false
+                }()
+
+                let cfprefsdMatch: Bool = {
+                    if let apps = DockManager.getSystemDockPersistentApps() {
+                        return DockManager.parseRawDockData(apps) == set.tiles
+                    }
+                    return false
+                }()
+
+                if !plistMatch {
+                    if let apps = DockManager.readPersistentAppsFromDisk() {
+                        let tiles = DockManager.parseRawDockData(apps)
+                        logger.warning("Read #\(readAttempt) plist: got \(tiles.map(\.label)), expected \(expectedLabels)")
+                    }
+                }
+                if !cfprefsdMatch {
+                    if let apps = DockManager.getSystemDockPersistentApps() {
+                        let tiles = DockManager.parseRawDockData(apps)
+                        logger.warning("Read #\(readAttempt) cfprefsd: got \(tiles.map(\.label)), expected \(expectedLabels)")
+                    }
+                }
+
+                if plistMatch && cfprefsdMatch {
+                    logger.info("First verification passed on read #\(readAttempt)")
+
+                    // Second verification after delay
+                    try? await Task.sleep(nanoseconds: 2_000_000_000)
+                    if Task.isCancelled { return false }
+
+                    let plistMatch2: Bool = {
+                        if let apps = DockManager.readPersistentAppsFromDisk() {
+                            return DockManager.parseRawDockData(apps) == set.tiles
+                        }
+                        return false
+                    }()
+
+                    let cfprefsdMatch2: Bool = {
+                        if let apps = DockManager.getSystemDockPersistentApps() {
+                            return DockManager.parseRawDockData(apps) == set.tiles
+                        }
+                        return false
+                    }()
+
+                    if plistMatch2 && cfprefsdMatch2 {
+                        logger.info("Second verification passed (plist + cfprefsd)")
+                        return true
+                    }
+
+                    if !plistMatch2 {
+                        logger.warning("Second verification FAILED: plist mismatch")
+                    }
+                    if !cfprefsdMatch2 {
+                        logger.warning("Second verification FAILED: cfprefsd mismatch")
+                    }
+                    break
+                }
+
+                if readAttempt < 4 {
+                    try? await Task.sleep(nanoseconds: UInt64(readAttempt) * 400_000_000)
                 }
             }
+
+            logger.error("Phase 2 attempt \(attempt): verification exhausted")
         }
-        
-        logger.info(">>> \(force ? "FORCED" : "STARTING") SWITCH: '\(set.name)' for Space \(spaceID)")
-        
-        let success = await applyDockSetVerified(set)
-        
-        if success {
-            await MainActor.run {
-                self.lastAppliedDockSetID = set.id
-                self.activeDockSetID = set.id
-            }
-            logger.info("<<< SUCCESS: Switched to '\(set.name)'")
-        } else {
-            logger.error("<<< FAILURE: Could not verify dock write for '\(set.name)'")
-        }
+
+        return false
     }
     
     // MARK: - Core System Logic (Verified Write + Force Kill)
-    
+
+    /// Returns PIDs of processes matching the given name (not bundle ID).
+    nonisolated static private func pidsByName(_ name: String) -> Set<pid_t> {
+        let task = Process()
+        task.executableURL = URL(fileURLWithPath: "/bin/ps")
+        task.arguments = ["-eo", "pid,comm"]
+
+        let pipe = Pipe()
+        task.standardOutput = pipe
+        task.standardError = FileHandle.nullDevice
+
+        do {
+            try task.run()
+            task.waitUntilExit()
+        } catch {
+            return []
+        }
+
+        let data = pipe.fileHandleForReading.readDataToEndOfFile()
+        guard let output = String(data: data, encoding: .utf8) else { return [] }
+
+        var pids = Set<pid_t>()
+        for line in output.components(separatedBy: "\n") {
+            let parts = line.components(separatedBy: CharacterSet.whitespaces).filter { !$0.isEmpty }
+            guard parts.count >= 2 else { continue }
+            let comm = parts.dropFirst().joined(separator: " ")
+            if comm.contains(name), let pid = pid_t(parts[0]) {
+                pids.insert(pid)
+            }
+        }
+        return pids
+    }
+
     nonisolated static private func getSystemDockPersistentApps() -> [Any]? {
         let appID = "com.apple.dock" as CFString
         let key = "persistent-apps" as CFString
@@ -207,169 +507,12 @@ class DockManager: ObservableObject {
         try newData.write(to: URL(fileURLWithPath: path), options: .atomic)
     }
     
+    /// Full synchronous dock set application (used by manual "Apply" button).
+    /// Combines Phase 1 (write plist + cfprefsd) and Phase 2 (restart Dock + verify).
     private func applyDockSetVerified(_ set: DockSet) async -> Bool {
-        switchLock.lock()
-        defer { switchLock.unlock() }
-
+        guard await phase1WriteToDisk(set) else { return false }
         if Task.isCancelled { return false }
-
-        let appID = "com.apple.dock" as CFString
-        let key = "persistent-apps" as CFString
-        let newAppData = DockManager.buildRawDockData(from: set.tiles)
-        let expectedLabels = set.tiles.map { $0.label }
-
-        for attempt in 1...3 {
-            if Task.isCancelled { return false }
-
-            // 1. Kill Dock FIRST so the dying process can't overwrite
-            //    cfprefsd with its in-memory state during shutdown cleanup.
-            let oldDockPIDs = Set(NSRunningApplication
-                .runningApplications(withBundleIdentifier: "com.apple.dock")
-                .map { $0.processIdentifier })
-
-            logger.info("Attempt \(attempt): killing Dock (PIDs: \(oldDockPIDs))")
-
-            let killTask = Process()
-            killTask.executableURL = URL(fileURLWithPath: "/usr/bin/killall")
-            killTask.arguments = ["Dock"]
-
-            await withTaskCancellationHandler {
-                try? killTask.run()
-                killTask.waitUntilExit()
-            } onCancel: {
-                killTask.terminate()
-            }
-
-            if killTask.terminationStatus != 0 {
-                logger.error("Attempt \(attempt): killall Dock failed (exit \(killTask.terminationStatus))")
-                try? await Task.sleep(nanoseconds: 200_000_000)
-                continue
-            }
-
-            if Task.isCancelled { return false }
-
-            // 2. Wait for old Dock PIDs to disappear
-            for _ in 0..<10 {
-                let currentPIDs = Set(NSRunningApplication
-                    .runningApplications(withBundleIdentifier: "com.apple.dock")
-                    .map { $0.processIdentifier })
-                if oldDockPIDs.isDisjoint(with: currentPIDs) { break }
-                try? await Task.sleep(nanoseconds: 200_000_000)
-                if Task.isCancelled { return false }
-            }
-
-            // 3. Grace period for deferred cfprefsd cleanup from old Dock
-            try? await Task.sleep(nanoseconds: 1_000_000_000)
-            if Task.isCancelled { return false }
-
-            // 4. Write to cfprefsd (updates the in-memory cache the new
-            //    Dock queries on startup) + plist directly as backup.
-            //    Must check the synchronize return value: if it fails,
-            //    cfprefsd never gets our data and the Dock will read stale
-            //    values regardless of what the local cache says.
-            CFPreferencesSetValue(key, newAppData as CFPropertyList, appID,
-                                   kCFPreferencesCurrentUser, kCFPreferencesAnyHost)
-
-            if !CFPreferencesAppSynchronize(appID) {
-                logger.error("Attempt \(attempt): CFPreferencesAppSynchronize failed")
-                try? await Task.sleep(nanoseconds: 500_000_000)
-                continue
-            }
-
-            do {
-                try DockManager.writePersistentAppsToDisk(newAppData)
-            } catch {
-                logger.error("Attempt \(attempt): backup plist write failed: \(error.localizedDescription)")
-            }
-
-            logger.info("Attempt \(attempt): wrote cfprefsd + plist, waiting for Dock restart")
-
-            // 5. Wait for new Dock process (different PID) to appear
-            var newPIDs: Set<pid_t> = []
-            for _ in 0..<20 {
-                let current = NSRunningApplication.runningApplications(withBundleIdentifier: "com.apple.dock")
-                let fresh = Set(current.map { $0.processIdentifier }).subtracting(oldDockPIDs)
-                if !fresh.isEmpty { newPIDs = fresh; break }
-                try? await Task.sleep(nanoseconds: 200_000_000)
-                if Task.isCancelled { return false }
-            }
-
-            if newPIDs.isEmpty {
-                logger.error("Attempt \(attempt): Dock did not restart")
-                continue
-            }
-
-            logger.info("Attempt \(attempt): Dock restarted (new PIDs: \(newPIDs))")
-
-            // 6. Let Dock fully initialize. On some systems the Dock
-            //    loads preferences in stages — 500ms is often not enough.
-            try? await Task.sleep(nanoseconds: 2_000_000_000)
-
-            // 7. Verify via plist (disk ground truth). After initial
-            //    verification, wait and re-verify to detect the Dock
-            //    overwriting our data after startup.
-            for readAttempt in 1...4 {
-                if Task.isCancelled { return false }
-
-                var matched = false
-                var source = "none"
-
-                if let apps = DockManager.readPersistentAppsFromDisk() {
-                    let tiles = DockManager.parseRawDockData(apps)
-                    matched = tiles == set.tiles
-                    source = "plist"
-                    if !matched {
-                        logger.warning("Read #\(readAttempt) plist: got \(tiles.map(\.label)), expected \(expectedLabels)")
-                    }
-                } else if let apps = DockManager.getSystemDockPersistentApps() {
-                    let tiles = DockManager.parseRawDockData(apps)
-                    matched = tiles == set.tiles
-                    source = "cfprefsd-fallback"
-                    if !matched {
-                        logger.warning("Read #\(readAttempt) cfprefsd: got \(tiles.map(\.label)), expected \(expectedLabels)")
-                    }
-                } else {
-                    logger.warning("Read #\(readAttempt): could not read from plist or cfprefsd")
-                }
-
-                if matched {
-                    logger.info("First verification passed on read #\(readAttempt) (source: \(source))")
-
-                    // Wait and re-verify to detect Dock overwriting our
-                    // data during late-stage initialization or state
-                    // restoration.
-                    try? await Task.sleep(nanoseconds: 2_000_000_000)
-                    if Task.isCancelled { return false }
-
-                    var secondMatch = false
-                    if let apps2 = DockManager.readPersistentAppsFromDisk() {
-                        let tiles2 = DockManager.parseRawDockData(apps2)
-                        secondMatch = tiles2 == set.tiles
-                        if !secondMatch {
-                            logger.warning("Second verification FAILED: Dock overwrote plist. Now got \(tiles2.map(\.label)), expected \(expectedLabels)")
-                        }
-                    } else {
-                        logger.warning("Second verification: could not read plist")
-                    }
-
-                    if secondMatch {
-                        logger.info("Second verification passed (source: plist)")
-                        return true
-                    }
-                    // Second verification failed — don't return, fall
-                    // through to retry the full cycle.
-                    break
-                }
-
-                if readAttempt < 4 {
-                    try? await Task.sleep(nanoseconds: UInt64(readAttempt) * 400_000_000)
-                }
-            }
-
-            logger.error("Attempt \(attempt): verification reads exhausted")
-        }
-
-        return false
+        return await phase2RestartDockAndVerify(set)
     }
     
     // MARK: - Data Management & Spacers
