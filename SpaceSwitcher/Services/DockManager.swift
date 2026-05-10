@@ -209,8 +209,16 @@ class DockManager: ObservableObject {
             let killTask = Process()
             killTask.executableURL = URL(fileURLWithPath: "/usr/bin/killall")
             killTask.arguments = ["Dock"]
-            try? killTask.run()
-            killTask.waitUntilExit()
+
+            await withTaskCancellationHandler {
+                try? killTask.run()
+                killTask.waitUntilExit()
+            } onCancel: {
+                killTask.terminate()
+            }
+
+            // Don't waste time verifying if superseded
+            if Task.isCancelled { return false }
 
             // Verify the new state by comparing tile content, not just count
             try? await Task.sleep(nanoseconds: 600_000_000)
