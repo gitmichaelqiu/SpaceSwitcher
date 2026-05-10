@@ -301,12 +301,13 @@ class DockManager: ObservableObject {
 
             logger.info("Attempt \(attempt): Dock restarted (new PIDs: \(newPIDs))")
 
-            // 6. Let Dock settle
-            try? await Task.sleep(nanoseconds: 500_000_000)
+            // 6. Let Dock fully initialize. On some systems the Dock
+            //    loads preferences in stages — 500ms is often not enough.
+            try? await Task.sleep(nanoseconds: 2_000_000_000)
 
-            // 7. Verify via plist (disk ground truth, avoids the misleading
-            //    process-local CFPreferences cache). Fall back to cfprefsd
-            //    only if the plist file is unreadable.
+            // 7. Verify via plist (disk ground truth). After initial
+            //    verification, wait and re-verify to detect the Dock
+            //    overwriting our data after startup.
             for readAttempt in 1...4 {
                 if Task.isCancelled { return false }
 
@@ -332,8 +333,32 @@ class DockManager: ObservableObject {
                 }
 
                 if matched {
-                    logger.info("Verification passed on read #\(readAttempt) (source: \(source))")
-                    return true
+                    logger.info("First verification passed on read #\(readAttempt) (source: \(source))")
+
+                    // Wait and re-verify to detect Dock overwriting our
+                    // data during late-stage initialization or state
+                    // restoration.
+                    try? await Task.sleep(nanoseconds: 2_000_000_000)
+                    if Task.isCancelled { return false }
+
+                    var secondMatch = false
+                    if let apps2 = DockManager.readPersistentAppsFromDisk() {
+                        let tiles2 = DockManager.parseRawDockData(apps2)
+                        secondMatch = tiles2 == set.tiles
+                        if !secondMatch {
+                            logger.warning("Second verification FAILED: Dock overwrote plist. Now got \(tiles2.map(\.label)), expected \(expectedLabels)")
+                        }
+                    } else {
+                        logger.warning("Second verification: could not read plist")
+                    }
+
+                    if secondMatch {
+                        logger.info("Second verification passed (source: plist)")
+                        return true
+                    }
+                    // Second verification failed — don't return, fall
+                    // through to retry the full cycle.
+                    break
                 }
 
                 if readAttempt < 4 {
@@ -362,15 +387,33 @@ class DockManager: ObservableObject {
     func createTile(from url: URL) -> DockTile {
         let name = url.deletingPathExtension().lastPathComponent
         let bundleID = Bundle(url: url)?.bundleIdentifier
+
+        // Gather metadata matching the Dock's native entry format so the
+        // Dock accepts the tile when we write it back.
+        let fileModDate: Int
+        let parentModDate: Int
+        if let attrs = try? FileManager.default.attributesOfItem(atPath: url.path) {
+            let ref = Date.timeIntervalSinceReferenceDate
+            fileModDate = Int(((attrs[.modificationDate] as? Date)?.timeIntervalSinceReferenceDate ?? ref) * 1_000_000)
+            parentModDate = fileModDate
+        } else {
+            fileModDate = 0
+            parentModDate = 0
+        }
+
         let tileData: [String: Any] = [
             "file-data": ["_CFURLString": url.absoluteString, "_CFURLStringType": 15],
             "file-label": name,
             "bundle-identifier": bundleID ?? "",
-            "file-type": 41
+            "file-type": 41,
+            "file-mod-date": fileModDate,
+            "parent-mod-date": parentModDate,
+            "dock-extra": false,
+            "is-beta": false
         ]
         let rawDict: [String: Any] = ["tile-data": tileData, "tile-type": "file-tile"]
         let blob = (try? PropertyListSerialization.data(fromPropertyList: rawDict, format: .binary, options: 0)) ?? Data()
-        
+
         return DockTile(label: name, bundleIdentifier: bundleID, fileURL: url, rawDataBlob: blob)
     }
 
