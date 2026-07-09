@@ -72,7 +72,7 @@
             {
               "appearance" : "dark",
               "value" : {
-                "automatic-gradient" : "extended-gray:0.75000,1.00000"
+                "automatic-gradient" : "extended-gray:1.00000,1.00000"
               }
             }
           ],
@@ -165,7 +165,7 @@
             {
               "appearance" : "dark",
               "value" : {
-                "automatic-gradient" : "extended-gray:0.50000,1.00000"
+                "automatic-gradient" : "extended-gray:0.75000,1.00000"
               }
             }
           ],
