@@ -1,4 +1,7 @@
 {
+  "features" : [
+    "refractivity"
+  ],
   "fill" : {
     "automatic-gradient" : "extended-srgb:0.00000,0.53333,1.00000,1.00000"
   },
@@ -44,14 +47,19 @@
           -93.9367195244272
         ]
       },
+      "refractivity" : {
+        "depth" : 0,
+        "enabled" : true,
+        "strength" : 0.5
+      },
       "shadow" : {
-        "kind" : "layer-color",
-        "opacity" : 0.2
+        "kind" : "neutral",
+        "opacity" : 0.6
       },
       "specular" : true,
       "translucency" : {
         "enabled" : true,
-        "value" : 0
+        "value" : 0.2
       }
     },
     {
@@ -65,7 +73,7 @@
               "value" : {
                 "linear-gradient" : [
                   "srgb:0.95743,0.98014,1.00000,1.00000",
-                  "srgb:0.52641,0.77899,1.00000,1.00000"
+                  "srgb:0.52549,0.78039,1.00000,1.00000"
                 ]
               }
             },
@@ -98,14 +106,41 @@
           -29
         ]
       },
-      "shadow" : {
-        "kind" : "layer-color",
-        "opacity" : 1
-      },
-      "translucency" : {
+      "refractivity" : {
+        "depth" : 0,
         "enabled" : true,
-        "value" : 0
-      }
+        "strength" : 0.5
+      },
+      "shadow-specializations" : [
+        {
+          "value" : {
+            "kind" : "layer-color",
+            "opacity" : 1.2
+          }
+        },
+        {
+          "appearance" : "dark",
+          "value" : {
+            "kind" : "neutral",
+            "opacity" : 1
+          }
+        }
+      ],
+      "translucency-specializations" : [
+        {
+          "value" : {
+            "enabled" : true,
+            "value" : 0.65
+          }
+        },
+        {
+          "appearance" : "dark",
+          "value" : {
+            "enabled" : true,
+            "value" : 0.8
+          }
+        }
+      ]
     },
     {
       "layers" : [
@@ -137,6 +172,11 @@
           -93.9367195244272
         ]
       },
+      "refractivity" : {
+        "depth" : 0,
+        "enabled" : true,
+        "strength" : 0.5
+      },
       "shadow" : {
         "kind" : "layer-color",
         "opacity" : 0.2
@@ -144,7 +184,7 @@
       "specular" : true,
       "translucency" : {
         "enabled" : true,
-        "value" : 0
+        "value" : 0.2
       }
     },
     {
@@ -191,13 +231,24 @@
           44
         ]
       },
-      "shadow" : {
-        "kind" : "layer-color",
-        "opacity" : 1
-      },
+      "shadow-specializations" : [
+        {
+          "value" : {
+            "kind" : "layer-color",
+            "opacity" : 1
+          }
+        },
+        {
+          "appearance" : "dark",
+          "value" : {
+            "kind" : "neutral",
+            "opacity" : 1
+          }
+        }
+      ],
       "translucency" : {
         "enabled" : true,
-        "value" : 0
+        "value" : 0.4
       }
     }
   ],
