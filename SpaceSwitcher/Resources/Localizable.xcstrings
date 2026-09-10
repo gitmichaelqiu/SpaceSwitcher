@@ -100,9 +100,6 @@
         }
       }
     },
-    "Add %@ modifier" : {
-
-    },
     "Add Action" : {
       "localizations" : {
         "zh-Hans" : {
@@ -192,6 +189,19 @@
           }
         }
       }
+    },
+    "App Shortcut" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "应用快捷键"
+          }
+        }
+      }
+    },
+    "Application" : {
+
     },
     "Apply Now" : {
       "localizations" : {
@@ -313,6 +323,9 @@
         }
       }
     },
+    "Choose Shortcut Modifiers" : {
+
+    },
     "Choose spaces" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -324,6 +337,9 @@
         }
       }
     },
+    "Command (⌘)" : {
+
+    },
     "Connected" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -334,6 +350,9 @@
           }
         }
       }
+    },
+    "Control (⌃)" : {
+
     },
     "Could Not Read Current Dock" : {
       "localizations" : {
@@ -564,6 +583,26 @@
         }
       }
     },
+    "System Shortcut..." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "系统快捷键…"
+          }
+        }
+      }
+    },
+    "System Shortcut" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "系统快捷键"
+          }
+        }
+      }
+    },
     "Grant" : {
       "localizations" : {
         "zh-Hans" : {
@@ -595,6 +634,9 @@
           }
         }
       }
+    },
+    "Hide Definitions" : {
+
     },
     "Hide the application." : {
       "localizations" : {
@@ -676,6 +718,7 @@
 
     },
     "Manual activation" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -779,6 +822,7 @@
       }
     },
     "No automatic actions" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -797,6 +841,9 @@
           }
         }
       }
+    },
+    "No fallback actions" : {
+
     },
     "No items assigned to this Dock set" : {
       "localizations" : {
@@ -848,10 +895,14 @@
     "Open DesktopRenamer" : {
 
     },
-    "Optional" : {
+    "Option (⌥)" : {
+
+    },
+    "Options" : {
 
     },
     "Otherwise" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -921,9 +972,6 @@
     "Remove" : {
 
     },
-    "Remove %@ modifier" : {
-
-    },
     "Remove Action" : {
 
     },
@@ -990,7 +1038,11 @@
         }
       }
     },
+    "Restore Previous Application" : {
+
+    },
     "Restore window" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -1001,6 +1053,7 @@
       }
     },
     "Return focus to the previous application after simulating keys." : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -1110,6 +1163,12 @@
           }
         }
       }
+    },
+    "Shift (⇧)" : {
+
+    },
+    "Shortcut Options" : {
+
     },
     "Show" : {
       "comment" : "Action: Show Window",
@@ -1284,7 +1343,11 @@
         }
       }
     },
+    "Wait for Application" : {
+
+    },
     "Wait for the application to be frontmost before simulating keys." : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {

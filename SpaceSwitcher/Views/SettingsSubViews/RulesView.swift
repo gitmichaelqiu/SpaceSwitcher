@@ -7,6 +7,7 @@ struct RulesView: View {
     
     @State private var showingAddRule = false
     @State private var selectedRule: AppRule?
+    @State private var rulePendingDeletion: AppRule?
     
     var body: some View {
         SettingsContainer(.rules) {
@@ -39,11 +40,7 @@ struct RulesView: View {
                                 availableSpaces: spaceManager.availableSpaces,
                                 isGlobalEnabled: ruleManager.isAutomationEnabled,
                                 onEdit: { selectedRule = rule },
-                                onDelete: {
-                                    withAnimation {
-                                        ruleManager.deleteRule(rule)
-                                    }
-                                },
+                                onDelete: { rulePendingDeletion = rule },
                                 onToggle: { updatedRule in
                                     ruleManager.updateRule(updatedRule)
                                 }
@@ -93,6 +90,29 @@ struct RulesView: View {
                 },
                 onCancel: { selectedRule = nil }
             )
+        }
+        .confirmationDialog(
+            "Delete Rule?",
+            isPresented: Binding(
+                get: { rulePendingDeletion != nil },
+                set: { isPresented in
+                    if !isPresented { rulePendingDeletion = nil }
+                }
+            )
+        ) {
+            Button("Delete Rule", role: .destructive) {
+                if let rule = rulePendingDeletion {
+                    withAnimation {
+                        ruleManager.deleteRule(rule)
+                    }
+                }
+                rulePendingDeletion = nil
+            }
+            Button("Cancel", role: .cancel) {
+                rulePendingDeletion = nil
+            }
+        } message: {
+            Text("This removes the rule for \(rulePendingDeletion?.appName ?? "this application").")
         }
     }
     
@@ -180,6 +200,7 @@ struct RuleRow: View {
                 .toggleStyle(.switch)
                 .controlSize(.small)
                 .disabled(!isGlobalEnabled)
+                .help(isGlobalEnabled ? "Enable or disable this rule." : "Enable Automation above to use individual rules.")
 
                 Menu {
                     Button("Delete", systemImage: "trash", role: .destructive, action: onDelete)

@@ -10,6 +10,7 @@ struct RuleEditor: View {
     @State private var showingLegend = false
     @State private var legendWidth: CGFloat = 260
     @State private var legendDragStartWidth: CGFloat?
+    @State private var groupPendingDeletion: UUID?
     
     init(rule: AppRule, availableSpaces: [SpaceInfo], onSave: @escaping (AppRule) -> Void, onCancel: @escaping () -> Void) {
         self._workingRule = State(wrappedValue: rule)
@@ -33,6 +34,27 @@ struct RuleEditor: View {
         }
         .frame(minWidth: 700, idealWidth: 820, minHeight: 500, idealHeight: 620)
         .onAppear { loadRunningApps() }
+        .confirmationDialog(
+            "Remove Workflow Group?",
+            isPresented: Binding(
+                get: { groupPendingDeletion != nil },
+                set: { isPresented in
+                    if !isPresented { groupPendingDeletion = nil }
+                }
+            )
+        ) {
+            Button("Remove Group", role: .destructive) {
+                if let groupID = groupPendingDeletion {
+                    removeGroup(id: groupID)
+                }
+                groupPendingDeletion = nil
+            }
+            Button("Cancel", role: .cancel) {
+                groupPendingDeletion = nil
+            }
+        } message: {
+            Text("The spaces and actions in this workflow group will be removed.")
+        }
     }
     
     // MARK: - Components
@@ -122,19 +144,20 @@ struct RuleEditor: View {
             ScrollView(.vertical) {
                 VStack(alignment: .leading, spacing: 12) {
                     // --- WORKFLOW GROUPS ---
-                    ForEach(Array(workingRule.groups.enumerated()), id: \.element.id) { index, group in
+                    ForEach($workingRule.groups) { $group in
+                        let index = workingRule.groups.firstIndex(where: { $0.id == group.id }) ?? 0
                         SettingsSection("Workflow Group \(index + 1)", accessory: {
                             Button("Remove", systemImage: "trash", role: .destructive) {
-                                removeGroup(id: group.id)
+                                groupPendingDeletion = group.id
                             }
                             .buttonStyle(.borderless)
                         }) {
                             SpaceConditionRow(
-                                group: $workingRule.groups[index],
+                                group: $group,
                                 availableSpaces: availableSpaces
                             )
 
-                            ActionListRows(actions: $workingRule.groups[index].actions)
+                            ActionListRows(actions: $group.actions)
 
                             AddActionRow {
                                 actionMenu(for: group.id)
@@ -278,12 +301,12 @@ struct RuleEditor: View {
         Button {
             addAction(.hotkey(keyCode: -1, modifiers: 0, restoreWindow: false, waitFrontmost: true))
         } label: {
-            Label("App Shortcut...", systemImage: "keyboard")
+            Label("App Shortcut...", systemImage: "app")
         }
         Button {
             addAction(.globalHotkey(keyCode: -1, modifiers: 0))
         } label: {
-            Label("Global Shortcut...", systemImage: "globe")
+            Label("System Shortcut...", systemImage: "globe")
         }
     }
 
@@ -435,19 +458,19 @@ struct SpaceConditionRow: View {
             } else {
                 Menu {
                     ForEach(availableSpaces) { space in
-                        let isSelected = group.targetSpaceIDs.contains(space.id)
-                        Button {
-                            if isSelected {
-                                group.targetSpaceIDs.remove(space.id)
-                            } else {
-                                group.targetSpaceIDs.insert(space.id)
-                            }
-                        } label: {
-                            Label(
-                                space.name.isEmpty ? "Space \(space.number)" : space.name,
-                                systemImage: isSelected ? "checkmark" : "circle"
+                        Toggle(
+                            space.name.isEmpty ? "Space \(space.number)" : space.name,
+                            isOn: Binding(
+                                get: { group.targetSpaceIDs.contains(space.id) },
+                                set: { isSelected in
+                                    if isSelected {
+                                        group.targetSpaceIDs.insert(space.id)
+                                    } else {
+                                        group.targetSpaceIDs.remove(space.id)
+                                    }
+                                }
                             )
-                        }
+                        )
                     }
                 } label: {
                     HStack(spacing: 6) {
@@ -467,72 +490,46 @@ struct SpaceConditionRow: View {
 
 struct ActionListRows: View {
     @Binding var actions: [ActionItem]
-    @State private var draggingItem: ActionItem?
     
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            ForEach(actions) { item in
+            ForEach($actions) { $item in
+                let itemID = item.id
+                let index = actions.firstIndex(where: { $0.id == itemID }) ?? 0
                 VStack(alignment: .leading, spacing: 0) {
                     Divider()
                     ActionRowContent(
-                        index: actions.firstIndex(where: { $0.id == item.id }) ?? 0,
-                        item: binding(for: item),
+                        index: index,
+                        item: $item,
+                        canMoveUp: index > 0,
+                        canMoveDown: index < actions.count - 1,
+                        onMoveUp: {
+                            moveAction(id: itemID, by: -1)
+                        },
+                        onMoveDown: {
+                            moveAction(id: itemID, by: 1)
+                        },
                         onDelete: {
                             withAnimation {
-                                actions.removeAll { $0.id == item.id }
+                                actions.removeAll { $0.id == itemID }
                             }
                         }
                     )
                     .padding(.horizontal, 8)
                     .padding(.vertical, 6)
-                    .background(draggingItem?.id == item.id ? Color.accentColor.opacity(0.08) : Color.clear)
                 }
-                .onDrag {
-                    self.draggingItem = item
-                    return NSItemProvider(object: item.id.uuidString as NSString)
-                } preview: {
-                    // Return an empty/clear view to hide the ghost row that follows the cursor
-                    Color.clear.frame(width: 1, height: 1)
-                }
-                .onDrop(of: [.text], delegate: ActionDropDelegate(item: item, actions: $actions, draggingItem: $draggingItem))
             }
         }
     }
-    
-    private func binding(for item: ActionItem) -> Binding<ActionItem> {
-        guard let index = actions.firstIndex(where: { $0.id == item.id }) else {
-            return .constant(item)
+
+    private func moveAction(id: UUID, by offset: Int) {
+        guard let sourceIndex = actions.firstIndex(where: { $0.id == id }) else { return }
+        let destinationIndex = sourceIndex + offset
+        guard actions.indices.contains(destinationIndex) else { return }
+
+        withAnimation(.easeInOut(duration: 0.2)) {
+            actions.swapAt(sourceIndex, destinationIndex)
         }
-        return $actions[index]
-    }
-}
-
-struct ActionDropDelegate: DropDelegate {
-    let item: ActionItem
-    @Binding var actions: [ActionItem]
-    @Binding var draggingItem: ActionItem?
-
-    func performDrop(info: DropInfo) -> Bool {
-        draggingItem = nil
-        return true
-    }
-
-    func dropEntered(info: DropInfo) {
-        guard let draggingItem = draggingItem,
-              draggingItem.id != item.id,
-              let from = actions.firstIndex(where: { $0.id == draggingItem.id }),
-              let to = actions.firstIndex(where: { $0.id == item.id })
-        else { return }
-
-        if actions[to].id != draggingItem.id {
-            withAnimation(.snappy(duration: 0.2)) {
-                actions.move(fromOffsets: IndexSet(integer: from), toOffset: to > from ? to + 1 : to)
-            }
-        }
-    }
-    
-    func dropUpdated(info: DropInfo) -> DropProposal? {
-        return DropProposal(operation: .move)
     }
 }
 
@@ -565,6 +562,10 @@ struct AddActionRow<Content: View>: View {
 struct ActionRowContent: View {
     let index: Int
     @Binding var item: ActionItem
+    let canMoveUp: Bool
+    let canMoveDown: Bool
+    let onMoveUp: () -> Void
+    let onMoveDown: () -> Void
     let onDelete: () -> Void
     
     @State private var isRecording = false
@@ -573,19 +574,18 @@ struct ActionRowContent: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 10) {
-                Image(systemName: "line.3.horizontal")
-                    .font(.system(size: 10))
-                    .foregroundStyle(.secondary.opacity(0.2))
-                
                 Text("\(index + 1)")
-                    .font(.system(size: 11, weight: .bold).monospacedDigit())
+                    .font(.body.monospacedDigit())
                     .foregroundStyle(.secondary)
-                    .frame(width: 14)
+                    .frame(width: 22, alignment: .leading)
                 
                 Group {
                     switch item.value {
                     case .globalHotkey(let code, let mods):
                         HStack(spacing: 8) {
+                            Label("System Shortcut", systemImage: "globe")
+                                .font(.subheadline)
+
                             ModifierMenu(modifiers: mods) { newModifiers in
                                 item.value = .globalHotkey(keyCode: code, modifiers: newModifiers)
                             }
@@ -597,6 +597,9 @@ struct ActionRowContent: View {
                         
                     case .hotkey(let code, let mods, _, _):
                         HStack(spacing: 8) {
+                            Label("App Shortcut", systemImage: "app")
+                                .font(.subheadline)
+
                             Button(action: startRecording) {
                                 if isRecording {
                                     Label("Recording...", systemImage: "record.circle")
@@ -645,10 +648,26 @@ struct ActionRowContent: View {
                 
                 Spacer()
                 
-                Button("Remove Action", systemImage: "trash", role: .destructive, action: onDelete)
-                    .buttonStyle(.plain)
-                    .labelStyle(.iconOnly)
-                    .help("Remove Action")
+                Menu {
+                    Button("Move Up", systemImage: "arrow.up") {
+                        onMoveUp()
+                    }
+                    .disabled(!canMoveUp)
+
+                    Button("Move Down", systemImage: "arrow.down") {
+                        onMoveDown()
+                    }
+                    .disabled(!canMoveDown)
+
+                    Divider()
+
+                    Button("Remove Action", systemImage: "trash", role: .destructive, action: onDelete)
+                } label: {
+                    Image(systemName: "ellipsis.circle")
+                }
+                .menuStyle(.borderlessButton)
+                .controlSize(.small)
+                .help("Action Options")
             }
             
         }
@@ -766,11 +785,11 @@ struct HotkeyOptionsMenu: View {
 
     var body: some View {
         Menu {
-            Toggle("Wait for Application", isOn: $waitFrontmost)
-            Toggle("Restore Previous Application", isOn: $restoreWindow)
+            Toggle("Wait for App to Be Frontmost", isOn: $waitFrontmost)
+            Toggle("Restore Previous App", isOn: $restoreWindow)
                 .disabled(waitFrontmost)
         } label: {
-            Label("Options", systemImage: "gearshape")
+            Label("Shortcut Options", systemImage: "gearshape")
         }
         .menuStyle(.borderlessButton)
         .help("Shortcut Options")

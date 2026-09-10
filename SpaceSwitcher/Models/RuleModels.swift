@@ -33,9 +33,9 @@ enum WindowAction: Identifiable, Codable, Equatable, Hashable {
         case .minimize: return NSLocalizedString("Minimize", comment: "")
         case .bringToFront: return NSLocalizedString("Bring to Front", comment: "")
         case .hotkey(let code, let mods, _, _):
-            return "Press: " + ShortcutHelper.format(code: code, modifiers: mods)
+            return NSLocalizedString("App Shortcut", comment: "") + ": " + ShortcutHelper.format(code: code, modifiers: mods)
         case .globalHotkey(let code, let mods):
-            return "Global: " + ShortcutHelper.format(code: code, modifiers: mods)
+            return NSLocalizedString("System Shortcut", comment: "") + ": " + ShortcutHelper.format(code: code, modifiers: mods)
         }
     }
 
