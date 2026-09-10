@@ -49,36 +49,19 @@ struct RulesView: View {
                                 }
                             )
                         }
-                        .transition(.asymmetric(
-                            insertion: .opacity.combined(with: .scale(scale: 0.98)),
-                            removal: .opacity.combined(with: .scale(scale: 0.95))
-                        ))
+                        .transition(.opacity)
                     }
                     
-                    // Add Rule Button
                     Button {
                         showingAddRule = true
                     } label: {
-                        HStack(spacing: 8) {
-                            Image(systemName: "plus.circle.fill")
-                                .font(.system(size: 14))
-                            Text("Add New Rule")
-                                .font(.system(size: 13, weight: .semibold))
-                        }
-                        .foregroundColor(.accentColor)
-                        .padding(.vertical, 10)
-                        .padding(.horizontal, 20)
-                        .background(
-                            RoundedRectangle(cornerRadius: 10, style: .continuous)
-                                .fill(Color.accentColor.opacity(0.1))
-                        )
+                        Label("Add New Rule", systemImage: "plus")
                     }
-                    .buttonStyle(.plain)
+                    .buttonStyle(.bordered)
                     .padding(.top, 10)
                     .frame(maxWidth: .infinity, alignment: .center)
                 }
                 .animation(.easeInOut(duration: 0.2), value: ruleManager.rules)
-                .padding(8)
                 .frame(maxWidth: .infinity, alignment: .topLeading)
             }
         }
@@ -115,19 +98,31 @@ struct RulesView: View {
     }
     
     private var emptyState: some View {
-        VStack(spacing: 16) {
-            Image(systemName: "list.bullet.rectangle.portrait")
-                .font(.system(size: 48))
-                .foregroundColor(.secondary.opacity(0.3))
-            
-            Text("No automation rules yet.")
-                .font(.body)
-                .foregroundColor(.secondary)
-            
-            Button("Create First Rule") {
-                showingAddRule = true
+        Group {
+            if #available(macOS 14.0, *) {
+                ContentUnavailableView {
+                    Label("No automation rules yet.", systemImage: "list.bullet.rectangle.portrait")
+                } description: {
+                    Text("Create a rule to control applications by desktop space.")
+                } actions: {
+                    Button("Create First Rule") {
+                        showingAddRule = true
+                    }
+                    .buttonStyle(.borderedProminent)
+                }
+            } else {
+                VStack(spacing: 16) {
+                    Image(systemName: "list.bullet.rectangle.portrait")
+                        .font(.title)
+                        .foregroundStyle(.secondary)
+                    Text("No automation rules yet.")
+                        .foregroundStyle(.secondary)
+                    Button("Create First Rule") {
+                        showingAddRule = true
+                    }
+                    .buttonStyle(.borderedProminent)
+                }
             }
-            .buttonStyle(.borderedProminent)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .padding(.top, 40)
@@ -141,8 +136,6 @@ struct RuleRow: View {
     let onEdit: () -> Void
     let onDelete: () -> Void
     let onToggle: (AppRule) -> Void
-    
-    @State private var isHovering = false
     
     private func spacesString(for spaceIDs: Set<String>) -> String {
         let items = spaceIDs.compactMap { id -> String? in
@@ -158,137 +151,108 @@ struct RuleRow: View {
     }
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            VStack(alignment: .leading, spacing: 12) {
-                HStack(spacing: 12) {
-                    // App Icon
-                    if let path = NSWorkspace.shared.urlForApplication(withBundleIdentifier: rule.appBundleID)?.path {
-                        Image(nsImage: NSWorkspace.shared.icon(forFile: path))
-                            .resizable()
-                            .frame(width: 44, height: 44)
-                            .shadow(color: .black.opacity(0.1), radius: 2, x: 0, y: 1)
-                    } else {
-                        Image(systemName: "questionmark.app.dashed")
-                            .resizable()
-                            .frame(width: 44, height: 44)
-                            .foregroundColor(.secondary.opacity(0.5))
-                    }
-                    
-                    VStack(alignment: .leading, spacing: 3) {
-                        Text(rule.appName)
-                            .font(.system(size: 14, weight: .bold))
-                            .foregroundColor(.primary)
-                        
-                        Text(rule.appBundleID)
-                            .font(.system(size: 11, design: .monospaced))
-                            .foregroundColor(.secondary.opacity(0.8))
-                    }
-                    
-                    Spacer()
-                    
-                    HStack(spacing: 12) {
-                        Button(action: onEdit) {
-                            Image(systemName: "pencil")
-                                .font(.system(size: 13, weight: .semibold))
-                                .padding(8)
-                                .background(Circle().fill(Color.accentColor.opacity(0.1)))
-                        }
-                        .buttonStyle(.plain)
-                        .foregroundColor(.accentColor)
-                        
-                        Button(action: onDelete) {
-                            Image(systemName: "trash")
-                                .font(.system(size: 13, weight: .semibold))
-                                .padding(8)
-                                .background(Circle().fill(Color.red.opacity(0.1)))
-                        }
-                        .buttonStyle(.plain)
-                        .foregroundColor(.red)
-                    }
-                    .opacity(isHovering ? 1.0 : 0.0)
-                    
-                    Toggle("", isOn: Binding(
-                        get: { rule.isEnabled },
-                        set: { value in
-                            var newRule = rule
-                            newRule.isEnabled = value
-                            onToggle(newRule)
-                        }
-                    ))
-                    .toggleStyle(.switch)
-                    .labelsHidden()
-                    .disabled(!isGlobalEnabled)
+        VStack(alignment: .leading, spacing: 0) {
+            HStack(spacing: 12) {
+                appIcon
+                    .frame(width: 32, height: 32)
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(rule.appName.isEmpty ? "Select Application" : rule.appName)
+                        .font(.body.weight(.semibold))
+                    Text(rule.appBundleID.isEmpty ? "No application selected" : rule.appBundleID)
+                        .font(.caption.monospaced())
+                        .foregroundStyle(.secondary)
                 }
-                
-                if !rule.groups.isEmpty {
-                    VStack(alignment: .leading, spacing: 10) {
-                        HStack {
-                            Text("Workflows")
-                                .font(.system(size: 10, weight: .bold))
-                                .tracking(0.5)
-                                .foregroundColor(.secondary.opacity(0.8))
-                            Spacer()
-                        }
-                        
-                        VStack(alignment: .leading, spacing: 8) {
-                            ForEach(rule.groups) { group in
-                                HStack(alignment: .top, spacing: 10) {
-                                    Image(systemName: "arrow.up.forward.app.fill")
-                                        .font(.system(size: 10))
-                                        .foregroundColor(.accentColor.opacity(0.8))
-                                        .padding(.top, 2)
-                                    
-                                    VStack(alignment: .leading, spacing: 2) {
-                                        Text(spacesString(for: group.targetSpaceIDs))
-                                            .font(.system(size: 11, weight: .bold))
-                                            .foregroundColor(.primary.opacity(0.9))
-                                        
-                                        Text(group.actions.map { $0.value.localizedString }.joined(separator: ", "))
-                                            .font(.system(size: 11))
-                                            .foregroundColor(.secondary)
-                                            .fixedSize(horizontal: false, vertical: true)
-                                    }
-                                }
-                            }
-                            
-                            if !rule.elseActions.isEmpty {
-                                Divider().opacity(0.2).padding(.vertical, 2)
-                                
-                                HStack(alignment: .top, spacing: 10) {
-                                    Image(systemName: "ellipsis.circle.fill")
-                                        .font(.system(size: 10))
-                                        .foregroundColor(.secondary.opacity(0.6))
-                                        .padding(.top, 2)
-                                    
-                                    VStack(alignment: .leading, spacing: 2) {
-                                        Text("Otherwise")
-                                            .font(.system(size: 11, weight: .bold))
-                                            .foregroundColor(.secondary)
-                                        
-                                        Text(rule.elseActions.map { $0.value.localizedString }.joined(separator: ", "))
-                                            .font(.system(size: 11))
-                                            .foregroundColor(.secondary)
-                                            .fixedSize(horizontal: false, vertical: true)
-                                            .multilineTextAlignment(.leading)
-                                    }
-                                }
-                            }
-                        }
+
+                Spacer()
+
+                Toggle("Enabled", isOn: Binding(
+                    get: { rule.isEnabled },
+                    set: { value in
+                        var updatedRule = rule
+                        updatedRule.isEnabled = value
+                        onToggle(updatedRule)
                     }
-                    .padding(12)
-                    .background(
-                        RoundedRectangle(cornerRadius: 12)
-                            .fill(Color.primary.opacity(0.04))
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 12)
-                                    .stroke(Color.primary.opacity(0.06), lineWidth: 0.5)
-                            )
-                    )
+                ))
+                .toggleStyle(.switch)
+                .controlSize(.small)
+                .disabled(!isGlobalEnabled)
+
+                Menu {
+                    Button("Edit", systemImage: "pencil", action: onEdit)
+                    Button("Delete", systemImage: "trash", role: .destructive, action: onDelete)
+                } label: {
+                    Image(systemName: "ellipsis.circle")
                 }
+                .menuStyle(.borderlessButton)
+                .help("Rule Actions")
             }
             .padding(12)
+
+            if !rule.groups.isEmpty || !rule.elseActions.isEmpty {
+                Divider()
+
+                VStack(alignment: .leading, spacing: 0) {
+                    ForEach(rule.groups) { group in
+                        ruleSummary(
+                            icon: "arrow.up.forward.app",
+                            title: spacesString(for: group.targetSpaceIDs),
+                            details: actionSummary(group.actions)
+                        )
+
+                        if rule.groups.last?.id != group.id || !rule.elseActions.isEmpty {
+                            Divider()
+                        }
+                    }
+
+                    if !rule.elseActions.isEmpty {
+                        ruleSummary(
+                            icon: "ellipsis.circle",
+                            title: "Otherwise",
+                            details: actionSummary(rule.elseActions)
+                        )
+                    }
+                }
+                .padding(.horizontal, 12)
+            }
         }
-        .contentShape(Rectangle())
-        .onHover { isHovering = $0 }
+    }
+
+    private var appIcon: some View {
+        Group {
+            if let path = NSWorkspace.shared.urlForApplication(withBundleIdentifier: rule.appBundleID)?.path {
+                Image(nsImage: NSWorkspace.shared.icon(forFile: path))
+                    .resizable()
+                    .aspectRatio(contentMode: .fit)
+            } else {
+                Image(systemName: "questionmark.app.dashed")
+                    .font(.title2)
+                    .foregroundStyle(.secondary)
+            }
+        }
+    }
+
+    private func actionSummary(_ actions: [ActionItem]) -> String {
+        actions.isEmpty ? "No actions" : actions.map { $0.value.localizedString }.joined(separator: ", ")
+    }
+
+    private func ruleSummary(icon: String, title: String, details: String) -> some View {
+        HStack(alignment: .top, spacing: 10) {
+            Image(systemName: icon)
+                .foregroundStyle(.secondary)
+                .frame(width: 18)
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title)
+                    .font(.body)
+                Text(details)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+
+            Spacer(minLength: 0)
+        }
+        .padding(.vertical, 10)
     }
 }

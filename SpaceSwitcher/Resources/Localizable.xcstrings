@@ -83,6 +83,16 @@
         }
       }
     },
+    "Actions used when no workflow group matches the current space." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "当当前桌面不匹配任何工作流组时使用的操作。"
+          }
+        }
+      }
+    },
     "Activate the application and bring its windows to the foreground." : {
       "localizations" : {
         "zh-Hans" : {
@@ -273,6 +283,16 @@
         }
       }
     },
+    "Choose spaces" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "选择桌面"
+          }
+        }
+      }
+    },
     "Choose from Applications..." : {
       "localizations" : {
         "zh-Hans" : {
@@ -310,6 +330,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "创建第一个规则"
+          }
+        }
+      }
+    },
+    "Create a rule to control applications by desktop space." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "创建规则，以按桌面控制应用程序。"
           }
         }
       }
@@ -687,6 +717,16 @@
         }
       }
     },
+    "No actions" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "无操作"
+          }
+        }
+      }
+    },
     "No items assigned to this Dock set" : {
       "localizations" : {
         "zh-Hans" : {
@@ -769,6 +809,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "录制…"
+          }
+        }
+      }
+    },
+    "Record Shortcut" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "录制快捷键"
           }
         }
       }
@@ -862,6 +912,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "规则自动化"
+          }
+        }
+      }
+    },
+    "Rule Actions" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "规则操作"
           }
         }
       }

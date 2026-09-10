@@ -95,12 +95,10 @@ struct RuleEditor: View {
                 }
             } label: {
                 Image(systemName: showingLegend ? "info.circle.fill" : "info.circle")
-                    .font(.system(size: 18))
-                    .foregroundColor(showingLegend ? .accentColor : .secondary)
-                    .padding(8)
-                    .background(Circle().fill(showingLegend ? Color.accentColor.opacity(0.1) : Color.clear))
+                    .font(.body)
             }
-            .buttonStyle(.plain)
+            .buttonStyle(.bordered)
+            .controlSize(.small)
             .help("Action Definitions")
         }
         .padding(.horizontal, 20)
@@ -116,7 +114,7 @@ struct RuleEditor: View {
                     
                     // --- WORKFLOW GROUPS ---
                     ForEach(Array(workingRule.groups.enumerated()), id: \.element.id) { index, group in
-                        VStack(alignment: .leading, spacing: 0) {
+                        SettingsSection("Workflow Group \(index + 1)") {
                             SpaceConditionRow(
                                 groupIndex: index,
                                 group: $workingRule.groups[index],
@@ -127,29 +125,19 @@ struct RuleEditor: View {
                                     }
                                 }
                             )
-                            
+
+                            Divider()
+
                             ActionListRows(actions: $workingRule.groups[index].actions)
-                            
+
                             AddActionRow {
                                 addActionToGroup(index: index, action: .show)
                             } menuContent: {
                                 actionMenu(for: index)
                             }
                         }
-                        .frame(maxWidth: .infinity, alignment: .topLeading)
-                        .background(
-                            RoundedRectangle(cornerRadius: 12, style: .continuous)
-                                .fill(Color(nsColor: .controlBackgroundColor).opacity(0.4) as Color)
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: 12, style: .continuous)
-                                        .fill(.regularMaterial)
-                                )
-                        )
-                        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-                        .padding(.horizontal, 20)
+                        .frame(maxWidth: .infinity, alignment: .leading)
                         .padding(.bottom, 16)
-                        .listRowInsets(EdgeInsets())
-                        .listRowSeparator(.hidden)
                     }
                 }
                 
@@ -160,64 +148,36 @@ struct RuleEditor: View {
                             workingRule.groups.append(RuleGroup(targetSpaceIDs: [], actions: []))
                         }
                     } label: {
-                        HStack(spacing: 8) {
-                            Image(systemName: "plus.circle.fill")
-                            Text("Add Workflow Group")
-                        }
-                        .font(.system(size: 13, weight: .semibold))
-                        .foregroundColor(.accentColor)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 8)
-                        .background(
-                            RoundedRectangle(cornerRadius: 10)
-                                .fill(Color.accentColor.opacity(0.05))
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: 10)
-                                        .stroke(Color.accentColor.opacity(0.1), lineWidth: 1)
-                                )
-                        )
+                        Label("Add Workflow Group", systemImage: "plus")
                     }
-                    .buttonStyle(.plain)
-                    .padding(.horizontal, 20)
+                    .buttonStyle(.bordered)
                     .padding(.bottom, 24)
-                    .listRowInsets(EdgeInsets())
-                    .listRowSeparator(.hidden)
                 }
                 
                 // --- FALLBACK SECTION ---
                 Section {
-                    VStack(alignment: .leading, spacing: 0) {
+                    SettingsSection("Fallback Behavior", helperText: "Actions used when no workflow group matches the current space.") {
                         HStack {
-                            Text("Fallback Behavior")
-                                .font(.system(size: 11, weight: .bold))
-                                .foregroundColor(.secondary)
-                                .textCase(.uppercase)
+                            Text("Otherwise")
+                                .font(.body.weight(.medium))
                             Spacer()
-                            Text("Default")
-                                .font(.system(size: 11))
-                                .foregroundColor(.secondary.opacity(0.4))
+                            Text("Optional")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
                         }
-                        .padding(.horizontal, 12)
-                        .padding(.vertical, 8)
-                        .background(Color.primary.opacity(0.02))
-                        
-                        Divider().opacity(0.3)
+
+                        Divider()
                         
                         if workingRule.elseActions.isEmpty {
-                            HStack {
-                                Spacer()
-                                Text("No automatic actions")
-                                    .font(.system(size: 13))
-                                    .foregroundColor(.secondary)
-                                    .italic()
-                                Spacer()
-                            }
-                            .padding(16)
+                            Text("No automatic actions")
+                                .foregroundStyle(.secondary)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .padding(.vertical, 10)
                         } else {
                             ActionListRows(actions: $workingRule.elseActions)
                         }
-                        
-                        Divider().opacity(0.3)
+
+                        Divider()
                         
                         HStack {
                             Menu {
@@ -231,32 +191,19 @@ struct RuleEditor: View {
                                 Button("Global Shortcut...") { withAnimation { workingRule.elseActions.append(ActionItem(.globalHotkey(keyCode: -1, modifiers: 0))) } }
                             } label: {
                                 Label("Add Action", systemImage: "plus")
-                                    .font(.system(size: 12, weight: .semibold))
                             }
                             .menuStyle(.borderlessButton)
-                            .foregroundColor(.accentColor)
                             .fixedSize()
                             Spacer()
                         }
-                        .padding(8)
+                        .padding(.vertical, 8)
                     }
-                    .background(
-                        RoundedRectangle(cornerRadius: 12, style: .continuous)
-                            .fill(Color(nsColor: .controlBackgroundColor).opacity(0.4) as Color)
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 12, style: .continuous)
-                                    .fill(.regularMaterial)
-                            )
-                    )
-                    .padding(.horizontal, 20)
                     .padding(.bottom, 32)
-                    .listRowInsets(EdgeInsets())
-                    .listRowSeparator(.hidden)
                 }
-                .padding(.vertical, 8)
+                .padding(.top, 8)
             }
             .animation(.easeInOut(duration: 0.35), value: workingRule.groups)
-            .background(Color(NSColor.windowBackgroundColor))
+            .background(Color.clear)
             
             // Custom Draggable Divider & Sidebar
             if showingLegend {
@@ -418,65 +365,60 @@ struct SpaceConditionRow: View {
     @Binding var group: RuleGroup
     let availableSpaces: [SpaceInfo]
     let onRemove: () -> Void
+
+    private var selectedSpaces: [SpaceInfo] {
+        availableSpaces.filter { group.targetSpaceIDs.contains($0.id) }
+    }
+
+    private var selectedSpacesTitle: String {
+        if selectedSpaces.isEmpty { return "Choose spaces" }
+        return selectedSpaces.map { $0.name.isEmpty ? "Space \($0.number)" : $0.name }.joined(separator: ", ")
+    }
     
     var body: some View {
         VStack(spacing: 0) {
             HStack {
                 Text("Group \(groupIndex + 1)")
-                    .font(.system(size: 11, weight: .bold))
+                    .font(.body.weight(.medium))
+
                 Spacer()
-                Button(action: onRemove) {
-                    Image(systemName: "trash")
-                        .font(.system(size: 11))
-                        .foregroundColor(.secondary)
-                }
-                .buttonStyle(.plain)
+
+                Button("Remove", systemImage: "trash", role: .destructive, action: onRemove)
+                    .buttonStyle(.borderless)
             }
-            .padding(.horizontal, 12)
             .padding(.vertical, 8)
-            .background(Color.primary.opacity(0.02))
-            
-            Divider().opacity(0.3)
-            
-            HStack(alignment: .center, spacing: 12) {
-                Text("Spaces:")
-                    .font(.system(size: 11, weight: .bold))
-                    .foregroundColor(.secondary)
-                    .textCase(.uppercase)
-                
+
+            Divider()
+
+            SettingsRow("Spaces") {
                 if availableSpaces.isEmpty {
                     Text("No spaces detected")
-                        .font(.system(size: 11))
-                        .foregroundColor(.secondary)
+                        .foregroundStyle(.secondary)
                 } else {
-                    ScrollView(.horizontal, showsIndicators: false) {
-                        HStack(spacing: 6) {
-                            ForEach(availableSpaces) { space in
-                                let isSelected = group.targetSpaceIDs.contains(space.id)
-                                Button {
-                                    if isSelected {
-                                        group.targetSpaceIDs.remove(space.id)
-                                    } else {
-                                        group.targetSpaceIDs.insert(space.id)
-                                    }
-                                } label: {
-                                    Text(space.name)
-                                        .font(.system(size: 11, weight: .medium))
-                                        .padding(.horizontal, 8)
-                                        .padding(.vertical, 3)
-                                        .background(
-                                            RoundedRectangle(cornerRadius: 6)
-                                                .fill(isSelected ? Color.accentColor : Color.primary.opacity(0.05))
-                                        )
-                                        .foregroundColor(isSelected ? .white : .primary)
+                    Menu {
+                        ForEach(availableSpaces) { space in
+                            let isSelected = group.targetSpaceIDs.contains(space.id)
+                            Button {
+                                if isSelected {
+                                    group.targetSpaceIDs.remove(space.id)
+                                } else {
+                                    group.targetSpaceIDs.insert(space.id)
                                 }
-                                .buttonStyle(.plain)
+                            } label: {
+                                Label(
+                                    space.name.isEmpty ? "Space \(space.number)" : space.name,
+                                    systemImage: isSelected ? "checkmark" : "circle"
+                                )
                             }
                         }
+                    } label: {
+                        Text(selectedSpacesTitle)
+                            .lineLimit(1)
                     }
+                    .menuStyle(.borderlessButton)
+                    .frame(maxWidth: 260, alignment: .trailing)
                 }
             }
-            .padding(12)
         }
     }
 }
@@ -730,22 +672,14 @@ struct KeyCaptureButton: View {
     @State private var isListening = false
     
     var body: some View {
-        Button(action: { isListening = true }) {
-            ZStack {
-                RoundedRectangle(cornerRadius: 4)
-                    .fill(isListening ? Color.accentColor.opacity(0.05) : Color.primary.opacity(0.04))
-                
-                if isListening {
-                    Text("...")
-                        .font(.system(size: 11, weight: .bold))
-                } else {
-                    Text(displayString)
-                        .font(.system(size: 11, weight: .medium, design: .monospaced))
-                }
-            }
-            .frame(width: 36, height: 20)
+        Button(isListening ? "…" : displayString) {
+            isListening = true
         }
-        .buttonStyle(.plain)
+        .font(.body.monospaced())
+        .frame(minWidth: 44)
+        .buttonStyle(.bordered)
+        .controlSize(.small)
+        .help("Record Shortcut")
         .overlay(
             Group {
                 if isListening {
@@ -774,13 +708,13 @@ struct ModifierToggle: View {
     var isOn: Bool { (current & flag.rawValue) != 0 }
     
     var body: some View {
-        Text(title)
-            .font(.system(size: 11, weight: .bold))
-            .frame(width: 18, height: 18)
-            .background(isOn ? Color.accentColor : Color.primary.opacity(0.05))
-            .foregroundColor(isOn ? .white : .secondary)
-            .cornerRadius(4)
-            .onTapGesture(perform: action)
+        Button(title, action: action)
+            .font(.body.weight(.semibold))
+            .frame(minWidth: 22)
+            .buttonStyle(.bordered)
+            .controlSize(.small)
+            .tint(isOn ? .accentColor : .secondary)
+            .help(isOn ? "Remove \(title) modifier" : "Add \(title) modifier")
     }
 }
 
