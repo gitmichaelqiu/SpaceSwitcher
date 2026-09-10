@@ -294,6 +294,16 @@
         }
       }
     },
+    "Could Not Read Current Dock" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "无法读取当前 Dock"
+          }
+        }
+      }
+    },
     "Create First Rule" : {
       "localizations" : {
         "zh-Hans" : {
@@ -345,6 +355,7 @@
       }
     },
     "Delete" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -353,6 +364,9 @@
           }
         }
       }
+    },
+    "Delete Dock Set" : {
+
     },
     "DesktopRenamer SpaceAPI" : {
 
@@ -388,7 +402,11 @@
         }
       }
     },
+    "Dock Set" : {
+
+    },
     "Dock Sets" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -561,6 +579,12 @@
           }
         }
       }
+    },
+    "Make Default" : {
+
+    },
+    "Manage Dock Sets" : {
+
     },
     "Manual activation" : {
       "localizations" : {
@@ -779,6 +803,16 @@
     "Requires %@." : {
 
     },
+    "Replace with Current Dock Items" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "替换为当前 Dock 项目"
+          }
+        }
+      }
+    },
     "Reset to default" : {
       "localizations" : {
         "zh-Hans" : {
@@ -953,6 +987,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "桌面："
+          }
+        }
+      }
+    },
+    "SpaceSwitcher could not read the current Dock items." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "SpaceSwitcher 无法读取当前 Dock 项目。"
           }
         }
       }

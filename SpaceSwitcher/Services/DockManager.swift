@@ -518,13 +518,35 @@ class DockManager: ObservableObject {
     // MARK: - Data Management & Spacers
     
     func createNewDockSet(name: String) {
-        guard let rawApps = DockManager.getSystemDockPersistentApps() else { return }
-        let tiles = DockManager.parseRawDockData(rawApps)
+        guard let tiles = currentDockTiles() else { return }
         DispatchQueue.main.async {
             let newSet = DockSet(id: UUID(), name: name, dateCreated: Date(), tiles: tiles)
             self.config.dockSets.append(newSet)
             if self.config.defaultDockSetID == nil { self.config.defaultDockSetID = newSet.id }
         }
+    }
+
+    /// Replaces a saved dock set with the apps currently pinned in the system Dock.
+    /// The current Dock remains unchanged; this only updates the selected configuration.
+    @MainActor
+    @discardableResult
+    func replaceDockItemsWithCurrentDock(for setID: UUID) -> Bool {
+        guard let tiles = currentDockTiles(),
+              let index = config.dockSets.firstIndex(where: { $0.id == setID }) else {
+            return false
+        }
+
+        config.dockSets[index].tiles = tiles
+        activeDockSetID = setID
+        lastAppliedDockSetID = setID
+        return true
+    }
+
+    private func currentDockTiles() -> [DockTile]? {
+        let rawApps = DockManager.getSystemDockPersistentApps()
+            ?? DockManager.readPersistentAppsFromDisk()
+        guard let rawApps else { return nil }
+        return DockManager.parseRawDockData(rawApps)
     }
     
     func createTile(from url: URL) -> DockTile {

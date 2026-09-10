@@ -380,6 +380,8 @@ struct DockItemsListView: View {
     @ObservedObject var spaceManager: SpaceManager
     let selectedSetID: UUID
     @Binding var tiles: [DockTile]
+
+    @State private var showingCurrentDockReadError = false
     
     var body: some View {
         SettingsSection(
@@ -396,6 +398,14 @@ struct DockItemsListView: View {
                     .controlSize(.small)
                     
                     Menu {
+                        Button {
+                            replaceWithCurrentDock()
+                        } label: {
+                            Label("Replace with Current Dock Items", systemImage: "arrow.down.doc")
+                        }
+
+                        Divider()
+
                         Button { addAppToSelectedSet() } label: { Label("Add Application...", systemImage: "plus.app") }
                         Divider()
                         Button { addSpacerToSelectedSet(isSmall: false) } label: { Label("Add Large Spacer", systemImage: "square") }
@@ -461,6 +471,22 @@ struct DockItemsListView: View {
                 }
                 .animation(.spring(response: 0.3, dampingFraction: 0.7), value: tiles)
             }
+        }
+        .alert("Could Not Read Current Dock", isPresented: $showingCurrentDockReadError) {
+            Button("OK", role: .cancel) { }
+        } message: {
+            Text("SpaceSwitcher could not read the current Dock items.")
+        }
+    }
+
+    private func replaceWithCurrentDock() {
+        guard dockManager.replaceDockItemsWithCurrentDock(for: selectedSetID) else {
+            showingCurrentDockReadError = true
+            return
+        }
+
+        withAnimation(.easeInOut(duration: 0.2)) {
+            tiles = dockManager.config.dockSets.first(where: { $0.id == selectedSetID })?.tiles ?? []
         }
     }
     
