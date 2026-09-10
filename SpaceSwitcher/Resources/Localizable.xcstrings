@@ -720,6 +720,9 @@
         }
       }
     },
+    "OK" : {
+
+    },
     "Open DesktopRenamer" : {
 
     },
@@ -770,6 +773,16 @@
         }
       }
     },
+    "Replace with Current Dock Items" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "替换为当前 Dock 项目"
+          }
+        }
+      }
+    },
     "Report an issue" : {
       "localizations" : {
         "zh-Hans" : {
@@ -802,16 +815,6 @@
     },
     "Requires %@." : {
 
-    },
-    "Replace with Current Dock Items" : {
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "替换为当前 Dock 项目"
-          }
-        }
-      }
     },
     "Reset to default" : {
       "localizations" : {
@@ -1061,6 +1064,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "此 Dock 组将自动用于所有未分配的桌面。"
+          }
+        }
+      }
+    },
+    "Space assignments are saved but only applied when Automatically switch dock is enabled." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "空间分配会被保存，但只有启用“自动切换 Dock”后才会应用。"
           }
         }
       }

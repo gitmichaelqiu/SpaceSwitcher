@@ -294,13 +294,22 @@ struct DockSpaceAssignmentView: View {
     let selectedSetID: UUID
     @ObservedObject var dockManager: DockManager
     @ObservedObject var spaceManager: SpaceManager
+
+    private var assignmentHelperText: LocalizedStringKey? {
+        guard dockManager.config.isAutomationEnabled else {
+            return "Space assignments are saved but only applied when Automatically switch dock is enabled."
+        }
+
+        guard dockManager.config.defaultDockSetID == selectedSetID else { return nil }
+        return "This dock set is used automatically for all unassigned spaces."
+    }
     
     var body: some View {
         let isDefault = dockManager.config.defaultDockSetID == selectedSetID
         
         SettingsSection(
             NSLocalizedString("Apply to Spaces", comment: ""),
-            helperText: isDefault ? "This dock set is used automatically for all unassigned spaces." : nil
+            helperText: assignmentHelperText
         ) {
             VStack(alignment: .leading, spacing: 10) {
                 if spaceManager.availableSpaces.isEmpty {
@@ -370,7 +379,7 @@ struct DockSpaceAssignmentView: View {
             .foregroundColor(isAssignedHere ? .white : (isAssignedElsewhere ? .secondary.opacity(0.3) : .primary))
         }
         .buttonStyle(.plain)
-        .disabled(isAssignedElsewhere || !dockManager.config.isAutomationEnabled)
+        .disabled(isAssignedElsewhere)
     }
 }
 
