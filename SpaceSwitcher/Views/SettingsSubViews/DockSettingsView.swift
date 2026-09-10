@@ -18,46 +18,48 @@ struct DockSettingsView: View {
     }
     
     var body: some View {
-        HSplitView {
-            DockSidebarView(
+        VStack(spacing: 0) {
+            DockSetTabBar(
                 dockManager: dockManager,
                 selectedSetID: $selectedSetID,
-                showingCreateSheet: $showingCreateSheet,
-                newSetName: $newSetName
+                onCreate: prepareNewSet,
+                onDelete: deleteSet,
+                onMakeDefault: makeDefault
             )
-            .frame(width: 250)
-            .layoutPriority(0)
-            
-            // RIGHT: Detail Area
+            .padding(.horizontal, 24)
+            .padding(.vertical, 10)
+
+            Divider()
+
             ZStack {
                 if let selectedID = selectedSetID,
                    let index = dockManager.config.dockSets.firstIndex(where: { $0.id == selectedID }) {
-                    
                     ScrollView(.vertical, showsIndicators: true) {
                         VStack(alignment: .leading, spacing: 24) {
-                            // 0. Automation Control
-                        SettingsSection("Automation") {
+                            SettingsSection("Automation") {
                                 SettingsRow(
                                     "Automatically switch dock",
-                                    requirements: [.spaceAPI(isAvailable: spaceManager.isAPIEnabled)]
+                                    requirements: [.spaceAPI(isAvailable: spaceManager.apiAvailability == .available)]
                                 ) {
                                     Toggle("", isOn: $dockManager.config.isAutomationEnabled)
                                         .toggleStyle(.switch)
                                         .labelsHidden()
                                 }
                             }
-                            
-                            // 1. Dock Set Configuration
+
                             SettingsSection(NSLocalizedString("Set Configuration", comment: "")) {
                                 SettingsRow("Name") {
                                     TextField("Name", text: $dockManager.config.dockSets[index].name)
                                         .textFieldStyle(.roundedBorder)
                                         .frame(width: 150)
                                 }
-                                
+
                                 Divider()
-                                
-                                SettingsRow("Default Set", helperText: "The default set is used for any space that doesn't have a specific assignment.") {
+
+                                SettingsRow(
+                                    "Default Set",
+                                    helperText: "The default set is used for any space that doesn't have a specific assignment."
+                                ) {
                                     Toggle("", isOn: Binding(
                                         get: { dockManager.config.defaultDockSetID == selectedID },
                                         set: { if $0 { dockManager.config.defaultDockSetID = selectedID } }
@@ -67,22 +69,20 @@ struct DockSettingsView: View {
                                     .disabled(dockManager.config.defaultDockSetID == selectedID)
                                 }
                             }
-                            
-                            // 2. Space Assignments
+
                             DockSpaceAssignmentView(
                                 selectedSetID: selectedID,
                                 dockManager: dockManager,
                                 spaceManager: spaceManager
                             )
-                            
-                            // 3. Dock Items List
+
                             DockItemsListView(
                                 dockManager: dockManager,
                                 spaceManager: spaceManager,
                                 selectedSetID: selectedID,
                                 tiles: $dockManager.config.dockSets[index].tiles
                             )
-                            
+
                             Spacer(minLength: 40)
                         }
                         .padding(24)
@@ -94,11 +94,9 @@ struct DockSettingsView: View {
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .layoutPriority(1)
             .background(Color(NSColor.windowBackgroundColor).opacity(0.1))
         }
         .animation(.easeInOut(duration: 0.18), value: selectedSetID)
-        // Create Sheet Logic
         .sheet(isPresented: $showingCreateSheet) {
             CreateDockSheet(
                 newSetName: $newSetName,
@@ -107,6 +105,11 @@ struct DockSettingsView: View {
             )
         }
     }
+
+    private func prepareNewSet() {
+        newSetName = "Dock Set \(dockManager.config.dockSets.count + 1)"
+        showingCreateSheet = true
+    }
     
     private func deleteSet(_ set: DockSet) {
         withAnimation {
@@ -124,102 +127,167 @@ struct DockSettingsView: View {
         }
     }
     
-    // MARK: - Parent Actions
     private func saveNewSet() {
         dockManager.createNewDockSet(name: newSetName)
         showingCreateSheet = false
-        // Select the new set (brief delay to ensure UI updates)
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
             selectedSetID = dockManager.config.dockSets.last?.id
         }
     }
+
+    private func makeDefault(_ set: DockSet) {
+        dockManager.config.defaultDockSetID = set.id
+    }
 }
 
-// MARK: - Component 1: Sidebar
-struct DockSidebarView: View {
+// MARK: - Dock Set Tabs
+private struct DockSetTabBar: View {
     @ObservedObject var dockManager: DockManager
     @Binding var selectedSetID: UUID?
-    @Binding var showingCreateSheet: Bool
-    @Binding var newSetName: String
-    
+    let onCreate: () -> Void
+    let onDelete: (DockSet) -> Void
+    let onMakeDefault: (DockSet) -> Void
+
+    @State private var availableWidth: CGFloat = 0
+    @State private var pickerWidth: CGFloat = 0
+
+    private var selectedSet: DockSet? {
+        guard let selectedSetID else { return nil }
+        return dockManager.config.dockSets.first { $0.id == selectedSetID }
+    }
+
+    private var shouldScroll: Bool {
+        guard availableWidth > 0, pickerWidth > 0 else { return false }
+        return pickerWidth > max(availableWidth - 20, 0)
+    }
+
     var body: some View {
-        VStack(spacing: 0) {
-            List(selection: $selectedSetID) {
-                Section {
-                    ForEach(dockManager.config.dockSets) { set in
-                        HStack(spacing: 8) {
-                            Circle()
-                                .fill(dockManager.activeDockSetID == set.id ? Color.green : Color.clear)
-                                .frame(width: 6, height: 6)
-                            
-                            Image(systemName: "dock.rectangle")
-                                .font(.system(size: 13))
-                                .foregroundColor(.secondary)
-                            
-                            Text(set.name)
-                                .font(.system(size: 13, weight: .medium))
-                            
-                            Spacer()
-                            
-                            if dockManager.config.defaultDockSetID == set.id {
-                                Image(systemName: "star.fill")
-                                    .foregroundColor(.orange.opacity(0.8))
-                                    .font(.system(size: 9))
-                            }
-                        }
-                        .padding(.vertical, 4)
-                        .tag(set.id)
-                        .contextMenu {
-                            Button("Delete", role: .destructive) { deleteSet(set) }
+        HStack(spacing: 8) {
+            Group {
+                if shouldScroll {
+                    ScrollView(.horizontal) {
+                        measuredPicker
+                            .fixedSize(horizontal: true, vertical: false)
+                            .padding(.horizontal, 10)
+                    }
+                    .scrollIndicators(.hidden)
+                    .frame(maxWidth: .infinity)
+                } else {
+                    HStack {
+                        Spacer(minLength: 0)
+                        measuredPicker
+                        Spacer(minLength: 0)
+                    }
+                    .padding(.horizontal, 10)
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .center)
+            .background {
+                GeometryReader { proxy in
+                    Color.clear.preference(
+                        key: DockSetTabAvailableWidthKey.self,
+                        value: proxy.size.width
+                    )
+                }
+            }
+            .onPreferenceChange(DockSetTabAvailableWidthKey.self) { width in
+                guard abs(availableWidth - width) > 0.5 else { return }
+                availableWidth = width
+            }
+            .onPreferenceChange(DockSetTabPickerWidthKey.self) { width in
+                guard abs(pickerWidth - width) > 0.5 else { return }
+                pickerWidth = width
+            }
+
+            Menu {
+                Button("New Dock Set", systemImage: "plus", action: onCreate)
+
+                if let selectedSet {
+                    if dockManager.config.defaultDockSetID != selectedSet.id {
+                        Button("Make Default", systemImage: "star") {
+                            onMakeDefault(selectedSet)
                         }
                     }
-                } header: {
-                    Text("Dock Sets")
-                        .font(.system(size: 11, weight: .bold))
-                        .foregroundColor(.secondary)
+
+                    if dockManager.config.dockSets.count > 1 {
+                        Button("Delete Dock Set", systemImage: "trash", role: .destructive) {
+                            onDelete(selectedSet)
+                        }
+                    }
                 }
-            }
-            .listStyle(.sidebar)
-            
-            Divider()
-            
-            Button {
-                newSetName = "Dock Set \(dockManager.config.dockSets.count + 1)"
-                showingCreateSheet = true
             } label: {
-                HStack(spacing: 8) {
-                    Image(systemName: "plus.circle.fill")
-                        .font(.system(size: 14))
-                    Text("New Dock Set")
-                        .font(.system(size: 13, weight: .semibold))
-                }
-                .foregroundColor(.accentColor)
-                .padding(.vertical, 12)
-                .frame(maxWidth: .infinity)
+                Image(systemName: "ellipsis.circle")
+                    .font(.system(size: 16))
+                    .frame(width: 28, height: 28)
+                    .contentShape(Rectangle())
             }
-            .buttonStyle(.plain)
-            .background(.regularMaterial)
+            .menuStyle(.borderlessButton)
+            .help("Manage Dock Sets")
         }
-        .background(.ultraThinMaterial)
+        .frame(maxWidth: .infinity)
     }
-    
-    private func deleteSet(_ set: DockSet) {
-        withAnimation {
-            dockManager.config.dockSets.removeAll { $0.id == set.id }
-            let keys = dockManager.config.spaceAssignments.filter { $0.value == set.id }.map { $0.key }
-            keys.forEach { dockManager.config.spaceAssignments.removeValue(forKey: $0) }
-            
-            // Selection fix
-            if selectedSetID == set.id { selectedSetID = dockManager.config.dockSets.first?.id }
-            
-            // Default set fix: Always ensure one exists if sets are available
-            if dockManager.config.defaultDockSetID == set.id || dockManager.config.defaultDockSetID == nil {
-                dockManager.config.defaultDockSetID = dockManager.config.dockSets.first?.id
+
+    private var measuredPicker: some View {
+        picker
+            .background {
+                GeometryReader { proxy in
+                    Color.clear.preference(
+                        key: DockSetTabPickerWidthKey.self,
+                        value: proxy.size.width
+                    )
+                }
             }
+    }
+
+    @ViewBuilder
+    private var picker: some View {
+        if #available(macOS 27.0, *) {
+            Picker("Dock Set", selection: $selectedSetID) {
+                pickerOptions
+            }
+            .labelsHidden()
+            .pickerStyle(.tabs)
+            .controlSize(.large)
+        } else {
+            Picker("Dock Set", selection: $selectedSetID) {
+                pickerOptions
+            }
+            .labelsHidden()
+            .pickerStyle(.segmented)
+            .controlSize(.large)
+        }
+    }
+
+    @ViewBuilder
+    private var pickerOptions: some View {
+        ForEach(dockManager.config.dockSets) { set in
+            Text(set.id == dockManager.activeDockSetID ? "○ \(set.name)" : set.name)
+                .lineLimit(1)
+                .accessibilityLabel(
+                    set.id == dockManager.activeDockSetID
+                        ? "\(set.name), active"
+                        : set.name
+                )
+                .tag(Optional(set.id))
         }
     }
 }
 
+private struct DockSetTabPickerWidthKey: PreferenceKey {
+    static let defaultValue: CGFloat = 0
+
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
+        value = max(value, nextValue())
+    }
+}
+
+private struct DockSetTabAvailableWidthKey: PreferenceKey {
+    static let defaultValue: CGFloat = 0
+
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
+        value = nextValue()
+    }
+}
 
 // MARK: - Component 2: Space Assignments
 struct DockSpaceAssignmentView: View {
