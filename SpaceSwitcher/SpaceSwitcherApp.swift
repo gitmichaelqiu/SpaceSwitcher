@@ -36,7 +36,6 @@ extension NSSplitViewItem {
 extension View {
     func removeSidebarToggle() -> some View {
         toolbar(removing: .sidebarToggle)
-            .toolbar { Color.clear }
     }
 }
 
