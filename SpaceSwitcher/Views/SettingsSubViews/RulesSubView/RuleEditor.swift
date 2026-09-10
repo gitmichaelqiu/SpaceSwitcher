@@ -56,37 +56,31 @@ struct RuleEditor: View {
                 Divider()
                 Button("Choose from Applications...") { pickOtherApp() }
             } label: {
-                ZStack {
-                    RoundedRectangle(cornerRadius: 12)
-                        .fill(Color(NSColor.controlBackgroundColor))
-                        .shadow(color: .black.opacity(0.05), radius: 2)
-                    
-                    if !workingRule.appBundleID.isEmpty, let path = NSWorkspace.shared.urlForApplication(withBundleIdentifier: workingRule.appBundleID)?.path {
-                        Image(nsImage: NSWorkspace.shared.icon(forFile: path))
-                            .resizable()
-                            .aspectRatio(contentMode: .fit)
-                            .padding(8)
-                    } else {
-                        Image(systemName: "app.dashed")
-                            .resizable()
-                            .aspectRatio(contentMode: .fit)
-                            .foregroundStyle(.secondary.opacity(0.5))
-                            .padding(10)
+                HStack(spacing: 12) {
+                    selectedAppIcon
+                        .frame(width: 40, height: 40)
+
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Application")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                        Text(workingRule.appBundleID.isEmpty ? "Select Application" : workingRule.appName)
+                            .font(.headline)
+                            .lineLimit(1)
+                        Text(workingRule.appBundleID.isEmpty ? "No selection" : workingRule.appBundleID)
+                            .font(.caption.monospaced())
+                            .foregroundStyle(.secondary)
+                            .lineLimit(1)
                     }
+
+                    Image(systemName: "chevron.up.chevron.down")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
                 }
-                .frame(width: 54, height: 54)
+                .contentShape(Rectangle())
             }
             .menuStyle(.borderlessButton)
-            
-            // Text Info
-            VStack(alignment: .leading, spacing: 2) {
-                Text(workingRule.appBundleID.isEmpty ? "Select Application" : workingRule.appName)
-                    .font(.system(size: 18, weight: .bold))
-                
-                Text(workingRule.appBundleID.isEmpty ? "No selection" : workingRule.appBundleID)
-                    .font(.system(size: 11, design: .monospaced))
-                    .foregroundStyle(.secondary.opacity(0.8))
-            }
+            .fixedSize(horizontal: false, vertical: true)
             
             Spacer()
             
@@ -95,16 +89,32 @@ struct RuleEditor: View {
                     showingLegend.toggle()
                 }
             } label: {
-                Image(systemName: showingLegend ? "info.circle.fill" : "info.circle")
-                    .font(.body)
+                Label(
+                    showingLegend ? "Hide Definitions" : "Action Definitions",
+                    systemImage: showingLegend ? "info.circle.fill" : "info.circle"
+                )
             }
             .buttonStyle(.bordered)
             .controlSize(.small)
-            .help("Action Definitions")
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 12)
         .background(Color(NSColor.windowBackgroundColor))
+    }
+
+    @ViewBuilder
+    private var selectedAppIcon: some View {
+        if !workingRule.appBundleID.isEmpty,
+           let path = NSWorkspace.shared.urlForApplication(withBundleIdentifier: workingRule.appBundleID)?.path {
+            Image(nsImage: NSWorkspace.shared.icon(forFile: path))
+                .resizable()
+                .aspectRatio(contentMode: .fit)
+        } else {
+            Image(systemName: "app.dashed")
+                .font(.title2)
+                .foregroundStyle(.secondary)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+        }
     }
     
     private var mainSplitView: some View {
@@ -123,8 +133,6 @@ struct RuleEditor: View {
                                 group: $workingRule.groups[index],
                                 availableSpaces: availableSpaces
                             )
-
-                            Divider()
 
                             ActionListRows(actions: $workingRule.groups[index].actions)
 
@@ -148,16 +156,8 @@ struct RuleEditor: View {
 
                     // --- FALLBACK SECTION ---
                     SettingsSection("Fallback Behavior", helperText: "Actions used when no workflow group matches the current space.") {
-                        SettingsRow("Otherwise") {
-                            Text("Optional")
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                        }
-
-                        Divider()
-                        
                         if workingRule.elseActions.isEmpty {
-                            Text("No automatic actions")
+                            Label("No fallback actions", systemImage: "arrow.turn.down.right")
                                 .foregroundStyle(.secondary)
                                 .frame(maxWidth: .infinity, alignment: .leading)
                                 .padding(.horizontal, 10)
@@ -166,23 +166,13 @@ struct RuleEditor: View {
                             ActionListRows(actions: $workingRule.elseActions)
                         }
 
-                        Divider()
-                        
-                        HStack {
-                            Menu {
-                                actionMenu { action in
-                                    withAnimation {
-                                        workingRule.elseActions.append(ActionItem(action))
-                                    }
+                        AddActionRow {
+                            actionMenu { action in
+                                withAnimation {
+                                    workingRule.elseActions.append(ActionItem(action))
                                 }
-                            } label: {
-                                Label("Add Action", systemImage: "plus")
                             }
-                            .menuStyle(.borderlessButton)
-                            .fixedSize()
-                            Spacer()
                         }
-                        .padding(.vertical, 8)
                     }
                     .padding(.bottom, 4)
                 }
@@ -269,17 +259,31 @@ struct RuleEditor: View {
     }
 
     @ViewBuilder private func actionMenu(addAction: @escaping (WindowAction) -> Void) -> some View {
-        Button("Show") { addAction(.show) }
-        Button("Restore") { addAction(.restore) }
-        Button("Hide") { addAction(.hide) }
-        Button("Minimize") { addAction(.minimize) }
-        Button("Bring to Front") { addAction(.bringToFront) }
-        Divider()
-        Button("App Shortcut...") {
-            addAction(.hotkey(keyCode: -1, modifiers: 0, restoreWindow: false, waitFrontmost: true))
+        Button { addAction(.show) } label: {
+            Label("Show", systemImage: "eye")
         }
-        Button("Global Shortcut...") {
+        Button { addAction(.restore) } label: {
+            Label("Restore", systemImage: "arrow.uturn.backward")
+        }
+        Button { addAction(.hide) } label: {
+            Label("Hide", systemImage: "eye.slash")
+        }
+        Button { addAction(.minimize) } label: {
+            Label("Minimize", systemImage: "arrow.down.right.and.arrow.up.left")
+        }
+        Button { addAction(.bringToFront) } label: {
+            Label("Bring to Front", systemImage: "arrow.up.forward.app")
+        }
+        Divider()
+        Button {
+            addAction(.hotkey(keyCode: -1, modifiers: 0, restoreWindow: false, waitFrontmost: true))
+        } label: {
+            Label("App Shortcut...", systemImage: "keyboard")
+        }
+        Button {
             addAction(.globalHotkey(keyCode: -1, modifiers: 0))
+        } label: {
+            Label("Global Shortcut...", systemImage: "globe")
         }
     }
 
@@ -446,11 +450,16 @@ struct SpaceConditionRow: View {
                         }
                     }
                 } label: {
-                    Text(selectedSpacesTitle)
-                        .lineLimit(1)
+                    HStack(spacing: 6) {
+                        Text(selectedSpacesTitle)
+                            .lineLimit(1)
+                        Image(systemName: "chevron.up.chevron.down")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
                 }
                 .menuStyle(.borderlessButton)
-                .frame(maxWidth: 260, alignment: .trailing)
+                .frame(minWidth: 180, maxWidth: 280, alignment: .trailing)
             }
         }
     }
@@ -464,7 +473,7 @@ struct ActionListRows: View {
         VStack(alignment: .leading, spacing: 0) {
             ForEach(actions) { item in
                 VStack(alignment: .leading, spacing: 0) {
-                    Divider().opacity(0.3)
+                    Divider()
                     ActionRowContent(
                         index: actions.firstIndex(where: { $0.id == item.id }) ?? 0,
                         item: binding(for: item),
@@ -476,7 +485,7 @@ struct ActionListRows: View {
                     )
                     .padding(.horizontal, 8)
                     .padding(.vertical, 6)
-                    .background(Color(NSColor.controlBackgroundColor).opacity(draggingItem?.id == item.id ? 0.2 : 0.01))
+                    .background(draggingItem?.id == item.id ? Color.accentColor.opacity(0.08) : Color.clear)
                 }
                 .onDrag {
                     self.draggingItem = item
@@ -559,7 +568,6 @@ struct ActionRowContent: View {
     let onDelete: () -> Void
     
     @State private var isRecording = false
-    @State private var isExpanded = false
     @State private var recordingMonitor: Any?
     
     var body: some View {
@@ -578,11 +586,8 @@ struct ActionRowContent: View {
                     switch item.value {
                     case .globalHotkey(let code, let mods):
                         HStack(spacing: 8) {
-                            HStack(spacing: 4) {
-                                ModifierToggle(title: "⌘", flag: .command, current: mods) { toggleModifier(.command, current: mods) }
-                                ModifierToggle(title: "⇧", flag: .shift, current: mods) { toggleModifier(.shift, current: mods) }
-                                ModifierToggle(title: "⌥", flag: .option, current: mods) { toggleModifier(.option, current: mods) }
-                                ModifierToggle(title: "⌃", flag: .control, current: mods) { toggleModifier(.control, current: mods) }
+                            ModifierMenu(modifiers: mods) { newModifiers in
+                                item.value = .globalHotkey(keyCode: code, modifiers: newModifiers)
                             }
                             
                             KeyCaptureButton(keyCode: code) { newCode in
@@ -594,26 +599,47 @@ struct ActionRowContent: View {
                         HStack(spacing: 8) {
                             Button(action: startRecording) {
                                 if isRecording {
-                                    Text("Recording...")
+                                    Label("Recording...", systemImage: "record.circle")
                                         .foregroundStyle(.red)
                                 } else {
-                                    Text(code == -1 ? "Shortcut" : ShortcutHelper.format(code: code, modifiers: mods))
+                                    Label(
+                                        code == -1 ? "Record Shortcut" : ShortcutHelper.format(code: code, modifiers: mods),
+                                        systemImage: "keyboard"
+                                    )
                                 }
                             }
                             .buttonStyle(.bordered)
                             .controlSize(.small)
-                            
-                            Button { withAnimation { isExpanded.toggle() } } label: {
-                                Image(systemName: "gearshape")
-                                    .font(.system(size: 11))
-                                    .foregroundStyle(isExpanded ? Color.accentColor : Color.secondary)
-                            }
-                            .buttonStyle(.plain)
+
+                            HotkeyOptionsMenu(
+                                restoreWindow: Binding(
+                                    get: {
+                                        if case .hotkey(_, _, let restoreWindow, _) = item.value {
+                                            return restoreWindow
+                                        }
+                                        return false
+                                    },
+                                    set: { restoreWindow in
+                                        updateHotkey(restoreWindow: restoreWindow, waitFrontmost: nil)
+                                    }
+                                ),
+                                waitFrontmost: Binding(
+                                    get: {
+                                        if case .hotkey(_, _, _, let waitFrontmost) = item.value {
+                                            return waitFrontmost
+                                        }
+                                        return true
+                                    },
+                                    set: { waitFrontmost in
+                                        updateHotkey(restoreWindow: nil, waitFrontmost: waitFrontmost)
+                                    }
+                                )
+                            )
                         }
                         
                     default:
-                        Text(item.value.localizedString)
-                            .font(.system(size: 12, weight: .medium))
+                        Label(item.value.localizedString, systemImage: actionIcon)
+                            .font(.body)
                     }
                 }
                 
@@ -625,53 +651,29 @@ struct ActionRowContent: View {
                     .help("Remove Action")
             }
             
-            if case .hotkey(let c, let m, let r, let w) = item.value, isExpanded {
-                VStack(alignment: .leading, spacing: 12) {
-                    VStack(alignment: .leading, spacing: 2) {
-                        Toggle("Manual activation", isOn: Binding(
-                            get: { w },
-                            set: { item.value = .hotkey(keyCode: c, modifiers: m, restoreWindow: $0 ? false : r, waitFrontmost: $0) }
-                        ))
-                        .font(.system(size: 11))
-                        .toggleStyle(.switch)
-                        .controlSize(.mini)
-                        
-                        Text("Wait for the application to be frontmost before simulating keys.")
-                            .font(.system(size: 9))
-                            .foregroundStyle(.secondary.opacity(0.8))
-                    }
-                    
-                    if !w {
-                        VStack(alignment: .leading, spacing: 2) {
-                            Toggle("Restore window", isOn: Binding(
-                                get: { r },
-                                set: { item.value = .hotkey(keyCode: c, modifiers: m, restoreWindow: $0, waitFrontmost: m == 0 ? false : w) }
-                            ))
-                            .font(.system(size: 11))
-                            .toggleStyle(.switch)
-                            .controlSize(.mini)
-                            
-                            Text("Return focus to the previous application after simulating keys.")
-                                .font(.system(size: 9))
-                                .foregroundStyle(.secondary.opacity(0.8))
-                        }
-                    }
-                }
-                .padding(.leading, 32)
-            }
-            
         }
         .onDisappear(perform: stopRecording)
     }
     
-    private func toggleModifier(_ flag: NSEvent.ModifierFlags, current: UInt) {
-        let raw = flag.rawValue
-        let hasIt = (current & raw) != 0
-        var newMods = current
-        if hasIt { newMods &= ~raw }
-        else { newMods |= raw }
-        if case .globalHotkey(let c, _) = item.value {
-            item.value = .globalHotkey(keyCode: c, modifiers: newMods)
+    private func updateHotkey(restoreWindow: Bool?, waitFrontmost: Bool?) {
+        guard case .hotkey(let keyCode, let modifiers, let currentRestoreWindow, let currentWaitFrontmost) = item.value else { return }
+        let newWaitFrontmost = waitFrontmost ?? currentWaitFrontmost
+        item.value = .hotkey(
+            keyCode: keyCode,
+            modifiers: modifiers,
+            restoreWindow: newWaitFrontmost ? false : (restoreWindow ?? currentRestoreWindow),
+            waitFrontmost: newWaitFrontmost
+        )
+    }
+
+    private var actionIcon: String {
+        switch item.value {
+        case .show: return "eye"
+        case .restore: return "arrow.uturn.backward"
+        case .hide: return "eye.slash"
+        case .minimize: return "arrow.down.right.and.arrow.up.left"
+        case .bringToFront: return "arrow.up.forward.app"
+        case .hotkey, .globalHotkey: return "keyboard"
         }
     }
     
@@ -713,17 +715,82 @@ struct ActionRowContent: View {
     }
 }
 
+struct ModifierMenu: View {
+    let modifiers: UInt
+    let onChange: (UInt) -> Void
+
+    var body: some View {
+        Menu {
+            Toggle("Command (⌘)", isOn: binding(for: .command))
+            Toggle("Shift (⇧)", isOn: binding(for: .shift))
+            Toggle("Option (⌥)", isOn: binding(for: .option))
+            Toggle("Control (⌃)", isOn: binding(for: .control))
+        } label: {
+            Label(summary, systemImage: "command")
+        }
+        .menuStyle(.borderlessButton)
+        .help("Choose Shortcut Modifiers")
+    }
+
+    private var summary: String {
+        let flags = NSEvent.ModifierFlags(rawValue: modifiers)
+        let symbols = [
+            (NSEvent.ModifierFlags.command, "⌘"),
+            (.shift, "⇧"),
+            (.option, "⌥"),
+            (.control, "⌃")
+        ]
+        let selected = symbols.compactMap { flags.contains($0.0) ? $0.1 : nil }
+        return selected.isEmpty ? "No Modifiers" : selected.joined()
+    }
+
+    private func binding(for flag: NSEvent.ModifierFlags) -> Binding<Bool> {
+        Binding(
+            get: { NSEvent.ModifierFlags(rawValue: modifiers).contains(flag) },
+            set: { isEnabled in
+                var updated = NSEvent.ModifierFlags(rawValue: modifiers)
+                if isEnabled {
+                    updated.insert(flag)
+                } else {
+                    updated.remove(flag)
+                }
+                onChange(updated.rawValue)
+            }
+        )
+    }
+}
+
+struct HotkeyOptionsMenu: View {
+    @Binding var restoreWindow: Bool
+    @Binding var waitFrontmost: Bool
+
+    var body: some View {
+        Menu {
+            Toggle("Wait for Application", isOn: $waitFrontmost)
+            Toggle("Restore Previous Application", isOn: $restoreWindow)
+                .disabled(waitFrontmost)
+        } label: {
+            Label("Options", systemImage: "gearshape")
+        }
+        .menuStyle(.borderlessButton)
+        .help("Shortcut Options")
+    }
+}
+
 struct KeyCaptureButton: View {
     let keyCode: Int
     let onUpdate: (Int) -> Void
     @State private var isListening = false
     
     var body: some View {
-        Button(isListening ? "…" : displayString) {
+        Button {
             isListening = true
+        } label: {
+            Label(
+                isListening ? "Press a Key" : (keyCode == -1 ? "Record Key" : displayString),
+                systemImage: isListening ? "record.circle" : "keyboard"
+            )
         }
-        .font(.body.monospaced())
-        .frame(minWidth: 44)
         .buttonStyle(.bordered)
         .controlSize(.small)
         .help("Record Shortcut")
@@ -748,24 +815,6 @@ struct KeyCaptureButton: View {
     var displayString: String {
         if keyCode == -1 { return "-" }
         return ShortcutHelper.keyString(for: keyCode) ?? "?"
-    }
-}
-
-struct ModifierToggle: View {
-    let title: String
-    let flag: NSEvent.ModifierFlags
-    let current: UInt
-    let action: () -> Void
-    var isOn: Bool { (current & flag.rawValue) != 0 }
-    
-    var body: some View {
-        Button(title, action: action)
-            .font(.body.weight(.semibold))
-            .frame(minWidth: 22)
-            .buttonStyle(.bordered)
-            .controlSize(.small)
-            .tint(isOn ? .accentColor : .secondary)
-            .help(isOn ? "Remove \(title) modifier" : "Add \(title) modifier")
     }
 }
 

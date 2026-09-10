@@ -123,6 +123,16 @@
         }
       }
     },
+    "Add at least one action before saving." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "保存前至少添加一个操作。"
+          }
+        }
+      }
+    },
     "Add First Item" : {
       "localizations" : {
         "zh-Hans" : {
@@ -283,6 +293,16 @@
         }
       }
     },
+    "Choose an application before saving." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "保存前请选择一个应用程序。"
+          }
+        }
+      }
+    },
     "Choose from Applications..." : {
       "localizations" : {
         "zh-Hans" : {
@@ -300,36 +320,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "选择桌面"
-          }
-        }
-      }
-    },
-    "Choose an application before saving." : {
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "保存前请选择一个应用程序。"
-          }
-        }
-      }
-    },
-    "Select Application" : {
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "选择应用程序"
-          }
-        }
-      }
-    },
-    "No selection" : {
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "未选择"
           }
         }
       }
@@ -487,19 +477,28 @@
         }
       }
     },
+    "Each space can belong to only one workflow group." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "每个桌面只能属于一个工作流组。"
+          }
+        }
+      }
+    },
     "Edit" : {
 
     },
     "Enabled" : {
 
     },
-    "Fallback Behavior" : {
-      "extractionState" : "stale",
+    "Every workflow group must contain at least one action." : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "兜底行为"
+            "value" : "每个工作流组至少要包含一个操作。"
           }
         }
       }
@@ -514,42 +513,13 @@
         }
       }
     },
-    "Every workflow group must contain at least one action." : {
+    "Fallback Behavior" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "每个工作流组至少要包含一个操作。"
-          }
-        }
-      }
-    },
-    "Each space can belong to only one workflow group." : {
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "每个桌面只能属于一个工作流组。"
-          }
-        }
-      }
-    },
-    "Add at least one action before saving." : {
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "保存前至少添加一个操作。"
-          }
-        }
-      }
-    },
-    "Record every shortcut before saving." : {
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "保存前请录制所有快捷键。"
+            "value" : "兜底行为"
           }
         }
       }
@@ -605,6 +575,7 @@
       }
     },
     "Group %lld" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -797,6 +768,7 @@
       }
     },
     "No application selected" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -838,6 +810,17 @@
     },
     "No results" : {
 
+    },
+    "No selection" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "未选择"
+          }
+        }
+      }
     },
     "No spaces detected" : {
       "localizations" : {
@@ -905,6 +888,16 @@
         }
       }
     },
+    "Record every shortcut before saving." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "保存前请录制所有快捷键。"
+          }
+        }
+      }
+    },
     "Record Shortcut" : {
       "localizations" : {
         "zh-Hans" : {
@@ -929,6 +922,9 @@
 
     },
     "Remove %@ modifier" : {
+
+    },
+    "Remove Action" : {
 
     },
     "Replace with Current Dock Items" : {
@@ -1073,6 +1069,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "选择一个 Dock 组以编辑其配置"
+          }
+        }
+      }
+    },
+    "Select Application" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "选择应用程序"
           }
         }
       }

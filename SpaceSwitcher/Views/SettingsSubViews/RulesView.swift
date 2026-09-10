@@ -14,7 +14,7 @@ struct RulesView: View {
                 emptyState
                     .frame(maxWidth: .infinity, minHeight: 400)
             } else {
-                VStack(spacing: 20) {
+                VStack(spacing: 14) {
                     // Global Toggle
                     SettingsSection {
                         SettingsRow(
@@ -57,8 +57,7 @@ struct RulesView: View {
                     } label: {
                         Label("Add New Rule", systemImage: "plus")
                     }
-                    .buttonStyle(.bordered)
-                    .padding(.top, 10)
+                    .buttonStyle(.borderedProminent)
                     .frame(maxWidth: .infinity, alignment: .center)
                 }
                 .animation(.easeInOut(duration: 0.2), value: ruleManager.rules)
@@ -166,6 +165,10 @@ struct RuleRow: View {
 
                 Spacer()
 
+                Button("Edit", systemImage: "pencil", action: onEdit)
+                    .buttonStyle(.bordered)
+                    .controlSize(.small)
+
                 Toggle("Enabled", isOn: Binding(
                     get: { rule.isEnabled },
                     set: { value in
@@ -179,12 +182,12 @@ struct RuleRow: View {
                 .disabled(!isGlobalEnabled)
 
                 Menu {
-                    Button("Edit", systemImage: "pencil", action: onEdit)
                     Button("Delete", systemImage: "trash", role: .destructive, action: onDelete)
                 } label: {
                     Image(systemName: "ellipsis.circle")
                 }
                 .menuStyle(.borderlessButton)
+                .controlSize(.small)
                 .help("Rule Actions")
             }
             .padding(12)
