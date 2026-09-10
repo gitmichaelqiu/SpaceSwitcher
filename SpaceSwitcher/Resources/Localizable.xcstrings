@@ -4,9 +4,6 @@
     "" : {
       "shouldTranslate" : false
     },
-    "..." : {
-      "shouldTranslate" : false
-    },
     "%lld" : {
       "shouldTranslate" : false
     },
@@ -102,6 +99,9 @@
           }
         }
       }
+    },
+    "Add %@ modifier" : {
+
     },
     "Add Action" : {
       "localizations" : {
@@ -283,7 +283,18 @@
         }
       }
     },
+    "Choose from Applications..." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "从应用程序中选择…"
+          }
+        }
+      }
+    },
     "Choose spaces" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -293,12 +304,32 @@
         }
       }
     },
-    "Choose from Applications..." : {
+    "Choose an application before saving." : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "从应用程序中选择…"
+            "value" : "保存前请选择一个应用程序。"
+          }
+        }
+      }
+    },
+    "Select Application" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "选择应用程序"
+          }
+        }
+      }
+    },
+    "No selection" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "未选择"
           }
         }
       }
@@ -324,22 +355,22 @@
         }
       }
     },
-    "Create First Rule" : {
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "创建第一个规则"
-          }
-        }
-      }
-    },
     "Create a rule to control applications by desktop space." : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "创建规则，以按桌面控制应用程序。"
+          }
+        }
+      }
+    },
+    "Create First Rule" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "创建第一个规则"
           }
         }
       }
@@ -355,6 +386,7 @@
       }
     },
     "Default" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -385,7 +417,6 @@
       }
     },
     "Delete" : {
-      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -456,12 +487,69 @@
         }
       }
     },
+    "Edit" : {
+
+    },
+    "Enabled" : {
+
+    },
     "Fallback Behavior" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "兜底行为"
+          }
+        }
+      }
+    },
+    "Every workflow group must target at least one space." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "每个工作流组至少要指定一个桌面。"
+          }
+        }
+      }
+    },
+    "Every workflow group must contain at least one action." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "每个工作流组至少要包含一个操作。"
+          }
+        }
+      }
+    },
+    "Each space can belong to only one workflow group." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "每个桌面只能属于一个工作流组。"
+          }
+        }
+      }
+    },
+    "Add at least one action before saving." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "保存前至少添加一个操作。"
+          }
+        }
+      }
+    },
+    "Record every shortcut before saving." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "保存前请录制所有快捷键。"
           }
         }
       }
@@ -697,6 +785,27 @@
         }
       }
     },
+    "No actions" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "无操作"
+          }
+        }
+      }
+    },
+    "No application selected" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "未选择应用程序"
+          }
+        }
+      }
+    },
     "No automatic actions" : {
       "localizations" : {
         "zh-Hans" : {
@@ -713,16 +822,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "尚无自动化规则。"
-          }
-        }
-      }
-    },
-    "No actions" : {
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "无操作"
           }
         }
       }
@@ -766,6 +865,9 @@
     "Open DesktopRenamer" : {
 
     },
+    "Optional" : {
+
+    },
     "Otherwise" : {
       "localizations" : {
         "zh-Hans" : {
@@ -803,6 +905,16 @@
         }
       }
     },
+    "Record Shortcut" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "录制快捷键"
+          }
+        }
+      }
+    },
     "Recording..." : {
       "localizations" : {
         "zh-Hans" : {
@@ -813,15 +925,11 @@
         }
       }
     },
-    "Record Shortcut" : {
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "录制快捷键"
-          }
-        }
-      }
+    "Remove" : {
+
+    },
+    "Remove %@ modifier" : {
+
     },
     "Replace with Current Dock Items" : {
       "localizations" : {
@@ -906,22 +1014,22 @@
         }
       }
     },
-    "Rule Automation" : {
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "规则自动化"
-          }
-        }
-      }
-    },
     "Rule Actions" : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "规则操作"
+          }
+        }
+      }
+    },
+    "Rule Automation" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "规则自动化"
           }
         }
       }
@@ -1016,6 +1124,16 @@
     "Space" : {
       "shouldTranslate" : false
     },
+    "Space assignments are saved but only applied when Automatically switch dock is enabled." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "空间分配会被保存，但只有启用“自动切换 Dock”后才会应用。"
+          }
+        }
+      }
+    },
     "SpaceAPI Status" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -1044,7 +1162,11 @@
         }
       }
     },
+    "Spaces" : {
+
+    },
     "Spaces:" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -1128,16 +1250,6 @@
         }
       }
     },
-    "Space assignments are saved but only applied when Automatically switch dock is enabled." : {
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "空间分配会被保存，但只有启用“自动切换 Dock”后才会应用。"
-          }
-        }
-      }
-    },
     "Updates" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -1186,6 +1298,7 @@
       }
     },
     "Workflows" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {

@@ -9,6 +9,7 @@ struct RuleEditor: View {
     @State private var runningApps: [(name: String, id: String, icon: NSImage)] = []
     @State private var showingLegend = false
     @State private var legendWidth: CGFloat = 260
+    @State private var legendDragStartWidth: CGFloat?
     
     init(rule: AppRule, availableSpaces: [SpaceInfo], onSave: @escaping (AppRule) -> Void, onCancel: @escaping () -> Void) {
         self._workingRule = State(wrappedValue: rule)
@@ -30,7 +31,7 @@ struct RuleEditor: View {
             
             footerView
         }
-        .frame(width: 820, height: 620)
+        .frame(minWidth: 700, idealWidth: 820, minHeight: 500, idealHeight: 620)
         .onAppear { loadRunningApps() }
     }
     
@@ -69,7 +70,7 @@ struct RuleEditor: View {
                         Image(systemName: "app.dashed")
                             .resizable()
                             .aspectRatio(contentMode: .fit)
-                            .foregroundColor(.secondary.opacity(0.5))
+                            .foregroundStyle(.secondary.opacity(0.5))
                             .padding(10)
                     }
                 }
@@ -84,7 +85,7 @@ struct RuleEditor: View {
                 
                 Text(workingRule.appBundleID.isEmpty ? "No selection" : workingRule.appBundleID)
                     .font(.system(size: 11, design: .monospaced))
-                    .foregroundColor(.secondary.opacity(0.8))
+                    .foregroundStyle(.secondary.opacity(0.8))
             }
             
             Spacer()
@@ -101,29 +102,26 @@ struct RuleEditor: View {
             .controlSize(.small)
             .help("Action Definitions")
         }
-        .padding(.horizontal, 20)
-        .padding(.vertical, 16)
+        .padding(.horizontal, 16)
+        .padding(.vertical, 12)
         .background(Color(NSColor.windowBackgroundColor))
     }
     
     private var mainSplitView: some View {
         HStack(spacing: 0) {
             ScrollView(.vertical) {
-                VStack(alignment: .leading, spacing: 0) {
-                    Color.clear.frame(height: 12)
-                    
+                VStack(alignment: .leading, spacing: 12) {
                     // --- WORKFLOW GROUPS ---
                     ForEach(Array(workingRule.groups.enumerated()), id: \.element.id) { index, group in
-                        SettingsSection("Workflow Group \(index + 1)") {
+                        SettingsSection("Workflow Group \(index + 1)", accessory: {
+                            Button("Remove", systemImage: "trash", role: .destructive) {
+                                removeGroup(id: group.id)
+                            }
+                            .buttonStyle(.borderless)
+                        }) {
                             SpaceConditionRow(
-                                groupIndex: index,
                                 group: $workingRule.groups[index],
-                                availableSpaces: availableSpaces,
-                                onRemove: {
-                                    withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-                                        _ = workingRule.groups.remove(at: index)
-                                    }
-                                }
+                                availableSpaces: availableSpaces
                             )
 
                             Divider()
@@ -131,18 +129,13 @@ struct RuleEditor: View {
                             ActionListRows(actions: $workingRule.groups[index].actions)
 
                             AddActionRow {
-                                addActionToGroup(index: index, action: .show)
-                            } menuContent: {
-                                actionMenu(for: index)
+                                actionMenu(for: group.id)
                             }
                         }
                         .frame(maxWidth: .infinity, alignment: .leading)
-                        .padding(.bottom, 16)
                     }
-                }
-                
-                // --- ADD GROUP BUTTON ---
-                Section {
+
+                    // --- ADD GROUP BUTTON ---
                     Button {
                         withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
                             workingRule.groups.append(RuleGroup(targetSpaceIDs: [], actions: []))
@@ -151,16 +144,11 @@ struct RuleEditor: View {
                         Label("Add Workflow Group", systemImage: "plus")
                     }
                     .buttonStyle(.bordered)
-                    .padding(.bottom, 24)
-                }
-                
-                // --- FALLBACK SECTION ---
-                Section {
+                    .frame(maxWidth: .infinity, alignment: .center)
+
+                    // --- FALLBACK SECTION ---
                     SettingsSection("Fallback Behavior", helperText: "Actions used when no workflow group matches the current space.") {
-                        HStack {
-                            Text("Otherwise")
-                                .font(.body.weight(.medium))
-                            Spacer()
+                        SettingsRow("Otherwise") {
                             Text("Optional")
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
@@ -172,6 +160,7 @@ struct RuleEditor: View {
                             Text("No automatic actions")
                                 .foregroundStyle(.secondary)
                                 .frame(maxWidth: .infinity, alignment: .leading)
+                                .padding(.horizontal, 10)
                                 .padding(.vertical, 10)
                         } else {
                             ActionListRows(actions: $workingRule.elseActions)
@@ -181,14 +170,11 @@ struct RuleEditor: View {
                         
                         HStack {
                             Menu {
-                                Button("Show") { withAnimation { workingRule.elseActions.append(ActionItem(.show)) } }
-                                Button("Restore") { withAnimation { workingRule.elseActions.append(ActionItem(.restore)) } }
-                                Button("Hide") { withAnimation { workingRule.elseActions.append(ActionItem(.hide)) } }
-                                Button("Minimize") { withAnimation { workingRule.elseActions.append(ActionItem(.minimize)) } }
-                                Button("Bring to Front") { withAnimation { workingRule.elseActions.append(ActionItem(.bringToFront)) } }
-                                Divider()
-                                Button("App Shortcut...") { withAnimation { workingRule.elseActions.append(ActionItem(.hotkey(keyCode: -1, modifiers: 0, restoreWindow: false, waitFrontmost: true))) } }
-                                Button("Global Shortcut...") { withAnimation { workingRule.elseActions.append(ActionItem(.globalHotkey(keyCode: -1, modifiers: 0))) } }
+                                actionMenu { action in
+                                    withAnimation {
+                                        workingRule.elseActions.append(ActionItem(action))
+                                    }
+                                }
                             } label: {
                                 Label("Add Action", systemImage: "plus")
                             }
@@ -198,9 +184,9 @@ struct RuleEditor: View {
                         }
                         .padding(.vertical, 8)
                     }
-                    .padding(.bottom, 32)
+                    .padding(.bottom, 4)
                 }
-                .padding(.top, 8)
+                .padding(12)
             }
             .animation(.easeInOut(duration: 0.35), value: workingRule.groups)
             .background(Color.clear)
@@ -223,9 +209,12 @@ struct RuleEditor: View {
                         DragGesture()
                             .onChanged { value in
                                 let delta = value.translation.width
-                                let newWidth = legendWidth - delta
+                                let startWidth = legendDragStartWidth ?? legendWidth
+                                legendDragStartWidth = startWidth
+                                let newWidth = startWidth - delta
                                 legendWidth = max(200, min(400, newWidth))
                             }
+                            .onEnded { _ in legendDragStartWidth = nil }
                     )
                 
                 legendSidebar
@@ -238,6 +227,13 @@ struct RuleEditor: View {
     
     private var footerView: some View {
         HStack(spacing: 12) {
+            if let validationMessage {
+                Label(validationMessage, systemImage: "exclamationmark.triangle.fill")
+                    .foregroundStyle(.secondary)
+                    .lineLimit(2)
+                    .frame(maxWidth: 320, alignment: .leading)
+            }
+
             Button("Cancel", action: onCancel)
                 .controlSize(.large)
                 .keyboardShortcut(.escape, modifiers: [])
@@ -249,31 +245,85 @@ struct RuleEditor: View {
             }
             .buttonStyle(.borderedProminent)
             .controlSize(.large)
-            .disabled(workingRule.appBundleID.isEmpty)
+            .disabled(validationMessage != nil)
             .keyboardShortcut(.return, modifiers: [])
         }
         .padding(.horizontal, 20)
-        .padding(.vertical, 16)
+        .padding(.vertical, 12)
         .background(Color(NSColor.windowBackgroundColor))
     }
     
     // MARK: - Actions
     
-    private func addActionToGroup(index: Int, action: WindowAction) {
+    private func addActionToGroup(id: UUID, action: WindowAction) {
+        guard let index = workingRule.groups.firstIndex(where: { $0.id == id }) else { return }
         withAnimation(.easeInOut(duration: 0.2)) {
             workingRule.groups[index].actions.append(ActionItem(action))
         }
     }
     
-    @ViewBuilder private func actionMenu(for index: Int) -> some View {
-        Button("Show") { addActionToGroup(index: index, action: .show) }
-        Button("Restore") { addActionToGroup(index: index, action: .restore) }
-        Button("Hide") { addActionToGroup(index: index, action: .hide) }
-        Button("Minimize") { addActionToGroup(index: index, action: .minimize) }
-        Button("Bring to Front") { addActionToGroup(index: index, action: .bringToFront) }
+    @ViewBuilder private func actionMenu(for id: UUID) -> some View {
+        actionMenu { action in
+            addActionToGroup(id: id, action: action)
+        }
+    }
+
+    @ViewBuilder private func actionMenu(addAction: @escaping (WindowAction) -> Void) -> some View {
+        Button("Show") { addAction(.show) }
+        Button("Restore") { addAction(.restore) }
+        Button("Hide") { addAction(.hide) }
+        Button("Minimize") { addAction(.minimize) }
+        Button("Bring to Front") { addAction(.bringToFront) }
         Divider()
-        Button("App Shortcut...") { addActionToGroup(index: index, action: .hotkey(keyCode: -1, modifiers: 0, restoreWindow: false, waitFrontmost: true)) }
-        Button("Global Shortcut...") { addActionToGroup(index: index, action: .globalHotkey(keyCode: -1, modifiers: 0)) }
+        Button("App Shortcut...") {
+            addAction(.hotkey(keyCode: -1, modifiers: 0, restoreWindow: false, waitFrontmost: true))
+        }
+        Button("Global Shortcut...") {
+            addAction(.globalHotkey(keyCode: -1, modifiers: 0))
+        }
+    }
+
+    private func removeGroup(id: UUID) {
+        withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+            workingRule.groups.removeAll { $0.id == id }
+        }
+    }
+
+    private var validationMessage: LocalizedStringKey? {
+        if workingRule.appBundleID.isEmpty {
+            return "Choose an application before saving."
+        }
+
+        if workingRule.groups.contains(where: { $0.targetSpaceIDs.isEmpty }) {
+            return "Every workflow group must target at least one space."
+        }
+
+        if workingRule.groups.contains(where: { $0.actions.isEmpty }) {
+            return "Every workflow group must contain at least one action."
+        }
+
+        let assignedSpaceIDs = workingRule.groups.flatMap(\.targetSpaceIDs)
+        if Set(assignedSpaceIDs).count != assignedSpaceIDs.count {
+            return "Each space can belong to only one workflow group."
+        }
+
+        let allActions = workingRule.groups.flatMap(\.actions) + workingRule.elseActions
+        if allActions.isEmpty {
+            return "Add at least one action before saving."
+        }
+
+        if allActions.contains(where: { action in
+            switch action.value {
+            case .hotkey(let keyCode, _, _, _), .globalHotkey(let keyCode, _):
+                return keyCode < 0
+            default:
+                return false
+            }
+        }) {
+            return "Record every shortcut before saving."
+        }
+
+        return nil
     }
     
     private func selectApp(name: String, id: String) {
@@ -317,7 +367,7 @@ struct RuleEditor: View {
         VStack(alignment: .leading, spacing: 16) {
             HStack(spacing: 8) {
                 Image(systemName: "info.circle.fill")
-                    .foregroundColor(.accentColor)
+                    .foregroundStyle(Color.accentColor)
                 Text("Action Definitions")
                     .font(.system(size: 13, weight: .bold))
             }
@@ -345,14 +395,14 @@ struct RuleEditor: View {
         VStack(alignment: .leading, spacing: 4) {
             Text(name)
                 .font(.system(size: 11, weight: .bold, design: .monospaced))
-                .foregroundColor(.primary)
+                .foregroundStyle(.primary)
                 .padding(.horizontal, 6)
                 .padding(.vertical, 2)
-                .background(RoundedRectangle(cornerRadius: 4).fill(Color.primary.opacity(0.05)))
+                .background(.quaternary, in: .rect(cornerRadius: 4))
             
             Text(desc)
                 .font(.system(size: 11))
-                .foregroundColor(.secondary)
+                .foregroundStyle(.secondary)
                 .lineSpacing(2)
         }
     }
@@ -361,10 +411,8 @@ struct RuleEditor: View {
 // MARK: - Subviews
 
 struct SpaceConditionRow: View {
-    let groupIndex: Int
     @Binding var group: RuleGroup
     let availableSpaces: [SpaceInfo]
-    let onRemove: () -> Void
 
     private var selectedSpaces: [SpaceInfo] {
         availableSpaces.filter { group.targetSpaceIDs.contains($0.id) }
@@ -376,48 +424,33 @@ struct SpaceConditionRow: View {
     }
     
     var body: some View {
-        VStack(spacing: 0) {
-            HStack {
-                Text("Group \(groupIndex + 1)")
-                    .font(.body.weight(.medium))
-
-                Spacer()
-
-                Button("Remove", systemImage: "trash", role: .destructive, action: onRemove)
-                    .buttonStyle(.borderless)
-            }
-            .padding(.vertical, 8)
-
-            Divider()
-
-            SettingsRow("Spaces") {
-                if availableSpaces.isEmpty {
-                    Text("No spaces detected")
-                        .foregroundStyle(.secondary)
-                } else {
-                    Menu {
-                        ForEach(availableSpaces) { space in
-                            let isSelected = group.targetSpaceIDs.contains(space.id)
-                            Button {
-                                if isSelected {
-                                    group.targetSpaceIDs.remove(space.id)
-                                } else {
-                                    group.targetSpaceIDs.insert(space.id)
-                                }
-                            } label: {
-                                Label(
-                                    space.name.isEmpty ? "Space \(space.number)" : space.name,
-                                    systemImage: isSelected ? "checkmark" : "circle"
-                                )
+        SettingsRow("Spaces") {
+            if availableSpaces.isEmpty {
+                Text("No spaces detected")
+                    .foregroundStyle(.secondary)
+            } else {
+                Menu {
+                    ForEach(availableSpaces) { space in
+                        let isSelected = group.targetSpaceIDs.contains(space.id)
+                        Button {
+                            if isSelected {
+                                group.targetSpaceIDs.remove(space.id)
+                            } else {
+                                group.targetSpaceIDs.insert(space.id)
                             }
+                        } label: {
+                            Label(
+                                space.name.isEmpty ? "Space \(space.number)" : space.name,
+                                systemImage: isSelected ? "checkmark" : "circle"
+                            )
                         }
-                    } label: {
-                        Text(selectedSpacesTitle)
-                            .lineLimit(1)
                     }
-                    .menuStyle(.borderlessButton)
-                    .frame(maxWidth: 260, alignment: .trailing)
+                } label: {
+                    Text(selectedSpacesTitle)
+                        .lineLimit(1)
                 }
+                .menuStyle(.borderlessButton)
+                .frame(maxWidth: 260, alignment: .trailing)
             }
         }
     }
@@ -441,8 +474,8 @@ struct ActionListRows: View {
                             }
                         }
                     )
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 8)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 6)
                     .background(Color(NSColor.controlBackgroundColor).opacity(draggingItem?.id == item.id ? 0.2 : 0.01))
                 }
                 .onDrag {
@@ -496,7 +529,6 @@ struct ActionDropDelegate: DropDelegate {
 
 
 struct AddActionRow<Content: View>: View {
-    let action: () -> Void
     @ViewBuilder let menuContent: Content
     
     var body: some View {
@@ -507,14 +539,14 @@ struct AddActionRow<Content: View>: View {
                     menuContent
                 } label: {
                     Label("Add Action", systemImage: "plus")
-                        .font(.system(size: 12, weight: .semibold))
                 }
                 .menuStyle(.borderlessButton)
-                .foregroundColor(.accentColor)
+                .tint(.accentColor)
                 .fixedSize()
                 Spacer()
             }
-            .padding(8)
+            .padding(.horizontal, 10)
+            .padding(.vertical, 6)
         }
     }
 }
@@ -528,17 +560,18 @@ struct ActionRowContent: View {
     
     @State private var isRecording = false
     @State private var isExpanded = false
+    @State private var recordingMonitor: Any?
     
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 10) {
                 Image(systemName: "line.3.horizontal")
                     .font(.system(size: 10))
-                    .foregroundColor(.secondary.opacity(0.2))
+                    .foregroundStyle(.secondary.opacity(0.2))
                 
                 Text("\(index + 1)")
                     .font(.system(size: 11, weight: .bold).monospacedDigit())
-                    .foregroundColor(.secondary)
+                    .foregroundStyle(.secondary)
                     .frame(width: 14)
                 
                 Group {
@@ -559,16 +592,12 @@ struct ActionRowContent: View {
                         
                     case .hotkey(let code, let mods, _, _):
                         HStack(spacing: 8) {
-                            Button(action: { isRecording = true }) {
+                            Button(action: startRecording) {
                                 if isRecording {
                                     Text("Recording...")
-                                        .font(.system(size: 11, weight: .bold))
-                                        .foregroundColor(.red)
+                                        .foregroundStyle(.red)
                                 } else {
-                                    HStack(spacing: 4) {
-                                        Text(code == -1 ? "Shortcut" : ShortcutHelper.format(code: code, modifiers: mods))
-                                    }
-                                    .font(.system(size: 11, weight: .medium))
+                                    Text(code == -1 ? "Shortcut" : ShortcutHelper.format(code: code, modifiers: mods))
                                 }
                             }
                             .buttonStyle(.bordered)
@@ -577,7 +606,7 @@ struct ActionRowContent: View {
                             Button { withAnimation { isExpanded.toggle() } } label: {
                                 Image(systemName: "gearshape")
                                     .font(.system(size: 11))
-                                    .foregroundColor(isExpanded ? .accentColor : .secondary)
+                                    .foregroundStyle(isExpanded ? Color.accentColor : Color.secondary)
                             }
                             .buttonStyle(.plain)
                         }
@@ -590,12 +619,10 @@ struct ActionRowContent: View {
                 
                 Spacer()
                 
-                Button(action: onDelete) {
-                    Image(systemName: "xmark.circle.fill")
-                        .font(.system(size: 13))
-                        .foregroundColor(.secondary.opacity(0.2))
-                }
-                .buttonStyle(.plain)
+                Button("Remove Action", systemImage: "trash", role: .destructive, action: onDelete)
+                    .buttonStyle(.plain)
+                    .labelStyle(.iconOnly)
+                    .help("Remove Action")
             }
             
             if case .hotkey(let c, let m, let r, let w) = item.value, isExpanded {
@@ -611,7 +638,7 @@ struct ActionRowContent: View {
                         
                         Text("Wait for the application to be frontmost before simulating keys.")
                             .font(.system(size: 9))
-                            .foregroundColor(.secondary.opacity(0.8))
+                            .foregroundStyle(.secondary.opacity(0.8))
                     }
                     
                     if !w {
@@ -626,17 +653,15 @@ struct ActionRowContent: View {
                             
                             Text("Return focus to the previous application after simulating keys.")
                                 .font(.system(size: 9))
-                                .foregroundColor(.secondary.opacity(0.8))
+                                .foregroundStyle(.secondary.opacity(0.8))
                         }
                     }
                 }
                 .padding(.leading, 32)
             }
             
-            if isRecording {
-                Text("").frame(width: 0, height: 0).onAppear { startRecording(item: item) }
-            }
         }
+        .onDisappear(perform: stopRecording)
     }
     
     private func toggleModifier(_ flag: NSEvent.ModifierFlags, current: UInt) {
@@ -650,19 +675,41 @@ struct ActionRowContent: View {
         }
     }
     
-    private func startRecording(item: ActionItem) {
-        NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
-            if isRecording {
-                let mods = event.modifierFlags.intersection(.deviceIndependentFlagsMask).rawValue
-                let code = Int(event.keyCode)
-                if case .hotkey(_, _, let r, let w) = item.value {
-                    self.item.value = .hotkey(keyCode: code, modifiers: UInt(mods), restoreWindow: r, waitFrontmost: w)
-                }
+    private func startRecording() {
+        stopRecording()
+        isRecording = true
+
+        recordingMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
+            guard isRecording else { return event }
+
+            if event.keyCode == 53 {
                 isRecording = false
+                stopRecording()
                 return nil
             }
-            return event
+
+            let mods = event.modifierFlags.intersection(.deviceIndependentFlagsMask).rawValue
+            let code = Int(event.keyCode)
+            if case .hotkey(_, _, let restoreWindow, let waitFrontmost) = self.item.value {
+                self.item.value = .hotkey(
+                    keyCode: code,
+                    modifiers: UInt(mods),
+                    restoreWindow: restoreWindow,
+                    waitFrontmost: waitFrontmost
+                )
+            }
+            isRecording = false
+            stopRecording()
+            return nil
         }
+    }
+
+    private func stopRecording() {
+        if let recordingMonitor {
+            NSEvent.removeMonitor(recordingMonitor)
+            self.recordingMonitor = nil
+        }
+        isRecording = false
     }
 }
 
@@ -684,6 +731,10 @@ struct KeyCaptureButton: View {
             Group {
                 if isListening {
                     KeyReceiver { event in
+                        if event.keyCode == 53 {
+                            isListening = false
+                            return
+                        }
                         let code = Int(event.keyCode)
                         onUpdate(code)
                         isListening = false

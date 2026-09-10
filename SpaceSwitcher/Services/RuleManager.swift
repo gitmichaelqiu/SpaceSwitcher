@@ -10,10 +10,29 @@ enum RuleSortOption: String, CaseIterable, Identifiable {
 }
 
 class RuleManager: ObservableObject {
-    @Published var rules: [AppRule] = [] { didSet { saveRules() } }
-    @Published var isAutomationEnabled: Bool = true { didSet { UserDefaults.standard.set(isAutomationEnabled, forKey: "isAutomationEnabled") } }
+    @Published var rules: [AppRule] = [] {
+        didSet {
+            saveRules()
+            forceRefresh()
+        }
+    }
+    @Published var isAutomationEnabled: Bool = true {
+        didSet {
+            UserDefaults.standard.set(isAutomationEnabled, forKey: "isAutomationEnabled")
+            if isAutomationEnabled {
+                forceRefresh()
+            } else {
+                enforcementTask?.cancel()
+            }
+        }
+    }
     @Published var sortOption: RuleSortOption = .name
-    weak var spaceManager: SpaceManager? { didSet { setupBindings() } }
+    weak var spaceManager: SpaceManager? {
+        didSet {
+            setupBindings()
+            forceRefresh()
+        }
+    }
     private var cancellables = Set<AnyCancellable>()
     private let rulesKey = "SpaceSwitcherRules"
     
