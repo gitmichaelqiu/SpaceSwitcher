@@ -1,16 +1,24 @@
 import ApplicationServices
 import Cocoa
 import Combine
+import CoreGraphics
 
 class PermissionManager: ObservableObject {
     static let shared = PermissionManager()
 
     @Published var isAccessibilityGranted: Bool = false
+    @Published var isEventSynthesisGranted: Bool = false
+
+    var hasAccessibilityPermission: Bool {
+        isAccessibilityGranted && isEventSynthesisGranted
+    }
+
+    private var becomeActiveObserver: NSObjectProtocol?
 
     private init() {
         checkPermissions()
-        // Listen for app becoming active to re-check permissions
-        NotificationCenter.default.addObserver(
+        // Re-verify permissions when the application returns to the foreground.
+        becomeActiveObserver = NotificationCenter.default.addObserver(
             forName: NSApplication.didBecomeActiveNotification, object: nil, queue: .main
         ) { [weak self] _ in
             self?.checkPermissions()
@@ -18,7 +26,9 @@ class PermissionManager: ObservableObject {
     }
 
     deinit {
-        NotificationCenter.default.removeObserver(self)
+        if let observer = becomeActiveObserver {
+            NotificationCenter.default.removeObserver(observer)
+        }
     }
 
     func checkPermissions() {
@@ -26,7 +36,8 @@ class PermissionManager: ObservableObject {
         let axOptions: NSDictionary = [
             kAXTrustedCheckOptionPrompt.takeUnretainedValue() as String: false
         ]
-        self.isAccessibilityGranted = AXIsProcessTrustedWithOptions(axOptions)
+        isAccessibilityGranted = AXIsProcessTrustedWithOptions(axOptions)
+        isEventSynthesisGranted = CGPreflightPostEventAccess()
     }
 
     func requestAccessibilityPermission() {
@@ -34,12 +45,9 @@ class PermissionManager: ObservableObject {
             kAXTrustedCheckOptionPrompt.takeUnretainedValue() as String: true
         ]
         let trusted = AXIsProcessTrustedWithOptions(axOptions)
-        self.isAccessibilityGranted = trusted
-        
-        // If it wasn't immediately granted, we open the settings
-        if !trusted {
-            openSystemSettings(type: "Privacy_Accessibility")
-        }
+        isAccessibilityGranted = trusted
+        isEventSynthesisGranted = CGRequestPostEventAccess()
+        openSystemSettings(type: "Privacy_Accessibility")
     }
 
     func openSystemSettings(type: String) {
