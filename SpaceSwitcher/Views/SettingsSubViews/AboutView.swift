@@ -21,7 +21,7 @@ struct AboutView: View {
     }
 
     var body: some View {
-        ScrollView {
+        SettingsContainer(.about) {
             VStack(alignment: .leading, spacing: 32) {
                 // Header Section
                 HStack(spacing: 20) {
@@ -101,7 +101,7 @@ struct AboutView: View {
                     AboutButtonRow(title: "Acknowledgements.pdf", action: openAcknowledgements)
                 }
             }
-            .padding(30)
+            .padding(14)
             .frame(maxWidth: .infinity, alignment: .leading)
         }
     }

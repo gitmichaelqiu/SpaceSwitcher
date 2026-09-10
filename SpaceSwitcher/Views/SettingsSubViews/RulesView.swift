@@ -3,12 +3,13 @@ import SwiftUI
 struct RulesView: View {
     @ObservedObject var ruleManager: RuleManager
     @ObservedObject var spaceManager: SpaceManager
+    @StateObject private var permissionManager = PermissionManager.shared
     
     @State private var showingAddRule = false
     @State private var selectedRule: AppRule?
     
     var body: some View {
-        ScrollView(.vertical, showsIndicators: true) {
+        SettingsContainer(.rules) {
             if ruleManager.rules.isEmpty {
                 emptyState
                     .frame(maxWidth: .infinity, minHeight: 400)
@@ -16,7 +17,15 @@ struct RulesView: View {
                 VStack(spacing: 20) {
                     // Global Toggle
                     SettingsSection {
-                        SettingsRow("Automation", helperText: "When disabled, all automation rules will be ignored.") {
+                        SettingsRow(
+                            "Automation",
+                            helperText: "When disabled, all automation rules will be ignored.",
+                            requirements: [
+                                .accessibility(isGranted: permissionManager.isAccessibilityGranted),
+                                .inputEvents(isGranted: permissionManager.isEventSynthesisGranted),
+                                .spaceAPI(isAvailable: spaceManager.apiAvailability == .available)
+                            ]
+                        ) {
                             Toggle("", isOn: $ruleManager.isAutomationEnabled)
                                 .toggleStyle(.switch)
                                 .labelsHidden()
@@ -69,7 +78,7 @@ struct RulesView: View {
                     .frame(maxWidth: .infinity, alignment: .center)
                 }
                 .animation(.easeInOut(duration: 0.2), value: ruleManager.rules)
-                .padding(24)
+                .padding(8)
                 .frame(maxWidth: .infinity, alignment: .topLeading)
             }
         }

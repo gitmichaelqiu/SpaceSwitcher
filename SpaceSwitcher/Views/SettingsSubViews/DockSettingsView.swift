@@ -36,8 +36,11 @@ struct DockSettingsView: View {
                     ScrollView(.vertical, showsIndicators: true) {
                         VStack(alignment: .leading, spacing: 24) {
                             // 0. Automation Control
-                            SettingsSection("Automation") {
-                                SettingsRow("Automatically switch dock") {
+                        SettingsSection("Automation") {
+                                SettingsRow(
+                                    "Automatically switch dock",
+                                    requirements: [.spaceAPI(isAvailable: spaceManager.isAPIEnabled)]
+                                ) {
                                     Toggle("", isOn: $dockManager.config.isAutomationEnabled)
                                         .toggleStyle(.switch)
                                         .labelsHidden()
