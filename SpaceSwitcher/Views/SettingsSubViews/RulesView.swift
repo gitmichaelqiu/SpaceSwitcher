@@ -20,7 +20,6 @@ struct RulesView: View {
                     SettingsSection {
                         SettingsRow(
                             "Automation",
-                            helperText: "When disabled, all automation rules will be ignored.",
                             requirements: [
                                 .accessibility(isGranted: permissionManager.isAccessibilityGranted),
                                 .inputEvents(isGranted: permissionManager.isEventSynthesisGranted),
