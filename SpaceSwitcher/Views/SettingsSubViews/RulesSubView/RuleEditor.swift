@@ -146,12 +146,14 @@ struct RuleEditor: View {
                     // --- WORKFLOW GROUPS ---
                     ForEach($workingRule.groups) { $group in
                         let index = workingRule.groups.firstIndex(where: { $0.id == group.id }) ?? 0
-                        SettingsSection("Workflow Group \(index + 1)", accessory: {
-                            Button("Remove", systemImage: "trash", role: .destructive) {
-                                groupPendingDeletion = group.id
-                            }
-                            .buttonStyle(.borderless)
-                        }) {
+                        SettingsSection(
+                            String(format: NSLocalizedString("Workflow Group %lld", comment: ""), index + 1),
+                            accessory: {
+                                Button("Remove", systemImage: "trash", role: .destructive) {
+                                    groupPendingDeletion = group.id
+                                }
+                                .buttonStyle(.borderless)
+                            }) {
                             SpaceConditionRow(
                                 group: $group,
                                 availableSpaces: availableSpaces

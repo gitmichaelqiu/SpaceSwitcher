@@ -224,7 +224,11 @@ struct SettingsRequirementWarning: View {
     }
 
     private var warningText: LocalizedStringKey {
-        LocalizedStringKey("Requires \(missingRequirements.map(\.name).joined(separator: ", ")).")
+        let names = missingRequirements
+            .map { NSLocalizedString($0.name, comment: "") }
+            .joined(separator: ", ")
+        let format = NSLocalizedString("Requires %@.", comment: "")
+        return LocalizedStringKey(String(format: format, names))
     }
 
     var body: some View {
