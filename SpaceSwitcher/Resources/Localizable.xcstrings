@@ -80,6 +80,16 @@
         }
       }
     },
+    "Action Options" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "操作选项"
+          }
+        }
+      }
+    },
     "Actions used when no workflow group matches the current space." : {
       "localizations" : {
         "zh-Hans" : {
@@ -180,16 +190,6 @@
         }
       }
     },
-    "App Shortcut..." : {
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "App 快捷键…"
-          }
-        }
-      }
-    },
     "App Shortcut" : {
       "localizations" : {
         "zh-Hans" : {
@@ -200,8 +200,25 @@
         }
       }
     },
+    "App Shortcut..." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "App 快捷键…"
+          }
+        }
+      }
+    },
     "Application" : {
-
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "应用"
+          }
+        }
+      }
     },
     "Apply Now" : {
       "localizations" : {
@@ -324,35 +341,20 @@
       }
     },
     "Choose Shortcut Modifiers" : {
-
-    },
-    "Choose spaces" : {
-      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "选择桌面"
+            "value" : "选择修饰键"
           }
         }
       }
     },
     "Command (⌘)" : {
-
-    },
-    "Connected" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "已连接"
-          }
-        }
-      }
+      "shouldTranslate" : false
     },
     "Control (⌃)" : {
-
+      "shouldTranslate" : false
     },
     "Could Not Read Current Dock" : {
       "localizations" : {
@@ -394,17 +396,6 @@
         }
       }
     },
-    "Default" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "默认"
-          }
-        }
-      }
-    },
     "Default Configuration Active" : {
       "localizations" : {
         "zh-Hans" : {
@@ -436,21 +427,37 @@
       }
     },
     "Delete Dock Set" : {
-
-    },
-    "DesktopRenamer SpaceAPI" : {
-
-    },
-    "Disconnected" : {
-      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "未连接"
+            "value" : "删除Dock组"
           }
         }
       }
+    },
+    "Delete Rule" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "删除规则"
+          }
+        }
+      }
+    },
+    "Delete Rule?" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "删除规则？"
+          }
+        }
+      }
+    },
+    "DesktopRenamer SpaceAPI" : {
+      "shouldTranslate" : false
     },
     "Dock Automation" : {
       "localizations" : {
@@ -473,15 +480,11 @@
       }
     },
     "Dock Set" : {
-
-    },
-    "Dock Sets" : {
-      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Dock 组"
+            "value" : "Dock组"
           }
         }
       }
@@ -507,10 +510,37 @@
       }
     },
     "Edit" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "编辑"
+          }
+        }
+      }
+    },
+    "Enable Automation above to use individual rules." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "启用自动化以使用规则。"
+          }
+        }
+      }
+    },
+    "Enable or disable this rule." : {
 
     },
     "Enabled" : {
-
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已启用"
+          }
+        }
+      }
     },
     "Every workflow group must contain at least one action." : {
       "localizations" : {
@@ -528,17 +558,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "每个工作流组至少要指定一个桌面。"
-          }
-        }
-      }
-    },
-    "Fallback Behavior" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "兜底行为"
           }
         }
       }
@@ -573,53 +592,12 @@
         }
       }
     },
-    "Global Shortcut..." : {
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "全局快捷键…"
-          }
-        }
-      }
-    },
-    "System Shortcut..." : {
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "系统快捷键…"
-          }
-        }
-      }
-    },
-    "System Shortcut" : {
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "系统快捷键"
-          }
-        }
-      }
-    },
     "Grant" : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "授权"
-          }
-        }
-      }
-    },
-    "Group %lld" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "组 %lld"
           }
         }
       }
@@ -636,7 +614,14 @@
       }
     },
     "Hide Definitions" : {
-
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "隐藏说明"
+          }
+        }
+      }
     },
     "Hide the application." : {
       "localizations" : {
@@ -659,10 +644,24 @@
       }
     },
     "Input Events" : {
-
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "输入事件"
+          }
+        }
+      }
     },
     "Install DesktopRenamer" : {
-
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "安装DesktopRenamer"
+          }
+        }
+      }
     },
     "Intelligent reversal. Only unhide and unminimize if SpaceSwitcher was the one that hid it earlier." : {
       "localizations" : {
@@ -675,10 +674,6 @@
       }
     },
     "Launch at login" : {
-
-    },
-    "Launch at Login" : {
-      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -689,7 +684,14 @@
       }
     },
     "Launch DesktopRenamer" : {
-
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "启动DesktopRenamer"
+          }
+        }
+      }
     },
     "Let you right-click with the Option key." : {
       "localizations" : {
@@ -712,18 +714,21 @@
       }
     },
     "Make Default" : {
-
-    },
-    "Manage Dock Sets" : {
-
-    },
-    "Manual activation" : {
-      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "手动激活"
+            "value" : "设为默认"
+          }
+        }
+      }
+    },
+    "Manage Dock Sets" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "管理Dock组"
           }
         }
       }
@@ -758,6 +763,12 @@
           }
         }
       }
+    },
+    "Move Down" : {
+
+    },
+    "Move Up" : {
+
     },
     "My GitHub" : {
       "localizations" : {
@@ -799,39 +810,6 @@
         }
       }
     },
-    "No actions" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "无操作"
-          }
-        }
-      }
-    },
-    "No application selected" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "未选择应用程序"
-          }
-        }
-      }
-    },
-    "No automatic actions" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "无自动化操作"
-          }
-        }
-      }
-    },
     "No automation rules yet." : {
       "localizations" : {
         "zh-Hans" : {
@@ -843,7 +821,14 @@
       }
     },
     "No fallback actions" : {
-
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "备用操作"
+          }
+        }
+      }
     },
     "No items assigned to this Dock set" : {
       "localizations" : {
@@ -856,15 +841,11 @@
       }
     },
     "No results" : {
-
-    },
-    "No selection" : {
-      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "未选择"
+            "value" : "无结果"
           }
         }
       }
@@ -890,27 +871,20 @@
       }
     },
     "OK" : {
-
+      "shouldTranslate" : false
     },
     "Open DesktopRenamer" : {
-
-    },
-    "Option (⌥)" : {
-
-    },
-    "Options" : {
-
-    },
-    "Otherwise" : {
-      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "其他"
+            "value" : "打开DesktopRenamer"
           }
         }
       }
+    },
+    "Option (⌥)" : {
+      "shouldTranslate" : false
     },
     "Permissions" : {
       "localizations" : {
@@ -970,9 +944,29 @@
       }
     },
     "Remove" : {
-
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "移除"
+          }
+        }
+      }
     },
     "Remove Action" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "移除操作"
+          }
+        }
+      }
+    },
+    "Remove Group" : {
+
+    },
+    "Remove Workflow Group?" : {
 
     },
     "Replace with Current Dock Items" : {
@@ -995,19 +989,15 @@
         }
       }
     },
-    "Required for detecting active applications and space changes via the bundle API." : {
-      "extractionState" : "stale",
+    "Required for reading active applications and controlling their visibility in automation rules." : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "通过 Bundle API 检测活动应用程序和桌面更改时需要。"
+            "value" : "用于阅读当前应用以及控制其可见性。"
           }
         }
       }
-    },
-    "Required for reading active applications and controlling their visibility in automation rules." : {
-
     },
     "Required for reading desktop spaces and using space-based automation." : {
 
@@ -1038,30 +1028,8 @@
         }
       }
     },
-    "Restore Previous Application" : {
+    "Restore Previous App" : {
 
-    },
-    "Restore window" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "恢复窗口"
-          }
-        }
-      }
-    },
-    "Return focus to the previous application after simulating keys." : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "模拟按键后将焦点返回到之前的应用程序。"
-          }
-        }
-      }
     },
     "Rule Actions" : {
       "localizations" : {
@@ -1126,17 +1094,6 @@
         }
       }
     },
-    "Select Application" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "选择应用程序"
-          }
-        }
-      }
-    },
     "Set Configuration" : {
       "localizations" : {
         "zh-Hans" : {
@@ -1153,13 +1110,13 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Settings..."
+            "value" : "Settings"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "设置…"
+            "value" : "设置"
           }
         }
       }
@@ -1200,17 +1157,6 @@
         }
       }
     },
-    "SpaceAPI Status" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "SpaceAPI 状态"
-          }
-        }
-      }
-    },
     "SpaceCount" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -1231,34 +1177,12 @@
     "Spaces" : {
 
     },
-    "Spaces:" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "桌面："
-          }
-        }
-      }
-    },
     "SpaceSwitcher could not read the current Dock items." : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "SpaceSwitcher 无法读取当前 Dock 项目。"
-          }
-        }
-      }
-    },
-    "SpaceSwitcher uses the DesktopRenamer API to detect space changes. Ensure the API is enabled in DesktopRenamer." : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "SpaceSwitcher 使用 DesktopRenamer API 检测桌面更改。请确保 DesktopRenamer 中的 API 已启用。"
           }
         }
       }
@@ -1286,6 +1210,26 @@
     "Switcher" : {
       "shouldTranslate" : false
     },
+    "System Shortcut" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "系统快捷键"
+          }
+        }
+      }
+    },
+    "System Shortcut..." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "系统快捷键…"
+          }
+        }
+      }
+    },
     "The default set is used for any space that doesn't have a specific assignment." : {
       "localizations" : {
         "zh-Hans" : {
@@ -1306,6 +1250,9 @@
         }
       }
     },
+    "The spaces and actions in this workflow group will be removed." : {
+
+    },
     "This dock set is used automatically for all unassigned spaces." : {
       "localizations" : {
         "zh-Hans" : {
@@ -1316,16 +1263,8 @@
         }
       }
     },
-    "Updates" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "更新"
-          }
-        }
-      }
+    "This removes the rule for %@." : {
+
     },
     "v%@" : {
       "localizations" : {
@@ -1343,19 +1282,8 @@
         }
       }
     },
-    "Wait for Application" : {
+    "Wait for App to Be Frontmost" : {
 
-    },
-    "Wait for the application to be frontmost before simulating keys." : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "在模拟按键之前等待应用程序处于最前台。"
-          }
-        }
-      }
     },
     "When disabled, all automation rules will be ignored." : {
       "localizations" : {
@@ -1363,17 +1291,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "禁用时，所有自动化规则将被忽略。"
-          }
-        }
-      }
-    },
-    "Workflows" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "工作流"
           }
         }
       }
