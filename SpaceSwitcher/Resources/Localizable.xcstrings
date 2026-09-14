@@ -72,16 +72,6 @@
         }
       }
     },
-    "Connected" : {
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "已连接"
-          }
-        }
-      }
-    },
     "Acknowledgements" : {
       "localizations" : {
         "zh-Hans" : {
@@ -481,16 +471,6 @@
     "DesktopRenamer SpaceAPI" : {
       "shouldTranslate" : false
     },
-    "Disabled" : {
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "已停用"
-          }
-        }
-      }
-    },
     "Dock Automation" : {
       "localizations" : {
         "zh-Hans" : {
@@ -652,16 +632,6 @@
         }
       }
     },
-    "Granted" : {
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "已授权"
-          }
-        }
-      }
-    },
     "Hide" : {
       "comment" : "Action: Hide Window",
       "localizations" : {
@@ -674,6 +644,7 @@
       }
     },
     "Hide Definitions" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -694,6 +665,7 @@
       }
     },
     "If the status shows 'Granted' but automation isn't working, try removing SpaceSwitcher from the list in System Settings and re-adding it." : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -944,16 +916,6 @@
         }
       }
     },
-    "Needs Access" : {
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "需要权限"
-          }
-        }
-      }
-    },
     "OK" : {
       "shouldTranslate" : false
     },
@@ -1088,6 +1050,7 @@
       }
     },
     "Required for reading active applications and controlling their visibility in automation rules." : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -1098,6 +1061,7 @@
       }
     },
     "Required for reading desktop spaces and using space-based automation." : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -1108,6 +1072,7 @@
       }
     },
     "Required for sending the keyboard shortcuts used by automation rules." : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -1203,19 +1168,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "保存规则"
-          }
-        }
-      }
-    },
-    "SpaceAPI" : {
-      "shouldTranslate" : false
-    },
-    "SpaceSwitcher uses DesktopRenamer's SpaceAPI to read the current desktop." : {
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "SpaceSwitcher 使用 DesktopRenamer 的 SpaceAPI 读取当前桌面。"
           }
         }
       }
@@ -1401,16 +1353,6 @@
         }
       }
     },
-    "Status" : {
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "状态"
-          }
-        }
-      }
-    },
     "The default set is used for any space that doesn't have a specific assignment." : {
       "localizations" : {
         "zh-Hans" : {
@@ -1457,16 +1399,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "这将移除 %@ 的规则。"
-          }
-        }
-      }
-    },
-    "Unavailable" : {
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "不可用"
           }
         }
       }

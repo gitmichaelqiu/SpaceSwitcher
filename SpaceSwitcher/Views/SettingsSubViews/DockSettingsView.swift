@@ -199,10 +199,12 @@ private struct DockSetTabBar: View {
                 pickerWidth = width
             }
 
-            Menu {
-                Button("New Dock Set", systemImage: "plus", action: onCreate)
+            Button("New Dock Set", systemImage: "plus", action: onCreate)
+                .buttonStyle(.bordered)
+                .controlSize(.small)
 
-                if let selectedSet {
+            if let selectedSet, canManageSelectedSet {
+                Menu {
                     if dockManager.config.defaultDockSetID != selectedSet.id {
                         Button("Make Default", systemImage: "star") {
                             onMakeDefault(selectedSet)
@@ -214,17 +216,23 @@ private struct DockSetTabBar: View {
                             onDelete(selectedSet)
                         }
                     }
+                } label: {
+                    Image(systemName: "ellipsis.circle")
+                        .font(.system(size: 16))
+                        .frame(width: 28, height: 28)
+                        .contentShape(Rectangle())
                 }
-            } label: {
-                Image(systemName: "ellipsis.circle")
-                    .font(.system(size: 16))
-                    .frame(width: 28, height: 28)
-                    .contentShape(Rectangle())
+                .menuStyle(.borderlessButton)
+                .help("Manage Dock Sets")
             }
-            .menuStyle(.borderlessButton)
-            .help("Manage Dock Sets")
         }
         .frame(maxWidth: .infinity)
+    }
+
+    private var canManageSelectedSet: Bool {
+        guard let selectedSet else { return false }
+        return dockManager.config.defaultDockSetID != selectedSet.id
+            || dockManager.config.dockSets.count > 1
     }
 
     private var measuredPicker: some View {

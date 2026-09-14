@@ -59,51 +59,10 @@ struct RuleEditor: View {
     
     private var appSelectorHeader: some View {
         HStack(alignment: .center, spacing: 16) {
-            // Icon
-            Menu {
-                if !runningApps.isEmpty {
-                    Section("Running Applications") {
-                        ForEach(runningApps, id: \.id) { app in
-                            Button { selectApp(name: app.name, id: app.id) } label: {
-                                HStack {
-                                    Image(nsImage: app.icon)
-                                    Text(app.name)
-                                }
-                            }
-                        }
-                    }
-                }
-                Divider()
-                Button("Choose from Applications...") { pickOtherApp() }
-            } label: {
-                HStack(spacing: 12) {
-                    selectedAppIcon
-                        .frame(width: 40, height: 40)
+            applicationPicker
 
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("Application")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                        Text(workingRule.appBundleID.isEmpty ? "Select Application" : workingRule.appName)
-                            .font(.headline)
-                            .lineLimit(1)
-                        Text(workingRule.appBundleID.isEmpty ? "No selection" : workingRule.appBundleID)
-                            .font(.caption.monospaced())
-                            .foregroundStyle(.secondary)
-                            .lineLimit(1)
-                    }
-
-                    Image(systemName: "chevron.up.chevron.down")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-                .contentShape(Rectangle())
-            }
-            .menuStyle(.borderlessButton)
-            .fixedSize(horizontal: false, vertical: true)
-            
             Spacer()
-            
+
             Button {
                 showingLegend.toggle()
             } label: {
@@ -122,6 +81,63 @@ struct RuleEditor: View {
         .padding(.horizontal, 16)
         .padding(.vertical, 10)
         .background(.bar)
+    }
+
+    @ViewBuilder
+    private var applicationPicker: some View {
+        if runningApps.isEmpty {
+            Button(action: pickOtherApp) {
+                applicationPickerLabel
+            }
+            .buttonStyle(.borderless)
+            .help("Choose an application")
+        } else {
+            Menu {
+                Section("Running Applications") {
+                    ForEach(runningApps, id: \.id) { app in
+                        Button { selectApp(name: app.name, id: app.id) } label: {
+                            HStack {
+                                Image(nsImage: app.icon)
+                                Text(app.name)
+                            }
+                        }
+                    }
+                }
+                Divider()
+                Button("Choose from Applications...") { pickOtherApp() }
+            } label: {
+                applicationPickerLabel
+            }
+            .menuStyle(.borderlessButton)
+            .fixedSize(horizontal: false, vertical: true)
+        }
+    }
+
+    private var applicationPickerLabel: some View {
+        HStack(spacing: 12) {
+            selectedAppIcon
+                .frame(width: 40, height: 40)
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Application")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                Text(workingRule.appBundleID.isEmpty ? "Select Application" : workingRule.appName)
+                    .font(.headline)
+                    .lineLimit(1)
+                Text(workingRule.appBundleID.isEmpty ? "No selection" : workingRule.appBundleID)
+                    .font(.caption.monospaced())
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+            }
+
+            if !runningApps.isEmpty {
+                Image(systemName: "chevron.up.chevron.down")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .contentShape(Rectangle())
     }
 
     @ViewBuilder

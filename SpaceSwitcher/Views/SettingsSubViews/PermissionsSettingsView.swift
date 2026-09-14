@@ -14,7 +14,7 @@ struct PermissionsSettingsView: View {
                 SettingsSection("Permissions") {
                     SettingsRow("Accessibility") {
                         HStack(spacing: 8) {
-                            PermissionStatusView(isGranted: permissionManager.isAccessibilityGranted)
+                            PermissionStatusIcon(isGranted: permissionManager.isAccessibilityGranted)
 
                             Button(permissionManager.isAccessibilityGranted ? "Settings" : "Grant") {
                                 permissionManager.requestAccessibilityPermission()
@@ -26,7 +26,7 @@ struct PermissionsSettingsView: View {
 
                     SettingsRow("Input Events") {
                         HStack(spacing: 8) {
-                            PermissionStatusView(isGranted: permissionManager.isEventSynthesisGranted)
+                            PermissionStatusIcon(isGranted: permissionManager.isEventSynthesisGranted)
 
                             Button(permissionManager.isEventSynthesisGranted ? "Settings" : "Grant") {
                                 permissionManager.requestAccessibilityPermission()
@@ -36,13 +36,9 @@ struct PermissionsSettingsView: View {
 
                     Divider()
 
-                }
-
-                SettingsSection(
-                    "SpaceAPI",
-                    helperText: "SpaceSwitcher uses DesktopRenamer's SpaceAPI to read the current desktop."
-                ) {
-                    SettingsRow("Status") {
+                    SettingsRow(
+                        "DesktopRenamer SpaceAPI"
+                    ) {
                         SpaceAPIStatusView(spaceManager: spaceManager)
                     }
                 }
@@ -65,17 +61,17 @@ struct SpaceAPIStatusView: View {
         HStack(spacing: 8) {
             switch spaceManager.apiAvailability {
             case .available:
-                SpaceAPIStatusLabel(title: "Connected", color: .green)
+                PermissionStatusIcon(isGranted: true)
                 Button("Open DesktopRenamer") {
                     spaceManager.openDesktopRenamer()
                 }
             case .disabled:
-                SpaceAPIStatusLabel(title: "Disabled", color: .orange)
+                PermissionStatusIcon(isGranted: false)
                 Button("Open DesktopRenamer") {
                     spaceManager.openDesktopRenamer()
                 }
             case .unavailable:
-                SpaceAPIStatusLabel(title: "Unavailable", color: .red)
+                PermissionStatusIcon(isGranted: false)
                 Button("Launch DesktopRenamer") {
                     spaceManager.openDesktopRenamer()
                 }
@@ -90,36 +86,11 @@ struct SpaceAPIStatusView: View {
     }
 }
 
-struct PermissionStatusView: View {
+struct PermissionStatusIcon: View {
     let isGranted: Bool
 
-    private var statusTitle: LocalizedStringKey {
-        isGranted ? "Granted" : "Needs Access"
-    }
-
     var body: some View {
-        HStack(spacing: 6) {
-            Image(systemName: isGranted ? "checkmark.circle.fill" : "xmark.circle.fill")
-                .foregroundStyle(isGranted ? .green : .red)
-
-            Text(statusTitle)
-                .foregroundStyle(.secondary)
-        }
-    }
-}
-
-struct SpaceAPIStatusLabel: View {
-    let title: LocalizedStringKey
-    let color: Color
-
-    var body: some View {
-        HStack(spacing: 6) {
-            Image(systemName: "circle.fill")
-                .font(.system(size: 8))
-                .foregroundStyle(color)
-
-            Text(title)
-                .foregroundStyle(.secondary)
-        }
+        Image(systemName: isGranted ? "checkmark.circle.fill" : "xmark.circle.fill")
+            .foregroundStyle(isGranted ? .green : .red)
     }
 }

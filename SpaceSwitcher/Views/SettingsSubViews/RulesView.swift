@@ -201,14 +201,13 @@ struct RuleRow: View {
                 .disabled(!isGlobalEnabled)
                 .help(isGlobalEnabled ? "Enable or disable this rule." : "Enable Automation above to use individual rules.")
 
-                Menu {
-                    Button("Delete", systemImage: "trash", role: .destructive, action: onDelete)
-                } label: {
-                    Image(systemName: "ellipsis.circle")
+                Button(role: .destructive, action: onDelete) {
+                    Image(systemName: "trash")
                 }
-                .menuStyle(.borderlessButton)
+                .buttonStyle(.borderless)
                 .controlSize(.small)
-                .help("Rule Actions")
+                .help("Delete Rule")
+                .accessibilityLabel("Delete Rule")
             }
             .padding(12)
 
