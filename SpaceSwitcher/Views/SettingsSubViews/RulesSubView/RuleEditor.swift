@@ -2,6 +2,7 @@ import SwiftUI
 import UniformTypeIdentifiers
 
 struct RuleEditor: View {
+    private let initialRule: AppRule
     @State private var workingRule: AppRule
     let availableSpaces: [SpaceInfo]
     let onSave: (AppRule) -> Void
@@ -11,6 +12,7 @@ struct RuleEditor: View {
     @State private var groupPendingDeletion: UUID?
     
     init(rule: AppRule, availableSpaces: [SpaceInfo], onSave: @escaping (AppRule) -> Void, onCancel: @escaping () -> Void) {
+        self.initialRule = rule
         self._workingRule = State(wrappedValue: rule)
         self.availableSpaces = availableSpaces
         self.onSave = onSave
@@ -31,7 +33,12 @@ struct RuleEditor: View {
             footerView
         }
         .frame(minWidth: 700, idealWidth: 820, minHeight: 500, idealHeight: 620)
-        .onAppear { loadRunningApps() }
+        .onAppear {
+            // Sheets can reuse their content between presentations. Always start
+            // from the rule that was selected for this presentation.
+            workingRule = initialRule
+            loadRunningApps()
+        }
         .confirmationDialog(
             "Remove Workflow Group?",
             isPresented: Binding(
@@ -119,13 +126,10 @@ struct RuleEditor: View {
                 .frame(width: 40, height: 40)
 
             VStack(alignment: .leading, spacing: 2) {
-                Text("Application")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                Text(workingRule.appBundleID.isEmpty ? "Select Application" : workingRule.appName)
+                Text(selectedApplicationName)
                     .font(.headline)
                     .lineLimit(1)
-                Text(workingRule.appBundleID.isEmpty ? "No selection" : workingRule.appBundleID)
+                Text(workingRule.appBundleID.isEmpty ? "Choose an application" : workingRule.appBundleID)
                     .font(.caption.monospaced())
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
@@ -138,12 +142,33 @@ struct RuleEditor: View {
             }
         }
         .contentShape(Rectangle())
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel(workingRule.appBundleID.isEmpty ? "Choose an application" : selectedApplicationName)
+    }
+
+    private var selectedApplicationName: String {
+        guard !workingRule.appBundleID.isEmpty else { return "Choose an application" }
+
+        if let bundle = selectedApplicationURL.flatMap(Bundle.init(url:)) {
+            let info = bundle.localizedInfoDictionary ?? bundle.infoDictionary
+            if let displayName = info?["CFBundleDisplayName"] as? String, !displayName.isEmpty {
+                return displayName
+            }
+            if let name = info?["CFBundleName"] as? String, !name.isEmpty {
+                return name
+            }
+        }
+
+        return workingRule.appName.isEmpty ? workingRule.appBundleID : workingRule.appName
+    }
+
+    private var selectedApplicationURL: URL? {
+        NSWorkspace.shared.urlForApplication(withBundleIdentifier: workingRule.appBundleID)
     }
 
     @ViewBuilder
     private var selectedAppIcon: some View {
-        if !workingRule.appBundleID.isEmpty,
-           let path = NSWorkspace.shared.urlForApplication(withBundleIdentifier: workingRule.appBundleID)?.path {
+        if let path = selectedApplicationURL?.path {
             Image(nsImage: NSWorkspace.shared.icon(forFile: path))
                 .resizable()
                 .aspectRatio(contentMode: .fit)
@@ -352,7 +377,7 @@ struct RuleEditor: View {
             if response == .OK, let url = panel.url {
                 let b = Bundle(url: url)
                 let id = b?.bundleIdentifier ?? ""
-                let name = (b?.infoDictionary?["CFBundleName"] as? String) ?? url.deletingPathExtension().lastPathComponent
+                let name = applicationName(for: b, fallback: url.deletingPathExtension().lastPathComponent)
                 if !id.isEmpty {
                     DispatchQueue.main.async {
                         self.selectApp(name: name, id: id)
@@ -360,6 +385,13 @@ struct RuleEditor: View {
                 }
             }
         }
+    }
+
+    private func applicationName(for bundle: Bundle?, fallback: String) -> String {
+        let info = bundle?.localizedInfoDictionary ?? bundle?.infoDictionary
+        return (info?["CFBundleDisplayName"] as? String)
+            ?? (info?["CFBundleName"] as? String)
+            ?? fallback
     }
     
     private func loadRunningApps() {

@@ -5,9 +5,20 @@ struct RulesView: View {
     @ObservedObject var spaceManager: SpaceManager
     @StateObject private var permissionManager = PermissionManager.shared
     
-    @State private var showingAddRule = false
-    @State private var selectedRule: AppRule?
+    @State private var presentedRuleSheet: RuleSheet?
     @State private var rulePendingDeletion: AppRule?
+
+    private enum RuleSheet: Identifiable {
+        case add(AppRule)
+        case edit(AppRule)
+
+        var id: String {
+            switch self {
+            case .add(let rule): return "add-\(rule.id.uuidString)"
+            case .edit(let rule): return "edit-\(rule.id.uuidString)"
+            }
+        }
+    }
     
     var body: some View {
         SettingsContainer(.rules) {
@@ -38,7 +49,7 @@ struct RulesView: View {
                                 rule: rule,
                                 availableSpaces: spaceManager.availableSpaces,
                                 isGlobalEnabled: ruleManager.isAutomationEnabled,
-                                onEdit: { selectedRule = rule },
+                                onEdit: { presentedRuleSheet = .edit(rule) },
                                 onDelete: { rulePendingDeletion = rule },
                                 onToggle: { updatedRule in
                                     ruleManager.updateRule(updatedRule)
@@ -49,7 +60,7 @@ struct RulesView: View {
                     }
                     
                     Button {
-                        showingAddRule = true
+                        presentNewRuleEditor()
                     } label: {
                         Label("Add New Rule", systemImage: "plus")
                     }
@@ -62,33 +73,35 @@ struct RulesView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("AddRuleRequest"))) { _ in
-            showingAddRule = true
+            presentNewRuleEditor()
         }
-        .sheet(isPresented: $showingAddRule) {
-            RuleEditor(
-                rule: AppRule(appBundleID: "", appName: "", groups: [], elseActions: []),
-                availableSpaces: spaceManager.availableSpaces,
-                onSave: { newRule in
-                    withAnimation {
-                        ruleManager.addRule(newRule)
-                        showingAddRule = false
-                    }
-                },
-                onCancel: { showingAddRule = false }
-            )
-        }
-        .sheet(item: $selectedRule) { rule in
-            RuleEditor(
-                rule: rule,
-                availableSpaces: spaceManager.availableSpaces,
-                onSave: { updatedRule in
-                    withAnimation {
-                        ruleManager.updateRule(updatedRule)
-                        selectedRule = nil
-                    }
-                },
-                onCancel: { selectedRule = nil }
-            )
+        .sheet(item: $presentedRuleSheet) { sheet in
+            switch sheet {
+            case .add(let rule):
+                RuleEditor(
+                    rule: rule,
+                    availableSpaces: spaceManager.availableSpaces,
+                    onSave: { newRule in
+                        withAnimation {
+                            ruleManager.addRule(newRule)
+                            presentedRuleSheet = nil
+                        }
+                    },
+                    onCancel: { presentedRuleSheet = nil }
+                )
+            case .edit(let rule):
+                RuleEditor(
+                    rule: rule,
+                    availableSpaces: spaceManager.availableSpaces,
+                    onSave: { updatedRule in
+                        withAnimation {
+                            ruleManager.updateRule(updatedRule)
+                            presentedRuleSheet = nil
+                        }
+                    },
+                    onCancel: { presentedRuleSheet = nil }
+                )
+            }
         }
         .confirmationDialog(
             "Delete Rule?",
@@ -124,7 +137,7 @@ struct RulesView: View {
                     Text("Create a rule to control applications by desktop space.")
                 } actions: {
                     Button("Create First Rule") {
-                        showingAddRule = true
+                        presentNewRuleEditor()
                     }
                     .buttonStyle(.borderedProminent)
                 }
@@ -136,7 +149,7 @@ struct RulesView: View {
                     Text("No automation rules yet.")
                         .foregroundStyle(.secondary)
                     Button("Create First Rule") {
-                        showingAddRule = true
+                        presentNewRuleEditor()
                     }
                     .buttonStyle(.borderedProminent)
                 }
@@ -144,6 +157,12 @@ struct RulesView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .padding(.top, 40)
+    }
+
+    private func presentNewRuleEditor() {
+        presentedRuleSheet = .add(
+            AppRule(appBundleID: "", appName: "", groups: [], elseActions: [])
+        )
     }
 }
 

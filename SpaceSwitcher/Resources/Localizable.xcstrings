@@ -332,6 +332,16 @@
         }
       }
     },
+    "Choose an application" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "选择应用程序"
+          }
+        }
+      }
+    },
     "Choose an application before saving." : {
       "localizations" : {
         "zh-Hans" : {
