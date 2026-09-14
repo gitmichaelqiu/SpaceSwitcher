@@ -4,41 +4,6 @@ import Combine
 import AppKit
 import ServiceManagement
 
-// MARK: - Sidebar Fix
-extension NSSplitViewItem {
-    @nonobjc private static let swizzler: () = {
-        let originalSelector = #selector(getter: canCollapse)
-        let swizzledSelector = #selector(getter: swizzledCanCollapse)
-
-        guard
-            let originalMethod = class_getInstanceMethod(NSSplitViewItem.self, originalSelector),
-            let swizzledMethod = class_getInstanceMethod(NSSplitViewItem.self, swizzledSelector)
-        else { return }
-
-        method_exchangeImplementations(originalMethod, swizzledMethod)
-    }()
-
-    @objc private var swizzledCanCollapse: Bool {
-        // If this split view item belongs to our specific Settings Window, return false
-        if let window = viewController.view.window,
-           window.identifier?.rawValue == "SettingsWindow" {
-            return false
-        }
-        return self.swizzledCanCollapse
-    }
-
-    static func swizzle() {
-        _ = swizzler
-    }
-}
-
-@available(macOS 14.0, *)
-extension View {
-    func removeSidebarToggle() -> some View {
-        toolbar(removing: .sidebarToggle)
-    }
-}
-
 // MARK: - App State
 class AppState: ObservableObject {
     dynamic let spaceManager: SpaceManager
@@ -118,11 +83,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCenterDele
 @main
 struct SpaceSwitcherApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
-    
-    init() {
-        NSSplitViewItem.swizzle()
-    }
-    
+
     var body: some Scene {
         Settings { EmptyView() }
         .commands {

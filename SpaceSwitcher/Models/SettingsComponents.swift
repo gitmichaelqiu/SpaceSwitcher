@@ -150,10 +150,10 @@ struct SettingsRow<Content: View>: View {
     }
 
     var body: some View {
-        HStack {
+        HStack(alignment: .firstTextBaseline, spacing: 16) {
             HStack(spacing: 4) {
                 Text(highlightedText(text: String(localized: title), query: navigationState.searchText))
-                    .frame(alignment: .leading)
+                    .layoutPriority(1)
 
                 if let helperText {
                     HelperInfoButton(text: helperText)
@@ -168,7 +168,7 @@ struct SettingsRow<Content: View>: View {
             .frame(maxWidth: .infinity, alignment: .leading)
 
             content
-                .frame(alignment: .trailing)
+                .fixedSize(horizontal: true, vertical: false)
         }
         .padding(.vertical, 6)
         .padding(.horizontal, 10)
@@ -330,7 +330,6 @@ struct SettingsSection<Content: View, Accessory: View>: View {
                     )
             )
         }
-        .padding(.top, title == nil ? -10 : 0)
     }
 }
 
@@ -380,24 +379,9 @@ struct WarningInfoButton: View {
     }
 }
 
-struct IsSettingsPreRenderingKey: EnvironmentKey {
-    static let defaultValue = false
-}
-
-struct SettingsTabKey: EnvironmentKey {
-    static let defaultValue: SettingsTab = .general
-}
-
 extension EnvironmentValues {
-    var isSettingsPreRendering: Bool {
-        get { self[IsSettingsPreRenderingKey.self] }
-        set { self[IsSettingsPreRenderingKey.self] = newValue }
-    }
-
-    var settingsTab: SettingsTab {
-        get { self[SettingsTabKey.self] }
-        set { self[SettingsTabKey.self] = newValue }
-    }
+    @Entry var isSettingsPreRendering = false
+    @Entry var settingsTab: SettingsTab = .general
 }
 
 struct SliderSettingsRow<V>: View where V: BinaryFloatingPoint, V.Stride: BinaryFloatingPoint {

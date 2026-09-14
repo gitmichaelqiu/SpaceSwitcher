@@ -27,8 +27,8 @@ enum SettingsTab: String, CaseIterable, Identifiable, Hashable {
 }
 
 let sidebarWidth: CGFloat = 180
-let defaultSettingsWindowWidth = 1100
-let defaultSettingsWindowHeight = 650
+let defaultSettingsWindowWidth = 900
+let defaultSettingsWindowHeight = 600
 let sidebarRowHeight: CGFloat = 32
 let sidebarFontSize: CGFloat = 16
 let titleHeaderHeight: CGFloat = 48
@@ -40,6 +40,7 @@ struct SettingsView: View {
 
     @StateObject private var navigationState = SettingsNavigationState()
     @State private var selectedTab: SettingsTab?
+    @State private var columnVisibility: NavigationSplitViewVisibility = .all
     @State private var searchText = ""
     @State private var isIndexingSettings = true
 
@@ -57,7 +58,7 @@ struct SettingsView: View {
 
     var body: some View {
         ZStack {
-            NavigationSplitView(columnVisibility: .constant(.all)) {
+            NavigationSplitView(columnVisibility: $columnVisibility) {
                 sidebar
             } detail: {
                 detailView
@@ -90,7 +91,6 @@ struct SettingsView: View {
         }
         .environmentObject(navigationState)
         .navigationTitle("")
-        .modifier(ToolbarHider())
         .ignoresSafeArea(edges: .top)
         // The minimum preserves the original usable size; the infinity
         // bounds keep the settings window genuinely resizable.
@@ -238,7 +238,6 @@ struct SettingsView: View {
         }
         .listStyle(.sidebar)
         .scrollDisabled(true)
-        .modifier(SidebarToggleRemover())
         .navigationSplitViewColumnWidth(min: sidebarWidth, ideal: sidebarWidth)
         .ignoresSafeArea(edges: .top)
     }
@@ -299,15 +298,6 @@ struct SettingsView: View {
         .ignoresSafeArea(edges: .top)
     }
 
-    struct ToolbarHider: ViewModifier {
-        func body(content: Content) -> some View {
-            if #available(macOS 14.0, *) {
-                content.toolbar(.hidden, for: .windowToolbar)
-            } else {
-                content
-            }
-        }
-    }
 }
 
 class SettingsHostingController: NSHostingController<SettingsView> {
@@ -336,15 +326,5 @@ class SettingsHostingController: NSHostingController<SettingsView> {
             width: defaultSettingsWindowWidth,
             height: defaultSettingsWindowHeight
         )
-    }
-}
-
-struct SidebarToggleRemover: ViewModifier {
-    func body(content: Content) -> some View {
-        if #available(macOS 14.0, *) {
-            content.toolbar(removing: .sidebarToggle)
-        } else {
-            content
-        }
     }
 }

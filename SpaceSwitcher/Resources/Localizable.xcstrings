@@ -15,7 +15,8 @@
             "value" : "© %@ Michael Yicheng Qiu"
           }
         }
-      }
+      },
+      "shouldTranslate" : false
     },
     "↺" : {
       "shouldTranslate" : false
@@ -60,22 +61,33 @@
         }
       }
     },
+    "Accessibility permission" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "辅助功能权限"
+          }
+        }
+      }
+    },
+    "Connected" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已连接"
+          }
+        }
+      }
+    },
     "Acknowledgements" : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "致谢"
-          }
-        }
-      }
-    },
-    "Accessibility permission" : {
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "辅助功能权限"
           }
         }
       }
@@ -469,6 +481,16 @@
     "DesktopRenamer SpaceAPI" : {
       "shouldTranslate" : false
     },
+    "Disabled" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已停用"
+          }
+        }
+      }
+    },
     "Dock Automation" : {
       "localizations" : {
         "zh-Hans" : {
@@ -580,6 +602,7 @@
       }
     },
     "Fallback Behavior" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -625,6 +648,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "授权"
+          }
+        }
+      }
+    },
+    "Granted" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已授权"
           }
         }
       }
@@ -911,6 +944,16 @@
         }
       }
     },
+    "Needs Access" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "需要权限"
+          }
+        }
+      }
+    },
     "OK" : {
       "shouldTranslate" : false
     },
@@ -1144,16 +1187,6 @@
         }
       }
     },
-    "Screen Recording permission" : {
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "屏幕录制权限"
-          }
-        }
-      }
-    },
     "Running Applications" : {
       "localizations" : {
         "zh-Hans" : {
@@ -1170,6 +1203,30 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "保存规则"
+          }
+        }
+      }
+    },
+    "SpaceAPI" : {
+      "shouldTranslate" : false
+    },
+    "SpaceSwitcher uses DesktopRenamer's SpaceAPI to read the current desktop." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "SpaceSwitcher 使用 DesktopRenamer 的 SpaceAPI 读取当前桌面。"
+          }
+        }
+      }
+    },
+    "Screen Recording permission" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "屏幕录制权限"
           }
         }
       }
@@ -1344,6 +1401,16 @@
         }
       }
     },
+    "Status" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "状态"
+          }
+        }
+      }
+    },
     "The default set is used for any space that doesn't have a specific assignment." : {
       "localizations" : {
         "zh-Hans" : {
@@ -1394,6 +1461,16 @@
         }
       }
     },
+    "Unavailable" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "不可用"
+          }
+        }
+      }
+    },
     "v%@" : {
       "localizations" : {
         "en" : {
@@ -1421,6 +1498,7 @@
       }
     },
     "When disabled, all automation rules will be ignored." : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {

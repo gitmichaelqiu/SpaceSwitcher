@@ -8,8 +8,6 @@ struct RuleEditor: View {
     let onCancel: () -> Void
     @State private var runningApps: [(name: String, id: String, icon: NSImage)] = []
     @State private var showingLegend = false
-    @State private var legendWidth: CGFloat = 260
-    @State private var legendDragStartWidth: CGFloat?
     @State private var groupPendingDeletion: UUID?
     
     init(rule: AppRule, availableSpaces: [SpaceInfo], onSave: @escaping (AppRule) -> Void, onCancel: @escaping () -> Void) {
@@ -26,7 +24,7 @@ struct RuleEditor: View {
             
             Divider()
             
-            mainSplitView
+            editorContent
             
             Divider()
             
@@ -107,21 +105,23 @@ struct RuleEditor: View {
             Spacer()
             
             Button {
-                withAnimation(.easeInOut(duration: 0.35)) {
-                    showingLegend.toggle()
-                }
+                showingLegend.toggle()
             } label: {
                 Label(
-                    showingLegend ? "Hide Definitions" : "Action Definitions",
-                    systemImage: showingLegend ? "info.circle.fill" : "info.circle"
+                    "Action Definitions",
+                    systemImage: "info.circle"
                 )
             }
             .buttonStyle(.bordered)
             .controlSize(.small)
+            .help("Action Definitions")
+            .popover(isPresented: $showingLegend, arrowEdge: .top) {
+                actionDefinitionsPopover
+            }
         }
         .padding(.horizontal, 16)
-        .padding(.vertical, 12)
-        .background(Color(NSColor.windowBackgroundColor))
+        .padding(.vertical, 10)
+        .background(.bar)
     }
 
     @ViewBuilder
@@ -139,105 +139,69 @@ struct RuleEditor: View {
         }
     }
     
-    private var mainSplitView: some View {
-        HStack(spacing: 0) {
-            ScrollView(.vertical) {
-                VStack(alignment: .leading, spacing: 12) {
-                    // --- WORKFLOW GROUPS ---
-                    ForEach($workingRule.groups) { $group in
-                        let index = workingRule.groups.firstIndex(where: { $0.id == group.id }) ?? 0
-                        SettingsSection(
-                            String(format: NSLocalizedString("Workflow Group %lld", comment: ""), index + 1),
-                            accessory: {
-                                Button("Remove", systemImage: "trash", role: .destructive) {
-                                    groupPendingDeletion = group.id
-                                }
-                                .buttonStyle(.borderless)
-                            }) {
-                            SpaceConditionRow(
-                                group: $group,
-                                availableSpaces: availableSpaces
-                            )
-
-                            ActionListRows(actions: $group.actions)
-
-                            AddActionRow {
-                                actionMenu(for: group.id)
+    private var editorContent: some View {
+        ScrollView(.vertical) {
+            VStack(alignment: .leading, spacing: 20) {
+                ForEach($workingRule.groups) { $group in
+                    let index = workingRule.groups.firstIndex(where: { $0.id == group.id }) ?? 0
+                    SettingsSection(
+                        String(format: NSLocalizedString("Workflow Group %lld", comment: ""), index + 1),
+                        accessory: {
+                            Button("Remove", systemImage: "trash", role: .destructive) {
+                                groupPendingDeletion = group.id
                             }
-                        }
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                    }
+                            .buttonStyle(.borderless)
+                            .controlSize(.small)
+                        }) {
+                        SpaceConditionRow(
+                            group: $group,
+                            availableSpaces: availableSpaces
+                        )
 
-                    // --- ADD GROUP BUTTON ---
-                    Button {
-                        withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-                            workingRule.groups.append(RuleGroup(targetSpaceIDs: [], actions: []))
-                        }
-                    } label: {
-                        Label("Add Workflow Group", systemImage: "plus")
-                    }
-                    .buttonStyle(.bordered)
-                    .frame(maxWidth: .infinity, alignment: .center)
-
-                    // --- FALLBACK SECTION ---
-                    SettingsSection("Fallback Behavior", helperText: "Actions used when no workflow group matches the current space.") {
-                        if workingRule.elseActions.isEmpty {
-                            Label("No fallback actions", systemImage: "arrow.turn.down.right")
-                                .foregroundStyle(.secondary)
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                                .padding(.horizontal, 10)
-                                .padding(.vertical, 10)
-                        } else {
-                            ActionListRows(actions: $workingRule.elseActions)
-                        }
+                        ActionListRows(actions: $group.actions)
 
                         AddActionRow {
-                            actionMenu { action in
-                                withAnimation {
-                                    workingRule.elseActions.append(ActionItem(action))
-                                }
+                            actionMenu(for: group.id)
+                        }
+                    }
+                }
+
+                Button {
+                    withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                        workingRule.groups.append(RuleGroup(targetSpaceIDs: [], actions: []))
+                    }
+                } label: {
+                    Label("Add Workflow Group", systemImage: "plus")
+                }
+                .buttonStyle(.bordered)
+                .frame(maxWidth: .infinity, alignment: .center)
+
+                SettingsSection("Fallback Behavior", helperText: "Actions used when no workflow group matches the current space.") {
+                    if workingRule.elseActions.isEmpty {
+                        Label("No fallback actions", systemImage: "arrow.turn.down.right")
+                            .foregroundStyle(.secondary)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 10)
+                    } else {
+                        ActionListRows(actions: $workingRule.elseActions)
+                    }
+
+                    AddActionRow {
+                        actionMenu { action in
+                            withAnimation {
+                                workingRule.elseActions.append(ActionItem(action))
                             }
                         }
                     }
-                    .padding(.bottom, 4)
                 }
-                .padding(12)
             }
-            .animation(.easeInOut(duration: 0.35), value: workingRule.groups)
-            .background(Color.clear)
-            
-            // Custom Draggable Divider & Sidebar
-            if showingLegend {
-                Rectangle()
-                    .fill(Color.primary.opacity(0.1))
-                    .frame(width: 1)
-                    .overlay(
-                        Color.clear
-                            .frame(width: 8)
-                            .contentShape(Rectangle())
-                    )
-                    .onHover { inside in
-                        if inside { NSCursor.resizeLeftRight.push() }
-                        else { NSCursor.pop() }
-                    }
-                    .gesture(
-                        DragGesture()
-                            .onChanged { value in
-                                let delta = value.translation.width
-                                let startWidth = legendDragStartWidth ?? legendWidth
-                                legendDragStartWidth = startWidth
-                                let newWidth = startWidth - delta
-                                legendWidth = max(200, min(400, newWidth))
-                            }
-                            .onEnded { _ in legendDragStartWidth = nil }
-                    )
-                
-                legendSidebar
-                    .frame(width: legendWidth)
-                    .transition(.move(edge: .trailing).combined(with: .opacity))
-            }
+            .padding(.horizontal, 20)
+            .padding(.vertical, 16)
+            .frame(maxWidth: .infinity, alignment: .leading)
         }
-        .animation(.easeInOut(duration: 0.35), value: showingLegend)
+        .background(Color(nsColor: .windowBackgroundColor))
+        .animation(.easeInOut(duration: 0.25), value: workingRule.groups)
     }
     
     private var footerView: some View {
@@ -391,32 +355,21 @@ struct RuleEditor: View {
         ) }.sorted { $0.name < $1.name }
     }
     
-    @ViewBuilder
-    private var legendSidebar: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            HStack(spacing: 8) {
-                Image(systemName: "info.circle.fill")
-                    .foregroundStyle(Color.accentColor)
+    private var actionDefinitionsPopover: some View {
+        ScrollView(.vertical) {
+            VStack(alignment: .leading, spacing: 16) {
                 Text("Action Definitions")
-                    .font(.system(size: 13, weight: .bold))
+                    .font(.headline)
+
+                legendItem(name: "Show", desc: "Forcefully unhide and unminimize the application, regardless of its previous state.")
+                legendItem(name: "Restore", desc: "Intelligent reversal. Only unhide and unminimize if SpaceSwitcher was the one that hid it earlier.")
+                legendItem(name: "Hide", desc: "Hide the application.")
+                legendItem(name: "Minimize", desc: "Minimize all windows of the application.")
+                legendItem(name: "Front", desc: "Activate the application and bring its windows to the foreground.")
             }
-            .padding(.top, 20)
-            
-            Divider()
-            
-            ScrollView(.vertical) {
-                VStack(alignment: .leading, spacing: 20) {
-                    legendItem(name: "Show", desc: "Forcefully unhide and unminimize the application, regardless of its previous state.")
-                    legendItem(name: "Restore", desc: "Intelligent reversal. Only unhide and unminimize if SpaceSwitcher was the one that hid it earlier.")
-                    legendItem(name: "Hide", desc: "Hide the application.")
-                    legendItem(name: "Minimize", desc: "Minimize all windows of the application.")
-                    legendItem(name: "Front", desc: "Activate the application and bring its windows to the foreground.")
-                }
-                .padding(.trailing, 8)
-            }
+            .padding(16)
         }
-        .padding(.horizontal, 16)
-        .background(Color(NSColor.controlBackgroundColor).opacity(0.3))
+        .frame(width: 300, height: 360)
     }
     
     @ViewBuilder
@@ -498,27 +451,28 @@ struct ActionListRows: View {
             ForEach($actions) { $item in
                 let itemID = item.id
                 let index = actions.firstIndex(where: { $0.id == itemID }) ?? 0
-                VStack(alignment: .leading, spacing: 0) {
-                    Divider()
-                    ActionRowContent(
-                        index: index,
-                        item: $item,
-                        canMoveUp: index > 0,
-                        canMoveDown: index < actions.count - 1,
-                        onMoveUp: {
-                            moveAction(id: itemID, by: -1)
-                        },
-                        onMoveDown: {
-                            moveAction(id: itemID, by: 1)
-                        },
-                        onDelete: {
-                            withAnimation {
-                                actions.removeAll { $0.id == itemID }
-                            }
+                ActionRowContent(
+                    index: index,
+                    item: $item,
+                    canMoveUp: index > 0,
+                    canMoveDown: index < actions.count - 1,
+                    onMoveUp: {
+                        moveAction(id: itemID, by: -1)
+                    },
+                    onMoveDown: {
+                        moveAction(id: itemID, by: 1)
+                    },
+                    onDelete: {
+                        withAnimation {
+                            actions.removeAll { $0.id == itemID }
                         }
-                    )
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 6)
+                    }
+                )
+                .padding(.horizontal, 12)
+                .padding(.vertical, 8)
+
+                if index < actions.count - 1 {
+                    Divider().padding(.leading, 46)
                 }
             }
         }
@@ -549,7 +503,6 @@ struct AddActionRow<Content: View>: View {
                     Label("Add Action", systemImage: "plus")
                 }
                 .menuStyle(.borderlessButton)
-                .tint(.accentColor)
                 .fixedSize()
                 Spacer()
             }

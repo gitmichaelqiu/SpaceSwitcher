@@ -10,7 +10,7 @@ class PermissionManager: ObservableObject {
     @Published var isEventSynthesisGranted: Bool = false
 
     var hasAccessibilityPermission: Bool {
-        isAccessibilityGranted && isEventSynthesisGranted
+        isAccessibilityGranted
     }
 
     private var becomeActiveObserver: NSObjectProtocol?

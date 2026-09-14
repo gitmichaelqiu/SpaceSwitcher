@@ -48,9 +48,6 @@ class SettingsWindowController: NSObject, NSWindowDelegate {
         win.titlebarAppearsTransparent = true
         win.titlebarSeparatorStyle = .none
         
-        // 3. REMOVE TOOLBAR: Ensures no extra space is reserved at the top
-        win.toolbar = nil
-        
         win.center()
         win.setFrameAutosaveName("Settings")
         win.isReleasedWhenClosed = false
