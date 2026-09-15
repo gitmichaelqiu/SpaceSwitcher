@@ -97,7 +97,8 @@ struct RuleEditor: View {
             Button(action: pickOtherApp) {
                 applicationPickerLabel
             }
-            .buttonStyle(.borderless)
+            .buttonStyle(.plain)
+            .foregroundStyle(.primary)
             .help("Choose an application")
         } else {
             Button {
@@ -105,7 +106,8 @@ struct RuleEditor: View {
             } label: {
                 applicationPickerLabel
             }
-            .buttonStyle(.borderless)
+            .buttonStyle(.plain)
+            .foregroundStyle(.primary)
             .fixedSize(horizontal: false, vertical: true)
             .popover(isPresented: $showingApplicationPicker, arrowEdge: .trailing) {
                 runningApplicationsPopover
@@ -176,6 +178,7 @@ struct RuleEditor: View {
             VStack(alignment: .leading, spacing: 2) {
                 Text(selectedApplicationName)
                     .font(.headline)
+                    .foregroundStyle(.primary)
                     .lineLimit(1)
                 Text(workingRule.appBundleID.isEmpty ? "Choose an application" : workingRule.appBundleID)
                     .font(.caption.monospaced())
@@ -551,7 +554,6 @@ struct ActionListRows: View {
                         onDelete: { removeAction(id: item.action.id) }
                     )
                     .padding(.horizontal, 12)
-                    .padding(.vertical, 6)
 
                     if !context.isLast {
                         Divider().padding(.leading, 46)
