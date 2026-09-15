@@ -367,18 +367,15 @@ struct BundleIdentifierText: View {
 
 enum SettingsComponentMetrics {
     static let iconButtonSize: CGFloat = 32
-    static let iconGlyphSize: CGFloat = 16
-    static let iconGlyphFrame: CGFloat = 18
 }
 
-struct SettingsIconLabel: View {
+struct SettingsDestructiveIconLabel: View {
     let systemName: String
 
     var body: some View {
         Image(systemName: systemName)
-            .font(.system(size: SettingsComponentMetrics.iconGlyphSize, weight: .medium))
-            .frame(width: SettingsComponentMetrics.iconGlyphFrame,
-                   height: SettingsComponentMetrics.iconGlyphFrame)
+            .font(.system(size: 12, weight: .bold))
+            .frame(width: 16, height: 16)
     }
 }
 

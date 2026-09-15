@@ -195,7 +195,7 @@ private struct DockSetTabBar: View {
             }
 
             Button(action: onCreate) {
-                SettingsIconLabel(systemName: "plus")
+                Image(systemName: "plus")
             }
                 .buttonStyle(.bordered)
                 .controlSize(.regular)
@@ -207,7 +207,7 @@ private struct DockSetTabBar: View {
                 Button(role: .destructive) {
                     onDelete(selectedSet)
                 } label: {
-                    SettingsIconLabel(systemName: "trash")
+                    Image(systemName: "trash")
                 }
                 .buttonStyle(.bordered)
                 .controlSize(.regular)
@@ -425,8 +425,10 @@ struct DockItemsListView: View {
                         Button { addSpacerToSelectedSet(isSmall: false) } label: { Label("Add Large Spacer", systemImage: "square") }
                         Button { addSpacerToSelectedSet(isSmall: true) } label: { Label("Add Small Spacer", systemImage: "square.dashed") }
                     } label: {
-                        SettingsIconLabel(systemName: "plus")
-                            .settingsIconControlFrame()
+                        Image(systemName: "plus")
+                            .font(.system(size: 15, weight: .medium))
+                            .frame(width: SettingsComponentMetrics.iconButtonSize,
+                                   height: SettingsComponentMetrics.iconButtonSize)
                     }
                     .menuStyle(.borderlessButton)
                     .controlSize(.regular)
@@ -605,11 +607,10 @@ struct DockTileRow: View {
             Spacer()
 
             Button(role: .destructive, action: onDelete) {
-                SettingsIconLabel(systemName: "trash")
+                SettingsDestructiveIconLabel(systemName: "trash")
             }
             .buttonStyle(.borderless)
             .controlSize(.regular)
-            .settingsIconControlFrame()
             .help("Remove Dock Item")
             .accessibilityLabel("Remove Dock Item")
         }

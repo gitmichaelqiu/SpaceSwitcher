@@ -225,11 +225,10 @@ struct RuleRow: View {
                 .help("Edit Rule")
 
                 Button(role: .destructive, action: onDelete) {
-                    SettingsIconLabel(systemName: "trash")
+                    SettingsDestructiveIconLabel(systemName: "trash")
                 }
                 .buttonStyle(.borderless)
                 .controlSize(.regular)
-                .settingsIconControlFrame()
                 .help("Delete Rule")
                 .accessibilityLabel("Delete Rule")
             }

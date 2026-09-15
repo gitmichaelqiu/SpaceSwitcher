@@ -244,11 +244,10 @@ struct RuleEditor: View {
                             Button(role: .destructive) {
                                 groupPendingDeletion = group.id
                             } label: {
-                                SettingsIconLabel(systemName: "trash")
+                                SettingsDestructiveIconLabel(systemName: "trash")
                             }
                             .buttonStyle(.borderless)
                             .controlSize(.regular)
-                            .settingsIconControlFrame()
                             .help("Remove Workflow Group")
                             .accessibilityLabel("Remove Workflow Group")
                         }) {
@@ -670,7 +669,7 @@ struct AddActionRow<Content: View>: View {
     
     var body: some View {
         VStack(spacing: 0) {
-            Divider().opacity(0.3)
+            Divider()
             HStack {
                 Menu {
                     menuContent
@@ -780,11 +779,10 @@ struct ActionRowContent: View {
             Spacer()
 
             Button(role: .destructive, action: onDelete) {
-                SettingsIconLabel(systemName: "trash")
+                SettingsDestructiveIconLabel(systemName: "trash")
             }
             .buttonStyle(.borderless)
             .controlSize(.regular)
-            .settingsIconControlFrame()
             .help("Remove Action")
             .accessibilityLabel("Remove Action")
         }
