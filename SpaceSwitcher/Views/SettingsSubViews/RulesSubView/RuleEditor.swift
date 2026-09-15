@@ -202,17 +202,10 @@ struct RuleEditor: View {
     private var selectedApplicationName: String {
         guard !workingRule.appBundleID.isEmpty else { return "Choose an application" }
 
-        if let bundle = selectedApplicationURL.flatMap(Bundle.init(url:)) {
-            let info = bundle.localizedInfoDictionary ?? bundle.infoDictionary
-            if let displayName = info?["CFBundleDisplayName"] as? String, !displayName.isEmpty {
-                return displayName
-            }
-            if let name = info?["CFBundleName"] as? String, !name.isEmpty {
-                return name
-            }
-        }
-
-        return workingRule.appName.isEmpty ? workingRule.appBundleID : workingRule.appName
+        return resolvedApplicationName(
+            bundleIdentifier: workingRule.appBundleID,
+            storedName: workingRule.appName
+        )
     }
 
     private var selectedApplicationURL: URL? {

@@ -192,7 +192,12 @@ struct RuleRow: View {
                     .frame(width: 32, height: 32)
 
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(rule.appName.isEmpty ? "Select Application" : rule.appName)
+                    Text(rule.appBundleID.isEmpty
+                         ? "Select Application"
+                         : resolvedApplicationName(
+                             bundleIdentifier: rule.appBundleID,
+                             storedName: rule.appName
+                         ))
                         .font(.body.weight(.semibold))
                     if rule.appBundleID.isEmpty {
                         Text("No application selected")

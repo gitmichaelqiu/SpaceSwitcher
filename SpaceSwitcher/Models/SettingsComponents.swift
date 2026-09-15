@@ -365,6 +365,25 @@ struct BundleIdentifierText: View {
     }
 }
 
+func resolvedApplicationName(bundleIdentifier: String, storedName: String = "") -> String {
+    if let url = NSWorkspace.shared.urlForApplication(withBundleIdentifier: bundleIdentifier),
+       let bundle = Bundle(url: url) {
+        let info = bundle.localizedInfoDictionary ?? bundle.infoDictionary
+        if let displayName = info?["CFBundleDisplayName"] as? String, !displayName.isEmpty {
+            return displayName
+        }
+        if let name = info?["CFBundleName"] as? String, !name.isEmpty {
+            return name
+        }
+    }
+
+    if !storedName.isEmpty {
+        return storedName
+    }
+
+    return bundleIdentifier
+}
+
 enum SettingsComponentMetrics {
     static let iconButtonSize: CGFloat = 32
 }
