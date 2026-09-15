@@ -195,11 +195,11 @@ private struct DockSetTabBar: View {
             }
 
             Button(action: onCreate) {
-                Image(systemName: "plus")
+                SettingsIconLabel(systemName: "plus")
             }
                 .buttonStyle(.bordered)
                 .controlSize(.regular)
-                .frame(width: SettingsComponentMetrics.iconButtonSize, height: SettingsComponentMetrics.iconButtonSize)
+                .settingsIconControlFrame()
                 .help("New Dock Set")
                 .accessibilityLabel("New Dock Set")
 
@@ -207,11 +207,11 @@ private struct DockSetTabBar: View {
                 Button(role: .destructive) {
                     onDelete(selectedSet)
                 } label: {
-                    Image(systemName: "trash")
+                    SettingsIconLabel(systemName: "trash")
                 }
                 .buttonStyle(.bordered)
                 .controlSize(.regular)
-                .frame(width: SettingsComponentMetrics.iconButtonSize, height: SettingsComponentMetrics.iconButtonSize)
+                .settingsIconControlFrame()
                 .help("Delete Dock Set")
                 .accessibilityLabel("Delete Dock Set")
             }
@@ -425,12 +425,12 @@ struct DockItemsListView: View {
                         Button { addSpacerToSelectedSet(isSmall: false) } label: { Label("Add Large Spacer", systemImage: "square") }
                         Button { addSpacerToSelectedSet(isSmall: true) } label: { Label("Add Small Spacer", systemImage: "square.dashed") }
                     } label: {
-                        Image(systemName: "plus")
-                            .font(.system(size: 15, weight: .medium))
-                            .frame(width: SettingsComponentMetrics.iconButtonSize, height: SettingsComponentMetrics.iconButtonSize)
+                        SettingsIconLabel(systemName: "plus")
+                            .settingsIconControlFrame()
                     }
                     .menuStyle(.borderlessButton)
                     .controlSize(.regular)
+                    .settingsIconControlFrame()
                 }
             }
         ) {
@@ -605,12 +605,11 @@ struct DockTileRow: View {
             Spacer()
 
             Button(role: .destructive, action: onDelete) {
-                Image(systemName: "trash")
-                    .font(.system(size: 15, weight: .medium))
+                SettingsIconLabel(systemName: "trash")
             }
             .buttonStyle(.borderless)
             .controlSize(.regular)
-            .frame(width: SettingsComponentMetrics.iconButtonSize, height: SettingsComponentMetrics.iconButtonSize)
+            .settingsIconControlFrame()
             .help("Remove Dock Item")
             .accessibilityLabel("Remove Dock Item")
         }

@@ -367,6 +367,26 @@ struct BundleIdentifierText: View {
 
 enum SettingsComponentMetrics {
     static let iconButtonSize: CGFloat = 32
+    static let iconGlyphSize: CGFloat = 16
+    static let iconGlyphFrame: CGFloat = 18
+}
+
+struct SettingsIconLabel: View {
+    let systemName: String
+
+    var body: some View {
+        Image(systemName: systemName)
+            .font(.system(size: SettingsComponentMetrics.iconGlyphSize, weight: .medium))
+            .frame(width: SettingsComponentMetrics.iconGlyphFrame,
+                   height: SettingsComponentMetrics.iconGlyphFrame)
+    }
+}
+
+extension View {
+    func settingsIconControlFrame() -> some View {
+        frame(width: SettingsComponentMetrics.iconButtonSize,
+              height: SettingsComponentMetrics.iconButtonSize)
+    }
 }
 
 struct SettingsSection<Content: View, Accessory: View>: View {

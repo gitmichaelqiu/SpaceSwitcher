@@ -244,10 +244,11 @@ struct RuleEditor: View {
                             Button(role: .destructive) {
                                 groupPendingDeletion = group.id
                             } label: {
-                                Image(systemName: "trash")
+                                SettingsIconLabel(systemName: "trash")
                             }
                             .buttonStyle(.borderless)
                             .controlSize(.regular)
+                            .settingsIconControlFrame()
                             .help("Remove Workflow Group")
                             .accessibilityLabel("Remove Workflow Group")
                         }) {
@@ -779,10 +780,11 @@ struct ActionRowContent: View {
             Spacer()
 
             Button(role: .destructive, action: onDelete) {
-                Image(systemName: "trash")
+                SettingsIconLabel(systemName: "trash")
             }
             .buttonStyle(.borderless)
             .controlSize(.regular)
+            .settingsIconControlFrame()
             .help("Remove Action")
             .accessibilityLabel("Remove Action")
         }
