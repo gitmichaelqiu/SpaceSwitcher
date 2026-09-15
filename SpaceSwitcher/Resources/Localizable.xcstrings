@@ -521,6 +521,16 @@
         }
       }
     },
+    "Drag to rearrange" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "拖动以重新排序"
+          }
+        }
+      }
+    },
     "Each space can belong to only one workflow group." : {
       "localizations" : {
         "zh-Hans" : {
@@ -537,6 +547,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "编辑"
+          }
+        }
+      }
+    },
+    "Edit Rule" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "编辑规则"
           }
         }
       }
@@ -1409,6 +1429,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "这将移除 %@ 的规则。"
+          }
+        }
+      }
+    },
+    "This rule will run when Automation is on." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "启用自动化后，此规则才会运行。"
           }
         }
       }

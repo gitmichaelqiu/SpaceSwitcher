@@ -203,9 +203,13 @@ struct RuleRow: View {
 
                 Spacer()
 
-                Button("Edit", systemImage: "pencil", action: onEdit)
-                    .buttonStyle(.bordered)
-                    .controlSize(.small)
+                Button(action: onEdit) {
+                    Image(systemName: "pencil")
+                }
+                .buttonStyle(.borderless)
+                .controlSize(.small)
+                .help("Edit Rule")
+                .accessibilityLabel("Edit Rule")
 
                 Toggle("Enabled", isOn: Binding(
                     get: { rule.isEnabled },
@@ -277,10 +281,10 @@ struct RuleRow: View {
     }
 
     private func ruleSummary(icon: String, title: String, details: String) -> some View {
-        HStack(alignment: .top, spacing: 10) {
+        HStack(alignment: .center, spacing: 10) {
             Image(systemName: icon)
                 .foregroundStyle(.secondary)
-                .frame(width: 18)
+                .frame(width: 18, height: 18)
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(title)

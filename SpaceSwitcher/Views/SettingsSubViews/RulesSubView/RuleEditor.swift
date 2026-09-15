@@ -103,9 +103,12 @@ struct RuleEditor: View {
                 Section("Running Applications") {
                     ForEach(runningApps, id: \.id) { app in
                         Button { selectApp(name: app.name, id: app.id) } label: {
-                            HStack {
-                                Image(nsImage: app.icon)
+                            Label {
                                 Text(app.name)
+                            } icon: {
+                                Image(nsImage: app.icon)
+                                    .resizable()
+                                    .frame(width: 18, height: 18)
                             }
                         }
                     }
@@ -247,13 +250,6 @@ struct RuleEditor: View {
     
     private var footerView: some View {
         HStack(spacing: 12) {
-            if let validationMessage {
-                Label(validationMessage, systemImage: "exclamationmark.triangle.fill")
-                    .foregroundStyle(.secondary)
-                    .lineLimit(2)
-                    .frame(maxWidth: 320, alignment: .leading)
-            }
-
             Button("Cancel", action: onCancel)
                 .controlSize(.large)
                 .keyboardShortcut(.escape, modifiers: [])
@@ -479,9 +475,6 @@ struct SpaceConditionRow: View {
                     HStack(spacing: 6) {
                         Text(selectedSpacesTitle)
                             .lineLimit(1)
-                        Image(systemName: "chevron.up.chevron.down")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
                     }
                 }
                 .menuStyle(.borderlessButton)
@@ -493,6 +486,7 @@ struct SpaceConditionRow: View {
 
 struct ActionListRows: View {
     @Binding var actions: [ActionItem]
+    @State private var targetedActionID: UUID?
     
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -502,14 +496,6 @@ struct ActionListRows: View {
                 ActionRowContent(
                     index: index,
                     item: $item,
-                    canMoveUp: index > 0,
-                    canMoveDown: index < actions.count - 1,
-                    onMoveUp: {
-                        moveAction(id: itemID, by: -1)
-                    },
-                    onMoveDown: {
-                        moveAction(id: itemID, by: 1)
-                    },
                     onDelete: {
                         withAnimation {
                             actions.removeAll { $0.id == itemID }
@@ -518,6 +504,29 @@ struct ActionListRows: View {
                 )
                 .padding(.horizontal, 12)
                 .padding(.vertical, 8)
+                .contentShape(Rectangle())
+                .contentShape(.dragPreview, RoundedRectangle(cornerRadius: 8))
+                .overlay {
+                    if targetedActionID == itemID {
+                        RoundedRectangle(cornerRadius: 8)
+                            .stroke(Color.accentColor.opacity(0.65), lineWidth: 2)
+                    }
+                }
+                .draggable(itemID.uuidString) {
+                    actionDragPreview(for: item)
+                }
+                .dropDestination(for: String.self) { sourceIDs, _ in
+                    guard let sourceID = sourceIDs.first,
+                          let sourceActionID = UUID(uuidString: sourceID),
+                          sourceActionID != itemID else { return false }
+                    return moveAction(sourceID: sourceActionID, before: itemID)
+                } isTargeted: { isTargeted in
+                    if isTargeted {
+                        targetedActionID = itemID
+                    } else if targetedActionID == itemID {
+                        targetedActionID = nil
+                    }
+                }
 
                 if index < actions.count - 1 {
                     Divider().padding(.leading, 46)
@@ -526,13 +535,43 @@ struct ActionListRows: View {
         }
     }
 
-    private func moveAction(id: UUID, by offset: Int) {
-        guard let sourceIndex = actions.firstIndex(where: { $0.id == id }) else { return }
-        let destinationIndex = sourceIndex + offset
-        guard actions.indices.contains(destinationIndex) else { return }
+    private func moveAction(sourceID: UUID, before targetID: UUID) -> Bool {
+        guard let sourceIndex = actions.firstIndex(where: { $0.id == sourceID }),
+              let targetIndex = actions.firstIndex(where: { $0.id == targetID }),
+              sourceIndex != targetIndex else { return false }
 
         withAnimation(.easeInOut(duration: 0.2)) {
-            actions.swapAt(sourceIndex, destinationIndex)
+            let movedAction = actions.remove(at: sourceIndex)
+            let destinationIndex = sourceIndex < targetIndex ? targetIndex - 1 : targetIndex
+            actions.insert(movedAction, at: destinationIndex)
+        }
+        return true
+    }
+
+    private func actionDragPreview(for item: ActionItem) -> some View {
+        HStack(spacing: 10) {
+            Image(systemName: "line.3.horizontal")
+                .foregroundStyle(.tertiary)
+            Label {
+                Text(verbatim: item.value.localizedString)
+            } icon: {
+                Image(systemName: actionIcon(for: item.value))
+            }
+        }
+        .font(.body)
+        .padding(.horizontal, 12)
+        .padding(.vertical, 8)
+        .background(.regularMaterial, in: .rect(cornerRadius: 8))
+    }
+
+    private func actionIcon(for action: WindowAction) -> String {
+        switch action {
+        case .show: return "eye"
+        case .restore: return "arrow.uturn.backward"
+        case .hide: return "eye.slash"
+        case .minimize: return "arrow.down.right.and.arrow.up.left"
+        case .bringToFront: return "arrow.up.forward.app"
+        case .hotkey, .globalHotkey: return "keyboard"
         }
     }
 }
@@ -565,10 +604,6 @@ struct AddActionRow<Content: View>: View {
 struct ActionRowContent: View {
     let index: Int
     @Binding var item: ActionItem
-    let canMoveUp: Bool
-    let canMoveDown: Bool
-    let onMoveUp: () -> Void
-    let onMoveDown: () -> Void
     let onDelete: () -> Void
     
     @State private var isRecording = false
@@ -577,6 +612,12 @@ struct ActionRowContent: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 10) {
+                Image(systemName: "line.3.horizontal")
+                    .font(.caption)
+                    .foregroundStyle(.tertiary)
+                    .frame(width: 16)
+                    .accessibilityLabel("Drag to rearrange")
+
                 Text("\(index + 1)")
                     .font(.body.monospacedDigit())
                     .foregroundStyle(.secondary)
@@ -651,26 +692,13 @@ struct ActionRowContent: View {
                 
                 Spacer()
                 
-                Menu {
-                    Button("Move Up", systemImage: "arrow.up") {
-                        onMoveUp()
-                    }
-                    .disabled(!canMoveUp)
-
-                    Button("Move Down", systemImage: "arrow.down") {
-                        onMoveDown()
-                    }
-                    .disabled(!canMoveDown)
-
-                    Divider()
-
-                    Button("Remove Action", systemImage: "trash", role: .destructive, action: onDelete)
-                } label: {
-                    Image(systemName: "ellipsis.circle")
+                Button(role: .destructive, action: onDelete) {
+                    Image(systemName: "trash")
                 }
-                .menuStyle(.borderlessButton)
+                .buttonStyle(.borderless)
                 .controlSize(.small)
-                .help("Action Options")
+                .help("Remove Action")
+                .accessibilityLabel("Remove Action")
             }
             
         }
