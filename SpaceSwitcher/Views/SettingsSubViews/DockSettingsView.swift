@@ -33,8 +33,8 @@ struct DockSettingsView: View {
             ZStack {
                 if let selectedID = selectedSetID,
                    let index = dockManager.config.dockSets.firstIndex(where: { $0.id == selectedID }) {
-                    ScrollView(.vertical, showsIndicators: true) {
-                        VStack(alignment: .leading, spacing: 24) {
+                    SettingsContainer(.dock) {
+                        VStack(alignment: .leading, spacing: 20) {
                             SettingsSection("Automation") {
                                 SettingsRow(
                                     "Automatically switch dock",
@@ -46,7 +46,7 @@ struct DockSettingsView: View {
                                 }
                             }
 
-                            SettingsSection(NSLocalizedString("Set Configuration", comment: "")) {
+                            SettingsSection("Set Configuration") {
                                 SettingsRow("Name") {
                                     TextField("Name", text: $dockManager.config.dockSets[index].name)
                                         .textFieldStyle(.roundedBorder)
@@ -87,16 +87,13 @@ struct DockSettingsView: View {
 
                             Spacer(minLength: 40)
                         }
-                        .padding(24)
                         .frame(maxWidth: .infinity, alignment: .leading)
                     }
-                    .frame(maxWidth: .infinity)
                 } else {
                     EmptySelectionView()
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .background(Color(NSColor.windowBackgroundColor).opacity(0.1))
         }
         .animation(.easeInOut(duration: 0.18), value: selectedSetID)
         .sheet(isPresented: $showingCreateSheet) {
@@ -303,7 +300,7 @@ struct DockSpaceAssignmentView: View {
         let isDefault = dockManager.config.defaultDockSetID == selectedSetID
         
         SettingsSection(
-            NSLocalizedString("Apply to Spaces", comment: ""),
+            "Apply to Spaces",
             helperText: assignmentHelperText
         ) {
             VStack(alignment: .leading, spacing: 10) {
@@ -402,7 +399,7 @@ struct DockItemsListView: View {
     
     var body: some View {
         SettingsSection(
-            NSLocalizedString("Dock Items", comment: ""),
+            "Dock Items",
             accessory: {
                 HStack(spacing: 8) {
                     Button {
