@@ -23,8 +23,7 @@ struct DockSettingsView: View {
                 dockManager: dockManager,
                 selectedSetID: $selectedSetID,
                 onCreate: prepareNewSet,
-                onDelete: deleteSet,
-                onMakeDefault: makeDefault
+                onDelete: deleteSet
             )
             .padding(.horizontal, 24)
             .padding(.vertical, 10)
@@ -135,9 +134,6 @@ struct DockSettingsView: View {
         }
     }
 
-    private func makeDefault(_ set: DockSet) {
-        dockManager.config.defaultDockSetID = set.id
-    }
 }
 
 // MARK: - Dock Set Tabs
@@ -146,7 +142,6 @@ private struct DockSetTabBar: View {
     @Binding var selectedSetID: UUID?
     let onCreate: () -> Void
     let onDelete: (DockSet) -> Void
-    let onMakeDefault: (DockSet) -> Void
 
     @State private var availableWidth: CGFloat = 0
     @State private var pickerWidth: CGFloat = 0
@@ -199,40 +194,29 @@ private struct DockSetTabBar: View {
                 pickerWidth = width
             }
 
-            Button("New Dock Set", systemImage: "plus", action: onCreate)
+            Button(action: onCreate) {
+                Image(systemName: "plus")
+            }
                 .buttonStyle(.bordered)
-                .controlSize(.small)
+                .controlSize(.regular)
+                .frame(width: 32, height: 32)
+                .help("New Dock Set")
+                .accessibilityLabel("New Dock Set")
 
-            if let selectedSet, canManageSelectedSet {
-                Menu {
-                    if dockManager.config.defaultDockSetID != selectedSet.id {
-                        Button("Make Default", systemImage: "star") {
-                            onMakeDefault(selectedSet)
-                        }
-                    }
-
-                    if dockManager.config.dockSets.count > 1 {
-                        Button("Delete Dock Set", systemImage: "trash", role: .destructive) {
-                            onDelete(selectedSet)
-                        }
-                    }
+            if let selectedSet, dockManager.config.dockSets.count > 1 {
+                Button(role: .destructive) {
+                    onDelete(selectedSet)
                 } label: {
-                    Image(systemName: "ellipsis.circle")
-                        .font(.system(size: 16))
-                        .frame(width: 28, height: 28)
-                        .contentShape(Rectangle())
+                    Image(systemName: "trash")
                 }
-                .menuStyle(.borderlessButton)
-                .help("Manage Dock Sets")
+                .buttonStyle(.bordered)
+                .controlSize(.regular)
+                .frame(width: 32, height: 32)
+                .help("Delete Dock Set")
+                .accessibilityLabel("Delete Dock Set")
             }
         }
         .frame(maxWidth: .infinity)
-    }
-
-    private var canManageSelectedSet: Bool {
-        guard let selectedSet else { return false }
-        return dockManager.config.defaultDockSetID != selectedSet.id
-            || dockManager.config.dockSets.count > 1
     }
 
     private var measuredPicker: some View {
@@ -322,72 +306,81 @@ struct DockSpaceAssignmentView: View {
             VStack(alignment: .leading, spacing: 10) {
                 if spaceManager.availableSpaces.isEmpty {
                     Text("No spaces detected.")
-                        .font(.system(size: 12))
-                        .foregroundColor(.secondary)
-                        .padding(12)
-                } else if !isDefault {
+                        .foregroundStyle(.secondary)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 14)
+                } else {
                     LazyVGrid(columns: [GridItem(.adaptive(minimum: 110, maximum: 140))], spacing: 12) {
                         ForEach(spaceManager.availableSpaces) { space in
-                            spaceButton(for: space)
+                            spaceCard(for: space, isDefault: isDefault)
                         }
                     }
-                    .padding(16)
-                } else {
-                    // Placeholder for default set (no explicit selection needed)
-                    HStack {
-                        Spacer()
-                        VStack(spacing: 12) {
-                            Image(systemName: "sparkles")
-                                .font(.system(size: 24))
-                                .foregroundColor(.accentColor.opacity(0.5))
-                            Text("Default Configuration Active")
-                                .font(.system(size: 12, weight: .medium))
-                                .foregroundColor(.secondary)
-                        }
-                        Spacer()
-                    }
-                    .padding(.vertical, 16)
+                    .padding(12)
                 }
             }
         }
     }
-    
-    @ViewBuilder
-    private func spaceButton(for space: SpaceInfo) -> some View {
+
+    private func spaceCard(for space: SpaceInfo, isDefault: Bool) -> some View {
         let assignedSetID = dockManager.config.spaceAssignments[space.id]
         let isAssignedHere = (assignedSetID == selectedSetID)
         let isAssignedElsewhere = (assignedSetID != nil && !isAssignedHere)
-        
-        Button {
-            withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-                if isAssignedHere {
-                    dockManager.config.spaceAssignments.removeValue(forKey: space.id)
-                } else if !isAssignedElsewhere {
-                    dockManager.config.spaceAssignments[space.id] = selectedSetID
+
+        return DockSpaceCard(
+            space: space,
+            isHighlighted: isDefault ? !isAssignedElsewhere : isAssignedHere,
+            isDimmed: isAssignedElsewhere,
+            isInteractive: !isDefault,
+            onTap: {
+                withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                    if isAssignedHere {
+                        dockManager.config.spaceAssignments.removeValue(forKey: space.id)
+                    } else if !isAssignedElsewhere {
+                        dockManager.config.spaceAssignments[space.id] = selectedSetID
+                    }
                 }
             }
-        } label: {
-            VStack(alignment: .center, spacing: 2) {
-                Text("\(space.number)")
-                    .font(.system(size: 15, weight: .bold))
-                Text(space.name)
-                    .font(.system(size: 10))
-                    .lineLimit(1)
+        )
+    }
+}
+
+private struct DockSpaceCard: View {
+    let space: SpaceInfo
+    let isHighlighted: Bool
+    let isDimmed: Bool
+    let isInteractive: Bool
+    let onTap: () -> Void
+
+    var body: some View {
+        if isInteractive {
+            Button(action: onTap) {
+                cardContent
             }
-            .frame(maxWidth: .infinity)
-            .padding(.vertical, 10)
-            .background(
-                RoundedRectangle(cornerRadius: 10, style: .continuous)
-                    .fill(isAssignedHere ? Color.accentColor : Color.primary.opacity(0.04))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 10, style: .continuous)
-                            .stroke(isAssignedElsewhere ? Color.secondary.opacity(0.1) : Color.clear, lineWidth: 1)
-                    )
-            )
-            .foregroundColor(isAssignedHere ? .white : (isAssignedElsewhere ? .secondary.opacity(0.3) : .primary))
+            .buttonStyle(.plain)
+        } else {
+            cardContent
         }
-        .buttonStyle(.plain)
-        .disabled(isAssignedElsewhere)
+    }
+
+    private var cardContent: some View {
+        VStack(alignment: .center, spacing: 2) {
+            Text("\(space.number)")
+                .font(.body.weight(.semibold))
+            Text(space.name)
+                .font(.caption)
+                .lineLimit(1)
+        }
+        .frame(maxWidth: .infinity, minHeight: 50, maxHeight: 50)
+        .background(
+            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                .fill(isHighlighted ? Color.accentColor : Color.primary.opacity(0.04))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 10, style: .continuous)
+                        .stroke(isDimmed ? Color.secondary.opacity(0.12) : Color.clear, lineWidth: 1)
+                )
+        )
+        .foregroundStyle(isHighlighted ? Color.white : (isDimmed ? Color.secondary.opacity(0.45) : Color.primary))
     }
 }
 
@@ -561,11 +554,9 @@ struct DockTileRow: View {
                 
                 VStack(alignment: .leading, spacing: 1) {
                     Text(tile.label)
-                        .font(.system(size: 13, weight: .medium))
+                        .font(.body.weight(.medium))
                     if let bid = tile.bundleIdentifier {
-                        Text(bid)
-                            .font(.system(size: 9))
-                            .foregroundColor(.secondary.opacity(0.7))
+                        BundleIdentifierText(bid)
                     }
                 }
             }
@@ -605,6 +596,7 @@ struct DockTileRow: View {
                 .transition(.opacity.combined(with: .move(edge: .trailing)))
             }
         }
+        .frame(minHeight: 44, alignment: .center)
         .contentShape(Rectangle())
         .onHover { isHovering = $0 }
     }

@@ -23,7 +23,7 @@ struct RuleEditor: View {
         VStack(alignment: .leading, spacing: 0) {
             appSelectorHeader
                 .zIndex(1)
-            
+
             Divider()
             
             editorContent
@@ -191,11 +191,15 @@ struct RuleEditor: View {
                     SettingsSection(
                         String(format: NSLocalizedString("Workflow Group %lld", comment: ""), index + 1),
                         accessory: {
-                            Button("Remove", systemImage: "trash", role: .destructive) {
+                            Button(role: .destructive) {
                                 groupPendingDeletion = group.id
+                            } label: {
+                                Image(systemName: "trash")
                             }
                             .buttonStyle(.borderless)
-                            .controlSize(.small)
+                            .controlSize(.regular)
+                            .help("Remove Workflow Group")
+                            .accessibilityLabel("Remove Workflow Group")
                         }) {
                         SpaceConditionRow(
                             group: $group,
@@ -486,58 +490,64 @@ struct SpaceConditionRow: View {
 
 struct ActionListRows: View {
     @Binding var actions: [ActionItem]
-    @State private var targetedActionID: UUID?
-    
-    var body: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            ForEach($actions) { $item in
-                let itemID = item.id
-                let index = actions.firstIndex(where: { $0.id == itemID }) ?? 0
-                ActionRowContent(
-                    index: index,
-                    item: $item,
-                    onDelete: {
-                        withAnimation {
-                            actions.removeAll { $0.id == itemID }
-                        }
-                    }
-                )
-                .padding(.horizontal, 12)
-                .padding(.vertical, 8)
-                .contentShape(Rectangle())
-                .contentShape(.dragPreview, RoundedRectangle(cornerRadius: 8))
-                .overlay {
-                    if targetedActionID == itemID {
-                        RoundedRectangle(cornerRadius: 8)
-                            .stroke(Color.accentColor.opacity(0.65), lineWidth: 2)
-                    }
-                }
-                .draggable(itemID.uuidString) {
-                    actionDragPreview(for: item)
-                }
-                .dropDestination(for: String.self) { sourceIDs, _ in
-                    guard let sourceID = sourceIDs.first,
-                          let sourceActionID = UUID(uuidString: sourceID),
-                          sourceActionID != itemID else { return false }
-                    return moveAction(sourceID: sourceActionID, before: itemID)
-                } isTargeted: { isTargeted in
-                    if isTargeted {
-                        targetedActionID = itemID
-                    } else if targetedActionID == itemID {
-                        targetedActionID = nil
-                    }
-                }
 
-                if index < actions.count - 1 {
-                    Divider().padding(.leading, 46)
+    private var reorderableItems: [ReorderableActionItem] {
+        actions.map(ReorderableActionItem.init)
+    }
+
+    var body: some View {
+        ReorderableSettingsList(
+            items: reorderableItems,
+            rowContent: { item, context in
+                VStack(spacing: 0) {
+                    ActionRowContent(
+                        index: context.index,
+                        item: actionBinding(for: item),
+                        onDelete: { removeAction(id: item.action.id) }
+                    )
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 6)
+
+                    if !context.isLast {
+                        Divider().padding(.leading, 46)
+                    }
                 }
+            },
+            dragPreview: { item in
+                actionDragPreview(for: item.action)
+            },
+            moveBefore: { sourceID, targetID in
+                moveAction(sourceID: sourceID, before: targetID)
+            },
+            moveToEnd: { sourceID in
+                moveActionToEnd(sourceID: sourceID)
             }
+        )
+    }
+
+    private func actionBinding(for item: ReorderableActionItem) -> Binding<ActionItem> {
+        Binding(
+            get: {
+                actions.first(where: { $0.id == item.action.id }) ?? item.action
+            },
+            set: { updatedItem in
+                guard let index = actions.firstIndex(where: { $0.id == item.action.id }) else { return }
+                actions[index] = updatedItem
+            }
+        )
+    }
+
+    private func removeAction(id: UUID) {
+        withAnimation(.easeInOut(duration: 0.2)) {
+            actions.removeAll { $0.id == id }
         }
     }
 
-    private func moveAction(sourceID: UUID, before targetID: UUID) -> Bool {
-        guard let sourceIndex = actions.firstIndex(where: { $0.id == sourceID }),
-              let targetIndex = actions.firstIndex(where: { $0.id == targetID }),
+    private func moveAction(sourceID: String, before targetID: String) -> Bool {
+        guard let sourceUUID = UUID(uuidString: sourceID),
+              let targetUUID = UUID(uuidString: targetID),
+              let sourceIndex = actions.firstIndex(where: { $0.id == sourceUUID }),
+              let targetIndex = actions.firstIndex(where: { $0.id == targetUUID }),
               sourceIndex != targetIndex else { return false }
 
         withAnimation(.easeInOut(duration: 0.2)) {
@@ -548,20 +558,36 @@ struct ActionListRows: View {
         return true
     }
 
+    private func moveActionToEnd(sourceID: String) {
+        guard let sourceUUID = UUID(uuidString: sourceID),
+              let sourceIndex = actions.firstIndex(where: { $0.id == sourceUUID }),
+              sourceIndex < actions.count - 1 else { return }
+
+        withAnimation(.easeInOut(duration: 0.2)) {
+            actions.append(actions.remove(at: sourceIndex))
+        }
+    }
+
     private func actionDragPreview(for item: ActionItem) -> some View {
         HStack(spacing: 10) {
             Image(systemName: "line.3.horizontal")
+                .font(.caption)
                 .foregroundStyle(.tertiary)
+                .frame(width: 16)
+
             Label {
                 Text(verbatim: item.value.localizedString)
             } icon: {
                 Image(systemName: actionIcon(for: item.value))
             }
+            .font(.body)
+
+            Spacer(minLength: 0)
         }
-        .font(.body)
         .padding(.horizontal, 12)
-        .padding(.vertical, 8)
-        .background(.regularMaterial, in: .rect(cornerRadius: 8))
+        .padding(.vertical, 6)
+        .frame(minWidth: 320, alignment: .leading)
+        .contentShape(.dragPreview, Rectangle())
     }
 
     private func actionIcon(for action: WindowAction) -> String {
@@ -573,6 +599,14 @@ struct ActionListRows: View {
         case .bringToFront: return "arrow.up.forward.app"
         case .hotkey, .globalHotkey: return "keyboard"
         }
+    }
+}
+
+private struct ReorderableActionItem: Identifiable {
+    let action: ActionItem
+
+    var id: String {
+        action.id.uuidString
     }
 }
 
@@ -610,98 +644,96 @@ struct ActionRowContent: View {
     @State private var recordingMonitor: Any?
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack(spacing: 10) {
-                Image(systemName: "line.3.horizontal")
-                    .font(.caption)
-                    .foregroundStyle(.tertiary)
-                    .frame(width: 16)
-                    .accessibilityLabel("Drag to rearrange")
+        HStack(spacing: 10) {
+            Image(systemName: "line.3.horizontal")
+                .font(.caption)
+                .foregroundStyle(.tertiary)
+                .frame(width: 16, height: 20)
+                .accessibilityLabel("Drag to rearrange")
 
-                Text("\(index + 1)")
-                    .font(.body.monospacedDigit())
-                    .foregroundStyle(.secondary)
-                    .frame(width: 22, alignment: .leading)
-                
-                Group {
-                    switch item.value {
-                    case .globalHotkey(let code, let mods):
-                        HStack(spacing: 8) {
-                            Label("System Shortcut", systemImage: "globe")
-                                .font(.subheadline)
+            Text("\(index + 1)")
+                .font(.body.monospacedDigit())
+                .foregroundStyle(.secondary)
+                .frame(width: 22, alignment: .leading)
 
-                            ModifierMenu(modifiers: mods) { newModifiers in
-                                item.value = .globalHotkey(keyCode: code, modifiers: newModifiers)
-                            }
-                            
-                            KeyCaptureButton(keyCode: code) { newCode in
-                                item.value = .globalHotkey(keyCode: newCode, modifiers: mods)
-                            }
+            Group {
+                switch item.value {
+                case .globalHotkey(let code, let mods):
+                    HStack(spacing: 8) {
+                        Label("System Shortcut", systemImage: "globe")
+                            .font(.subheadline)
+
+                        ModifierMenu(modifiers: mods) { newModifiers in
+                            item.value = .globalHotkey(keyCode: code, modifiers: newModifiers)
                         }
-                        
-                    case .hotkey(let code, let mods, _, _):
-                        HStack(spacing: 8) {
-                            Label("App Shortcut", systemImage: "app")
-                                .font(.subheadline)
 
-                            Button(action: startRecording) {
-                                if isRecording {
-                                    Label("Recording...", systemImage: "record.circle")
-                                        .foregroundStyle(.red)
-                                } else {
-                                    Label(
-                                        code == -1 ? "Record Shortcut" : ShortcutHelper.format(code: code, modifiers: mods),
-                                        systemImage: "keyboard"
-                                    )
-                                }
-                            }
-                            .buttonStyle(.bordered)
-                            .controlSize(.small)
-
-                            HotkeyOptionsMenu(
-                                restoreWindow: Binding(
-                                    get: {
-                                        if case .hotkey(_, _, let restoreWindow, _) = item.value {
-                                            return restoreWindow
-                                        }
-                                        return false
-                                    },
-                                    set: { restoreWindow in
-                                        updateHotkey(restoreWindow: restoreWindow, waitFrontmost: nil)
-                                    }
-                                ),
-                                waitFrontmost: Binding(
-                                    get: {
-                                        if case .hotkey(_, _, _, let waitFrontmost) = item.value {
-                                            return waitFrontmost
-                                        }
-                                        return true
-                                    },
-                                    set: { waitFrontmost in
-                                        updateHotkey(restoreWindow: nil, waitFrontmost: waitFrontmost)
-                                    }
-                                )
-                            )
+                        KeyCaptureButton(keyCode: code) { newCode in
+                            item.value = .globalHotkey(keyCode: newCode, modifiers: mods)
                         }
-                        
-                    default:
-                        Label(item.value.localizedString, systemImage: actionIcon)
-                            .font(.body)
                     }
+
+                case .hotkey(let code, let mods, _, _):
+                    HStack(spacing: 8) {
+                        Label("App Shortcut", systemImage: "app")
+                            .font(.subheadline)
+                        
+                        Button(action: startRecording) {
+                            if isRecording {
+                                Label("Recording...", systemImage: "record.circle")
+                                    .foregroundStyle(.red)
+                            } else {
+                                Label(
+                                    code == -1 ? "Record Shortcut" : ShortcutHelper.format(code: code, modifiers: mods),
+                                    systemImage: "keyboard"
+                                )
+                            }
+                        }
+                        .buttonStyle(.bordered)
+                        .controlSize(.small)
+
+                        HotkeyOptionsMenu(
+                            restoreWindow: Binding(
+                                get: {
+                                    if case .hotkey(_, _, let restoreWindow, _) = item.value {
+                                        return restoreWindow
+                                    }
+                                    return false
+                                },
+                                set: { restoreWindow in
+                                    updateHotkey(restoreWindow: restoreWindow, waitFrontmost: nil)
+                                }
+                            ),
+                            waitFrontmost: Binding(
+                                get: {
+                                    if case .hotkey(_, _, _, let waitFrontmost) = item.value {
+                                        return waitFrontmost
+                                    }
+                                    return true
+                                },
+                                set: { waitFrontmost in
+                                    updateHotkey(restoreWindow: nil, waitFrontmost: waitFrontmost)
+                                }
+                            )
+                        )
+                    }
+
+                default:
+                    Label(item.value.localizedString, systemImage: actionIcon)
+                        .font(.body)
                 }
-                
-                Spacer()
-                
-                Button(role: .destructive, action: onDelete) {
-                    Image(systemName: "trash")
-                }
-                .buttonStyle(.borderless)
-                .controlSize(.small)
-                .help("Remove Action")
-                .accessibilityLabel("Remove Action")
             }
-            
+
+            Spacer()
+
+            Button(role: .destructive, action: onDelete) {
+                Image(systemName: "trash")
+            }
+            .buttonStyle(.borderless)
+            .controlSize(.regular)
+            .help("Remove Action")
+            .accessibilityLabel("Remove Action")
         }
+        .frame(minHeight: 28, alignment: .center)
         .onDisappear(perform: stopRecording)
     }
     

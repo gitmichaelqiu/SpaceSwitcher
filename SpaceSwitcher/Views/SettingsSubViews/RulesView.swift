@@ -48,7 +48,6 @@ struct RulesView: View {
                             RuleRow(
                                 rule: rule,
                                 availableSpaces: spaceManager.availableSpaces,
-                                isGlobalEnabled: ruleManager.isAutomationEnabled,
                                 onEdit: { presentedRuleSheet = .edit(rule) },
                                 onDelete: { rulePendingDeletion = rule },
                                 onToggle: { updatedRule in
@@ -169,7 +168,6 @@ struct RulesView: View {
 struct RuleRow: View {
     let rule: AppRule
     let availableSpaces: [SpaceInfo]
-    let isGlobalEnabled: Bool
     let onEdit: () -> Void
     let onDelete: () -> Void
     let onToggle: (AppRule) -> Void
@@ -196,22 +194,18 @@ struct RuleRow: View {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(rule.appName.isEmpty ? "Select Application" : rule.appName)
                         .font(.body.weight(.semibold))
-                    Text(rule.appBundleID.isEmpty ? "No application selected" : rule.appBundleID)
-                        .font(.caption.monospaced())
-                        .foregroundStyle(.secondary)
+                    if rule.appBundleID.isEmpty {
+                        Text("No application selected")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    } else {
+                        BundleIdentifierText(rule.appBundleID)
+                    }
                 }
 
                 Spacer()
 
-                Button(action: onEdit) {
-                    Image(systemName: "pencil")
-                }
-                .buttonStyle(.borderless)
-                .controlSize(.small)
-                .help("Edit Rule")
-                .accessibilityLabel("Edit Rule")
-
-                Toggle("Enabled", isOn: Binding(
+                Toggle("", isOn: Binding(
                     get: { rule.isEnabled },
                     set: { value in
                         var updatedRule = rule
@@ -219,18 +213,26 @@ struct RuleRow: View {
                         onToggle(updatedRule)
                     }
                 ))
+                .labelsHidden()
                 .toggleStyle(.switch)
                 .controlSize(.small)
-                .help(isGlobalEnabled ? "Enable or disable this rule." : "This rule will run when Automation is on.")
+                .help("Enable or disable this rule.")
+                .accessibilityLabel("Enable Rule")
+
+                Button("Edit", systemImage: "pencil", action: onEdit)
+                .buttonStyle(.bordered)
+                .controlSize(.small)
+                .help("Edit Rule")
 
                 Button(role: .destructive, action: onDelete) {
                     Image(systemName: "trash")
                 }
                 .buttonStyle(.borderless)
-                .controlSize(.small)
+                .controlSize(.regular)
                 .help("Delete Rule")
                 .accessibilityLabel("Delete Rule")
             }
+            .frame(minHeight: 32, alignment: .center)
             .padding(12)
 
             if !rule.groups.isEmpty || !rule.elseActions.isEmpty {
