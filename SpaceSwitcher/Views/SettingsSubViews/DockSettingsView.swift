@@ -199,7 +199,7 @@ private struct DockSetTabBar: View {
             }
                 .buttonStyle(.bordered)
                 .controlSize(.regular)
-                .frame(width: 32, height: 32)
+                .frame(width: SettingsComponentMetrics.iconButtonSize, height: SettingsComponentMetrics.iconButtonSize)
                 .help("New Dock Set")
                 .accessibilityLabel("New Dock Set")
 
@@ -211,7 +211,7 @@ private struct DockSetTabBar: View {
                 }
                 .buttonStyle(.bordered)
                 .controlSize(.regular)
-                .frame(width: 32, height: 32)
+                .frame(width: SettingsComponentMetrics.iconButtonSize, height: SettingsComponentMetrics.iconButtonSize)
                 .help("Delete Dock Set")
                 .accessibilityLabel("Delete Dock Set")
             }
@@ -377,10 +377,14 @@ private struct DockSpaceCard: View {
                 .fill(isHighlighted ? Color.accentColor : Color.primary.opacity(0.04))
                 .overlay(
                     RoundedRectangle(cornerRadius: 10, style: .continuous)
-                        .stroke(isDimmed ? Color.secondary.opacity(0.12) : Color.clear, lineWidth: 1)
+                        .stroke(isDimmed ? Color(nsColor: .disabledControlTextColor).opacity(0.18) : Color.clear, lineWidth: 1)
                 )
         )
-        .foregroundStyle(isHighlighted ? Color.white : (isDimmed ? Color.secondary.opacity(0.45) : Color.primary))
+        .foregroundStyle(
+            isHighlighted
+                ? Color.white
+                : (isDimmed ? Color(nsColor: .disabledControlTextColor) : Color.primary)
+        )
     }
 }
 
@@ -422,11 +426,11 @@ struct DockItemsListView: View {
                         Button { addSpacerToSelectedSet(isSmall: true) } label: { Label("Add Small Spacer", systemImage: "square.dashed") }
                     } label: {
                         Image(systemName: "plus")
-                            .font(.system(size: 12, weight: .semibold))
-                            .frame(width: 28, height: 28)
-                            .background(RoundedRectangle(cornerRadius: 6).fill(Color.primary.opacity(0.05)))
+                            .font(.system(size: 15, weight: .medium))
+                            .frame(width: SettingsComponentMetrics.iconButtonSize, height: SettingsComponentMetrics.iconButtonSize)
                     }
                     .menuStyle(.borderlessButton)
+                    .controlSize(.regular)
                 }
             }
         ) {
@@ -449,36 +453,30 @@ struct DockItemsListView: View {
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 40)
             } else {
-                VStack(spacing: 0) {
-                    ForEach(tiles) { tile in
-                        if let index = tiles.firstIndex(where: { $0.id == tile.id }) {
+                ReorderableSettingsList(
+                    items: reorderableItems,
+                    rowContent: { item, context in
+                        VStack(spacing: 0) {
                             DockTileRow(
-                                tile: tile,
-                                onDelete: {
-                                    withAnimation(.easeInOut(duration: 0.2)) {
-                                        _tiles.wrappedValue = _tiles.wrappedValue.enumerated()
-                                            .filter { $0.offset != index }
-                                            .map { $0.element }
-                                    }
-                                },
-                                moveUp: index > 0 ? {
-                                    withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-                                        _tiles.wrappedValue.move(fromOffsets: IndexSet(integer: index), toOffset: index - 1)
-                                    }
-                                } : nil,
-                                moveDown: index < tiles.count - 1 ? {
-                                    withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-                                        _tiles.wrappedValue.move(fromOffsets: IndexSet(integer: index), toOffset: index + 2)
-                                    }
-                                } : nil
+                                tile: item.tile,
+                                onDelete: { removeTile(id: item.tile.id) }
                             )
-                            
-                            if index < tiles.count - 1 {
-                                Divider().opacity(0.5)
+
+                            if !context.isLast {
+                                Divider()
                             }
                         }
+                    },
+                    dragPreview: { item in
+                        dockTileDragPreview(for: item.tile)
+                    },
+                    moveBefore: { sourceID, targetID in
+                        moveTile(sourceID: sourceID, before: targetID)
+                    },
+                    moveToEnd: { sourceID in
+                        moveTileToEnd(sourceID: sourceID)
                     }
-                }
+                )
                 .animation(.spring(response: 0.3, dampingFraction: 0.7), value: tiles)
             }
         }
@@ -487,6 +485,10 @@ struct DockItemsListView: View {
         } message: {
             Text("SpaceSwitcher could not read the current Dock items.")
         }
+    }
+
+    private var reorderableItems: [ReorderableDockTile] {
+        tiles.map(ReorderableDockTile.init)
     }
 
     private func replaceWithCurrentDock() {
@@ -503,6 +505,45 @@ struct DockItemsListView: View {
     private func forceApply() {
         guard let currentSpace = spaceManager.currentSpaceID else { return }
         dockManager.applyDockForSpace(currentSpace, force: true)
+    }
+
+    private func removeTile(id: UUID) {
+        withAnimation(.easeInOut(duration: 0.2)) {
+            tiles.removeAll { $0.id == id }
+        }
+    }
+
+    private func moveTile(sourceID: String, before targetID: String) -> Bool {
+        guard let sourceUUID = UUID(uuidString: sourceID),
+              let targetUUID = UUID(uuidString: targetID),
+              let sourceIndex = tiles.firstIndex(where: { $0.id == sourceUUID }),
+              let targetIndex = tiles.firstIndex(where: { $0.id == targetUUID }),
+              sourceIndex != targetIndex else { return false }
+
+        withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+            let movedTile = tiles.remove(at: sourceIndex)
+            let destinationIndex = sourceIndex < targetIndex ? targetIndex - 1 : targetIndex
+            tiles.insert(movedTile, at: destinationIndex)
+        }
+        return true
+    }
+
+    private func moveTileToEnd(sourceID: String) {
+        guard let sourceUUID = UUID(uuidString: sourceID),
+              let sourceIndex = tiles.firstIndex(where: { $0.id == sourceUUID }),
+              sourceIndex < tiles.count - 1 else { return }
+
+        withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+            tiles.append(tiles.remove(at: sourceIndex))
+        }
+    }
+
+    private func dockTileDragPreview(for tile: DockTile) -> some View {
+        DockTileRow(tile: tile, onDelete: {})
+            .padding(.horizontal, 12)
+            .frame(minWidth: 320)
+            .background(SettingsSectionStyle.dragPreviewBackgroundColor)
+            .contentShape(.dragPreview, Rectangle())
     }
     
     private func addAppToSelectedSet() {
@@ -540,65 +581,43 @@ struct DockItemsListView: View {
 struct DockTileRow: View {
     let tile: DockTile
     let onDelete: () -> Void
-    var moveUp: (() -> Void)?
-    var moveDown: (() -> Void)?
-    
-    @State private var isHovering = false
     
     var body: some View {
-        HStack(spacing: 0) {
-            HStack(spacing: 12) {
-                iconView
-                    .frame(width: 24, height: 24)
-                    .shadow(color: .black.opacity(0.1), radius: 1, x: 0, y: 0.5)
-                
-                VStack(alignment: .leading, spacing: 1) {
-                    Text(tile.label)
-                        .font(.body.weight(.medium))
-                    if let bid = tile.bundleIdentifier {
-                        BundleIdentifierText(bid)
-                    }
+        HStack(spacing: 10) {
+            Image(systemName: "line.3.horizontal")
+                .font(.caption)
+                .foregroundStyle(.tertiary)
+                .frame(width: 16, height: 20)
+                .accessibilityLabel("Drag to rearrange")
+
+            iconView
+                .frame(width: 24, height: 24)
+                .shadow(color: .black.opacity(0.1), radius: 1, x: 0, y: 0.5)
+
+            VStack(alignment: .leading, spacing: 1) {
+                Text(tile.label)
+                    .font(.body.weight(.medium))
+                if let bid = tile.bundleIdentifier {
+                    BundleIdentifierText(bid)
                 }
             }
-            .padding(.horizontal, 12)
-            .padding(.vertical, 8)
-            
+
             Spacer()
-            
-            if isHovering {
-                HStack(spacing: 4) {
-                    if let moveUp = moveUp {
-                        Button(action: moveUp) {
-                            Image(systemName: "chevron.up")
-                                .frame(width: 20, height: 20)
-                        }
-                        .buttonStyle(.plain)
-                        .foregroundColor(.secondary)
-                    }
-                    
-                    if let moveDown = moveDown {
-                        Button(action: moveDown) {
-                            Image(systemName: "chevron.down")
-                                .frame(width: 20, height: 20)
-                        }
-                        .buttonStyle(.plain)
-                        .foregroundColor(.secondary)
-                    }
-                    
-                    Button(action: onDelete) {
-                        Image(systemName: "xmark.circle.fill")
-                            .frame(width: 20, height: 20)
-                    }
-                    .buttonStyle(.plain)
-                    .foregroundColor(.red.opacity(0.7))
-                }
-                .padding(.trailing, 8)
-                .transition(.opacity.combined(with: .move(edge: .trailing)))
+
+            Button(role: .destructive, action: onDelete) {
+                Image(systemName: "trash")
+                    .font(.system(size: 15, weight: .medium))
             }
+            .buttonStyle(.borderless)
+            .controlSize(.regular)
+            .frame(width: SettingsComponentMetrics.iconButtonSize, height: SettingsComponentMetrics.iconButtonSize)
+            .help("Remove Dock Item")
+            .accessibilityLabel("Remove Dock Item")
         }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 8)
         .frame(minHeight: 44, alignment: .center)
         .contentShape(Rectangle())
-        .onHover { isHovering = $0 }
     }
     
     @ViewBuilder
@@ -621,6 +640,14 @@ struct DockTileRow: View {
                 .font(.system(size: 16))
                 .foregroundColor(.secondary)
         }
+    }
+}
+
+private struct ReorderableDockTile: Identifiable {
+    let tile: DockTile
+
+    var id: String {
+        tile.id.uuidString
     }
 }
 

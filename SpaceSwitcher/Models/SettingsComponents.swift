@@ -365,6 +365,10 @@ struct BundleIdentifierText: View {
     }
 }
 
+enum SettingsComponentMetrics {
+    static let iconButtonSize: CGFloat = 32
+}
+
 struct SettingsSection<Content: View, Accessory: View>: View {
     let title: LocalizedStringKey?
     let helperText: LocalizedStringKey?

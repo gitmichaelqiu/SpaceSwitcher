@@ -99,6 +99,7 @@ struct RuleEditor: View {
             }
             .buttonStyle(.plain)
             .foregroundStyle(.primary)
+            .frame(width: 300, alignment: .leading)
             .help("Choose an application")
         } else {
             Button {
@@ -108,8 +109,9 @@ struct RuleEditor: View {
             }
             .buttonStyle(.plain)
             .foregroundStyle(.primary)
+            .frame(width: 300, alignment: .leading)
             .fixedSize(horizontal: false, vertical: true)
-            .popover(isPresented: $showingApplicationPicker, arrowEdge: .trailing) {
+            .popover(isPresented: $showingApplicationPicker, arrowEdge: .top) {
                 runningApplicationsPopover
             }
         }
@@ -253,6 +255,10 @@ struct RuleEditor: View {
                             group: $group,
                             availableSpaces: availableSpaces
                         )
+
+                        if !group.actions.isEmpty {
+                            Divider()
+                        }
 
                         ActionListRows(actions: $group.actions)
 
