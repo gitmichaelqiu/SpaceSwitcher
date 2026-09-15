@@ -467,6 +467,7 @@ struct SettingsSection<Content: View, Accessory: View>: View {
                     )
             )
         }
+        .padding(.top, title == nil ? -10 : 0)
     }
 }
 
