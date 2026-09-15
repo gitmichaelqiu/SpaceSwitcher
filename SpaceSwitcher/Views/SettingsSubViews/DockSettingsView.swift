@@ -59,13 +59,16 @@ struct DockSettingsView: View {
                                     "Default Set",
                                     helperText: "The default set is used for any space that doesn't have a specific assignment."
                                 ) {
-                                    Toggle("", isOn: Binding(
-                                        get: { dockManager.config.defaultDockSetID == selectedID },
-                                        set: { if $0 { dockManager.config.defaultDockSetID = selectedID } }
-                                    ))
+                                    Picker("", selection: Binding(
+                                        get: { dockManager.config.defaultDockSetID ?? selectedID },
+                                        set: { dockManager.config.defaultDockSetID = $0 }
+                                    )) {
+                                        ForEach(dockManager.config.dockSets) { dockSet in
+                                            Text(dockSet.name).tag(dockSet.id)
+                                        }
+                                    }
                                     .labelsHidden()
-                                    .toggleStyle(.switch)
-                                    .disabled(dockManager.config.defaultDockSetID == selectedID)
+                                    .pickerStyle(.menu)
                                 }
                             }
 
