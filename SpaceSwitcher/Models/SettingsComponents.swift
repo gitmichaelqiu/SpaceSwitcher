@@ -150,7 +150,7 @@ struct SettingsRow<Content: View>: View {
     }
 
     var body: some View {
-        HStack(alignment: .firstTextBaseline, spacing: 16) {
+        HStack {
             HStack(spacing: 4) {
                 Text(highlightedText(text: String(localized: title), query: navigationState.searchText))
                     .layoutPriority(1)
@@ -168,7 +168,7 @@ struct SettingsRow<Content: View>: View {
             .frame(maxWidth: .infinity, alignment: .leading)
 
             content
-                .fixedSize(horizontal: true, vertical: false)
+                .frame(alignment: .trailing)
         }
         .padding(.vertical, 6)
         .padding(.horizontal, 10)
