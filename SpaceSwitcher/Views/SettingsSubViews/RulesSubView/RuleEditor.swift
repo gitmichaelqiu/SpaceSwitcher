@@ -9,6 +9,7 @@ struct RuleEditor: View {
     let onCancel: () -> Void
     @State private var runningApps: [(name: String, id: String, icon: NSImage)] = []
     @State private var showingLegend = false
+    @State private var showingApplicationPicker = false
     @State private var groupPendingDeletion: UUID?
     
     init(rule: AppRule, availableSpaces: [SpaceInfo], onSave: @escaping (AppRule) -> Void, onCancel: @escaping () -> Void) {
@@ -99,28 +100,72 @@ struct RuleEditor: View {
             .buttonStyle(.borderless)
             .help("Choose an application")
         } else {
-            Menu {
-                Section("Running Applications") {
-                    ForEach(runningApps, id: \.id) { app in
-                        Button { selectApp(name: app.name, id: app.id) } label: {
-                            Label {
-                                Text(app.name)
-                            } icon: {
-                                Image(nsImage: app.icon)
-                                    .resizable()
-                                    .frame(width: 18, height: 18)
-                            }
-                        }
-                    }
-                }
-                Divider()
-                Button("Choose from Applications...") { pickOtherApp() }
+            Button {
+                showingApplicationPicker.toggle()
             } label: {
                 applicationPickerLabel
             }
-            .menuStyle(.borderlessButton)
+            .buttonStyle(.borderless)
             .fixedSize(horizontal: false, vertical: true)
+            .popover(isPresented: $showingApplicationPicker, arrowEdge: .trailing) {
+                runningApplicationsPopover
+            }
         }
+    }
+
+    private var runningApplicationsPopover: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            Text("Running Applications")
+                .font(.headline)
+                .foregroundStyle(.secondary)
+                .padding(.horizontal, 8)
+                .padding(.vertical, 6)
+
+            ScrollView(.vertical) {
+                VStack(spacing: 2) {
+                    ForEach(runningApps, id: \.id) { app in
+                        Button {
+                            selectApp(name: app.name, id: app.id)
+                            showingApplicationPicker = false
+                        } label: {
+                            HStack(spacing: 10) {
+                                Image(nsImage: app.icon)
+                                    .resizable()
+                                    .aspectRatio(contentMode: .fit)
+                                    .frame(width: 20, height: 20)
+                                    .cornerRadius(4)
+
+                                Text(app.name)
+                                    .lineLimit(1)
+
+                                Spacer(minLength: 0)
+                            }
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 6)
+                            .contentShape(Rectangle())
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+            }
+            .frame(maxHeight: 300)
+
+            Divider()
+                .padding(.vertical, 6)
+
+            Button {
+                showingApplicationPicker = false
+                pickOtherApp()
+            } label: {
+                Label("Choose from Applications...", systemImage: "plus.app")
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+            .buttonStyle(.plain)
+            .padding(.horizontal, 8)
+            .padding(.vertical, 6)
+        }
+        .padding(8)
+        .frame(width: 300)
     }
 
     private var applicationPickerLabel: some View {
