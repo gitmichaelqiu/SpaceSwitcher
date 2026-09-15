@@ -367,24 +367,17 @@ private struct DockSpaceCard: View {
         VStack(alignment: .center, spacing: 2) {
             Text("\(space.number)")
                 .font(.body.weight(.semibold))
-            Text(space.name)
+            Text(space.name.isEmpty ? "Space \(space.number)" : space.name)
                 .font(.caption)
                 .lineLimit(1)
         }
         .frame(maxWidth: .infinity, minHeight: 50, maxHeight: 50)
         .background(
             RoundedRectangle(cornerRadius: 10, style: .continuous)
-                .fill(isHighlighted ? Color.accentColor : Color.primary.opacity(0.04))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 10, style: .continuous)
-                        .stroke(isDimmed ? Color(nsColor: .disabledControlTextColor).opacity(0.18) : Color.clear, lineWidth: 1)
-                )
+                .fill(isHighlighted ? Color.accentColor : Color(nsColor: .controlBackgroundColor))
         )
-        .foregroundStyle(
-            isHighlighted
-                ? Color.white
-                : (isDimmed ? Color(nsColor: .disabledControlTextColor) : Color.primary)
-        )
+        .foregroundStyle(isHighlighted ? Color.white : Color.primary)
+        .opacity(isDimmed ? 0.5 : 1)
     }
 }
 
