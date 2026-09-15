@@ -217,8 +217,7 @@ struct RuleRow: View {
                 ))
                 .toggleStyle(.switch)
                 .controlSize(.small)
-                .disabled(!isGlobalEnabled)
-                .help(isGlobalEnabled ? "Enable or disable this rule." : "Enable Automation above to use individual rules.")
+                .help(isGlobalEnabled ? "Enable or disable this rule." : "This rule will run when Automation is on.")
 
                 Button(role: .destructive, action: onDelete) {
                     Image(systemName: "trash")
