@@ -36,9 +36,13 @@ class RuleManager: ObservableObject {
     private var cancellables = Set<AnyCancellable>()
     private let rulesKey = "SpaceSwitcherRules"
     
-    // Managed visibility states
-    private var managedHides = Set<String>()
-    private var managedMinimizes = Set<String>()
+    // Managed visibility states are keyed by WindowServer window ID so a rule
+    // can restore only the windows it changed. App-level fallbacks are keyed by
+    // process ID when an application does not expose an AX window list.
+    private var managedHides = Set<Int>()
+    private var managedMinimizes = Set<Int>()
+    private var managedAppHides = Set<Int32>()
+    private var managedAppMinimizes = Set<Int32>()
     
     // Tracks the current rule enforcement process
     private var enforcementTask: Task<Void, Never>?
@@ -69,124 +73,262 @@ class RuleManager: ObservableObject {
         enforcementTask?.cancel()
         
         // Start new enforcement task
-        enforcementTask = Task {
+        enforcementTask = Task { [weak self] in
+            guard let self else { return }
             guard isAutomationEnabled else { return }
             
             for rule in rules where rule.isEnabled {
                 // Check cancellation before every rule
                 if Task.isCancelled { return }
                 
+                let actions: [ActionItem]
+                let sourceSpaceID: String?
                 if let matchingGroup = rule.groups.first(where: { $0.targetSpaceIDs.contains(spaceID) }) {
-                    await perform(actions: matchingGroup.actions, on: rule.appBundleID)
+                    actions = matchingGroup.actions
+                    sourceSpaceID = matchingGroup.sourceSpaceID
                 } else {
-                    await perform(actions: rule.elseActions, on: rule.appBundleID)
+                    actions = rule.elseActions
+                    sourceSpaceID = nil
+                }
+
+                let applications = applications(for: rule)
+                for (index, application) in applications.enumerated() {
+                    if Task.isCancelled { return }
+                    await perform(
+                        actions: actions,
+                        on: application,
+                        sourceSpaceID: sourceSpaceID,
+                        performGlobalHotkeys: index == 0
+                    )
                 }
             }
         }
     }
     
-    // Async function called by the master enforcement task
-    private func perform(actions: [ActionItem], on bundleID: String) async {
-        // Loosely check app existence
-        guard let app = NSRunningApplication.runningApplications(withBundleIdentifier: bundleID).first else { return }
-        
+    private func applications(for rule: AppRule) -> [NSRunningApplication] {
+        let ownPID = ProcessInfo.processInfo.processIdentifier
+
+        if rule.appliesToAllApps {
+            return NSWorkspace.shared.runningApplications.filter {
+                $0.activationPolicy == .regular && $0.processIdentifier != ownPID
+            }
+        }
+
+        guard !rule.appBundleID.isEmpty else { return [] }
+        return NSRunningApplication.runningApplications(withBundleIdentifier: rule.appBundleID)
+            .filter { $0.processIdentifier != ownPID }
+    }
+
+    // Async function called by the master enforcement task.
+    private func perform(
+        actions: [ActionItem],
+        on app: NSRunningApplication,
+        sourceSpaceID: String?,
+        performGlobalHotkeys: Bool
+    ) async {
+        let allWindows = WindowSpaceService.windows(for: app)
+        let targetWindows: [RuleWindowTarget]
+
+        if let sourceSpaceID {
+            targetWindows = allWindows.filter { $0.spaceIDs.contains(sourceSpaceID) }
+            // A source-space rule must never guess based on app-wide state. If
+            // the window cannot be located in that space, leave it alone.
+            guard !targetWindows.isEmpty else { return }
+        } else {
+            targetWindows = allWindows
+        }
+
         let previousApp = NSWorkspace.shared.frontmostApplication
-        
+
         for item in actions {
             // Check cancellation before every action
             if Task.isCancelled { return }
             
             switch item.value {
             case .hide:
-                if !app.isHidden {
-                    managedHides.insert(bundleID)
+                if targetWindows.isEmpty {
+                    hideApp(app)
+                    continue
                 }
-                app.hide()
+
+                var didHideWindow = false
+                for window in targetWindows {
+                    if WindowSpaceService.setHidden(window, isHidden: true) {
+                        managedHides.insert(window.id)
+                        didHideWindow = true
+                    }
+                }
+
+                // AX exposes app hiding on every supported macOS release, but
+                // some applications do not expose a settable window-hidden
+                // attribute. Preserve the old behavior only when no source
+                // filter could be violated by doing so.
+                if !didHideWindow && sourceSpaceID == nil {
+                    hideApp(app)
+                }
                 
             case .show:
-                managedHides.remove(bundleID)
-                managedMinimizes.remove(bundleID)
-                let wasHidden = app.isHidden
-                unhideAppWithoutActivation(app)
-                unminimizeAppWindows(app)
-                if wasHidden { try? await Task.sleep(nanoseconds: 200_000_000) }
-
-            case .restore:
-                let shouldUnhide = managedHides.contains(bundleID)
-                let shouldUnminimize = managedMinimizes.contains(bundleID)
-                managedHides.remove(bundleID)
-                managedMinimizes.remove(bundleID)
-                
-                if shouldUnhide {
+                let canApplyAppVisibility = sourceSpaceID == nil || targetWindows.count == allWindows.count
+                let wasHidden = canApplyAppVisibility && app.isHidden
+                if canApplyAppVisibility {
+                    managedAppHides.remove(app.processIdentifier)
+                    managedAppMinimizes.remove(app.processIdentifier)
                     unhideAppWithoutActivation(app)
                 }
-                if shouldUnminimize {
+
+                for window in targetWindows {
+                    managedHides.remove(window.id)
+                    managedMinimizes.remove(window.id)
+                    _ = WindowSpaceService.setHidden(window, isHidden: false)
+                    _ = WindowSpaceService.setMinimized(window, isMinimized: false)
+                }
+
+                if canApplyAppVisibility && targetWindows.isEmpty {
                     unminimizeAppWindows(app)
                 }
-                if shouldUnhide { try? await Task.sleep(nanoseconds: 200_000_000) }
+                if wasHidden { try? await Task.sleep(nanoseconds: 200_000_000) }
+                
+            case .restore:
+                let canApplyAppVisibility = sourceSpaceID == nil || targetWindows.count == allWindows.count
+                if canApplyAppVisibility && managedAppHides.remove(app.processIdentifier) != nil {
+                    unhideAppWithoutActivation(app)
+                }
+
+                if canApplyAppVisibility && managedAppMinimizes.remove(app.processIdentifier) != nil {
+                    unminimizeAppWindows(app)
+                }
+
+                var restoredHiddenWindow = false
+                for window in targetWindows {
+                    if managedHides.remove(window.id) != nil {
+                        _ = WindowSpaceService.setHidden(window, isHidden: false)
+                        restoredHiddenWindow = true
+                    }
+                    if managedMinimizes.remove(window.id) != nil {
+                        _ = WindowSpaceService.setMinimized(window, isMinimized: false)
+                    }
+                }
+                if restoredHiddenWindow { try? await Task.sleep(nanoseconds: 200_000_000) }
                 
             case .minimize:
-                if !isAppEffectivelyHidden(app) {
-                    if minimizeAppWindows(app) {
-                        managedMinimizes.insert(bundleID)
+                if targetWindows.isEmpty {
+                    if !isAppEffectivelyHidden(app) {
+                        if minimizeAppWindows(app) {
+                            managedAppMinimizes.insert(app.processIdentifier)
+                        }
+                    } else {
+                        minimizeAppWindows(app)
                     }
-                } else {
-                    // Even if already hidden/minimized, we still run the minimize command 
-                    // to ensure consistency, but we don't 'claim' it as managed.
-                    minimizeAppWindows(app)
+                    continue
+                }
+
+                for window in targetWindows {
+                    if !isWindowMinimized(window), WindowSpaceService.setMinimized(window, isMinimized: true) {
+                        managedMinimizes.insert(window.id)
+                    }
                 }
                 
             case .bringToFront:
                 app.activate(options: .activateIgnoringOtherApps)
+                if targetWindows.isEmpty {
+                    continue
+                }
+                for window in targetWindows {
+                    _ = WindowSpaceService.raise(window)
+                }
                 
             case .globalHotkey(let k, let m):
-                simulateHotkey(keyCode: k, modifiers: m)
+                if performGlobalHotkeys {
+                    simulateHotkey(keyCode: k, modifiers: m)
+                }
                 
             case .hotkey(let k, let m, let restoreWindow, let waitFrontmost):
-                
-                if waitFrontmost {
-                    // Wait mode
-                    var retries = 0
-                    // Poll for 5 seconds
-                    while !app.isActive && retries < 100 {
-                        if Task.isCancelled { return } // Stop if space changed
-                        try? await Task.sleep(nanoseconds: 50_000_000)
-                        retries += 1
-                    }
-                    
-                    if !app.isActive { continue } // Timed out or cancelled
-                    try? await Task.sleep(nanoseconds: 200_000_000)
-                    
-                } else {
-                    // Force mode
-                    var attempts = 0
-                    while !app.isActive && attempts < 5 {
-                        if Task.isCancelled { return }
-                        app.activate(options: .activateIgnoringOtherApps)
-                        
-                        var check = 0
-                        while !app.isActive && check < 5 {
-                            try? await Task.sleep(nanoseconds: 50_000_000)
-                            check += 1
-                        }
-                        attempts += 1
-                    }
-                    
-                    if app.isActive {
-                        try? await Task.sleep(nanoseconds: 200_000_000)
-                    }
-                }
-                
-                // Final check before firing keys
+                await performHotkey(
+                    keyCode: k,
+                    modifiers: m,
+                    restoreWindow: restoreWindow,
+                    waitFrontmost: waitFrontmost,
+                    on: app,
+                    targetWindow: targetWindows.first,
+                    previousApp: previousApp
+                )
+            }
+        }
+    }
+
+    private func hideApp(_ app: NSRunningApplication) {
+        if !app.isHidden {
+            managedAppHides.insert(app.processIdentifier)
+        }
+        app.hide()
+    }
+
+    private func isWindowMinimized(_ target: RuleWindowTarget) -> Bool {
+        var value: CFTypeRef?
+        guard AXUIElementCopyAttributeValue(
+            target.accessibilityElement,
+            kAXMinimizedAttribute as CFString,
+            &value
+        ) == .success else {
+            return false
+        }
+        return (value as? Bool) ?? (value as? NSNumber)?.boolValue ?? false
+    }
+
+    private func performHotkey(
+        keyCode: Int,
+        modifiers: UInt,
+        restoreWindow: Bool,
+        waitFrontmost: Bool,
+        on app: NSRunningApplication,
+        targetWindow: RuleWindowTarget?,
+        previousApp: NSRunningApplication?
+    ) async {
+        if waitFrontmost {
+            var retries = 0
+            while !app.isActive && retries < 100 {
                 if Task.isCancelled { return }
-                simulateHotkey(keyCode: k, modifiers: m)
-                
-                if !waitFrontmost && restoreWindow, let prev = previousApp, prev.processIdentifier != app.processIdentifier {
-                    try? await Task.sleep(nanoseconds: 100_000_000)
-                    if !Task.isCancelled {
-                        prev.activate(options: .activateIgnoringOtherApps)
-                    }
+                try? await Task.sleep(nanoseconds: 50_000_000)
+                retries += 1
+            }
+
+            if !app.isActive { return }
+            if let targetWindow {
+                _ = WindowSpaceService.raise(targetWindow)
+            }
+            try? await Task.sleep(nanoseconds: 200_000_000)
+        } else {
+            var attempts = 0
+            while !app.isActive && attempts < 5 {
+                if Task.isCancelled { return }
+                app.activate(options: .activateIgnoringOtherApps)
+                if let targetWindow {
+                    _ = WindowSpaceService.raise(targetWindow)
                 }
+
+                var check = 0
+                while !app.isActive && check < 5 {
+                    try? await Task.sleep(nanoseconds: 50_000_000)
+                    check += 1
+                }
+                attempts += 1
+            }
+
+            if app.isActive {
+                try? await Task.sleep(nanoseconds: 200_000_000)
+            }
+        }
+
+        if Task.isCancelled { return }
+        simulateHotkey(keyCode: keyCode, modifiers: modifiers)
+
+        if !waitFrontmost,
+           restoreWindow,
+           let previousApp,
+           previousApp.processIdentifier != app.processIdentifier {
+            try? await Task.sleep(nanoseconds: 100_000_000)
+            if !Task.isCancelled {
+                previousApp.activate(options: .activateIgnoringOtherApps)
             }
         }
     }
