@@ -101,7 +101,6 @@ struct AboutView: View {
                     AboutButtonRow(title: "Acknowledgements.pdf", action: openAcknowledgements)
                 }
             }
-            .padding(14)
             .frame(maxWidth: .infinity, alignment: .leading)
         }
     }
