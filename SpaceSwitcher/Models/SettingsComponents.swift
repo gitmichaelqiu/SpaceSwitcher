@@ -408,7 +408,7 @@ enum SettingsComponentMetrics {
     static let listRowHeight: CGFloat = 34
     static let untitledSectionTopAdjustment: CGFloat = -10
     static let iconButtonSize: CGFloat = 32
-    static let iconGlyphSize: CGFloat = 15
+    static let iconGlyphSize: CGFloat = 12
 }
 
 struct SettingsIconControlLabel: View {
@@ -416,7 +416,7 @@ struct SettingsIconControlLabel: View {
 
     var body: some View {
         Image(systemName: systemName)
-            .font(.system(size: SettingsComponentMetrics.iconGlyphSize, weight: .medium))
+            .font(.system(size: SettingsComponentMetrics.iconGlyphSize, weight: .bold))
             .frame(width: 20, height: 20)
     }
 }
