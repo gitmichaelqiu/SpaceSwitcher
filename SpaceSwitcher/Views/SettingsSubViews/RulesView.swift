@@ -194,7 +194,7 @@ struct RuleRow: View {
 
         if group.usesSourceSpace {
             items.insert(
-                NSLocalizedString("Source Space", comment: "Special rule condition matching a window's current desktop"),
+                String(localized: "Source Space", comment: "Special rule condition matching a window's current desktop"),
                 at: 0
             )
         }

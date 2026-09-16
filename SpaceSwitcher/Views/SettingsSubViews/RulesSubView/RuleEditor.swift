@@ -545,12 +545,12 @@ struct SpaceConditionRow: View {
     private var selectedSpacesTitle: String {
         var titles: [String] = []
         if group.usesSourceSpace {
-            titles.append(NSLocalizedString("Source Space", comment: "Special rule condition matching a window's current desktop"))
+            titles.append(String(localized: "Source Space", comment: "Special rule condition matching a window's current desktop"))
         }
 
         titles.append(contentsOf: selectedSpaces.map(spaceDisplayName))
         if titles.isEmpty {
-            return NSLocalizedString("Choose spaces", comment: "Empty space-selection menu label")
+            return String(localized: "Choose spaces", comment: "Empty space-selection menu label")
         }
         return titles.joined(separator: ", ")
     }
