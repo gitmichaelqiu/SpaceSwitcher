@@ -542,11 +542,14 @@ private struct ApplicationPickerRow<LabelContent: View>: View {
         }
         .buttonStyle(.borderless)
         .background(
-            isHovered
-                ? Color(nsColor: .selectedContentBackgroundColor)
-                : Color.clear
+            RoundedRectangle(cornerRadius: 6, style: .continuous)
+                .fill(
+                    isHovered
+                        ? Color(nsColor: .selectedContentBackgroundColor)
+                        : Color.clear
+                )
         )
-        .contentShape(Rectangle())
+        .contentShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
         .onHover { isHovered = $0 }
     }
 }
