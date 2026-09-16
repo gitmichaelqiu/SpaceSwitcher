@@ -22,42 +22,18 @@ struct RulesView: View {
     
     var body: some View {
         SettingsContainer(.rules) {
-            if ruleManager.rules.isEmpty {
-                emptyState
-                    .frame(maxWidth: .infinity, minHeight: 400)
-            } else {
-                VStack(spacing: SettingsComponentMetrics.sectionSpacing) {
-                    // Global Toggle
-                    SettingsSection {
-                        SettingsRow(
-                            "Automation",
-                            requirements: [
-                                .accessibility(isGranted: permissionManager.isAccessibilityGranted),
-                                .inputEvents(isGranted: permissionManager.isEventSynthesisGranted),
-                                .spaceAPI(isAvailable: spaceManager.apiAvailability == .available)
-                            ]
-                        ) {
-                            Toggle("", isOn: $ruleManager.isAutomationEnabled)
-                                .toggleStyle(.switch)
-                                .labelsHidden()
-                        }
+            VStack(spacing: SettingsComponentMetrics.sectionSpacing) {
+                automationSection
+                perAppAutomationSection {
+                    if ruleManager.rules.isEmpty {
+                        emptyState
+                            .frame(maxWidth: .infinity, minHeight: 280)
+                    } else {
+                        ruleList
                     }
-                    
-                    ForEach(ruleManager.rules) { rule in
-                        SettingsSection {
-                            RuleRow(
-                                rule: rule,
-                                availableSpaces: spaceManager.availableSpaces,
-                                onEdit: { presentedRuleSheet = .edit(rule) },
-                                onDelete: { rulePendingDeletion = rule },
-                                onToggle: { updatedRule in
-                                    ruleManager.updateRule(updatedRule)
-                                }
-                            )
-                        }
-                        .transition(.opacity)
-                    }
-                    
+                }
+
+                if !ruleManager.rules.isEmpty {
                     Button {
                         presentNewRuleEditor()
                     } label: {
@@ -66,9 +42,9 @@ struct RulesView: View {
                     .buttonStyle(.borderedProminent)
                     .frame(maxWidth: .infinity, alignment: .center)
                 }
-                .animation(.easeInOut(duration: 0.2), value: ruleManager.rules)
-                .frame(maxWidth: .infinity, alignment: .topLeading)
             }
+            .animation(.easeInOut(duration: 0.2), value: ruleManager.rules)
+            .frame(maxWidth: .infinity, alignment: .topLeading)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("AddRuleRequest"))) { _ in
@@ -124,6 +100,50 @@ struct RulesView: View {
             }
         } message: {
             Text("This removes the rule for \(pendingDeletionApplicationName).")
+        }
+    }
+
+    private var automationSection: some View {
+        SettingsSection("Automation") {
+            SettingsRow(
+                "Automatically switch spaces",
+                requirements: [
+                    .accessibility(isGranted: permissionManager.isAccessibilityGranted),
+                    .inputEvents(isGranted: permissionManager.isEventSynthesisGranted),
+                    .spaceAPI(isAvailable: spaceManager.apiAvailability == .available)
+                ]
+            ) {
+                Toggle("", isOn: $ruleManager.isAutomationEnabled)
+                    .toggleStyle(.switch)
+                    .labelsHidden()
+            }
+        }
+    }
+
+    private func perAppAutomationSection<Content: View>(
+        @ViewBuilder content: () -> Content
+    ) -> some View {
+        SettingsSection("Per-App Automation", content: content)
+    }
+
+    private var ruleList: some View {
+        VStack(spacing: 0) {
+            ForEach(ruleManager.rules) { rule in
+                RuleRow(
+                    rule: rule,
+                    availableSpaces: spaceManager.availableSpaces,
+                    onEdit: { presentedRuleSheet = .edit(rule) },
+                    onDelete: { rulePendingDeletion = rule },
+                    onToggle: { updatedRule in
+                        ruleManager.updateRule(updatedRule)
+                    }
+                )
+                .transition(.opacity)
+
+                if rule.id != ruleManager.rules.last?.id {
+                    Divider()
+                }
+            }
         }
     }
     

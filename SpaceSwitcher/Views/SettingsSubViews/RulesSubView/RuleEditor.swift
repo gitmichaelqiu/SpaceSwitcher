@@ -584,49 +584,48 @@ struct SpaceConditionRow: View {
     }
     
     var body: some View {
-        VStack(spacing: 0) {
-            SettingsRow("Spaces") {
-                if availableSpaces.isEmpty {
-                    Text("No spaces detected")
-                        .foregroundStyle(.secondary)
-                } else {
-                    Menu {
+        SettingsRow("Spaces") {
+            if availableSpaces.isEmpty {
+                Text("No spaces detected")
+                    .foregroundStyle(.secondary)
+            } else {
+                Menu {
+                    Toggle(
+                        "Source Space",
+                        isOn: Binding(
+                            get: { group.usesSourceSpace },
+                            set: { group.usesSourceSpace = $0 }
+                        )
+                    )
+
+                    if !availableSpaces.isEmpty {
+                        Divider()
+                    }
+
+                    ForEach(availableSpaces) { space in
                         Toggle(
-                            "Source Space",
+                            spaceDisplayName(space),
                             isOn: Binding(
-                                get: { group.usesSourceSpace },
-                                set: { group.usesSourceSpace = $0 }
+                                get: { group.targetSpaceIDs.contains(space.id) },
+                                set: { isSelected in
+                                    if isSelected {
+                                        group.targetSpaceIDs.insert(space.id)
+                                    } else {
+                                        group.targetSpaceIDs.remove(space.id)
+                                    }
+                                }
                             )
                         )
-
-                        if !availableSpaces.isEmpty {
-                            Divider()
-                        }
-
-                        ForEach(availableSpaces) { space in
-                            Toggle(
-                                spaceDisplayName(space),
-                                isOn: Binding(
-                                    get: { group.targetSpaceIDs.contains(space.id) },
-                                    set: { isSelected in
-                                        if isSelected {
-                                            group.targetSpaceIDs.insert(space.id)
-                                        } else {
-                                            group.targetSpaceIDs.remove(space.id)
-                                        }
-                                    }
-                                )
-                            )
-                        }
-                    } label: {
-                        Text(selectedSpacesTitle)
-                            .lineLimit(1)
                     }
-                    .menuStyle(.borderlessButton)
-                    .frame(minWidth: 180, maxWidth: 280, alignment: .trailing)
+                } label: {
+                    Text(selectedSpacesTitle)
+                        .lineLimit(1)
                 }
+                .menuStyle(.borderlessButton)
+                .frame(minWidth: 180, maxWidth: 280, alignment: .trailing)
             }
         }
+        .frame(height: SettingsComponentMetrics.listRowHeight)
     }
 }
 

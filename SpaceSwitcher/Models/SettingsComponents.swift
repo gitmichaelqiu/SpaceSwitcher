@@ -174,6 +174,7 @@ struct SettingsRow<Content: View>: View {
         }
         .padding(.vertical, SettingsComponentMetrics.rowVerticalPadding)
         .padding(.horizontal, SettingsComponentMetrics.rowHorizontalPadding)
+        .frame(minHeight: SettingsComponentMetrics.listRowHeight)
         .id(title.key)
         .onAppear {
             navigationState.register(title: title.key, tab: currentTab)
