@@ -80,29 +80,91 @@ class RuleManager: ObservableObject {
             for rule in rules where rule.isEnabled {
                 // Check cancellation before every rule
                 if Task.isCancelled { return }
-                
-                let actions: [ActionItem]
-                let sourceSpaceID: String?
-                if let matchingGroup = rule.groups.first(where: { $0.targetSpaceIDs.contains(spaceID) }) {
-                    actions = matchingGroup.actions
-                    sourceSpaceID = matchingGroup.sourceSpaceID
-                } else {
-                    actions = rule.elseActions
-                    sourceSpaceID = nil
-                }
 
                 let applications = applications(for: rule)
-                for (index, application) in applications.enumerated() {
+                var didPerformGlobalHotkey = false
+
+                for application in applications {
                     if Task.isCancelled { return }
-                    await perform(
-                        actions: actions,
-                        on: application,
-                        sourceSpaceID: sourceSpaceID,
-                        performGlobalHotkeys: index == 0
-                    )
+
+                    let allWindows = WindowSpaceService.windows(for: application)
+                    let plans: [RuleWindowPlan]
+
+                    if allWindows.isEmpty {
+                        // A source-space condition cannot be evaluated without
+                        // an accessibility window list. Preserve the old
+                        // app-level behavior for ordinary space groups and
+                        // fallback actions, but never guess a source match.
+                        let actions = rule.groups.first(where: {
+                            $0.targetSpaceIDs.contains(spaceID)
+                        })?.actions ?? rule.elseActions
+                        plans = [RuleWindowPlan(actions: actions, windows: [])]
+                    } else {
+                        plans = windowPlans(
+                            for: rule,
+                            currentSpaceID: spaceID,
+                            windows: allWindows
+                        )
+                    }
+
+                    for plan in plans {
+                        if Task.isCancelled { return }
+
+                        let hasGlobalHotkey = plan.actions.contains {
+                            if case .globalHotkey = $0.value { return true }
+                            return false
+                        }
+
+                        await perform(
+                            actions: plan.actions,
+                            on: application,
+                            allWindows: allWindows,
+                            targetWindows: plan.windows,
+                            performGlobalHotkeys: hasGlobalHotkey && !didPerformGlobalHotkey
+                        )
+
+                        if hasGlobalHotkey {
+                            didPerformGlobalHotkey = true
+                        }
+                    }
                 }
             }
         }
+    }
+
+    private struct RuleWindowPlan {
+        let actions: [ActionItem]
+        var windows: [RuleWindowTarget]
+    }
+
+    private func windowPlans(
+        for rule: AppRule,
+        currentSpaceID: String,
+        windows: [RuleWindowTarget]
+    ) -> [RuleWindowPlan] {
+        var plans: [(groupID: UUID?, plan: RuleWindowPlan)] = []
+
+        for window in windows {
+            let matchingGroup = rule.groups.first { group in
+                group.targetSpaceIDs.contains(currentSpaceID)
+                    || (group.usesSourceSpace && window.spaceIDs.contains(currentSpaceID))
+            }
+            let groupID = matchingGroup?.id
+            let actions = matchingGroup?.actions ?? rule.elseActions
+
+            if let index = plans.firstIndex(where: { $0.groupID == groupID }) {
+                plans[index].plan.windows.append(window)
+            } else {
+                plans.append(
+                    (
+                        groupID: groupID,
+                        plan: RuleWindowPlan(actions: actions, windows: [window])
+                    )
+                )
+            }
+        }
+
+        return plans.map(\.plan)
     }
     
     private func applications(for rule: AppRule) -> [NSRunningApplication] {
@@ -123,21 +185,10 @@ class RuleManager: ObservableObject {
     private func perform(
         actions: [ActionItem],
         on app: NSRunningApplication,
-        sourceSpaceID: String?,
+        allWindows: [RuleWindowTarget],
+        targetWindows: [RuleWindowTarget],
         performGlobalHotkeys: Bool
     ) async {
-        let allWindows = WindowSpaceService.windows(for: app)
-        let targetWindows: [RuleWindowTarget]
-
-        if let sourceSpaceID {
-            targetWindows = allWindows.filter { $0.spaceIDs.contains(sourceSpaceID) }
-            // A source-space rule must never guess based on app-wide state. If
-            // the window cannot be located in that space, leave it alone.
-            guard !targetWindows.isEmpty else { return }
-        } else {
-            targetWindows = allWindows
-        }
-
         let previousApp = NSWorkspace.shared.frontmostApplication
 
         for item in actions {
@@ -161,14 +212,14 @@ class RuleManager: ObservableObject {
 
                 // AX exposes app hiding on every supported macOS release, but
                 // some applications do not expose a settable window-hidden
-                // attribute. Preserve the old behavior only when no source
-                // filter could be violated by doing so.
-                if !didHideWindow && sourceSpaceID == nil {
+                // attribute. Preserve the old behavior only when the plan
+                // covers the complete application.
+                if !didHideWindow && targetWindows.count == allWindows.count {
                     hideApp(app)
                 }
                 
             case .show:
-                let canApplyAppVisibility = sourceSpaceID == nil || targetWindows.count == allWindows.count
+                let canApplyAppVisibility = targetWindows.count == allWindows.count
                 let wasHidden = canApplyAppVisibility && app.isHidden
                 if canApplyAppVisibility {
                     managedAppHides.remove(app.processIdentifier)
@@ -189,7 +240,7 @@ class RuleManager: ObservableObject {
                 if wasHidden { try? await Task.sleep(nanoseconds: 200_000_000) }
                 
             case .restore:
-                let canApplyAppVisibility = sourceSpaceID == nil || targetWindows.count == allWindows.count
+                let canApplyAppVisibility = targetWindows.count == allWindows.count
                 if canApplyAppVisibility && managedAppHides.remove(app.processIdentifier) != nil {
                     unhideAppWithoutActivation(app)
                 }
