@@ -482,7 +482,10 @@ struct RuleEditor: View {
     }
     
     private func loadRunningApps() {
-        let apps = NSWorkspace.shared.runningApplications.filter { $0.activationPolicy == .regular }
+        let ownBundleID = Bundle.main.bundleIdentifier
+        let apps = NSWorkspace.shared.runningApplications.filter {
+            $0.activationPolicy != .prohibited && $0.bundleIdentifier != ownBundleID
+        }
         self.runningApps = apps.map { (
             name: $0.localizedName ?? "Unknown",
             id: $0.bundleIdentifier ?? "",
@@ -594,9 +597,9 @@ struct SpaceConditionRow: View {
                         Button {
                             group.sourceSpaceID = nil
                         } label: {
-                            Label(
+                            sourceSpaceMenuLabel(
                                 "Any Source Space",
-                                systemImage: group.sourceSpaceID == nil ? "checkmark" : ""
+                                isSelected: group.sourceSpaceID == nil
                             )
                         }
 
@@ -606,9 +609,9 @@ struct SpaceConditionRow: View {
                             Button {
                                 group.sourceSpaceID = space.id
                             } label: {
-                                Label(
+                                sourceSpaceMenuLabel(
                                     spaceDisplayName(space),
-                                    systemImage: group.sourceSpaceID == space.id ? "checkmark" : ""
+                                    isSelected: group.sourceSpaceID == space.id
                                 )
                             }
                         }
@@ -620,6 +623,15 @@ struct SpaceConditionRow: View {
                     .frame(minWidth: 180, maxWidth: 280, alignment: .trailing)
                 }
             }
+        }
+    }
+
+    @ViewBuilder
+    private func sourceSpaceMenuLabel(_ title: String, isSelected: Bool) -> some View {
+        HStack(spacing: 8) {
+            Image(systemName: "checkmark")
+                .opacity(isSelected ? 1 : 0)
+            Text(title)
         }
     }
 }
