@@ -152,12 +152,49 @@ enum ShortcutHelper {
     }
 }
 
-// ... (RuleGroup, AppRule, SpaceInfo remain unchanged)
 struct RuleGroup: Identifiable, Codable, Equatable {
     var id: UUID = UUID()
     var targetSpaceIDs: Set<String>
-    var sourceSpaceID: String? = nil
+    var usesSourceSpace: Bool = false
     var actions: [ActionItem]
+
+    init(
+        targetSpaceIDs: Set<String>,
+        actions: [ActionItem],
+        usesSourceSpace: Bool = false
+    ) {
+        self.targetSpaceIDs = targetSpaceIDs
+        self.actions = actions
+        self.usesSourceSpace = usesSourceSpace
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case id, targetSpaceIDs, usesSourceSpace, sourceSpaceID, actions
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decode(UUID.self, forKey: .id)
+        targetSpaceIDs = try container.decode(Set<String>.self, forKey: .targetSpaceIDs)
+        actions = try container.decode([ActionItem].self, forKey: .actions)
+
+        // Migrate the short-lived sourceSpaceID representation to the
+        // source-space condition. The old value identified a space to filter;
+        // the new model intentionally stores only whether the condition is on.
+        if let value = try container.decodeIfPresent(Bool.self, forKey: .usesSourceSpace) {
+            usesSourceSpace = value
+        } else {
+            usesSourceSpace = try container.decodeIfPresent(String.self, forKey: .sourceSpaceID) != nil
+        }
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(id, forKey: .id)
+        try container.encode(targetSpaceIDs, forKey: .targetSpaceIDs)
+        try container.encode(usesSourceSpace, forKey: .usesSourceSpace)
+        try container.encode(actions, forKey: .actions)
+    }
 }
 
 struct AppRule: Identifiable, Codable, Equatable {
