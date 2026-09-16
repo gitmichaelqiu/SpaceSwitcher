@@ -484,17 +484,7 @@ struct SettingsSection<Content: View, Accessory: View>: View {
     var body: some View {
         VStack(alignment: .leading, spacing: SettingsComponentMetrics.sectionContentSpacing) {
             if let title {
-                HStack(spacing: SettingsComponentMetrics.labelSpacing) {
-                    Text(title)
-                        .font(.headline)
-
-                    if let helperText {
-                        HelperInfoButton(text: helperText)
-                    }
-
-                    Spacer()
-                }
-                .padding(.leading, SettingsComponentMetrics.sectionTitleLeadingPadding)
+                SettingsSectionTitle(title, helperText: helperText)
                 .overlay(alignment: .trailing) {
                     accessory
                 }
@@ -516,6 +506,30 @@ struct SettingsSection<Content: View, Accessory: View>: View {
             .top,
             title == nil ? SettingsComponentMetrics.untitledSectionTopAdjustment : 0
         )
+    }
+}
+
+struct SettingsSectionTitle: View {
+    let title: LocalizedStringKey
+    let helperText: LocalizedStringKey?
+
+    init(_ title: LocalizedStringKey, helperText: LocalizedStringKey? = nil) {
+        self.title = title
+        self.helperText = helperText
+    }
+
+    var body: some View {
+        HStack(spacing: SettingsComponentMetrics.labelSpacing) {
+            Text(title)
+                .font(.headline)
+
+            if let helperText {
+                HelperInfoButton(text: helperText)
+            }
+
+            Spacer()
+        }
+        .padding(.leading, SettingsComponentMetrics.sectionTitleLeadingPadding)
     }
 }
 

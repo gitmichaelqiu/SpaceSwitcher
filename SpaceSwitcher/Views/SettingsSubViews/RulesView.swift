@@ -24,14 +24,7 @@ struct RulesView: View {
         SettingsContainer(.rules) {
             VStack(spacing: SettingsComponentMetrics.sectionSpacing) {
                 automationSection
-                perAppAutomationSection {
-                    if ruleManager.rules.isEmpty {
-                        emptyState
-                            .frame(maxWidth: .infinity, minHeight: 280)
-                    } else {
-                        ruleList
-                    }
-                }
+                perAppAutomationSection
 
                 if !ruleManager.rules.isEmpty {
                     Button {
@@ -120,28 +113,29 @@ struct RulesView: View {
         }
     }
 
-    private func perAppAutomationSection<Content: View>(
-        @ViewBuilder content: () -> Content
-    ) -> some View {
-        SettingsSection("Per-App Automation", content: content)
-    }
+    private var perAppAutomationSection: some View {
+        VStack(alignment: .leading, spacing: SettingsComponentMetrics.sectionSpacing) {
+            SettingsSectionTitle("Per-App Automation")
 
-    private var ruleList: some View {
-        VStack(spacing: 0) {
-            ForEach(ruleManager.rules) { rule in
-                RuleRow(
-                    rule: rule,
-                    availableSpaces: spaceManager.availableSpaces,
-                    onEdit: { presentedRuleSheet = .edit(rule) },
-                    onDelete: { rulePendingDeletion = rule },
-                    onToggle: { updatedRule in
-                        ruleManager.updateRule(updatedRule)
+            if ruleManager.rules.isEmpty {
+                SettingsSection {
+                    emptyState
+                        .frame(maxWidth: .infinity, minHeight: 280)
+                }
+            } else {
+                ForEach(ruleManager.rules) { rule in
+                    SettingsSection {
+                        RuleRow(
+                            rule: rule,
+                            availableSpaces: spaceManager.availableSpaces,
+                            onEdit: { presentedRuleSheet = .edit(rule) },
+                            onDelete: { rulePendingDeletion = rule },
+                            onToggle: { updatedRule in
+                                ruleManager.updateRule(updatedRule)
+                            }
+                        )
                     }
-                )
-                .transition(.opacity)
-
-                if rule.id != ruleManager.rules.last?.id {
-                    Divider()
+                    .transition(.opacity)
                 }
             }
         }
