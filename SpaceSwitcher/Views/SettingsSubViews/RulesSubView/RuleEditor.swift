@@ -201,8 +201,6 @@ struct RuleEditor: View {
                     Text("Every application")
                         .font(.caption)
                         .foregroundStyle(.secondary)
-                } else {
-                    BundleIdentifierText(workingRule.appBundleID.isEmpty ? "Choose an application" : workingRule.appBundleID)
                 }
             }
 

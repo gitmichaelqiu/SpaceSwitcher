@@ -586,28 +586,22 @@ struct DockTileRow: View {
                 .frame(width: 24, height: 24)
                 .shadow(color: .black.opacity(0.1), radius: 1, x: 0, y: 0.5)
 
-            VStack(alignment: .leading, spacing: 1) {
-                Text(tile.label)
-                    .font(.body.weight(.medium))
-                if let bid = tile.bundleIdentifier {
-                    BundleIdentifierText(bid)
-                }
-            }
+            Text(tile.label)
+                .font(.body.weight(.medium))
 
             Spacer()
 
             Button(role: .destructive, action: onDelete) {
-                SettingsIconControlLabel(systemName: "trash")
+                SettingsDestructiveIconLabel(systemName: "trash")
             }
             .buttonStyle(.borderless)
             .controlSize(.regular)
-            .settingsIconControlFrame()
             .help("Remove Dock Item")
             .accessibilityLabel("Remove Dock Item")
         }
         .padding(.horizontal, SettingsComponentMetrics.listRowHorizontalPadding)
         .padding(.vertical, SettingsComponentMetrics.rowVerticalPadding)
-        .frame(minHeight: 44, alignment: .center)
+        .frame(minHeight: SettingsComponentMetrics.listRowHeight, alignment: .center)
         .contentShape(Rectangle())
     }
     

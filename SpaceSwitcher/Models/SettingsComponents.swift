@@ -352,22 +352,6 @@ struct ReorderableSettingsList<Item: Identifiable, RowContent: View, DragPreview
     }
 }
 
-struct BundleIdentifierText: View {
-    let value: String
-
-    init(_ value: String) {
-        self.value = value
-    }
-
-    var body: some View {
-        Text(value)
-            .font(.caption.monospaced())
-            .foregroundStyle(.secondary)
-            .lineLimit(1)
-            .truncationMode(.middle)
-    }
-}
-
 func resolvedApplicationName(bundleIdentifier: String, storedName: String = "") -> String {
     if let url = NSWorkspace.shared.urlForApplication(withBundleIdentifier: bundleIdentifier),
        let bundle = Bundle(url: url) {

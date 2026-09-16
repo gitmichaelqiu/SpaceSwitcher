@@ -246,8 +246,6 @@ struct RuleRow: View {
                         Text("No application selected")
                             .font(.caption)
                             .foregroundStyle(.secondary)
-                    } else {
-                        BundleIdentifierText(rule.appBundleID)
                     }
                 }
 
