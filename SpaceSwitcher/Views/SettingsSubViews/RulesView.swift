@@ -123,7 +123,7 @@ struct RulesView: View {
                 rulePendingDeletion = nil
             }
         } message: {
-            Text("This removes the rule for \(rulePendingDeletion?.appName ?? "this application").")
+            Text("This removes the rule for \(pendingDeletionApplicationName).")
         }
     }
     
@@ -161,6 +161,15 @@ struct RulesView: View {
     private func presentNewRuleEditor() {
         presentedRuleSheet = .add(
             AppRule(appBundleID: "", appName: "", groups: [], elseActions: [])
+        )
+    }
+
+    private var pendingDeletionApplicationName: String {
+        guard let rule = rulePendingDeletion else { return "this application" }
+        guard !rule.appBundleID.isEmpty else { return rule.appName }
+        return resolvedApplicationName(
+            bundleIdentifier: rule.appBundleID,
+            storedName: rule.appName
         )
     }
 }
