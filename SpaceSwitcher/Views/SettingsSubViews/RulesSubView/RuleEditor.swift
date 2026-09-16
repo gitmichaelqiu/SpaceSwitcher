@@ -479,7 +479,7 @@ struct RuleEditor: View {
     private func loadRunningApps() {
         let ownBundleID = Bundle.main.bundleIdentifier
         let apps = NSWorkspace.shared.runningApplications.filter {
-            $0.activationPolicy != .prohibited && $0.bundleIdentifier != ownBundleID
+            $0.activationPolicy == .regular && $0.bundleIdentifier != ownBundleID
         }
         self.runningApps = apps.map { (
             name: $0.localizedName ?? "Unknown",
