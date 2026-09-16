@@ -601,7 +601,7 @@ struct DockTileRow: View {
         }
         .padding(.horizontal, SettingsComponentMetrics.listRowHorizontalPadding)
         .padding(.vertical, SettingsComponentMetrics.rowVerticalPadding)
-        .frame(minHeight: SettingsComponentMetrics.listRowHeight, alignment: .center)
+        .frame(height: SettingsComponentMetrics.listRowHeight, alignment: .center)
         .contentShape(Rectangle())
     }
     

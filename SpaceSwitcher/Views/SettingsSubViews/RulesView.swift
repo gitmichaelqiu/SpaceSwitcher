@@ -238,15 +238,6 @@ struct RuleRow: View {
                     }
                     .font(.body.weight(.semibold))
 
-                    if rule.appliesToAllApps {
-                        Text("Every application")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    } else if rule.appBundleID.isEmpty {
-                        Text("No application selected")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
                 }
 
                 Spacer()
@@ -274,13 +265,13 @@ struct RuleRow: View {
                     SettingsDestructiveIconLabel(systemName: "trash")
                 }
                 .buttonStyle(.borderless)
-                .controlSize(.regular)
+                .controlSize(.small)
                 .help("Delete Rule")
                 .accessibilityLabel("Delete Rule")
             }
             .padding(.horizontal, SettingsComponentMetrics.rowHorizontalPadding)
             .padding(.vertical, SettingsComponentMetrics.rowVerticalPadding)
-            .frame(minHeight: SettingsComponentMetrics.listRowHeight, alignment: .center)
+            .frame(height: SettingsComponentMetrics.listRowHeight, alignment: .center)
 
             if !rule.groups.isEmpty || !rule.elseActions.isEmpty {
                 Divider()
