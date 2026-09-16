@@ -91,35 +91,24 @@ struct RuleEditor: View {
         .background(.bar)
     }
 
-    @ViewBuilder
     private var applicationPicker: some View {
-        if runningApps.isEmpty {
-            Button(action: pickOtherApp) {
-                applicationPickerLabel
-            }
-            .buttonStyle(.plain)
-            .foregroundStyle(.primary)
-            .frame(width: 300, alignment: .leading)
-            .help("Choose an application")
-        } else {
-            Button {
-                showingApplicationPicker.toggle()
-            } label: {
-                applicationPickerLabel
-            }
-            .buttonStyle(.plain)
-            .foregroundStyle(.primary)
-            .frame(width: 300, alignment: .leading)
-            .fixedSize(horizontal: false, vertical: true)
-            .popover(isPresented: $showingApplicationPicker, arrowEdge: .top) {
-                runningApplicationsPopover
-            }
+        Button {
+            showingApplicationPicker.toggle()
+        } label: {
+            applicationPickerLabel
+        }
+        .buttonStyle(.plain)
+        .foregroundStyle(.primary)
+        .frame(width: 300, alignment: .leading)
+        .fixedSize(horizontal: false, vertical: true)
+        .popover(isPresented: $showingApplicationPicker, arrowEdge: .top) {
+            runningApplicationsPopover
         }
     }
 
     private var runningApplicationsPopover: some View {
         VStack(alignment: .leading, spacing: 0) {
-            Text("Running Applications")
+            Text("Target Application")
                 .font(.headline)
                 .foregroundStyle(.secondary)
                 .padding(.horizontal, 8)
@@ -127,6 +116,39 @@ struct RuleEditor: View {
 
             ScrollView(.vertical) {
                 VStack(spacing: 2) {
+                    Button {
+                        selectAllApps()
+                        showingApplicationPicker = false
+                    } label: {
+                        HStack(spacing: 10) {
+                            Image(systemName: "square.grid.2x2")
+                                .font(.body)
+                                .frame(width: 20, height: 20)
+
+                            Text("All Apps")
+                                .lineLimit(1)
+
+                            Spacer(minLength: 0)
+                        }
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 6)
+                        .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+
+                    if !runningApps.isEmpty {
+                        Divider()
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 4)
+
+                        Text("Running Applications")
+                            .font(.headline)
+                            .foregroundStyle(.secondary)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 4)
+                    }
+
                     ForEach(runningApps, id: \.id) { app in
                         Button {
                             selectApp(name: app.name, id: app.id)
@@ -182,24 +204,28 @@ struct RuleEditor: View {
                     .font(.headline)
                     .foregroundStyle(.primary)
                     .lineLimit(1)
-                Text(workingRule.appBundleID.isEmpty ? "Choose an application" : workingRule.appBundleID)
-                    .font(.caption.monospaced())
-                    .foregroundStyle(.secondary)
-                    .lineLimit(1)
+                if workingRule.appliesToAllApps {
+                    Text("Every application")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                } else {
+                    BundleIdentifierText(workingRule.appBundleID.isEmpty ? "Choose an application" : workingRule.appBundleID)
+                }
             }
 
-            if !runningApps.isEmpty {
-                Image(systemName: "chevron.up.chevron.down")
+            Image(systemName: "chevron.down")
                     .font(.caption)
                     .foregroundStyle(.secondary)
-            }
         }
         .contentShape(Rectangle())
         .accessibilityElement(children: .combine)
-        .accessibilityLabel(workingRule.appBundleID.isEmpty ? "Choose an application" : selectedApplicationName)
+        .accessibilityLabel(workingRule.appliesToAllApps ? "All Apps" : (workingRule.appBundleID.isEmpty ? "Choose an application" : selectedApplicationName))
     }
 
     private var selectedApplicationName: String {
+        if workingRule.appliesToAllApps {
+            return NSLocalizedString("All Apps", comment: "")
+        }
         guard !workingRule.appBundleID.isEmpty else { return "Choose an application" }
 
         return resolvedApplicationName(
@@ -209,7 +235,8 @@ struct RuleEditor: View {
     }
 
     private var selectedApplicationURL: URL? {
-        NSWorkspace.shared.urlForApplication(withBundleIdentifier: workingRule.appBundleID)
+        guard !workingRule.appliesToAllApps else { return nil }
+        return NSWorkspace.shared.urlForApplication(withBundleIdentifier: workingRule.appBundleID)
     }
 
     @ViewBuilder
@@ -218,6 +245,10 @@ struct RuleEditor: View {
             Image(nsImage: NSWorkspace.shared.icon(forFile: path))
                 .resizable()
                 .aspectRatio(contentMode: .fit)
+        } else if workingRule.appliesToAllApps {
+            Image(systemName: "square.grid.2x2")
+                .font(.title2)
+                .foregroundStyle(.secondary)
         } else {
             Image(systemName: "app.dashed")
                 .font(.title2)
@@ -371,7 +402,7 @@ struct RuleEditor: View {
     }
 
     private var validationMessage: LocalizedStringKey? {
-        if workingRule.appBundleID.isEmpty {
+        if !workingRule.appliesToAllApps && workingRule.appBundleID.isEmpty {
             return "Choose an application before saving."
         }
 
@@ -411,6 +442,15 @@ struct RuleEditor: View {
         withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
             workingRule.appName = name
             workingRule.appBundleID = id
+            workingRule.appliesToAllApps = false
+        }
+    }
+
+    private func selectAllApps() {
+        withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+            workingRule.appName = ""
+            workingRule.appBundleID = ""
+            workingRule.appliesToAllApps = true
         }
     }
     
@@ -447,7 +487,9 @@ struct RuleEditor: View {
             name: $0.localizedName ?? "Unknown",
             id: $0.bundleIdentifier ?? "",
             icon: $0.icon ?? NSImage()
-        ) }.sorted { $0.name < $1.name }
+        ) }
+        .filter { !$0.id.isEmpty }
+        .sorted { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
     }
     
     private var actionDefinitionsPopover: some View {
@@ -499,37 +541,84 @@ struct SpaceConditionRow: View {
         if selectedSpaces.isEmpty { return "Choose spaces" }
         return selectedSpaces.map(spaceDisplayName).joined(separator: ", ")
     }
+
+    private var sourceSpaceTitle: String {
+        guard let sourceSpaceID = group.sourceSpaceID,
+              let sourceSpace = availableSpaces.first(where: { $0.id == sourceSpaceID }) else {
+            return "Any Source Space"
+        }
+        return spaceDisplayName(sourceSpace)
+    }
     
     var body: some View {
-        SettingsRow("Spaces") {
-            if availableSpaces.isEmpty {
-                Text("No spaces detected")
-                    .foregroundStyle(.secondary)
-            } else {
-                Menu {
-                    ForEach(availableSpaces) { space in
-                        Toggle(
-                            spaceDisplayName(space),
-                            isOn: Binding(
-                                get: { group.targetSpaceIDs.contains(space.id) },
-                                set: { isSelected in
-                                    if isSelected {
-                                        group.targetSpaceIDs.insert(space.id)
-                                    } else {
-                                        group.targetSpaceIDs.remove(space.id)
+        VStack(spacing: 0) {
+            SettingsRow("Spaces") {
+                if availableSpaces.isEmpty {
+                    Text("No spaces detected")
+                        .foregroundStyle(.secondary)
+                } else {
+                    Menu {
+                        ForEach(availableSpaces) { space in
+                            Toggle(
+                                spaceDisplayName(space),
+                                isOn: Binding(
+                                    get: { group.targetSpaceIDs.contains(space.id) },
+                                    set: { isSelected in
+                                        if isSelected {
+                                            group.targetSpaceIDs.insert(space.id)
+                                        } else {
+                                            group.targetSpaceIDs.remove(space.id)
+                                        }
                                     }
-                                }
+                                )
                             )
-                        )
-                    }
-                } label: {
-                    HStack(spacing: 6) {
+                        }
+                    } label: {
                         Text(selectedSpacesTitle)
                             .lineLimit(1)
                     }
+                    .menuStyle(.borderlessButton)
+                    .frame(minWidth: 180, maxWidth: 280, alignment: .trailing)
                 }
-                .menuStyle(.borderlessButton)
-                .frame(minWidth: 180, maxWidth: 280, alignment: .trailing)
+            }
+
+            Divider()
+                .padding(.leading, 10)
+
+            SettingsRow("Source Space") {
+                if availableSpaces.isEmpty {
+                    Text("No spaces detected")
+                        .foregroundStyle(.secondary)
+                } else {
+                    Menu {
+                        Button {
+                            group.sourceSpaceID = nil
+                        } label: {
+                            Label(
+                                "Any Source Space",
+                                systemImage: group.sourceSpaceID == nil ? "checkmark" : ""
+                            )
+                        }
+
+                        Divider()
+
+                        ForEach(availableSpaces) { space in
+                            Button {
+                                group.sourceSpaceID = space.id
+                            } label: {
+                                Label(
+                                    spaceDisplayName(space),
+                                    systemImage: group.sourceSpaceID == space.id ? "checkmark" : ""
+                                )
+                            }
+                        }
+                    } label: {
+                        Text(sourceSpaceTitle)
+                            .lineLimit(1)
+                    }
+                    .menuStyle(.borderlessButton)
+                    .frame(minWidth: 180, maxWidth: 280, alignment: .trailing)
+                }
             }
         }
     }

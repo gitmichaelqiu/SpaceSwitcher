@@ -166,6 +166,9 @@ struct RulesView: View {
 
     private var pendingDeletionApplicationName: String {
         guard let rule = rulePendingDeletion else { return "this application" }
+        if rule.appliesToAllApps {
+            return NSLocalizedString("All Apps", comment: "")
+        }
         guard !rule.appBundleID.isEmpty else { return rule.appName }
         return resolvedApplicationName(
             bundleIdentifier: rule.appBundleID,
@@ -200,14 +203,25 @@ struct RuleRow: View {
                     .frame(width: 32, height: 32)
 
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(rule.appBundleID.isEmpty
-                         ? "Select Application"
-                         : resolvedApplicationName(
-                             bundleIdentifier: rule.appBundleID,
-                             storedName: rule.appName
-                         ))
-                        .font(.body.weight(.semibold))
-                    if rule.appBundleID.isEmpty {
+                    Group {
+                        if rule.appliesToAllApps {
+                            Text("All Apps")
+                        } else if rule.appBundleID.isEmpty {
+                            Text("Select Application")
+                        } else {
+                            Text(resolvedApplicationName(
+                                bundleIdentifier: rule.appBundleID,
+                                storedName: rule.appName
+                            ))
+                        }
+                    }
+                    .font(.body.weight(.semibold))
+
+                    if rule.appliesToAllApps {
+                        Text("Every application")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    } else if rule.appBundleID.isEmpty {
                         Text("No application selected")
                             .font(.caption)
                             .foregroundStyle(.secondary)
@@ -256,7 +270,7 @@ struct RuleRow: View {
                         ruleSummary(
                             icon: "arrow.up.forward.app",
                             title: spacesString(for: group.targetSpaceIDs),
-                            details: actionSummary(group.actions)
+                            details: groupSummary(group)
                         )
 
                         if rule.groups.last?.id != group.id || !rule.elseActions.isEmpty {
@@ -279,7 +293,11 @@ struct RuleRow: View {
 
     private var appIcon: some View {
         Group {
-            if let path = NSWorkspace.shared.urlForApplication(withBundleIdentifier: rule.appBundleID)?.path {
+            if rule.appliesToAllApps {
+                Image(systemName: "square.grid.2x2")
+                    .font(.title2)
+                    .foregroundStyle(.secondary)
+            } else if let path = NSWorkspace.shared.urlForApplication(withBundleIdentifier: rule.appBundleID)?.path {
                 Image(nsImage: NSWorkspace.shared.icon(forFile: path))
                     .resizable()
                     .aspectRatio(contentMode: .fit)
@@ -293,6 +311,17 @@ struct RuleRow: View {
 
     private func actionSummary(_ actions: [ActionItem]) -> String {
         actions.isEmpty ? "No actions" : actions.map { $0.value.localizedString }.joined(separator: ", ")
+    }
+
+    private func groupSummary(_ group: RuleGroup) -> String {
+        let actions = actionSummary(group.actions)
+        guard let sourceSpaceID = group.sourceSpaceID,
+              let sourceSpace = availableSpaces.first(where: { $0.id == sourceSpaceID }) else {
+            return actions
+        }
+
+        let format = NSLocalizedString("Source: %@ · %@", comment: "Rule summary showing a source space and actions")
+        return String(format: format, spaceDisplayName(sourceSpace), actions)
     }
 
     private func ruleSummary(icon: String, title: String, details: String) -> some View {
