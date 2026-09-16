@@ -555,7 +555,7 @@ struct ActionListRows: View {
                     .padding(.horizontal, 12)
 
                     if !context.isLast {
-                        Divider().padding(.leading, 46)
+                        Divider().padding(.leading, 12)
                     }
                 }
             },
