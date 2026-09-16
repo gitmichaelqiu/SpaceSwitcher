@@ -11,7 +11,10 @@ struct PermissionsSettingsView: View {
     var body: some View {
         SettingsContainer(.permissions) {
             VStack(alignment: .leading, spacing: 20) {
-                SettingsSection("Permissions") {
+                SettingsSection(
+                    "Permissions",
+                    helperText: "Accessibility controls both window automation and input events."
+                ) {
                     SettingsRow("Accessibility") {
                         HStack(spacing: 8) {
                             PermissionStatusIcon(isGranted: permissionManager.isAccessibilityGranted)
@@ -92,5 +95,6 @@ struct PermissionStatusIcon: View {
     var body: some View {
         Image(systemName: isGranted ? "checkmark.circle.fill" : "xmark.circle.fill")
             .foregroundStyle(isGranted ? .green : .red)
+            .accessibilityLabel(isGranted ? "Granted" : "Not granted")
     }
 }
