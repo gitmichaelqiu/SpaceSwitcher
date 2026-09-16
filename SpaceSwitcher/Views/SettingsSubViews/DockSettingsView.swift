@@ -420,8 +420,6 @@ struct DockItemsListView: View {
                     } label: {
                         Image(systemName: "plus")
                             .font(.system(size: 15, weight: .medium))
-                            .frame(width: SettingsComponentMetrics.iconButtonSize,
-                                   height: SettingsComponentMetrics.iconButtonSize)
                     }
                     .menuStyle(.borderlessButton)
                     .controlSize(.regular)
