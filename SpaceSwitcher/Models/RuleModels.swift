@@ -156,6 +156,7 @@ enum ShortcutHelper {
 struct RuleGroup: Identifiable, Codable, Equatable {
     var id: UUID = UUID()
     var targetSpaceIDs: Set<String>
+    var sourceSpaceID: String? = nil
     var actions: [ActionItem]
 }
 
@@ -163,13 +164,22 @@ struct AppRule: Identifiable, Codable, Equatable {
     var id: UUID = UUID()
     var appBundleID: String
     var appName: String
+    var appliesToAllApps: Bool = false
     var groups: [RuleGroup]
     var elseActions: [ActionItem]
     var isEnabled: Bool = true
     
-    init(appBundleID: String, appName: String, groups: [RuleGroup], elseActions: [ActionItem], isEnabled: Bool = true) {
+    init(
+        appBundleID: String,
+        appName: String,
+        appliesToAllApps: Bool = false,
+        groups: [RuleGroup],
+        elseActions: [ActionItem],
+        isEnabled: Bool = true
+    ) {
         self.appBundleID = appBundleID
         self.appName = appName
+        self.appliesToAllApps = appliesToAllApps
         self.groups = groups
         self.elseActions = elseActions
         self.isEnabled = isEnabled
@@ -178,8 +188,9 @@ struct AppRule: Identifiable, Codable, Equatable {
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         id = try container.decode(UUID.self, forKey: .id)
-        appBundleID = try container.decode(String.self, forKey: .appBundleID)
-        appName = try container.decode(String.self, forKey: .appName)
+        appBundleID = try container.decodeIfPresent(String.self, forKey: .appBundleID) ?? ""
+        appName = try container.decodeIfPresent(String.self, forKey: .appName) ?? ""
+        appliesToAllApps = try container.decodeIfPresent(Bool.self, forKey: .appliesToAllApps) ?? false
         isEnabled = try container.decodeIfPresent(Bool.self, forKey: .isEnabled) ?? true
         
         if let g = try? container.decode([RuleGroup].self, forKey: .groups) { groups = g } else { groups = [] }
@@ -187,7 +198,7 @@ struct AppRule: Identifiable, Codable, Equatable {
     }
     
     enum CodingKeys: String, CodingKey {
-        case id, appBundleID, appName, isEnabled, groups, elseActions
+        case id, appBundleID, appName, appliesToAllApps, isEnabled, groups, elseActions
     }
     
     func encode(to encoder: Encoder) throws {
@@ -195,6 +206,7 @@ struct AppRule: Identifiable, Codable, Equatable {
         try container.encode(id, forKey: .id)
         try container.encode(appBundleID, forKey: .appBundleID)
         try container.encode(appName, forKey: .appName)
+        try container.encode(appliesToAllApps, forKey: .appliesToAllApps)
         try container.encode(isEnabled, forKey: .isEnabled)
         try container.encode(groups, forKey: .groups)
         try container.encode(elseActions, forKey: .elseActions)
