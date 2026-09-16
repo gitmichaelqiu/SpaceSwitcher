@@ -34,7 +34,7 @@ struct DockSettingsView: View {
                 if let selectedID = selectedSetID,
                    let index = dockManager.config.dockSets.firstIndex(where: { $0.id == selectedID }) {
                     SettingsContainer(.dock) {
-                        VStack(alignment: .leading, spacing: 20) {
+                        VStack(alignment: .leading, spacing: SettingsComponentMetrics.sectionSpacing) {
                             SettingsSection("Automation") {
                                 SettingsRow(
                                     "Automatically switch dock",

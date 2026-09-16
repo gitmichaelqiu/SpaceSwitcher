@@ -8,7 +8,7 @@ struct GeneralSettingsView: View {
 
     var body: some View {
         SettingsContainer(.general) {
-            VStack(alignment: .leading, spacing: 20) {
+            VStack(alignment: .leading, spacing: SettingsComponentMetrics.sectionSpacing) {
                 // 1. General
                 SettingsSection("General") {
                     SettingsRow("Launch at login") {

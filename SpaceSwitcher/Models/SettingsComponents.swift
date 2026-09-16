@@ -108,7 +108,7 @@ struct SettingsContainer<Content: View>: View {
         ScrollViewReader { proxy in
             ScrollView(.vertical, showsIndicators: true) {
                 content()
-                    .padding(16)
+                    .padding(SettingsComponentMetrics.containerPadding)
             }
             .environment(\.settingsTab, tab)
             .onChange(of: navigationState.scrollToItemID) { itemID in
@@ -150,28 +150,30 @@ struct SettingsRow<Content: View>: View {
     }
 
     var body: some View {
-        HStack {
-            HStack(spacing: 4) {
-                Text(highlightedText(text: String(localized: title), query: navigationState.searchText))
-                    .layoutPriority(1)
+        VStack(alignment: .leading, spacing: SettingsComponentMetrics.rowContentSpacing) {
+            HStack {
+                HStack(spacing: SettingsComponentMetrics.labelSpacing) {
+                    Text(highlightedText(text: String(localized: title), query: navigationState.searchText))
+                        .layoutPriority(1)
 
-                if let helperText {
-                    HelperInfoButton(text: helperText)
+                    if let helperText {
+                        HelperInfoButton(text: helperText)
+                    }
+
+                    if let warningText {
+                        WarningInfoButton(text: warningText)
+                    }
+
+                    SettingsRequirementWarning(requirements: requirements)
                 }
+                .frame(maxWidth: .infinity, alignment: .leading)
 
-                if let warningText {
-                    WarningInfoButton(text: warningText)
-                }
-
-                SettingsRequirementWarning(requirements: requirements)
+                content
+                    .frame(alignment: .trailing)
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
-
-            content
-                .frame(alignment: .trailing)
         }
-        .padding(.vertical, 6)
-        .padding(.horizontal, 10)
+        .padding(.vertical, SettingsComponentMetrics.rowVerticalPadding)
+        .padding(.horizontal, SettingsComponentMetrics.rowHorizontalPadding)
         .id(title.key)
         .onAppear {
             navigationState.register(title: title.key, tab: currentTab)
@@ -393,6 +395,15 @@ func spaceDisplayName(_ space: SpaceInfo) -> String {
 }
 
 enum SettingsComponentMetrics {
+    static let containerPadding: CGFloat = 16
+    static let sectionSpacing: CGFloat = 20
+    static let sectionContentSpacing: CGFloat = 8
+    static let rowContentSpacing: CGFloat = 8
+    static let labelSpacing: CGFloat = 4
+    static let sectionTitleLeadingPadding: CGFloat = 4
+    static let rowVerticalPadding: CGFloat = 6
+    static let rowHorizontalPadding: CGFloat = 10
+    static let untitledSectionTopAdjustment: CGFloat = -10
     static let iconButtonSize: CGFloat = 32
 }
 
@@ -466,9 +477,9 @@ struct SettingsSection<Content: View, Accessory: View>: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: SettingsComponentMetrics.sectionContentSpacing) {
             if let title {
-                HStack(spacing: 4) {
+                HStack(spacing: SettingsComponentMetrics.labelSpacing) {
                     Text(title)
                         .font(.headline)
 
@@ -479,7 +490,7 @@ struct SettingsSection<Content: View, Accessory: View>: View {
                     Spacer()
                     accessory
                 }
-                .padding(.leading, 4)
+                .padding(.leading, SettingsComponentMetrics.sectionTitleLeadingPadding)
             }
 
             VStack(spacing: 0) {
@@ -494,7 +505,10 @@ struct SettingsSection<Content: View, Accessory: View>: View {
                     )
             )
         }
-        .padding(.top, title == nil ? -10 : 0)
+        .padding(
+            .top,
+            title == nil ? SettingsComponentMetrics.untitledSectionTopAdjustment : 0
+        )
     }
 }
 
@@ -617,6 +631,6 @@ struct SliderSettingsRow<V>: View where V: BinaryFloatingPoint, V.Stride: Binary
             }
         }
         .padding(.vertical, 8)
-        .padding(.horizontal, 10)
+        .padding(.horizontal, SettingsComponentMetrics.rowHorizontalPadding)
     }
 }

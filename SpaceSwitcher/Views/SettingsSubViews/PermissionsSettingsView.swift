@@ -10,7 +10,7 @@ struct PermissionsSettingsView: View {
     
     var body: some View {
         SettingsContainer(.permissions) {
-            VStack(alignment: .leading, spacing: 20) {
+            VStack(alignment: .leading, spacing: SettingsComponentMetrics.sectionSpacing) {
                 SettingsSection(
                     "Permissions",
                     helperText: "Accessibility controls both window automation and input events."

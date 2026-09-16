@@ -252,7 +252,7 @@ struct RuleEditor: View {
     
     private var editorContent: some View {
         ScrollView(.vertical) {
-            VStack(alignment: .leading, spacing: 20) {
+            VStack(alignment: .leading, spacing: SettingsComponentMetrics.sectionSpacing) {
                 ForEach($workingRule.groups) { $group in
                     let index = workingRule.groups.firstIndex(where: { $0.id == group.id }) ?? 0
                     SettingsSection(

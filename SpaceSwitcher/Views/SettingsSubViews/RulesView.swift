@@ -26,7 +26,7 @@ struct RulesView: View {
                 emptyState
                     .frame(maxWidth: .infinity, minHeight: 400)
             } else {
-                VStack(spacing: 14) {
+                VStack(spacing: SettingsComponentMetrics.sectionSpacing) {
                     // Global Toggle
                     SettingsSection {
                         SettingsRow(
