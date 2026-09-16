@@ -583,7 +583,7 @@ struct DockTileRow: View {
                 .accessibilityLabel("Drag to rearrange")
 
             iconView
-                .frame(width: 24, height: 24)
+                .frame(width: 20, height: 20)
                 .shadow(color: .black.opacity(0.1), radius: 1, x: 0, y: 0.5)
 
             Text(tile.label)
@@ -595,7 +595,7 @@ struct DockTileRow: View {
                 SettingsDestructiveIconLabel(systemName: "trash")
             }
             .buttonStyle(.borderless)
-            .controlSize(.regular)
+            .controlSize(.small)
             .help("Remove Dock Item")
             .accessibilityLabel("Remove Dock Item")
         }

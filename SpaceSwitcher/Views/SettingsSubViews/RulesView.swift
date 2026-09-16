@@ -221,7 +221,7 @@ struct RuleRow: View {
         VStack(alignment: .leading, spacing: 0) {
             HStack(spacing: 12) {
                 appIcon
-                    .frame(width: 32, height: 32)
+                    .frame(width: 20, height: 20)
 
                 VStack(alignment: .leading, spacing: 2) {
                     Group {
@@ -278,8 +278,9 @@ struct RuleRow: View {
                 .help("Delete Rule")
                 .accessibilityLabel("Delete Rule")
             }
-            .frame(minHeight: 32, alignment: .center)
-            .padding(12)
+            .padding(.horizontal, SettingsComponentMetrics.rowHorizontalPadding)
+            .padding(.vertical, SettingsComponentMetrics.rowVerticalPadding)
+            .frame(minHeight: SettingsComponentMetrics.listRowHeight, alignment: .center)
 
             if !rule.groups.isEmpty || !rule.elseActions.isEmpty {
                 Divider()
