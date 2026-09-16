@@ -104,6 +104,11 @@ struct RuleEditor: View {
         .popover(isPresented: $showingApplicationPicker, arrowEdge: .top) {
             runningApplicationsPopover
         }
+        .onChange(of: showingApplicationPicker) { isPresented in
+            if isPresented {
+                loadRunningApps()
+            }
+        }
     }
 
     private var runningApplicationsPopover: some View {
