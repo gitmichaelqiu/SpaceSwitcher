@@ -116,7 +116,7 @@ struct RuleEditor: View {
 
             ScrollView(.vertical) {
                 VStack(spacing: 2) {
-                    Button {
+                    ApplicationPickerRow {
                         selectAllApps()
                         showingApplicationPicker = false
                     } label: {
@@ -130,11 +130,7 @@ struct RuleEditor: View {
 
                             Spacer(minLength: 0)
                         }
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 6)
-                        .contentShape(Rectangle())
                     }
-                    .buttonStyle(.plain)
 
                     if !runningApps.isEmpty {
                         Divider()
@@ -150,7 +146,7 @@ struct RuleEditor: View {
                     }
 
                     ForEach(runningApps, id: \.id) { app in
-                        Button {
+                        ApplicationPickerRow {
                             selectApp(name: app.name, id: app.id)
                             showingApplicationPicker = false
                         } label: {
@@ -166,11 +162,7 @@ struct RuleEditor: View {
 
                                 Spacer(minLength: 0)
                             }
-                            .padding(.horizontal, 8)
-                            .padding(.vertical, 6)
-                            .contentShape(Rectangle())
                         }
-                        .buttonStyle(.plain)
                     }
                 }
             }
@@ -179,16 +171,12 @@ struct RuleEditor: View {
             Divider()
                 .padding(.vertical, 6)
 
-            Button {
+            ApplicationPickerRow {
                 showingApplicationPicker = false
                 pickOtherApp()
             } label: {
                 Label("Choose from Applications...", systemImage: "plus.app")
-                    .frame(maxWidth: .infinity, alignment: .leading)
             }
-            .buttonStyle(.plain)
-            .padding(.horizontal, 8)
-            .padding(.vertical, 6)
         }
         .padding(8)
         .frame(width: 300)
@@ -529,6 +517,37 @@ struct RuleEditor: View {
                 .foregroundStyle(.secondary)
                 .lineSpacing(2)
         }
+    }
+}
+
+private struct ApplicationPickerRow<LabelContent: View>: View {
+    private let action: () -> Void
+    private let label: LabelContent
+    @State private var isHovered = false
+
+    init(
+        action: @escaping () -> Void,
+        @ViewBuilder label: () -> LabelContent
+    ) {
+        self.action = action
+        self.label = label()
+    }
+
+    var body: some View {
+        Button(action: action) {
+            label
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.horizontal, 8)
+                .padding(.vertical, 6)
+        }
+        .buttonStyle(.borderless)
+        .background(
+            isHovered
+                ? Color(nsColor: .selectedContentBackgroundColor)
+                : Color.clear
+        )
+        .contentShape(Rectangle())
+        .onHover { isHovered = $0 }
     }
 }
 
