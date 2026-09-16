@@ -403,6 +403,7 @@ enum SettingsComponentMetrics {
     static let sectionTitleLeadingPadding: CGFloat = 4
     static let rowVerticalPadding: CGFloat = 6
     static let rowHorizontalPadding: CGFloat = 10
+    static let listRowHorizontalPadding: CGFloat = 12
     static let untitledSectionTopAdjustment: CGFloat = -10
     static let iconButtonSize: CGFloat = 32
 }
@@ -429,10 +430,12 @@ struct SettingsSection<Content: View, Accessory: View>: View {
     let helperText: LocalizedStringKey?
     let accessory: Accessory
     let content: Content
+    let topPadding: CGFloat
 
     init(
         _ title: LocalizedStringKey? = nil,
         helperText: LocalizedStringKey? = nil,
+        topPadding: CGFloat? = nil,
         @ViewBuilder accessory: () -> Accessory,
         @ViewBuilder content: () -> Content
     ) {
@@ -440,40 +443,49 @@ struct SettingsSection<Content: View, Accessory: View>: View {
         self.helperText = helperText
         self.accessory = accessory()
         self.content = content()
+        self.topPadding = topPadding ?? (title == nil ? SettingsComponentMetrics.untitledSectionTopAdjustment : 0)
     }
 
     init(
         _ title: LocalizedStringKey? = nil,
         helperText: LocalizedStringKey? = nil,
+        topPadding: CGFloat? = nil,
         @ViewBuilder content: () -> Content
     ) where Accessory == EmptyView {
         self.title = title
         self.helperText = helperText
         self.accessory = EmptyView()
         self.content = content()
+        self.topPadding = topPadding ?? (title == nil ? SettingsComponentMetrics.untitledSectionTopAdjustment : 0)
     }
 
     init(
         _ title: String,
         helperText: LocalizedStringKey? = nil,
+        topPadding: CGFloat? = nil,
         @ViewBuilder content: () -> Content
     ) where Accessory == EmptyView {
-        self.title = LocalizedStringKey(title)
+        let localizedTitle = LocalizedStringKey(title)
+        self.title = localizedTitle
         self.helperText = helperText
         self.accessory = EmptyView()
         self.content = content()
+        self.topPadding = topPadding ?? 0
     }
 
     init(
         _ title: String,
         helperText: LocalizedStringKey? = nil,
+        topPadding: CGFloat? = nil,
         @ViewBuilder accessory: () -> Accessory,
         @ViewBuilder content: () -> Content
     ) {
-        self.title = LocalizedStringKey(title)
+        let localizedTitle = LocalizedStringKey(title)
+        self.title = localizedTitle
         self.helperText = helperText
         self.accessory = accessory()
         self.content = content()
+        self.topPadding = topPadding ?? 0
     }
 
     var body: some View {
@@ -505,10 +517,7 @@ struct SettingsSection<Content: View, Accessory: View>: View {
                     )
             )
         }
-        .padding(
-            .top,
-            title == nil ? SettingsComponentMetrics.untitledSectionTopAdjustment : 0
-        )
+        .padding(.top, topPadding)
     }
 }
 

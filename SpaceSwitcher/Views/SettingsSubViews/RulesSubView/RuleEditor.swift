@@ -300,8 +300,8 @@ struct RuleEditor: View {
                         Label("No fallback actions", systemImage: "arrow.turn.down.right")
                             .foregroundStyle(.secondary)
                             .frame(maxWidth: .infinity, alignment: .leading)
-                            .padding(.horizontal, 12)
-                            .padding(.vertical, 10)
+                            .padding(.horizontal, SettingsComponentMetrics.listRowHorizontalPadding)
+                            .padding(.vertical, SettingsComponentMetrics.rowVerticalPadding)
                     } else {
                         ActionListRows(actions: $workingRule.elseActions)
                     }
@@ -646,10 +646,10 @@ struct ActionListRows: View {
                         item: actionBinding(for: item),
                         onDelete: { removeAction(id: item.action.id) }
                     )
-                    .padding(.horizontal, 12)
+                    .padding(.horizontal, SettingsComponentMetrics.listRowHorizontalPadding)
 
                     if !context.isLast {
-                        Divider().padding(.leading, 12)
+                        Divider().padding(.leading, SettingsComponentMetrics.listRowHorizontalPadding)
                     }
                 }
             },
@@ -724,8 +724,8 @@ struct ActionListRows: View {
 
             Spacer(minLength: 0)
         }
-        .padding(.horizontal, 12)
-        .padding(.vertical, 6)
+        .padding(.horizontal, SettingsComponentMetrics.listRowHorizontalPadding)
+        .padding(.vertical, SettingsComponentMetrics.rowVerticalPadding)
         .frame(minWidth: 320, alignment: .leading)
         .contentShape(.dragPreview, Rectangle())
     }
@@ -767,8 +767,8 @@ struct AddActionRow<Content: View>: View {
                 .fixedSize()
                 Spacer()
             }
-            .padding(.horizontal, 10)
-            .padding(.vertical, 6)
+            .padding(.horizontal, SettingsComponentMetrics.listRowHorizontalPadding)
+            .padding(.vertical, SettingsComponentMetrics.rowVerticalPadding)
         }
     }
 }
@@ -873,7 +873,7 @@ struct ActionRowContent: View {
             .help("Remove Action")
             .accessibilityLabel("Remove Action")
         }
-        .frame(minHeight: 28, alignment: .center)
+        .padding(.vertical, SettingsComponentMetrics.rowVerticalPadding)
         .onDisappear(perform: stopRecording)
     }
     

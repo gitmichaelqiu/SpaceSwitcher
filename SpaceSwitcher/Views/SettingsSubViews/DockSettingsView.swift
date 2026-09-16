@@ -533,7 +533,7 @@ struct DockItemsListView: View {
 
     private func dockTileDragPreview(for tile: DockTile) -> some View {
         DockTileRow(tile: tile, onDelete: {})
-            .padding(.horizontal, 12)
+            .padding(.horizontal, SettingsComponentMetrics.listRowHorizontalPadding)
             .frame(minWidth: 320)
             .background(SettingsSectionStyle.dragPreviewBackgroundColor)
             .contentShape(.dragPreview, Rectangle())
@@ -605,8 +605,8 @@ struct DockTileRow: View {
             .help("Remove Dock Item")
             .accessibilityLabel("Remove Dock Item")
         }
-        .padding(.horizontal, 12)
-        .padding(.vertical, 8)
+        .padding(.horizontal, SettingsComponentMetrics.listRowHorizontalPadding)
+        .padding(.vertical, SettingsComponentMetrics.rowVerticalPadding)
         .frame(minHeight: 44, alignment: .center)
         .contentShape(Rectangle())
     }
