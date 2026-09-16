@@ -28,7 +28,7 @@ struct RulesView: View {
             } else {
                 VStack(spacing: SettingsComponentMetrics.sectionSpacing) {
                     // Global Toggle
-                    SettingsSection(topPadding: 0) {
+                    SettingsSection {
                         SettingsRow(
                             "Automation",
                             requirements: [
@@ -44,7 +44,7 @@ struct RulesView: View {
                     }
                     
                     ForEach(ruleManager.rules) { rule in
-                        SettingsSection(topPadding: 0) {
+                        SettingsSection {
                             RuleRow(
                                 rule: rule,
                                 availableSpaces: spaceManager.availableSpaces,

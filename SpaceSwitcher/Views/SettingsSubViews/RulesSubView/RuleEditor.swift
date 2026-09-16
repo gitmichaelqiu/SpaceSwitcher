@@ -302,6 +302,7 @@ struct RuleEditor: View {
                             .frame(maxWidth: .infinity, alignment: .leading)
                             .padding(.horizontal, SettingsComponentMetrics.listRowHorizontalPadding)
                             .padding(.vertical, SettingsComponentMetrics.rowVerticalPadding)
+                            .frame(height: SettingsComponentMetrics.listRowHeight)
                     } else {
                         ActionListRows(actions: $workingRule.elseActions)
                     }
@@ -769,6 +770,7 @@ struct AddActionRow<Content: View>: View {
             }
             .padding(.horizontal, SettingsComponentMetrics.listRowHorizontalPadding)
             .padding(.vertical, SettingsComponentMetrics.rowVerticalPadding)
+            .frame(height: SettingsComponentMetrics.listRowHeight)
         }
     }
 }
@@ -873,7 +875,7 @@ struct ActionRowContent: View {
             .help("Remove Action")
             .accessibilityLabel("Remove Action")
         }
-        .padding(.vertical, SettingsComponentMetrics.rowVerticalPadding)
+        .frame(height: SettingsComponentMetrics.listRowHeight)
         .onDisappear(perform: stopRecording)
     }
     
