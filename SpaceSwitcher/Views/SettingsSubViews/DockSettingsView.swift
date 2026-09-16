@@ -367,7 +367,7 @@ private struct DockSpaceCard: View {
         VStack(alignment: .center, spacing: 2) {
             Text("\(space.number)")
                 .font(.body.weight(.semibold))
-            Text(space.name.isEmpty ? "Space \(space.number)" : space.name)
+            Text(spaceDisplayName(space))
                 .font(.caption)
                 .lineLimit(1)
         }

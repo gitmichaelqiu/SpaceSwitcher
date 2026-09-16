@@ -497,7 +497,7 @@ struct SpaceConditionRow: View {
 
     private var selectedSpacesTitle: String {
         if selectedSpaces.isEmpty { return "Choose spaces" }
-        return selectedSpaces.map { $0.name.isEmpty ? "Space \($0.number)" : $0.name }.joined(separator: ", ")
+        return selectedSpaces.map(spaceDisplayName).joined(separator: ", ")
     }
     
     var body: some View {
@@ -509,7 +509,7 @@ struct SpaceConditionRow: View {
                 Menu {
                     ForEach(availableSpaces) { space in
                         Toggle(
-                            space.name.isEmpty ? "Space \(space.number)" : space.name,
+                            spaceDisplayName(space),
                             isOn: Binding(
                                 get: { group.targetSpaceIDs.contains(space.id) },
                                 set: { isSelected in

@@ -175,8 +175,7 @@ struct RuleRow: View {
     private func spacesString(for spaceIDs: Set<String>) -> String {
         let items = spaceIDs.compactMap { id -> String? in
             if let space = availableSpaces.first(where: { $0.id == id }) {
-                // Return just the name if it exists, otherwise "Space X"
-                return space.name.isEmpty ? "Space \(space.number)" : space.name
+                return spaceDisplayName(space)
             }
             return nil
         }.sorted()

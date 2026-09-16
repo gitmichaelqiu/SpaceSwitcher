@@ -384,6 +384,14 @@ func resolvedApplicationName(bundleIdentifier: String, storedName: String = "") 
     return bundleIdentifier
 }
 
+func spaceDisplayName(_ space: SpaceInfo) -> String {
+    guard space.name.isEmpty else { return space.name }
+    return String.localizedStringWithFormat(
+        NSLocalizedString("Space %lld", comment: "Fallback name for an unnamed desktop space"),
+        Int64(space.number)
+    )
+}
+
 enum SettingsComponentMetrics {
     static let iconButtonSize: CGFloat = 32
 }
