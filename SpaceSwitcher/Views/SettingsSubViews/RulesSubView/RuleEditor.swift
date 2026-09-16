@@ -406,7 +406,9 @@ struct RuleEditor: View {
             return "Choose an application before saving."
         }
 
-        if workingRule.groups.contains(where: { $0.targetSpaceIDs.isEmpty }) {
+        if workingRule.groups.contains(where: {
+            $0.targetSpaceIDs.isEmpty && !$0.usesSourceSpace
+        }) {
             return "Every workflow group must target at least one space."
         }
 
@@ -541,16 +543,16 @@ struct SpaceConditionRow: View {
     }
 
     private var selectedSpacesTitle: String {
-        if selectedSpaces.isEmpty { return "Choose spaces" }
-        return selectedSpaces.map(spaceDisplayName).joined(separator: ", ")
-    }
-
-    private var sourceSpaceTitle: String {
-        guard let sourceSpaceID = group.sourceSpaceID,
-              let sourceSpace = availableSpaces.first(where: { $0.id == sourceSpaceID }) else {
-            return "Any Source Space"
+        var titles: [String] = []
+        if group.usesSourceSpace {
+            titles.append(NSLocalizedString("Source Space", comment: "Special rule condition matching a window's current desktop"))
         }
-        return spaceDisplayName(sourceSpace)
+
+        titles.append(contentsOf: selectedSpaces.map(spaceDisplayName))
+        if titles.isEmpty {
+            return NSLocalizedString("Choose spaces", comment: "Empty space-selection menu label")
+        }
+        return titles.joined(separator: ", ")
     }
     
     var body: some View {
@@ -561,6 +563,18 @@ struct SpaceConditionRow: View {
                         .foregroundStyle(.secondary)
                 } else {
                     Menu {
+                        Toggle(
+                            "Source Space",
+                            isOn: Binding(
+                                get: { group.usesSourceSpace },
+                                set: { group.usesSourceSpace = $0 }
+                            )
+                        )
+
+                        if !availableSpaces.isEmpty {
+                            Divider()
+                        }
+
                         ForEach(availableSpaces) { space in
                             Toggle(
                                 spaceDisplayName(space),
@@ -584,54 +598,6 @@ struct SpaceConditionRow: View {
                     .frame(minWidth: 180, maxWidth: 280, alignment: .trailing)
                 }
             }
-
-            Divider()
-                .padding(.leading, 10)
-
-            SettingsRow("Source Space") {
-                if availableSpaces.isEmpty {
-                    Text("No spaces detected")
-                        .foregroundStyle(.secondary)
-                } else {
-                    Menu {
-                        Button {
-                            group.sourceSpaceID = nil
-                        } label: {
-                            sourceSpaceMenuLabel(
-                                "Any Source Space",
-                                isSelected: group.sourceSpaceID == nil
-                            )
-                        }
-
-                        Divider()
-
-                        ForEach(availableSpaces) { space in
-                            Button {
-                                group.sourceSpaceID = space.id
-                            } label: {
-                                sourceSpaceMenuLabel(
-                                    spaceDisplayName(space),
-                                    isSelected: group.sourceSpaceID == space.id
-                                )
-                            }
-                        }
-                    } label: {
-                        Text(sourceSpaceTitle)
-                            .lineLimit(1)
-                    }
-                    .menuStyle(.borderlessButton)
-                    .frame(minWidth: 180, maxWidth: 280, alignment: .trailing)
-                }
-            }
-        }
-    }
-
-    @ViewBuilder
-    private func sourceSpaceMenuLabel(_ title: String, isSelected: Bool) -> some View {
-        HStack(spacing: 8) {
-            Image(systemName: "checkmark")
-                .opacity(isSelected ? 1 : 0)
-            Text(title)
         }
     }
 }

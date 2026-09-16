@@ -184,13 +184,20 @@ struct RuleRow: View {
     let onDelete: () -> Void
     let onToggle: (AppRule) -> Void
     
-    private func spacesString(for spaceIDs: Set<String>) -> String {
-        let items = spaceIDs.compactMap { id -> String? in
+    private func spacesString(for group: RuleGroup) -> String {
+        var items = group.targetSpaceIDs.compactMap { id -> String? in
             if let space = availableSpaces.first(where: { $0.id == id }) {
                 return spaceDisplayName(space)
             }
             return nil
         }.sorted()
+
+        if group.usesSourceSpace {
+            items.insert(
+                NSLocalizedString("Source Space", comment: "Special rule condition matching a window's current desktop"),
+                at: 0
+            )
+        }
         
         if items.isEmpty { return "Unassigned" }
         return items.joined(separator: ", ")
@@ -269,8 +276,8 @@ struct RuleRow: View {
                     ForEach(rule.groups) { group in
                         ruleSummary(
                             icon: "arrow.up.forward.app",
-                            title: spacesString(for: group.targetSpaceIDs),
-                            details: groupSummary(group)
+                            title: spacesString(for: group),
+                            details: actionSummary(group.actions)
                         )
 
                         if rule.groups.last?.id != group.id || !rule.elseActions.isEmpty {
@@ -311,17 +318,6 @@ struct RuleRow: View {
 
     private func actionSummary(_ actions: [ActionItem]) -> String {
         actions.isEmpty ? "No actions" : actions.map { $0.value.localizedString }.joined(separator: ", ")
-    }
-
-    private func groupSummary(_ group: RuleGroup) -> String {
-        let actions = actionSummary(group.actions)
-        guard let sourceSpaceID = group.sourceSpaceID,
-              let sourceSpace = availableSpaces.first(where: { $0.id == sourceSpaceID }) else {
-            return actions
-        }
-
-        let format = NSLocalizedString("Source: %@ · %@", comment: "Rule summary showing a source space and actions")
-        return String(format: format, spaceDisplayName(sourceSpace), actions)
     }
 
     private func ruleSummary(icon: String, title: String, details: String) -> some View {
