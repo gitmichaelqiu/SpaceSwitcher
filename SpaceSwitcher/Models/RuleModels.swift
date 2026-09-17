@@ -2,12 +2,39 @@ import Foundation
 import AppKit
 
 // MARK: - Actions
+enum RuleCondition: String, CaseIterable, Codable, Hashable, Identifiable {
+    case windowMinimized
+    case windowFrontmost
+    case applicationActive
+    case applicationHidden
+    case windowFullscreen
+
+    var id: String { rawValue }
+
+    var localizedString: String {
+        switch self {
+        case .windowMinimized:
+            return NSLocalizedString("Window is minimized", comment: "Condition matching minimized windows")
+        case .windowFrontmost:
+            return NSLocalizedString("Window is frontmost", comment: "Condition matching the frontmost window")
+        case .applicationActive:
+            return NSLocalizedString("Application is active", comment: "Condition matching active applications")
+        case .applicationHidden:
+            return NSLocalizedString("Application is hidden", comment: "Condition matching hidden applications")
+        case .windowFullscreen:
+            return NSLocalizedString("Window is fullscreen", comment: "Condition matching fullscreen windows")
+        }
+    }
+}
+
 enum WindowAction: Identifiable, Codable, Equatable, Hashable {
     case show
     case restore
     case hide
     case minimize
     case bringToFront
+    case ifCondition(RuleCondition)
+    case endIf
     // Standard App-Specific Hotkey
     case hotkey(keyCode: Int, modifiers: UInt, restoreWindow: Bool, waitFrontmost: Bool)
     // NEW: Global System Hotkey
@@ -20,6 +47,8 @@ enum WindowAction: Identifiable, Codable, Equatable, Hashable {
         case .hide: return "hide"
         case .minimize: return "minimize"
         case .bringToFront: return "bringToFront"
+        case .ifCondition(let condition): return "if-\(condition.rawValue)"
+        case .endIf: return "endIf"
         case .hotkey(let k, let m, _, _): return "hotkey-\(k)-\(m)"
         case .globalHotkey(let k, let m): return "global-\(k)-\(m)"
         }
@@ -32,6 +61,13 @@ enum WindowAction: Identifiable, Codable, Equatable, Hashable {
         case .hide: return NSLocalizedString("Hide", comment: "")
         case .minimize: return NSLocalizedString("Minimize", comment: "")
         case .bringToFront: return NSLocalizedString("Bring to Front", comment: "")
+        case .ifCondition(let condition):
+            return String(
+                format: NSLocalizedString("If %@", comment: "Conditional rule action"),
+                condition.localizedString
+            )
+        case .endIf:
+            return NSLocalizedString("End If", comment: "End of a conditional rule action block")
         case .hotkey(let code, let mods, _, _):
             return NSLocalizedString("App Shortcut", comment: "") + ": " + ShortcutHelper.format(code: code, modifiers: mods)
         case .globalHotkey(let code, let mods):
@@ -39,7 +75,9 @@ enum WindowAction: Identifiable, Codable, Equatable, Hashable {
         }
     }
 
-    private enum CodingKeys: String, CodingKey { case type, keyCode, modifiers, restoreWindow, waitFrontmost }
+    private enum CodingKeys: String, CodingKey {
+        case type, condition, keyCode, modifiers, restoreWindow, waitFrontmost
+    }
     
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
@@ -50,6 +88,10 @@ enum WindowAction: Identifiable, Codable, Equatable, Hashable {
         case "hide": self = .hide
         case "minimize": self = .minimize
         case "bringToFront": self = .bringToFront
+        case "if":
+            let condition = try container.decode(RuleCondition.self, forKey: .condition)
+            self = .ifCondition(condition)
+        case "endIf": self = .endIf
         case "hotkey":
             let c = try container.decode(Int.self, forKey: .keyCode)
             let m = try container.decode(UInt.self, forKey: .modifiers)
@@ -72,6 +114,10 @@ enum WindowAction: Identifiable, Codable, Equatable, Hashable {
         case .hide: try container.encode("hide", forKey: .type)
         case .minimize: try container.encode("minimize", forKey: .type)
         case .bringToFront: try container.encode("bringToFront", forKey: .type)
+        case .ifCondition(let condition):
+            try container.encode("if", forKey: .type)
+            try container.encode(condition, forKey: .condition)
+        case .endIf: try container.encode("endIf", forKey: .type)
         case .hotkey(let c, let m, let r, let w):
             try container.encode("hotkey", forKey: .type)
             try container.encode(c, forKey: .keyCode)
@@ -86,20 +132,9 @@ enum WindowAction: Identifiable, Codable, Equatable, Hashable {
     }
 }
 
-enum WindowCondition: String, CaseIterable, Codable, Hashable, Identifiable {
+private enum LegacyWindowCondition: String, Codable {
     case none
     case minimized
-
-    var id: String { rawValue }
-
-    var localizedString: String {
-        switch self {
-        case .none:
-            return NSLocalizedString("No condition", comment: "A workflow group that always matches its space trigger")
-        case .minimized:
-            return NSLocalizedString("Window is minimized", comment: "Window condition matching minimized windows")
-        }
-    }
 }
 
 // MARK: - Action Wrapper
@@ -172,19 +207,16 @@ struct RuleGroup: Identifiable, Codable, Equatable {
     var id: UUID = UUID()
     var targetSpaceIDs: Set<String>
     var usesSourceSpace: Bool = false
-    var windowCondition: WindowCondition = .none
     var actions: [ActionItem]
 
     init(
         targetSpaceIDs: Set<String>,
         actions: [ActionItem],
-        usesSourceSpace: Bool = false,
-        windowCondition: WindowCondition = .none
+        usesSourceSpace: Bool = false
     ) {
         self.targetSpaceIDs = targetSpaceIDs
         self.actions = actions
         self.usesSourceSpace = usesSourceSpace
-        self.windowCondition = windowCondition
     }
 
     private enum CodingKeys: String, CodingKey {
@@ -206,7 +238,13 @@ struct RuleGroup: Identifiable, Codable, Equatable {
             usesSourceSpace = try container.decodeIfPresent(String.self, forKey: .sourceSpaceID) != nil
         }
 
-        windowCondition = try container.decodeIfPresent(WindowCondition.self, forKey: .windowCondition) ?? .none
+        // Older versions stored a single group-level minimized condition. Keep
+        // decoding that key so existing rules retain their behavior while the
+        // in-memory model uses the flat conditional action representation.
+        if try container.decodeIfPresent(LegacyWindowCondition.self, forKey: .windowCondition) == .minimized {
+            actions.insert(ActionItem(.ifCondition(.windowMinimized)), at: 0)
+            actions.append(ActionItem(.endIf))
+        }
     }
 
     func encode(to encoder: Encoder) throws {
@@ -214,7 +252,6 @@ struct RuleGroup: Identifiable, Codable, Equatable {
         try container.encode(id, forKey: .id)
         try container.encode(targetSpaceIDs, forKey: .targetSpaceIDs)
         try container.encode(usesSourceSpace, forKey: .usesSourceSpace)
-        try container.encode(windowCondition, forKey: .windowCondition)
         try container.encode(actions, forKey: .actions)
     }
 }
