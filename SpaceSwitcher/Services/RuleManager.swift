@@ -96,7 +96,9 @@ class RuleManager: ObservableObject {
                         // app-level behavior for ordinary space groups and
                         // fallback actions, but never guess a source match.
                         let actions = rule.groups.first(where: {
-                            $0.targetSpaceIDs.contains(spaceID)
+                            !$0.usesSourceSpace
+                                && $0.windowCondition == .none
+                                && $0.targetSpaceIDs.contains(spaceID)
                         })?.actions ?? rule.elseActions
                         plans = [RuleWindowPlan(actions: actions, windows: [])]
                     } else {
@@ -146,8 +148,17 @@ class RuleManager: ObservableObject {
 
         for window in windows {
             let matchingGroup = rule.groups.first { group in
-                group.targetSpaceIDs.contains(currentSpaceID)
+                let spaceMatches = group.targetSpaceIDs.contains(currentSpaceID)
                     || (group.usesSourceSpace && window.spaceIDs.contains(currentSpaceID))
+
+                guard spaceMatches else { return false }
+
+                switch group.windowCondition {
+                case .none:
+                    return true
+                case .minimized:
+                    return window.isMinimized == true
+                }
             }
             let groupID = matchingGroup?.id
             let actions = matchingGroup?.actions ?? rule.elseActions

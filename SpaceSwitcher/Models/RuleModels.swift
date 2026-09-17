@@ -86,6 +86,22 @@ enum WindowAction: Identifiable, Codable, Equatable, Hashable {
     }
 }
 
+enum WindowCondition: String, CaseIterable, Codable, Hashable, Identifiable {
+    case none
+    case minimized
+
+    var id: String { rawValue }
+
+    var localizedString: String {
+        switch self {
+        case .none:
+            return NSLocalizedString("No condition", comment: "A workflow group that always matches its space trigger")
+        case .minimized:
+            return NSLocalizedString("Window is minimized", comment: "Window condition matching minimized windows")
+        }
+    }
+}
+
 // MARK: - Action Wrapper
 struct ActionItem: Identifiable, Codable, Hashable {
     let id = UUID()
@@ -156,20 +172,23 @@ struct RuleGroup: Identifiable, Codable, Equatable {
     var id: UUID = UUID()
     var targetSpaceIDs: Set<String>
     var usesSourceSpace: Bool = false
+    var windowCondition: WindowCondition = .none
     var actions: [ActionItem]
 
     init(
         targetSpaceIDs: Set<String>,
         actions: [ActionItem],
-        usesSourceSpace: Bool = false
+        usesSourceSpace: Bool = false,
+        windowCondition: WindowCondition = .none
     ) {
         self.targetSpaceIDs = targetSpaceIDs
         self.actions = actions
         self.usesSourceSpace = usesSourceSpace
+        self.windowCondition = windowCondition
     }
 
     private enum CodingKeys: String, CodingKey {
-        case id, targetSpaceIDs, usesSourceSpace, sourceSpaceID, actions
+        case id, targetSpaceIDs, usesSourceSpace, sourceSpaceID, windowCondition, actions
     }
 
     init(from decoder: Decoder) throws {
@@ -186,6 +205,8 @@ struct RuleGroup: Identifiable, Codable, Equatable {
         } else {
             usesSourceSpace = try container.decodeIfPresent(String.self, forKey: .sourceSpaceID) != nil
         }
+
+        windowCondition = try container.decodeIfPresent(WindowCondition.self, forKey: .windowCondition) ?? .none
     }
 
     func encode(to encoder: Encoder) throws {
@@ -193,6 +214,7 @@ struct RuleGroup: Identifiable, Codable, Equatable {
         try container.encode(id, forKey: .id)
         try container.encode(targetSpaceIDs, forKey: .targetSpaceIDs)
         try container.encode(usesSourceSpace, forKey: .usesSourceSpace)
+        try container.encode(windowCondition, forKey: .windowCondition)
         try container.encode(actions, forKey: .actions)
     }
 }

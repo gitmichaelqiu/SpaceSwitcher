@@ -271,6 +271,10 @@ struct RuleEditor: View {
                             availableSpaces: availableSpaces
                         )
 
+                        Divider()
+
+                        WindowConditionRow(group: $group)
+
                         if !group.actions.isEmpty {
                             Divider()
                         }
@@ -563,6 +567,7 @@ private struct ApplicationPickerRow<LabelContent: View>: View {
 struct SpaceConditionRow: View {
     @Binding var group: RuleGroup
     let availableSpaces: [SpaceInfo]
+    @State private var isPickerPresented = false
 
     private var selectedSpaces: [SpaceInfo] {
         availableSpaces.filter { group.targetSpaceIDs.contains($0.id) }
@@ -587,19 +592,44 @@ struct SpaceConditionRow: View {
                 Text("No spaces detected")
                     .foregroundStyle(.secondary)
             } else {
-                Menu {
-                    Toggle(
-                        "Source Space",
-                        isOn: Binding(
-                            get: { group.usesSourceSpace },
-                            set: { group.usesSourceSpace = $0 }
-                        )
-                    )
+                Button {
+                    isPickerPresented = true
+                } label: {
+                    HStack(spacing: 4) {
+                        Text(selectedSpacesTitle)
+                            .lineLimit(1)
 
-                    if !availableSpaces.isEmpty {
-                        Divider()
+                        Image(systemName: "chevron.down")
+                            .font(.caption2.weight(.semibold))
                     }
+                }
+                .buttonStyle(.borderless)
+                .frame(minWidth: 180, maxWidth: 280, alignment: .trailing)
+                .popover(isPresented: $isPickerPresented, arrowEdge: .bottom) {
+                    spacePickerPopover
+                }
+            }
+        }
+        .frame(height: SettingsComponentMetrics.listRowHeight)
+    }
 
+    private var spacePickerPopover: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            Toggle(
+                "Source Space",
+                isOn: Binding(
+                    get: { group.usesSourceSpace },
+                    set: { group.usesSourceSpace = $0 }
+                )
+            )
+            .toggleStyle(.checkbox)
+            .frame(maxWidth: .infinity, alignment: .leading)
+
+            Divider()
+                .padding(.vertical, 4)
+
+            ScrollView(.vertical) {
+                VStack(alignment: .leading, spacing: 2) {
                     ForEach(availableSpaces) { space in
                         Toggle(
                             spaceDisplayName(space),
@@ -614,14 +644,32 @@ struct SpaceConditionRow: View {
                                 }
                             )
                         )
+                        .toggleStyle(.checkbox)
+                        .frame(maxWidth: .infinity, alignment: .leading)
                     }
-                } label: {
-                    Text(selectedSpacesTitle)
-                        .lineLimit(1)
                 }
-                .menuStyle(.borderlessButton)
-                .frame(minWidth: 180, maxWidth: 280, alignment: .trailing)
             }
+            .frame(maxHeight: 280)
+        }
+        .padding(10)
+        .frame(width: 260)
+    }
+}
+
+struct WindowConditionRow: View {
+    @Binding var group: RuleGroup
+
+    var body: some View {
+        SettingsRow("Window Condition") {
+            Picker("Window Condition", selection: $group.windowCondition) {
+                ForEach(WindowCondition.allCases) { condition in
+                    Text(condition.localizedString)
+                        .tag(condition)
+                }
+            }
+            .labelsHidden()
+            .pickerStyle(.menu)
+            .frame(minWidth: 180, alignment: .trailing)
         }
         .frame(height: SettingsComponentMetrics.listRowHeight)
     }

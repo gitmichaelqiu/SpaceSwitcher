@@ -25,6 +25,7 @@ struct RuleWindowTarget {
     let applicationPID: Int32
     let accessibilityElement: AXUIElement
     let spaceIDs: Set<String>
+    let isMinimized: Bool?
 }
 
 enum WindowSpaceService {
@@ -52,7 +53,8 @@ enum WindowSpaceService {
                 id: Int(windowID),
                 applicationPID: application.processIdentifier,
                 accessibilityElement: window,
-                spaceIDs: currentSpaceIDs(for: Int(windowID))
+                spaceIDs: currentSpaceIDs(for: Int(windowID)),
+                isMinimized: minimizedState(for: window)
             )
         }
     }
@@ -71,6 +73,25 @@ enum WindowSpaceService {
         }
 
         return Set(spaceIDs.map { String($0.intValue) })
+    }
+
+    private static func minimizedState(for window: AXUIElement) -> Bool? {
+        var value: CFTypeRef?
+        guard AXUIElementCopyAttributeValue(
+            window,
+            kAXMinimizedAttribute as CFString,
+            &value
+        ) == .success else {
+            return nil
+        }
+
+        if let value = value as? Bool {
+            return value
+        }
+        if let value = value as? NSNumber {
+            return value.boolValue
+        }
+        return nil
     }
 
     @discardableResult
