@@ -605,7 +605,11 @@ struct SpaceConditionRow: View {
                 }
                 .buttonStyle(.borderless)
                 .frame(minWidth: 180, maxWidth: 280, alignment: .trailing)
-                .popover(isPresented: $isPickerPresented, arrowEdge: .bottom) {
+                .popover(
+                    isPresented: $isPickerPresented,
+                    attachmentAnchor: .point(UnitPoint(x: 1, y: 0.5)),
+                    arrowEdge: .bottom
+                ) {
                     spacePickerPopover
                 }
             }
