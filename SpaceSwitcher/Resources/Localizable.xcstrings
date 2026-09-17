@@ -244,6 +244,28 @@
         }
       }
     },
+    "Application is active" : {
+      "comment" : "Condition matching active applications",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "应用程序处于活跃状态"
+          }
+        }
+      }
+    },
+    "Application is hidden" : {
+      "comment" : "Condition matching hidden applications",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "应用程序已隐藏"
+          }
+        }
+      }
+    },
     "Apply Now" : {
       "localizations" : {
         "zh-Hans" : {
@@ -630,12 +652,53 @@
         }
       }
     },
+    "Condition" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "条件"
+          }
+        }
+      }
+    },
     "Every workflow group must contain at least one action." : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "每个工作流组至少要包含一个操作。"
+          }
+        }
+      }
+    },
+    "Conditions cannot be nested." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "条件不能嵌套。"
+          }
+        }
+      }
+    },
+    "End If" : {
+      "comment" : "End of a conditional rule action block",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "结束条件"
+          }
+        }
+      }
+    },
+    "End If must follow an If action." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "End If 必须跟在 If 操作之后。"
           }
         }
       }
@@ -750,6 +813,57 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "如果状态显示“已授权”但自动化未正常工作，请尝试在系统设置列表中移除 SpaceSwitcher 并重新添加。"
+          }
+        }
+      }
+    },
+    "If %@" : {
+      "comment" : "Conditional rule action",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "如果 %@"
+          }
+        }
+      }
+    },
+    "If…" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "如果…"
+          }
+        }
+      }
+    },
+    "If" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "如果"
+          }
+        }
+      }
+    },
+    "Every If action must have an End If." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "每个 If 操作都必须有 End If。"
+          }
+        }
+      }
+    },
+    "Every If block must contain an action." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "每个 If 区块都必须包含一个操作。"
           }
         }
       }
@@ -1175,6 +1289,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "移除操作"
+          }
+        }
+      }
+    },
+    "Remove Condition Block" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "移除条件区块"
           }
         }
       }
@@ -1755,6 +1879,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "窗口已最小化"
+          }
+        }
+      }
+    },
+    "Window is frontmost" : {
+      "comment" : "Condition matching the frontmost window",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "窗口位于最前端"
+          }
+        }
+      }
+    },
+    "Window is fullscreen" : {
+      "comment" : "Condition matching fullscreen windows",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "窗口处于全屏模式"
           }
         }
       }
