@@ -389,7 +389,7 @@ enum SettingsComponentMetrics {
     static let rowVerticalPadding: CGFloat = 6
     static let rowHorizontalPadding: CGFloat = 10
     static let listRowHorizontalPadding: CGFloat = 12
-    static let listRowHeight: CGFloat = 34
+    static let listRowHeight: CGFloat = 36
     static let untitledSectionTopAdjustment: CGFloat = -10
     static let iconButtonSize: CGFloat = 32
     static let iconGlyphSize: CGFloat = 12
