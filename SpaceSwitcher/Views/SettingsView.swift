@@ -146,6 +146,8 @@ struct SettingsView: View {
             TextField("Search", text: $searchText)
                 .textFieldStyle(.plain)
                 .font(.system(size: 13))
+                .foregroundColor(.primary)
+                .background(Color.clear)
 
             if !searchText.isEmpty {
                 Button {
