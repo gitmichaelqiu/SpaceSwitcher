@@ -970,6 +970,17 @@
         }
       }
     },
+    "No condition" : {
+      "comment" : "A workflow group that always matches its space trigger",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "无条件"
+          }
+        }
+      }
+    },
     "No fallback actions" : {
       "localizations" : {
         "zh-Hans" : {
@@ -1733,6 +1744,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "禁用时，所有自动化规则将被忽略。"
+          }
+        }
+      }
+    },
+    "Window is minimized" : {
+      "comment" : "Window condition matching minimized windows",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "窗口已最小化"
           }
         }
       }
