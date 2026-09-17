@@ -213,10 +213,6 @@ struct RuleRow: View {
             )
         }
 
-        if group.windowCondition != .none {
-            items.append(group.windowCondition.localizedString)
-        }
-        
         if items.isEmpty { return "Unassigned" }
         return items.joined(separator: ", ")
     }
