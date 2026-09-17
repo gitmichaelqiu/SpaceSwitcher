@@ -624,10 +624,10 @@ struct SpaceConditionRow: View {
             )
 
             Divider()
-                .padding(.vertical, 6)
+                .padding(.vertical, 4)
 
             ScrollView(.vertical) {
-                VStack(alignment: .leading, spacing: 1) {
+                VStack(alignment: .leading, spacing: 0) {
                     ForEach(availableSpaces) { space in
                         SpacePickerToggleRow(
                             title: spaceDisplayName(space),
@@ -647,8 +647,8 @@ struct SpaceConditionRow: View {
             }
             .frame(maxHeight: 252)
         }
-        .padding(.vertical, 8)
-        .padding(.horizontal, 7)
+        .padding(.vertical, 6)
+        .padding(.horizontal, 8)
         .frame(width: 220)
     }
 }
@@ -661,10 +661,12 @@ private struct SpacePickerToggleRow: View {
     var body: some View {
         Toggle(isOn: $isOn) {
             Text(verbatim: title)
+                .font(.body)
+                .lineLimit(1)
         }
             .toggleStyle(.checkbox)
             .controlSize(.small)
-            .padding(.horizontal, 5)
+            .padding(.horizontal, 4)
             .frame(maxWidth: .infinity, minHeight: 28, alignment: .leading)
             .background(
                 RoundedRectangle(cornerRadius: 6, style: .continuous)
