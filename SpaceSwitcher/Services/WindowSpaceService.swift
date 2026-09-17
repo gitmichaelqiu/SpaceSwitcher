@@ -26,6 +26,8 @@ struct RuleWindowTarget {
     let accessibilityElement: AXUIElement
     let spaceIDs: Set<String>
     let isMinimized: Bool?
+    let isFullscreen: Bool?
+    let isFrontmost: Bool
 }
 
 enum WindowSpaceService {
@@ -43,6 +45,7 @@ enum WindowSpaceService {
             return []
         }
 
+        let focusedWindowID = focusedWindowID()
         return windows.compactMap { window in
             var windowID: CGWindowID = 0
             guard spaceSwitcherWindowID(window, &windowID) == 0, windowID != 0 else {
@@ -54,7 +57,9 @@ enum WindowSpaceService {
                 applicationPID: application.processIdentifier,
                 accessibilityElement: window,
                 spaceIDs: currentSpaceIDs(for: Int(windowID)),
-                isMinimized: minimizedState(for: window)
+                isMinimized: minimizedState(for: window),
+                isFullscreen: fullscreenState(for: window),
+                isFrontmost: focusedWindowID == Int(windowID)
             )
         }
     }
@@ -92,6 +97,45 @@ enum WindowSpaceService {
             return value.boolValue
         }
         return nil
+    }
+
+    private static func fullscreenState(for window: AXUIElement) -> Bool? {
+        var value: CFTypeRef?
+        guard AXUIElementCopyAttributeValue(
+            window,
+            "AXFullScreen" as CFString,
+            &value
+        ) == .success else {
+            return nil
+        }
+
+        if let value = value as? Bool {
+            return value
+        }
+        if let value = value as? NSNumber {
+            return value.boolValue
+        }
+        return nil
+    }
+
+    private static func focusedWindowID() -> Int? {
+        let systemWideElement = AXUIElementCreateSystemWide()
+        var focusedReference: CFTypeRef?
+        guard AXUIElementCopyAttributeValue(
+            systemWideElement,
+            kAXFocusedWindowAttribute as CFString,
+            &focusedReference
+        ) == .success,
+        let focusedReference else {
+            return nil
+        }
+        let focusedWindow = focusedReference as! AXUIElement
+
+        var windowID: CGWindowID = 0
+        guard spaceSwitcherWindowID(focusedWindow, &windowID) == 0, windowID != 0 else {
+            return nil
+        }
+        return Int(windowID)
     }
 
     @discardableResult
