@@ -311,9 +311,22 @@ struct DockSpaceAssignmentView: View {
                         .padding(.horizontal, 12)
                         .padding(.vertical, 14)
                 } else {
-                    LazyVGrid(columns: [GridItem(.adaptive(minimum: 110, maximum: 140))], spacing: 12) {
-                        ForEach(spaceManager.availableSpaces) { space in
-                            spaceCard(for: space, isDefault: isDefault)
+                    VStack(alignment: .leading, spacing: 14) {
+                        ForEach(displayGroups) { group in
+                            VStack(alignment: .leading, spacing: 8) {
+                                Text(group.name)
+                                    .font(.headline)
+                                    .padding(.leading, 4)
+
+                                LazyVGrid(
+                                    columns: [GridItem(.adaptive(minimum: 110, maximum: 140))],
+                                    spacing: 12
+                                ) {
+                                    ForEach(group.spaces) { space in
+                                        spaceCard(for: space, isDefault: isDefault)
+                                    }
+                                }
+                            }
                         }
                     }
                     .padding(12)
@@ -343,6 +356,28 @@ struct DockSpaceAssignmentView: View {
             }
         )
     }
+
+    private var displayGroups: [DockDisplaySpaceGroup] {
+        Dictionary(grouping: spaceManager.availableSpaces, by: \.displayID)
+            .map { displayID, spaces in
+                DockDisplaySpaceGroup(
+                    id: displayID,
+                    name: spaces.first?.displayName ?? displayID,
+                    spaces: spaces.sorted { $0.number < $1.number }
+                )
+            }
+            .sorted { lhs, rhs in
+                if lhs.id.caseInsensitiveCompare("Main") == .orderedSame { return true }
+                if rhs.id.caseInsensitiveCompare("Main") == .orderedSame { return false }
+                return lhs.name.localizedStandardCompare(rhs.name) == .orderedAscending
+            }
+    }
+}
+
+private struct DockDisplaySpaceGroup: Identifiable {
+    let id: String
+    let name: String
+    let spaces: [SpaceInfo]
 }
 
 private struct DockSpaceCard: View {
