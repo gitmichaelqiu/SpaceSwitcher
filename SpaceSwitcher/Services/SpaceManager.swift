@@ -333,16 +333,7 @@ final class SpaceManager: ObservableObject {
                   let number = (rawSpace["number"] as? NSNumber)?.intValue else {
                 return nil
             }
-            let displayID = rawSpace["displayID"] as? String ?? "Main"
-            let displayName = rawSpace["displayName"] as? String
-                ?? self.displayName(for: displayID)
-            return SpaceInfo(
-                id: id,
-                name: name,
-                number: number,
-                displayID: displayID,
-                displayName: displayName
-            )
+            return SpaceInfo(id: id, name: name, number: number)
         }.sorted { $0.number < $1.number }
 
         let currentSpaceIDs = snapshot["currentSpaceIDs"] as? [String] ?? []
@@ -410,37 +401,10 @@ final class SpaceManager: ObservableObject {
                   let number = (rawSpace["spaceNumber"] as? NSNumber)?.intValue else {
                 return nil
             }
-            let displayID = rawSpace["displayID"] as? String ?? "Main"
-            return SpaceInfo(
-                id: id,
-                name: name,
-                number: number,
-                displayID: displayID,
-                displayName: displayName(for: displayID)
-            )
+            return SpaceInfo(id: id, name: name, number: number)
         }.sorted { $0.number < $1.number }
         isAPIEnabled = true
         apiAvailability = .available
-    }
-
-    private func displayName(for displayID: String) -> String {
-        if displayID.caseInsensitiveCompare("Main") == .orderedSame {
-            return NSScreen.main?.localizedName ?? "Main Display"
-        }
-
-        for screen in NSScreen.screens {
-            guard let screenNumber = screen.deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")] as? NSNumber,
-                  let uuid = CGDisplayCreateUUIDFromDisplayID(screenNumber.uint32Value)?.takeRetainedValue(),
-                  let uuidString = CFUUIDCreateString(nil, uuid) as String? else {
-                continue
-            }
-
-            if uuidString.caseInsensitiveCompare(displayID) == .orderedSame {
-                return screen.localizedName
-            }
-        }
-
-        return displayID
     }
 
     private func setDisconnected(as availability: SpaceAPIAvailability = .unavailable) {
