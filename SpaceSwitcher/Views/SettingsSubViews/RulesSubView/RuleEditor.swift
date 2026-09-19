@@ -393,6 +393,7 @@ struct RuleEditor: View {
         Button { addAction(.bringToFront) } label: {
             Label("Bring to Front", systemImage: "arrow.up.forward.app")
         }
+        Divider()
         Button {
             addCondition(.windowMinimized)
         } label: {
