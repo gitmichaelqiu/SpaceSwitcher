@@ -13,13 +13,13 @@ enum RuleCondition: String, CaseIterable, Codable, Hashable, Identifiable {
     var localizedString: String {
         switch self {
         case .windowMinimized:
-            return NSLocalizedString("Window is minimized", comment: "Condition matching minimized windows")
-        case .windowFrontmost:
-            return NSLocalizedString("Window is frontmost", comment: "Condition matching the frontmost window")
+            return NSLocalizedString("window is minimized", comment: "Condition matching minimized windows")
         case .windowHidden:
-            return NSLocalizedString("Window is hidden", comment: "Condition matching hidden windows")
+            return NSLocalizedString("window is hidden", comment: "Condition matching hidden windows")
+        case .windowFrontmost:
+            return NSLocalizedString("window is frontmost", comment: "Condition matching the frontmost window")
         case .windowFullscreen:
-            return NSLocalizedString("Window is fullscreen", comment: "Condition matching fullscreen windows")
+            return NSLocalizedString("window is fullscreen", comment: "Condition matching fullscreen windows")
         }
     }
 
