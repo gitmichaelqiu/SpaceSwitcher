@@ -5,8 +5,7 @@ import AppKit
 enum RuleCondition: String, CaseIterable, Codable, Hashable, Identifiable {
     case windowMinimized
     case windowFrontmost
-    case applicationActive
-    case applicationHidden
+    case windowHidden
     case windowFullscreen
 
     var id: String { rawValue }
@@ -17,12 +16,32 @@ enum RuleCondition: String, CaseIterable, Codable, Hashable, Identifiable {
             return NSLocalizedString("Window is minimized", comment: "Condition matching minimized windows")
         case .windowFrontmost:
             return NSLocalizedString("Window is frontmost", comment: "Condition matching the frontmost window")
-        case .applicationActive:
-            return NSLocalizedString("Application is active", comment: "Condition matching active applications")
-        case .applicationHidden:
-            return NSLocalizedString("Application is hidden", comment: "Condition matching hidden applications")
+        case .windowHidden:
+            return NSLocalizedString("Window is hidden", comment: "Condition matching hidden windows")
         case .windowFullscreen:
             return NSLocalizedString("Window is fullscreen", comment: "Condition matching fullscreen windows")
+        }
+    }
+
+    init(from decoder: Decoder) throws {
+        let value = try decoder.singleValueContainer().decode(String.self)
+
+        // The first conditional-action release exposed application-wide
+        // states. Migrate those values to the per-window equivalents used by
+        // the current evaluator instead of discarding saved conditions.
+        switch value {
+        case "applicationActive":
+            self = .windowFrontmost
+        case "applicationHidden":
+            self = .windowHidden
+        default:
+            guard let condition = Self(rawValue: value) else {
+                throw DecodingError.dataCorruptedError(
+                    in: try decoder.singleValueContainer(),
+                    debugDescription: "Unknown rule condition: \(value)"
+                )
+            }
+            self = condition
         }
     }
 }

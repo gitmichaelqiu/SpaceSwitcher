@@ -26,6 +26,7 @@ struct RuleWindowTarget {
     let accessibilityElement: AXUIElement
     let spaceIDs: Set<String>
     let isMinimized: Bool?
+    let isHidden: Bool?
     let isFullscreen: Bool?
     let isFrontmost: Bool
 }
@@ -58,6 +59,7 @@ enum WindowSpaceService {
                 accessibilityElement: window,
                 spaceIDs: currentSpaceIDs(for: Int(windowID)),
                 isMinimized: minimizedState(for: window),
+                isHidden: hiddenState(for: window),
                 isFullscreen: fullscreenState(for: window),
                 isFrontmost: focusedWindowID == Int(windowID)
             )
@@ -85,6 +87,25 @@ enum WindowSpaceService {
         guard AXUIElementCopyAttributeValue(
             window,
             kAXMinimizedAttribute as CFString,
+            &value
+        ) == .success else {
+            return nil
+        }
+
+        if let value = value as? Bool {
+            return value
+        }
+        if let value = value as? NSNumber {
+            return value.boolValue
+        }
+        return nil
+    }
+
+    private static func hiddenState(for window: AXUIElement) -> Bool? {
+        var value: CFTypeRef?
+        guard AXUIElementCopyAttributeValue(
+            window,
+            kAXHiddenAttribute as CFString,
             &value
         ) == .success else {
             return nil

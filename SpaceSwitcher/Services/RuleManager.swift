@@ -91,20 +91,16 @@ class RuleManager: ObservableObject {
                     let plans: [RuleWindowPlan]
 
                     if allWindows.isEmpty {
-                        // A source-space condition cannot be evaluated without
-                        // an accessibility window list. Preserve the old
-                        // app-level behavior for ordinary space groups and
-                        // fallback actions, but never guess a source match.
+                        // A source-space or window-state condition cannot be
+                        // evaluated without an accessibility window list.
+                        // Preserve ordinary app-level actions, but never guess
+                        // a window condition.
                         let rawActions = rule.groups.first(where: {
                             !$0.usesSourceSpace && $0.targetSpaceIDs.contains(spaceID)
                         })?.actions ?? rule.elseActions
                         let actions = evaluatedActions(
                             rawActions,
-                            context: RuleEvaluationContext(
-                                applicationIsActive: application.isActive,
-                                applicationIsHidden: application.isHidden,
-                                window: nil
-                            )
+                            context: RuleEvaluationContext(window: nil)
                         )
                         plans = actions.isEmpty
                             ? []
@@ -149,8 +145,6 @@ class RuleManager: ObservableObject {
     }
 
     private struct RuleEvaluationContext {
-        let applicationIsActive: Bool
-        let applicationIsHidden: Bool
         let window: RuleWindowTarget?
     }
 
@@ -172,11 +166,7 @@ class RuleManager: ObservableObject {
             let rawActions = matchingGroup?.actions ?? rule.elseActions
             let actions = evaluatedActions(
                 rawActions,
-                context: RuleEvaluationContext(
-                    applicationIsActive: application.isActive,
-                    applicationIsHidden: application.isHidden,
-                    window: window
-                )
+                context: RuleEvaluationContext(window: window)
             )
 
             guard !actions.isEmpty else { continue }
@@ -230,10 +220,8 @@ class RuleManager: ObservableObject {
             return context.window?.isMinimized == true
         case .windowFrontmost:
             return context.window?.isFrontmost == true
-        case .applicationActive:
-            return context.applicationIsActive
-        case .applicationHidden:
-            return context.applicationIsHidden
+        case .windowHidden:
+            return context.window?.isHidden == true
         case .windowFullscreen:
             return context.window?.isFullscreen == true
         }
