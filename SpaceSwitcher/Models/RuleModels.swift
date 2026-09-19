@@ -310,7 +310,39 @@ struct AppRule: Identifiable, Codable, Equatable {
 }
 
 struct SpaceInfo: Identifiable, Codable, Hashable {
-    let id: String; let name: String; let number: Int
+    let id: String
+    let name: String
+    let number: Int
+    let displayID: String
+    let displayName: String
+
+    init(
+        id: String,
+        name: String,
+        number: Int,
+        displayID: String = "Main",
+        displayName: String = "Main Display"
+    ) {
+        self.id = id
+        self.name = name
+        self.number = number
+        self.displayID = displayID
+        self.displayName = displayName
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decode(String.self, forKey: .id)
+        name = try container.decode(String.self, forKey: .name)
+        number = try container.decode(Int.self, forKey: .number)
+        displayID = try container.decodeIfPresent(String.self, forKey: .displayID) ?? "Main"
+        displayName = try container.decodeIfPresent(String.self, forKey: .displayName) ?? displayID
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case id, name, number, displayID, displayName
+    }
+
     static func == (lhs: SpaceInfo, rhs: SpaceInfo) -> Bool { lhs.id == rhs.id }
     func hash(into hasher: inout Hasher) { hasher.combine(id) }
 }
