@@ -393,20 +393,10 @@ struct RuleEditor: View {
         Button { addAction(.bringToFront) } label: {
             Label("Bring to Front", systemImage: "arrow.up.forward.app")
         }
-        Menu {
-            ForEach(RuleCondition.allCases) { condition in
-                Button {
-                    addCondition(condition)
-                } label: {
-                    Label {
-                        Text(verbatim: WindowAction.ifCondition(condition).localizedString)
-                    } icon: {
-                        Image(systemName: "arrow.triangle.branch")
-                    }
-                }
-            }
+        Button {
+            addCondition(.windowMinimized)
         } label: {
-            Label("If…", systemImage: "arrow.triangle.branch")
+            Label("If", systemImage: "arrow.triangle.branch")
         }
         Divider()
         Button {
