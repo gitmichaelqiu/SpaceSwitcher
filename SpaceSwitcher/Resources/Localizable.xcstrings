@@ -71,17 +71,6 @@
         }
       }
     },
-    "Accessibility permission" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "辅助功能权限"
-          }
-        }
-      }
-    },
     "Acknowledgements" : {
       "localizations" : {
         "zh-Hans" : {
@@ -98,27 +87,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "操作定义"
-          }
-        }
-      }
-    },
-    "Action Options" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "操作选项"
-          }
-        }
-      }
-    },
-    "Actions used when no workflow group matches the current space." : {
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "当当前桌面不匹配任何工作流组时使用的操作。"
           }
         }
       }
@@ -213,6 +181,16 @@
         }
       }
     },
+    "All Apps" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "所有应用"
+          }
+        }
+      }
+    },
     "App Shortcut" : {
       "localizations" : {
         "zh-Hans" : {
@@ -233,56 +211,12 @@
         }
       }
     },
-    "Application" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "应用"
-          }
-        }
-      }
-    },
-    "Application is active" : {
-      "comment" : "Condition matching active applications",
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "应用程序处于活跃状态"
-          }
-        }
-      }
-    },
-    "Application is hidden" : {
-      "comment" : "Condition matching hidden applications",
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "应用程序已隐藏"
-          }
-        }
-      }
-    },
     "Apply Now" : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "立即应用"
-          }
-        }
-      }
-    },
-    "Apply to Spaces" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "应用到桌面"
           }
         }
       }
@@ -317,12 +251,12 @@
         }
       }
     },
-    "Automation" : {
+    "Automatically switch spaces" : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "自动化"
+            "value" : "自动切换桌面"
           }
         }
       }
@@ -367,16 +301,6 @@
         }
       }
     },
-    "Choose an application" : {
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "选择应用程序"
-          }
-        }
-      }
-    },
     "Choose an application before saving." : {
       "localizations" : {
         "zh-Hans" : {
@@ -408,7 +332,7 @@
       }
     },
     "Choose spaces" : {
-      "extractionState" : "stale",
+      "comment" : "Empty space-selection menu label",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -420,6 +344,26 @@
     },
     "Command (⌘)" : {
       "shouldTranslate" : false
+    },
+    "Condition" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "条件"
+          }
+        }
+      }
+    },
+    "Conditions cannot be nested." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "条件不能嵌套。"
+          }
+        }
+      }
     },
     "Control (⌃)" : {
       "shouldTranslate" : false
@@ -464,34 +408,12 @@
         }
       }
     },
-    "Default Configuration Active" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "默认配置已激活"
-          }
-        }
-      }
-    },
     "Default Set" : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "默认组"
-          }
-        }
-      }
-    },
-    "Delete" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "删除"
           }
         }
       }
@@ -535,17 +457,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Dock 自动化"
-          }
-        }
-      }
-    },
-    "Dock Items" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Dock 项目"
           }
         }
       }
@@ -610,17 +521,6 @@
         }
       }
     },
-    "Enable Automation above to use individual rules." : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "启用自动化以使用规则。"
-          }
-        }
-      }
-    },
     "Enable or disable this rule." : {
       "localizations" : {
         "zh-Hans" : {
@@ -637,47 +537,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "启用规则"
-          }
-        }
-      }
-    },
-    "Enabled" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "已启用"
-          }
-        }
-      }
-    },
-    "Condition" : {
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "条件"
-          }
-        }
-      }
-    },
-    "Every workflow group must contain at least one action." : {
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "每个工作流组至少要包含一个操作。"
-          }
-        }
-      }
-    },
-    "Conditions cannot be nested." : {
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "条件不能嵌套。"
           }
         }
       }
@@ -703,23 +562,52 @@
         }
       }
     },
+    "Every application" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "所有应用程序"
+          }
+        }
+      }
+    },
+    "Every If action must have an End If." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "每个 If 操作都必须有 End If。"
+          }
+        }
+      }
+    },
+    "Every If block must contain an action." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "每个 If 区块都必须包含一个操作。"
+          }
+        }
+      }
+    },
+    "Every workflow group must contain at least one action." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "每个工作流组至少要包含一个操作。"
+          }
+        }
+      }
+    },
     "Every workflow group must target at least one space." : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "每个工作流组至少要指定一个桌面。"
-          }
-        }
-      }
-    },
-    "Fallback Behavior" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "回退行为"
           }
         }
       }
@@ -785,55 +673,12 @@
         }
       }
     },
-    "Hide Definitions" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "隐藏说明"
-          }
-        }
-      }
-    },
     "Hide the application." : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "隐藏应用程序。"
-          }
-        }
-      }
-    },
-    "If the status shows 'Granted' but automation isn't working, try removing SpaceSwitcher from the list in System Settings and re-adding it." : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "如果状态显示“已授权”但自动化未正常工作，请尝试在系统设置列表中移除 SpaceSwitcher 并重新添加。"
-          }
-        }
-      }
-    },
-    "If %@" : {
-      "comment" : "Conditional rule action",
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "如果 %@"
-          }
-        }
-      }
-    },
-    "If…" : {
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "如果…"
           }
         }
       }
@@ -848,22 +693,13 @@
         }
       }
     },
-    "Every If action must have an End If." : {
+    "If %@" : {
+      "comment" : "Conditional rule action",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "每个 If 操作都必须有 End If。"
-          }
-        }
-      }
-    },
-    "Every If block must contain an action." : {
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "每个 If 区块都必须包含一个操作。"
+            "value" : "如果 %@"
           }
         }
       }
@@ -938,28 +774,6 @@
         }
       }
     },
-    "Make Default" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "设为默认"
-          }
-        }
-      }
-    },
-    "Manage Dock Sets" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "管理 Dock 组"
-          }
-        }
-      }
-    },
     "Minimize" : {
       "comment" : "Action: Minimize Window",
       "localizations" : {
@@ -987,28 +801,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "更多应用"
-          }
-        }
-      }
-    },
-    "Move Down" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "下移"
-          }
-        }
-      }
-    },
-    "Move Up" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "上移"
           }
         }
       }
@@ -1053,44 +845,12 @@
         }
       }
     },
-    "No actions" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "无操作"
-          }
-        }
-      }
-    },
-    "No application selected" : {
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "未选择应用程序"
-          }
-        }
-      }
-    },
     "No automation rules yet." : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "尚无自动化规则。"
-          }
-        }
-      }
-    },
-    "No condition" : {
-      "comment" : "A workflow group that always matches its space trigger",
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "无条件"
           }
         }
       }
@@ -1111,17 +871,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "此 Dock 组未分配任何项目"
-          }
-        }
-      }
-    },
-    "No Modifiers" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "无修饰键"
           }
         }
       }
@@ -1182,13 +931,12 @@
     "Option (⌥)" : {
       "shouldTranslate" : false
     },
-    "Otherwise" : {
-      "extractionState" : "stale",
+    "Per-App Automation" : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "否则"
+            "value" : "App自动化"
           }
         }
       }
@@ -1199,17 +947,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "权限"
-          }
-        }
-      }
-    },
-    "Press a Key" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "按下按键"
           }
         }
       }
@@ -1241,17 +978,6 @@
         }
       }
     },
-    "Record Key" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "录制按键"
-          }
-        }
-      }
-    },
     "Record Shortcut" : {
       "localizations" : {
         "zh-Hans" : {
@@ -1268,17 +994,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "录制…"
-          }
-        }
-      }
-    },
-    "Remove" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "移除"
           }
         }
       }
@@ -1363,39 +1078,6 @@
         }
       }
     },
-    "Required for reading active applications and controlling their visibility in automation rules." : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "用于读取当前应用程序并在自动化规则中控制其显示状态。"
-          }
-        }
-      }
-    },
-    "Required for reading desktop spaces and using space-based automation." : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "用于读取桌面并使用基于桌面的自动化功能。"
-          }
-        }
-      }
-    },
-    "Required for sending the keyboard shortcuts used by automation rules." : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "用于发送自动化规则所使用的键盘快捷键。"
-          }
-        }
-      }
-    },
     "Requires %@." : {
       "localizations" : {
         "zh-Hans" : {
@@ -1432,17 +1114,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "恢复之前的应用"
-          }
-        }
-      }
-    },
-    "Rule Actions" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "规则操作"
           }
         }
       }
@@ -1487,17 +1158,6 @@
         }
       }
     },
-    "Screen Recording permission" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "屏幕录制权限"
-          }
-        }
-      }
-    },
     "Search" : {
       "localizations" : {
         "zh-Hans" : {
@@ -1519,23 +1179,11 @@
       }
     },
     "Select Application" : {
-      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "选择应用程序"
-          }
-        }
-      }
-    },
-    "Set Configuration" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Dock 组设置"
           }
         }
       }
@@ -1583,6 +1231,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "显示"
+          }
+        }
+      }
+    },
+    "Source Space" : {
+      "comment" : "Special rule condition matching a window's current desktop",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "来源桌面"
           }
         }
       }
@@ -1691,6 +1350,16 @@
         }
       }
     },
+    "Target Application" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "目标应用程序"
+          }
+        }
+      }
+    },
     "The default set is used for any space that doesn't have a specific assignment." : {
       "localizations" : {
         "zh-Hans" : {
@@ -1741,100 +1410,6 @@
         }
       }
     },
-    "This rule will run when Automation is on." : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "启用自动化后，此规则才会运行。"
-          }
-        }
-      }
-    },
-    "All Apps" : {
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "所有应用"
-          }
-        }
-      }
-    },
-    "Any Source Space" : {
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "任意来源桌面"
-          }
-        }
-      }
-    },
-    "Every application" : {
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "所有应用程序"
-          }
-        }
-      }
-    },
-    "Source Space" : {
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "来源桌面"
-          }
-        }
-      }
-    },
-    "Source: %@ · %@" : {
-      "comment" : "Rule summary showing a source space and actions",
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "来源：%@ · %@"
-          }
-        }
-      }
-    },
-    "Target Application" : {
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "目标应用程序"
-          }
-        }
-      }
-    },
-    "Unknown" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "未知"
-          }
-        }
-      }
-    },
-    "Updates" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "更新"
-          }
-        }
-      }
-    },
     "v%@" : {
       "localizations" : {
         "en" : {
@@ -1861,29 +1436,7 @@
         }
       }
     },
-    "When disabled, all automation rules will be ignored." : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "禁用时，所有自动化规则将被忽略。"
-          }
-        }
-      }
-    },
-    "Window is minimized" : {
-      "comment" : "Window condition matching minimized windows",
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "窗口已最小化"
-          }
-        }
-      }
-    },
-    "Window is frontmost" : {
+    "window is frontmost" : {
       "comment" : "Condition matching the frontmost window",
       "localizations" : {
         "zh-Hans" : {
@@ -1894,13 +1447,35 @@
         }
       }
     },
-    "Window is fullscreen" : {
+    "window is fullscreen" : {
       "comment" : "Condition matching fullscreen windows",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "窗口处于全屏模式"
+          }
+        }
+      }
+    },
+    "window is hidden" : {
+      "comment" : "Condition matching hidden windows",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "窗口已隐藏"
+          }
+        }
+      }
+    },
+    "window is minimized" : {
+      "comment" : "Condition matching minimized windows",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "窗口已最小化"
           }
         }
       }
