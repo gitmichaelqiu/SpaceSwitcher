@@ -91,26 +91,19 @@ class RuleManager: ObservableObject {
                     let plans: [RuleWindowPlan]
 
                     if allWindows.isEmpty {
-                        // A source-space or window-state condition cannot be
-                        // evaluated without an accessibility window list.
-                        // Preserve ordinary app-level actions, but never guess
-                        // a window condition.
-                        let rawActions = rule.groups.first(where: {
-                            !$0.usesSourceSpace && $0.targetSpaceIDs.contains(spaceID)
+                        // A source-space condition cannot be evaluated without
+                        // an accessibility window list. Preserve the old
+                        // app-level behavior for ordinary space groups and
+                        // fallback actions, but never guess a source match.
+                        let actions = rule.groups.first(where: {
+                            $0.targetSpaceIDs.contains(spaceID)
                         })?.actions ?? rule.elseActions
-                        let actions = evaluatedActions(
-                            rawActions,
-                            context: RuleEvaluationContext(window: nil)
-                        )
-                        plans = actions.isEmpty
-                            ? []
-                            : [RuleWindowPlan(actions: actions, windows: [])]
+                        plans = [RuleWindowPlan(actions: actions, windows: [])]
                     } else {
                         plans = windowPlans(
                             for: rule,
                             currentSpaceID: spaceID,
-                            windows: allWindows,
-                            application: application
+                            windows: allWindows
                         )
                     }
 
@@ -118,7 +111,7 @@ class RuleManager: ObservableObject {
                         if Task.isCancelled { return }
 
                         let hasGlobalHotkey = plan.actions.contains {
-                            if case .globalHotkey = $0 { return true }
+                            if case .globalHotkey = $0.value { return true }
                             return false
                         }
 
@@ -140,91 +133,38 @@ class RuleManager: ObservableObject {
     }
 
     private struct RuleWindowPlan {
-        let actions: [WindowAction]
+        let actions: [ActionItem]
         var windows: [RuleWindowTarget]
-    }
-
-    private struct RuleEvaluationContext {
-        let window: RuleWindowTarget?
     }
 
     private func windowPlans(
         for rule: AppRule,
         currentSpaceID: String,
-        windows: [RuleWindowTarget],
-        application: NSRunningApplication
+        windows: [RuleWindowTarget]
     ) -> [RuleWindowPlan] {
-        var plans: [RuleWindowPlan] = []
+        var plans: [(groupID: UUID?, plan: RuleWindowPlan)] = []
 
         for window in windows {
             let matchingGroup = rule.groups.first { group in
-                let spaceMatches = group.targetSpaceIDs.contains(currentSpaceID)
+                group.targetSpaceIDs.contains(currentSpaceID)
                     || (group.usesSourceSpace && window.spaceIDs.contains(currentSpaceID))
-
-                return spaceMatches
             }
-            let rawActions = matchingGroup?.actions ?? rule.elseActions
-            let actions = evaluatedActions(
-                rawActions,
-                context: RuleEvaluationContext(window: window)
-            )
+            let groupID = matchingGroup?.id
+            let actions = matchingGroup?.actions ?? rule.elseActions
 
-            guard !actions.isEmpty else { continue }
-
-            if let index = plans.firstIndex(where: { $0.actions == actions }) {
-                plans[index].windows.append(window)
+            if let index = plans.firstIndex(where: { $0.groupID == groupID }) {
+                plans[index].plan.windows.append(window)
             } else {
-                plans.append(RuleWindowPlan(actions: actions, windows: [window]))
+                plans.append(
+                    (
+                        groupID: groupID,
+                        plan: RuleWindowPlan(actions: actions, windows: [window])
+                    )
+                )
             }
         }
 
-        return plans
-    }
-
-    private func evaluatedActions(
-        _ items: [ActionItem],
-        context: RuleEvaluationContext
-    ) -> [WindowAction] {
-        var result: [WindowAction] = []
-        var activeConditionResult: Bool?
-
-        for item in items {
-            switch item.value {
-            case .ifCondition(let condition):
-                // Conditional blocks are intentionally flat. Treat malformed
-                // nested blocks as false until their matching End If rather
-                // than accidentally executing actions.
-                if activeConditionResult != nil {
-                    activeConditionResult = false
-                } else {
-                    activeConditionResult = conditionMatches(condition, context: context)
-                }
-            case .endIf:
-                activeConditionResult = nil
-            default:
-                if activeConditionResult != false {
-                    result.append(item.value)
-                }
-            }
-        }
-
-        return result
-    }
-
-    private func conditionMatches(
-        _ condition: RuleCondition,
-        context: RuleEvaluationContext
-    ) -> Bool {
-        switch condition {
-        case .windowMinimized:
-            return context.window?.isMinimized == true
-        case .windowFrontmost:
-            return context.window?.isFrontmost == true
-        case .windowHidden:
-            return context.window?.isHidden == true
-        case .windowFullscreen:
-            return context.window?.isFullscreen == true
-        }
+        return plans.map(\.plan)
     }
     
     private func applications(for rule: AppRule) -> [NSRunningApplication] {
@@ -243,7 +183,7 @@ class RuleManager: ObservableObject {
 
     // Async function called by the master enforcement task.
     private func perform(
-        actions: [WindowAction],
+        actions: [ActionItem],
         on app: NSRunningApplication,
         allWindows: [RuleWindowTarget],
         targetWindows: [RuleWindowTarget],
@@ -251,16 +191,11 @@ class RuleManager: ObservableObject {
     ) async {
         let previousApp = NSWorkspace.shared.frontmostApplication
 
-        for action in actions {
+        for item in actions {
             // Check cancellation before every action
             if Task.isCancelled { return }
             
-            switch action {
-            case .ifCondition(_), .endIf:
-                // Conditions are evaluated before execution and never reach
-                // this method as executable actions. Keep this defensive case
-                // for malformed data loaded from older versions.
-                continue
+            switch item.value {
             case .hide:
                 if targetWindows.isEmpty {
                     hideApp(app)

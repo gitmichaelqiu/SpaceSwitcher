@@ -212,7 +212,7 @@ struct RuleRow: View {
                 at: 0
             )
         }
-
+        
         if items.isEmpty { return "Unassigned" }
         return items.joined(separator: ", ")
     }

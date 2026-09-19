@@ -75,14 +75,13 @@ struct SpaceAPIStatusView: View {
                 }
             case .unavailable:
                 PermissionStatusIcon(isGranted: false)
-                if spaceManager.desktopRenamerApplicationURL != nil {
-                    Button("Launch DesktopRenamer") {
-                        spaceManager.openDesktopRenamer()
-                    }
-                } else {
-                    Button("Install DesktopRenamer") {
-                        spaceManager.openDesktopRenamerDownloadPage()
-                    }
+                Button("Launch DesktopRenamer") {
+                    spaceManager.openDesktopRenamer()
+                }
+                .disabled(spaceManager.desktopRenamerApplicationURL == nil)
+
+                Button("Install DesktopRenamer") {
+                    spaceManager.openDesktopRenamerDownloadPage()
                 }
             }
         }
