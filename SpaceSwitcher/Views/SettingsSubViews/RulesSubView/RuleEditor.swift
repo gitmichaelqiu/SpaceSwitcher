@@ -11,6 +11,8 @@ struct RuleEditor: View {
     @State private var showingLegend = false
     @State private var showingApplicationPicker = false
     @State private var groupPendingDeletion: UUID?
+    @State private var presetPendingApplication: RulePreset?
+    @State private var showingPresetConfirmation = false
     
     init(rule: AppRule, availableSpaces: [SpaceInfo], onSave: @escaping (AppRule) -> Void, onCancel: @escaping () -> Void) {
         self.initialRule = rule
@@ -61,6 +63,26 @@ struct RuleEditor: View {
         } message: {
             Text("The spaces and actions in this workflow group will be removed.")
         }
+        .confirmationDialog(
+            "Apply Preset?",
+            isPresented: $showingPresetConfirmation,
+            titleVisibility: .visible
+        ) {
+            Button("Apply Preset") {
+                applyPendingPreset()
+            }
+            Button("Cancel", role: .cancel) {
+                presetPendingApplication = nil
+            }
+        } message: {
+            if let preset = presetPendingApplication {
+                let replacementWarning = NSLocalizedString(
+                    "Applying this preset will replace the workflow groups and fallback actions. The selected application will be preserved.",
+                    comment: "Rule preset replacement warning"
+                )
+                Text("\(preset.description)\n\n\(replacementWarning)")
+            }
+        }
     }
     
     // MARK: - Components
@@ -70,6 +92,21 @@ struct RuleEditor: View {
             applicationPicker
 
             Spacer()
+
+            Menu {
+                ForEach(RulePreset.allCases) { preset in
+                    Button {
+                        requestApplying(preset)
+                    } label: {
+                        Label(preset.title, systemImage: preset.icon)
+                    }
+                }
+            } label: {
+                Label("Presets", systemImage: "wand.and.stars")
+            }
+            .buttonStyle(.bordered)
+            .controlSize(.small)
+            .help("Presets")
 
             Button {
                 showingLegend.toggle()
@@ -357,6 +394,23 @@ struct RuleEditor: View {
         withAnimation(.easeInOut(duration: 0.2)) {
             insertAction(action, into: &workingRule.groups[index].actions)
         }
+    }
+
+    private func requestApplying(_ preset: RulePreset) {
+        guard !workingRule.groups.isEmpty || !workingRule.elseActions.isEmpty else {
+            workingRule = preset.applying(to: workingRule)
+            return
+        }
+
+        presetPendingApplication = preset
+        showingPresetConfirmation = true
+    }
+
+    private func applyPendingPreset() {
+        guard let preset = presetPendingApplication else { return }
+        workingRule = preset.applying(to: workingRule)
+        presetPendingApplication = nil
+        showingPresetConfirmation = false
     }
 
     private func addConditionToGroup(id: UUID, condition: RuleCondition) {

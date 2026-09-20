@@ -91,6 +91,17 @@
         }
       }
     },
+    "Applying this preset will replace the workflow groups and fallback actions. The selected application will be preserved." : {
+      "comment" : "Rule preset replacement warning",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "应用此预设将替换工作流组和后备操作。所选应用程序将保留。"
+          }
+        }
+      }
+    },
     "Activate the application and bring its windows to the foreground." : {
       "localizations" : {
         "zh-Hans" : {
@@ -937,6 +948,102 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "App自动化"
+          }
+        }
+      }
+    },
+    "Apply Preset" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "应用预设"
+          }
+        }
+      }
+    },
+    "Apply Preset?" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "应用预设？"
+          }
+        }
+      }
+    },
+    "Hide Minimized Windows Outside Source Space" : {
+      "comment" : "Rule preset title",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "隐藏来源桌面之外的最小化窗口"
+          }
+        }
+      }
+    },
+    "Hide Windows Outside Source Space" : {
+      "comment" : "Rule preset title",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "隐藏来源桌面之外的窗口"
+          }
+        }
+      }
+    },
+    "Minimize Windows Outside Source Space" : {
+      "comment" : "Rule preset title",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "最小化来源桌面之外的窗口"
+          }
+        }
+      }
+    },
+    "Presets" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "预设"
+          }
+        }
+      }
+    },
+    "Restore windows on their source space and hide them elsewhere only when minimized." : {
+      "comment" : "Rule preset description",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在窗口来源桌面恢复窗口，仅在其他桌面上将最小化的窗口隐藏。"
+          }
+        }
+      }
+    },
+    "Restore windows on their source space and hide them elsewhere." : {
+      "comment" : "Rule preset description",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在窗口来源桌面恢复窗口，并在其他桌面上隐藏窗口。"
+          }
+        }
+      }
+    },
+    "Restore windows on their source space and minimize them elsewhere." : {
+      "comment" : "Rule preset description",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在窗口来源桌面恢复窗口，并在其他桌面上最小化窗口。"
           }
         }
       }
