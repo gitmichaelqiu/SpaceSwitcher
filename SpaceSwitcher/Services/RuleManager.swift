@@ -157,12 +157,28 @@ class RuleManager: ObservableObject {
                             ? []
                             : [RuleWindowPlan(actions: actions, windows: [])]
                     } else {
-                        plans = windowPlans(
+                        // Hide is an application-level operation on macOS. If
+                        // this manager hid the application as a whole, do not
+                        // split the next source-space pass into a partial
+                        // Restore plus a fallback Hide for the remaining
+                        // windows. That would leave the application hidden
+                        // even though one of its windows is back in its
+                        // source space (the common case for VSCode).
+                        if let managedRestorePlan = managedApplicationRestorePlan(
                             for: rule,
                             currentSpaceID: spaceID,
                             windows: allWindows,
                             application: application
-                        )
+                        ) {
+                            plans = [managedRestorePlan]
+                        } else {
+                            plans = windowPlans(
+                                for: rule,
+                                currentSpaceID: spaceID,
+                                windows: allWindows,
+                                application: application
+                            )
+                        }
                     }
 
                     self.debugLog("app \(application.localizedName ?? "<unknown>") plans=\(plans.count)")
@@ -193,6 +209,55 @@ class RuleManager: ObservableObject {
                 }
             }
         }
+    }
+
+    private func managedApplicationRestorePlan(
+        for rule: AppRule,
+        currentSpaceID: String,
+        windows: [RuleWindowTarget],
+        application: NSRunningApplication
+    ) -> RuleWindowPlan? {
+        let processID = application.processIdentifier
+        guard managedAppHides[processID] != nil,
+              let sourceGroup = rule.groups.first(where: { $0.usesSourceSpace }) else {
+            return nil
+        }
+
+        // Preserve window-aware conditions in the source group when possible.
+        // The preset and the usual source-space workflow use an unconditional
+        // Restore, but this also handles a conditional Restore correctly for
+        // any source window that currently qualifies.
+        let sourceWindows = windows.filter { $0.spaceIDs.contains(currentSpaceID) }
+        guard !sourceWindows.isEmpty else {
+            return nil
+        }
+        let evaluatedSourceActions = sourceWindows
+            .map {
+                evaluatedActions(
+                    sourceGroup.actions,
+                    context: RuleEvaluationContext(window: $0)
+                )
+            }
+            .first {
+                $0.contains {
+                    if case .restore = $0 { return true }
+                    return false
+                }
+            }
+            ?? evaluatedActions(
+                sourceGroup.actions,
+                context: RuleEvaluationContext(window: nil)
+            )
+
+        guard evaluatedSourceActions.contains(where: {
+            if case .restore = $0 { return true }
+            return false
+        }) else {
+            return nil
+        }
+
+        debugLog("managed app restore: app=\(application.localizedName ?? "<unknown>") pid=\(processID) sourceSpace=\(currentSpaceID) windows=[\(windows.map { String($0.id) }.joined(separator: ","))]")
+        return RuleWindowPlan(actions: evaluatedSourceActions, windows: windows)
     }
 
     private func windowDebugSummary(_ window: RuleWindowTarget, prefix: String = "window") -> String {
