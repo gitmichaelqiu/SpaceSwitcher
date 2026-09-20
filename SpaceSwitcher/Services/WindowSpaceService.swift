@@ -168,6 +168,13 @@ enum WindowSpaceService {
         ) == .success
     }
 
+    /// Read the live minimized state instead of relying only on the snapshot
+    /// taken while enumerating windows. Space changes can briefly invalidate
+    /// that snapshot while Accessibility is updating the window.
+    static func isMinimized(_ target: RuleWindowTarget) -> Bool? {
+        minimizedState(for: target.accessibilityElement)
+    }
+
     @discardableResult
     static func setMinimized(_ target: RuleWindowTarget, isMinimized: Bool) -> Bool {
         AXUIElementSetAttributeValue(

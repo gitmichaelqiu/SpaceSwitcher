@@ -237,7 +237,8 @@ class RuleManager: ObservableObject {
     ) -> Bool {
         switch condition {
         case .windowMinimized:
-            return context.window?.isMinimized == true
+            guard let window = context.window else { return false }
+            return (WindowSpaceService.isMinimized(window) ?? window.isMinimized) == true
         case .windowFrontmost:
             return context.window?.isFrontmost == true
         case .windowHidden:
@@ -287,9 +288,21 @@ class RuleManager: ObservableObject {
                     continue
                 }
 
+                // AXHidden is an application-level attribute on macOS. When
+                // every known window is part of this plan, use the native
+                // application operation instead of treating a successful
+                // per-window AX write as proof that anything was hidden.
+                // This is especially important for minimized windows, whose
+                // individual AX elements can accept the write without
+                // changing the visible application state.
+                if targetWindows.count == allWindows.count {
+                    hideApp(app)
+                    continue
+                }
+
                 var didHideWindow = false
                 for window in targetWindows {
-                    if WindowSpaceService.setHidden(window, isHidden: true) {
+                    if await setHiddenWithRetry(window, isHidden: true) {
                         managedHides[window.id] = window
                         didHideWindow = true
                     }
