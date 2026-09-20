@@ -6,6 +6,10 @@
   <p align="center">SpaceSwitcher</p>
 </h1>
 
+<h3>
+<p align="center"><i>Customize space experiences.</i></p>
+</h3>
+
 <table align="center" border="0" cellpadding="0" cellspacing="0">
   <tr>
     <td align="center">
@@ -30,10 +34,7 @@
   </tr>
 </table>
 
-**SpaceSwitcher** is a macOS workspace enhancer that lets you control **which app and dock to show** in each workspace. Especially for apps that you have **assigned to all desktops**. Update checker will **NOT** work because of this.
-
-> [!NOTE]
-> SpaceSwitcher is still in the early beta. All releases for now are marked as non-production-ready. Therefore, you need to go into the Releases page to download.
+**SpaceSwitcher** is a macOS workspace enhancer that lets you control **which app and dock to show** in each workspace.
 
 ## 📦 Installation
 
@@ -70,15 +71,30 @@ Here is an example:
 - In SpaceSwitcher/Rules, I add the rule of "simulate shortkey" for each macOS space
 - So when I switch to a space, Zen browser can automatically switch to the corresponding workspace
 
-## 🛜 SpaceAPI
+## 🛜 SpaceAPI Prerequisite
 
-To get the current space's information, an extra app DesktopRenamer is required. You can download it [here](https://github.com/gitmichaelqiu/DesktopRenamer/releases/).
+<img src="https://github.com/gitmichaelqiu/DesktopRenamer/raw/main/DesktopRenamer/Resources/DesktopRenamerIcon_Default.png?raw=true" width="120"/>
+
+To get the current space's information, [DesktopRenamer](https://github.com/gitmichaelqiu/DesktopRenamer/releases/) is required.
 
 After downloading DesktopRenamer, you need to turn on SpaceAPI in Settings → General.
 
-## ⚠️ Issues/Suggestions
+## ⚠️ Issues
 
 You are welcome to create issues/suggestions in [GitHub Issues](https://github.com/gitmichaelqiu/SpaceSwitcher/issues).
+
+If you are curious what I am doing on the project, go to the Issues page. The pinned issues are what I am focusing.
+
+## 🙏 Acknowlegements
+
+This app uses the following packages:
+
+- [HotKey by @soffes](https://github.com/soffes/HotKey)
+- [Sparkle by @sparkle-project](https://github.com/sparkle-project/Sparkle)
+
+Many thanks to all of these wonderful developers!
+
+See [Acknowledgements.pdf](https://github.com/gitmichaelqiu/SpaceSwitcher/blob/main/SpaceSwitcher/Resources/Acknowledgements/Acknowledgements.pdf) for licenses.
 
 ## ⭐ Support This Project
 
