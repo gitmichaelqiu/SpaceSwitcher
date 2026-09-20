@@ -2,6 +2,7 @@ import Foundation
 import AppKit
 import Combine
 import ApplicationServices
+import os.log
 
 enum RuleSortOption: String, CaseIterable, Identifiable {
     case name = "Name"
@@ -52,6 +53,7 @@ class RuleManager: ObservableObject {
     
     // Tracks the current rule enforcement process
     private var enforcementTask: Task<Void, Never>?
+    private let debugLogger = Logger(subsystem: "com.michaelqiu.SpaceSwitcher", category: "Rules")
     
     init() { 
         loadRules() 
@@ -59,7 +61,9 @@ class RuleManager: ObservableObject {
     }
 
     private func debugLog(_ message: @autoclosure () -> String) {
-        print("[SpaceSwitcher][Rules] \(message())")
+        let message = message()
+        print("[SpaceSwitcher][Rules] \(message)")
+        debugLogger.info("\(message, privacy: .public)")
     }
     
     private func setupBindings() {
