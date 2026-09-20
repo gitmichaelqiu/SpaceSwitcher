@@ -44,7 +44,10 @@ class RuleManager: ObservableObject {
     // target lets a source-space pass restore it once the user returns.
     private var managedHides: [Int: RuleWindowTarget] = [:]
     private var managedMinimizes = Set<Int>()
-    private var managedAppHides = Set<Int32>()
+    // Keep the source spaces for application-level hides. macOS can remove
+    // all of a hidden application's AX windows, so the source-space trigger
+    // must remain available even when the next evaluation has no windows.
+    private var managedAppHides: [Int32: Set<String>] = [:]
     private var managedAppMinimizes = Set<Int32>()
     
     // Tracks the current rule enforcement process
@@ -115,8 +118,10 @@ class RuleManager: ObservableObject {
                         // evaluated without an accessibility window list.
                         // Preserve ordinary app-level actions, but never guess
                         // a window condition.
-                        let rawActions = rule.groups.first(where: {
-                            !$0.usesSourceSpace && $0.targetSpaceIDs.contains(spaceID)
+                        let sourceSpaceIDs = managedAppHides[application.processIdentifier] ?? []
+                        let rawActions = rule.groups.first(where: { group in
+                            (!group.usesSourceSpace && group.targetSpaceIDs.contains(spaceID))
+                                || (group.usesSourceSpace && sourceSpaceIDs.contains(spaceID))
                         })?.actions ?? rule.elseActions
                         let actions = evaluatedActions(
                             rawActions,
@@ -284,7 +289,7 @@ class RuleManager: ObservableObject {
                 continue
             case .hide:
                 if targetWindows.isEmpty {
-                    hideApp(app)
+                    hideApp(app, sourceSpaceIDs: Set(allWindows.flatMap(\.spaceIDs)))
                     continue
                 }
 
@@ -296,7 +301,7 @@ class RuleManager: ObservableObject {
                 // individual AX elements can accept the write without
                 // changing the visible application state.
                 if targetWindows.count == allWindows.count {
-                    hideApp(app)
+                    hideApp(app, sourceSpaceIDs: Set(allWindows.flatMap(\.spaceIDs)))
                     continue
                 }
 
@@ -320,9 +325,9 @@ class RuleManager: ObservableObject {
                 let canApplyAppVisibility = targetWindows.count == allWindows.count
                 let wasHidden = canApplyAppVisibility && app.isHidden
                 if canApplyAppVisibility,
-                   managedAppHides.contains(app.processIdentifier),
+                   managedAppHides[app.processIdentifier] != nil,
                    unhideAppWithoutActivation(app) {
-                    managedAppHides.remove(app.processIdentifier)
+                    managedAppHides.removeValue(forKey: app.processIdentifier)
                 }
 
                 for window in targetWindows {
@@ -346,9 +351,9 @@ class RuleManager: ObservableObject {
             case .restore:
                 let canApplyAppVisibility = targetWindows.count == allWindows.count
                 if canApplyAppVisibility,
-                   managedAppHides.contains(app.processIdentifier),
+                   managedAppHides[app.processIdentifier] != nil,
                    unhideAppWithoutActivation(app) {
-                    managedAppHides.remove(app.processIdentifier)
+                    managedAppHides.removeValue(forKey: app.processIdentifier)
                 }
 
                 if canApplyAppVisibility && managedAppMinimizes.contains(app.processIdentifier) {
@@ -416,9 +421,9 @@ class RuleManager: ObservableObject {
         }
     }
 
-    private func hideApp(_ app: NSRunningApplication) {
+    private func hideApp(_ app: NSRunningApplication, sourceSpaceIDs: Set<String> = []) {
         if !app.isHidden {
-            managedAppHides.insert(app.processIdentifier)
+            managedAppHides[app.processIdentifier] = sourceSpaceIDs
         }
         app.hide()
     }
