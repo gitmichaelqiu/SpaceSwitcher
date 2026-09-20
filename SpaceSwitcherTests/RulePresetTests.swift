@@ -48,6 +48,22 @@ final class RulePresetTests: XCTestCase {
         }
     }
 
+    func testPresetRuleRoundTripsThroughPersistence() throws {
+        let presetRule = RulePreset.hideMinimizedOutsideSource.applying(to: makeRule())
+        let data = try JSONEncoder().encode(presetRule)
+        let reloadedRule = try JSONDecoder().decode(AppRule.self, from: data)
+
+        XCTAssertEqual(reloadedRule.id, presetRule.id)
+        XCTAssertEqual(reloadedRule.appBundleID, presetRule.appBundleID)
+        XCTAssertEqual(reloadedRule.appName, presetRule.appName)
+        XCTAssertTrue(reloadedRule.groups[0].usesSourceSpace)
+        XCTAssertEqual(reloadedRule.groups[0].actions.map(\.value), [.restore])
+        XCTAssertEqual(
+            reloadedRule.elseActions.map(\.value),
+            [.ifCondition(.windowMinimized), .hide, .endIf]
+        )
+    }
+
     private func makeRule() -> AppRule {
         AppRule(
             appBundleID: "com.example.TestApp",
