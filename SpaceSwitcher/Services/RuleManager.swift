@@ -57,12 +57,17 @@ class RuleManager: ObservableObject {
         loadRules() 
         self.isAutomationEnabled = UserDefaults.standard.object(forKey: "isAutomationEnabled") as? Bool ?? true
     }
+
+    private func debugLog(_ message: @autoclosure () -> String) {
+        print("[SpaceSwitcher][Rules] \(message())")
+    }
     
     private func setupBindings() {
         spaceManager?.$currentSpaceID
             .dropFirst().removeDuplicates()
             .sink { [weak self] spaceID in
                 guard let self = self, let spaceID = spaceID else { return }
+                self.debugLog("space change received: current=\(spaceID), settling=150ms")
                 // SpaceAPI can publish the new desktop before WindowServer and
                 // Accessibility have finished updating window membership.
                 self.applyRules(for: spaceID, settlingDelay: 150_000_000)
@@ -72,23 +77,31 @@ class RuleManager: ObservableObject {
     
     func forceRefresh() {
         guard let spaceID = spaceManager?.currentSpaceID else { return }
+        debugLog("force refresh: current=\(spaceID)")
         // Always run on main thread via the Task manager
         self.applyRules(for: spaceID)
     }
-    
+
     private func applyRules(for spaceID: String, settlingDelay: UInt64 = 0) {
+        debugLog("apply start: space=\(spaceID), delay=\(settlingDelay / 1_000_000)ms, enabled=\(isAutomationEnabled)")
         // Cancel existing enforcement to prevent stale actions
         enforcementTask?.cancel()
         
         // Start new enforcement task
         enforcementTask = Task { [weak self] in
             guard let self else { return }
-            guard isAutomationEnabled else { return }
+            guard isAutomationEnabled else {
+                self.debugLog("apply skipped: automation disabled")
+                return
+            }
 
             if settlingDelay > 0 {
                 try? await Task.sleep(nanoseconds: settlingDelay)
                 guard !Task.isCancelled,
-                      self.spaceManager?.currentSpaceID == spaceID else { return }
+                      self.spaceManager?.currentSpaceID == spaceID else {
+                    self.debugLog("apply cancelled after settling: requested=\(spaceID), current=\(self.spaceManager?.currentSpaceID ?? "nil")")
+                    return
+                }
             }
             
             for rule in rules where rule.isEnabled {
@@ -96,12 +109,17 @@ class RuleManager: ObservableObject {
                 if Task.isCancelled { return }
 
                 let applications = applications(for: rule)
+                self.debugLog("rule \(rule.id.uuidString.prefix(8)) app=\(rule.appName.isEmpty ? "<all>" : rule.appName) applications=\(applications.count)")
                 var didPerformGlobalHotkey = false
 
                 for application in applications {
                     if Task.isCancelled { return }
 
                     var allWindows = WindowSpaceService.windows(for: application)
+                    self.debugLog("app \(application.localizedName ?? "<unknown>") pid=\(application.processIdentifier) hidden=\(application.isHidden) active=\(application.isActive) AXWindows=\(allWindows.count) managedAppHideSources=\(self.managedAppHides[application.processIdentifier]?.sorted().joined(separator: ",") ?? "none")")
+                    for window in allWindows {
+                        self.debugLog(self.windowDebugSummary(window, prefix: "  AX window"))
+                    }
                     let knownWindowIDs = Set(allWindows.map(\.id))
 
                     // A hidden AX window may disappear from the application's
@@ -111,6 +129,9 @@ class RuleManager: ObservableObject {
                         $0.applicationPID == application.processIdentifier
                             && !knownWindowIDs.contains($0.id)
                     })
+                    if allWindows.count != knownWindowIDs.count {
+                        self.debugLog("app \(application.localizedName ?? "<unknown>") merged managed windows: total=\(allWindows.count)")
+                    }
                     let plans: [RuleWindowPlan]
 
                     if allWindows.isEmpty {
@@ -127,6 +148,7 @@ class RuleManager: ObservableObject {
                             rawActions,
                             context: RuleEvaluationContext(window: nil)
                         )
+                        self.debugLog("app \(application.localizedName ?? "<unknown>") has no AX windows; raw=\(self.actionDebugSummary(rawActions.map(\.value))) evaluated=\(self.actionDebugSummary(actions))")
                         plans = actions.isEmpty
                             ? []
                             : [RuleWindowPlan(actions: actions, windows: [])]
@@ -137,6 +159,11 @@ class RuleManager: ObservableObject {
                             windows: allWindows,
                             application: application
                         )
+                    }
+
+                    self.debugLog("app \(application.localizedName ?? "<unknown>") plans=\(plans.count)")
+                    for plan in plans {
+                        self.debugLog("  plan actions=\(self.actionDebugSummary(plan.actions)) windows=[\(plan.windows.map { String($0.id) }.joined(separator: ","))]")
                     }
 
                     for plan in plans {
@@ -162,6 +189,26 @@ class RuleManager: ObservableObject {
                 }
             }
         }
+    }
+
+    private func windowDebugSummary(_ window: RuleWindowTarget, prefix: String = "window") -> String {
+        let liveMinimized = WindowSpaceService.isMinimized(window)
+        let liveHidden = WindowSpaceService.isHidden(window)
+        return "\(prefix) id=\(window.id) spaces=[\(window.spaceIDs.sorted().joined(separator: ","))] minimized(snapshot=\(boolDebug(window.isMinimized)),live=\(boolDebug(liveMinimized))) hidden(snapshot=\(boolDebug(window.isHidden)),live=\(boolDebug(liveHidden))) frontmost=\(window.isFrontmost)"
+    }
+
+    private func boolDebug(_ value: Bool?) -> String {
+        value.map(String.init) ?? "unknown"
+    }
+
+    private func actionDebugSummary(_ actions: [WindowAction]) -> String {
+        actions.map { action in
+            switch action {
+            case .ifCondition(let condition): return "if(\(condition.rawValue))"
+            case .endIf: return "endIf"
+            default: return action.localizedString
+            }
+        }.joined(separator: " -> ")
     }
 
     private struct RuleWindowPlan {
@@ -193,6 +240,7 @@ class RuleManager: ObservableObject {
                 rawActions,
                 context: RuleEvaluationContext(window: window)
             )
+            debugLog("match app=\(application.localizedName ?? "<unknown>") window=\(window.id) currentSpace=\(currentSpaceID) group=\(matchingGroup?.id.uuidString.prefix(8).description ?? "fallback") raw=\(actionDebugSummary(rawActions.map(\.value))) evaluated=\(actionDebugSummary(actions))")
 
             guard !actions.isEmpty else { continue }
 
@@ -276,6 +324,7 @@ class RuleManager: ObservableObject {
         performGlobalHotkeys: Bool
     ) async {
         let previousApp = NSWorkspace.shared.frontmostApplication
+        debugLog("perform app=\(app.localizedName ?? "<unknown>") pid=\(app.processIdentifier) actions=\(actionDebugSummary(actions)) targetWindows=[\(targetWindows.map { String($0.id) }.joined(separator: ","))] allWindows=\(allWindows.count)")
 
         for action in actions {
             // Check cancellation before every action
@@ -289,6 +338,7 @@ class RuleManager: ObservableObject {
                 continue
             case .hide:
                 if targetWindows.isEmpty {
+                    debugLog("hide app-level because target window list is empty")
                     hideApp(app, sourceSpaceIDs: Set(allWindows.flatMap(\.spaceIDs)))
                     continue
                 }
@@ -301,6 +351,7 @@ class RuleManager: ObservableObject {
                 // individual AX elements can accept the write without
                 // changing the visible application state.
                 if targetWindows.count == allWindows.count {
+                    debugLog("hide app-level because all windows match")
                     hideApp(app, sourceSpaceIDs: Set(allWindows.flatMap(\.spaceIDs)))
                     continue
                 }
@@ -324,6 +375,7 @@ class RuleManager: ObservableObject {
             case .show:
                 let canApplyAppVisibility = targetWindows.count == allWindows.count
                 let wasHidden = canApplyAppVisibility && app.isHidden
+                debugLog("show: canApplyAppVisibility=\(canApplyAppVisibility) appHiddenBefore=\(app.isHidden) managedAppHide=\(managedAppHides[app.processIdentifier] != nil)")
                 if canApplyAppVisibility,
                    managedAppHides[app.processIdentifier] != nil,
                    unhideAppWithoutActivation(app) {
@@ -350,10 +402,14 @@ class RuleManager: ObservableObject {
                 
             case .restore:
                 let canApplyAppVisibility = targetWindows.count == allWindows.count
+                debugLog("restore: canApplyAppVisibility=\(canApplyAppVisibility) appHiddenBefore=\(app.isHidden) managedAppHideSources=\(managedAppHides[app.processIdentifier]?.sorted().joined(separator: ",") ?? "none") managedWindowHides=\(managedHides.keys.sorted().map(String.init).joined(separator: ","))")
                 if canApplyAppVisibility,
                    managedAppHides[app.processIdentifier] != nil,
                    unhideAppWithoutActivation(app) {
                     managedAppHides.removeValue(forKey: app.processIdentifier)
+                    debugLog("restore: application unhide succeeded; appHiddenAfter=\(app.isHidden)")
+                } else if canApplyAppVisibility, managedAppHides[app.processIdentifier] != nil {
+                    debugLog("restore: application unhide failed; appHiddenAfter=\(app.isHidden)")
                 }
 
                 if canApplyAppVisibility && managedAppMinimizes.contains(app.processIdentifier) {
@@ -363,14 +419,23 @@ class RuleManager: ObservableObject {
 
                 var restoredHiddenWindow = false
                 for window in targetWindows {
-                    if managedHides[window.id] != nil,
-                       await setHiddenWithRetry(window, isHidden: false) {
+                    let wasManaged = managedHides[window.id] != nil
+                    let didUnhide: Bool
+                    if wasManaged {
+                        didUnhide = await setHiddenWithRetry(window, isHidden: false)
+                    } else {
+                        didUnhide = false
+                    }
+                    debugLog("restore window id=\(window.id): managed=\(wasManaged) unhide=\(didUnhide)")
+                    if didUnhide {
                         managedHides.removeValue(forKey: window.id)
                         restoredHiddenWindow = true
                     }
-                    if managedMinimizes.contains(window.id),
+                    let wasManagedMinimized = managedMinimizes.contains(window.id)
+                    if wasManagedMinimized,
                        WindowSpaceService.setMinimized(window, isMinimized: false) {
                         managedMinimizes.remove(window.id)
+                        debugLog("restore window id=\(window.id): unminimized managed window")
                     }
                 }
                 if restoredHiddenWindow { try? await Task.sleep(nanoseconds: 200_000_000) }
@@ -422,10 +487,12 @@ class RuleManager: ObservableObject {
     }
 
     private func hideApp(_ app: NSRunningApplication, sourceSpaceIDs: Set<String> = []) {
+        debugLog("hide app request: app=\(app.localizedName ?? "<unknown>") pid=\(app.processIdentifier) hiddenBefore=\(app.isHidden) sourceSpaces=[\(sourceSpaceIDs.sorted().joined(separator: ","))]")
         if !app.isHidden {
             managedAppHides[app.processIdentifier] = sourceSpaceIDs
         }
         app.hide()
+        debugLog("hide app request completed: hiddenAfter=\(app.isHidden) managedSources=\(managedAppHides[app.processIdentifier]?.sorted().joined(separator: ",") ?? "none")")
     }
 
     private func setHiddenWithRetry(
@@ -434,7 +501,9 @@ class RuleManager: ObservableObject {
     ) async -> Bool {
         for attempt in 0..<3 {
             if Task.isCancelled { return false }
-            if WindowSpaceService.setHidden(window, isHidden: isHidden) {
+            let result = WindowSpaceService.setHiddenResult(window, isHidden: isHidden)
+            debugLog("AX hidden write: window=\(window.id) desired=\(isHidden) attempt=\(attempt + 1)/3 result=\(result.rawValue) observed=\(boolDebug(WindowSpaceService.isHidden(window)))")
+            if result == .success {
                 return true
             }
 
@@ -567,12 +636,12 @@ class RuleManager: ObservableObject {
     @discardableResult
     private func unhideAppWithoutActivation(_ app: NSRunningApplication) -> Bool {
         if !checkAccessibility() {
-            print("RULE: Accessibility permission missing, skipping unhide")
+            debugLog("application unhide skipped: Accessibility permission missing")
             return false
         }
         let pid = app.processIdentifier; let appElement = AXUIElementCreateApplication(pid)
         let result = AXUIElementSetAttributeValue(appElement, kAXHiddenAttribute as CFString, kCFBooleanFalse)
-        if result != .success { print("RULE: Failed to unhide \(app.localizedName ?? "Unknown"): \(result.rawValue)") }
+        debugLog("application unhide AX write: app=\(app.localizedName ?? "<unknown>") pid=\(pid) result=\(result.rawValue) hiddenAfter=\(app.isHidden)")
         return result == .success
     }
     @discardableResult

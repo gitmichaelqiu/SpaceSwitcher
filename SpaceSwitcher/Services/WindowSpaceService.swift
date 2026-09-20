@@ -161,11 +161,20 @@ enum WindowSpaceService {
 
     @discardableResult
     static func setHidden(_ target: RuleWindowTarget, isHidden: Bool) -> Bool {
+        setHiddenResult(target, isHidden: isHidden) == .success
+    }
+
+    static func setHiddenResult(_ target: RuleWindowTarget, isHidden: Bool) -> AXError {
         AXUIElementSetAttributeValue(
             target.accessibilityElement,
             kAXHiddenAttribute as CFString,
             isHidden ? kCFBooleanTrue : kCFBooleanFalse
-        ) == .success
+        )
+    }
+
+    /// Read the live hidden state of a window when the application exposes it.
+    static func isHidden(_ target: RuleWindowTarget) -> Bool? {
+        hiddenState(for: target.accessibilityElement)
     }
 
     /// Read the live minimized state instead of relying only on the snapshot
