@@ -104,8 +104,7 @@ struct RuleEditor: View {
             } label: {
                 Label("Presets", systemImage: "wand.and.stars")
             }
-            .buttonStyle(.bordered)
-            .controlSize(.small)
+            .menuStyle(.borderlessButton)
             .help("Presets")
 
             Button {
