@@ -144,6 +144,8 @@ private struct DockSetTabBar: View {
     let onCreate: () -> Void
     let onDelete: (DockSet) -> Void
 
+    @State private var tabBarOverflows = false
+
     private var selectedSet: DockSet? {
         guard let selectedSetID else { return nil }
         return dockManager.config.dockSets.first { $0.id == selectedSetID }
@@ -151,16 +153,51 @@ private struct DockSetTabBar: View {
 
     var body: some View {
         HStack(spacing: 8) {
-            NativeHorizontalScrollView {
-                nativePicker
-                    .fixedSize(horizontal: true, vertical: false)
+            ZStack {
+                GeometryReader { proxy in
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        nativePicker
+                            .fixedSize(horizontal: true, vertical: false)
+                            .background {
+                                GeometryReader { contentProxy in
+                                    Color.clear.preference(
+                                        key: DockSetPickerWidthKey.self,
+                                        value: contentProxy.size.width
+                                    )
+                                }
+                            }
+                            .frame(minWidth: proxy.size.width, alignment: .center)
+                    }
+                    .scrollIndicators(.hidden)
+                }
+
+                if tabBarOverflows {
+                    HStack(spacing: 0) {
+                        tabBarEdgeFade(isLeading: true)
+                        Spacer(minLength: 0)
+                        tabBarEdgeFade(isLeading: false)
+                    }
+                    .allowsHitTesting(false)
+                }
             }
-            // NSScrollView has no useful intrinsic height of its own. Keep
-            // the bridge at the same 36-point height as the native tab
-            // control so horizontal overflow never expands the settings
-            // layout vertically.
             .frame(height: SettingsComponentMetrics.listRowHeight)
             .frame(maxWidth: .infinity)
+            .background {
+                GeometryReader { proxy in
+                    Color.clear.preference(
+                        key: DockSetViewportWidthKey.self,
+                        value: proxy.size.width
+                    )
+                }
+            }
+            .onPreferenceChange(DockSetPickerWidthKey.self) { width in
+                tabBarContentWidth = width
+                tabBarOverflows = width > tabBarViewportWidth + 0.5
+            }
+            .onPreferenceChange(DockSetViewportWidthKey.self) { width in
+                tabBarViewportWidth = width
+                tabBarOverflows = tabBarContentWidth > width + 0.5
+            }
 
             Button(action: onCreate) {
                 SettingsIconControlLabel(systemName: "plus")
@@ -185,6 +222,22 @@ private struct DockSetTabBar: View {
             }
         }
         .frame(maxWidth: .infinity)
+    }
+
+    @State private var tabBarContentWidth: CGFloat = 0
+    @State private var tabBarViewportWidth: CGFloat = 0
+
+    private func tabBarEdgeFade(isLeading: Bool) -> some View {
+        Rectangle()
+            .fill(.ultraThinMaterial)
+            .mask {
+                LinearGradient(
+                    colors: isLeading ? [.black, .clear] : [.clear, .black],
+                    startPoint: .leading,
+                    endPoint: .trailing
+                )
+            }
+            .frame(width: 20, height: SettingsComponentMetrics.listRowHeight)
     }
 
     @ViewBuilder
@@ -221,50 +274,19 @@ private struct DockSetTabBar: View {
     }
 }
 
-/// Keeps the native SwiftUI tab picker intact while giving it a real AppKit
-/// scroll document whose width is based on the picker's intrinsic content.
-private struct NativeHorizontalScrollView<Content: View>: NSViewRepresentable {
-    let content: Content
+private struct DockSetPickerWidthKey: PreferenceKey {
+    static var defaultValue: CGFloat = 0
 
-    init(@ViewBuilder content: () -> Content) {
-        self.content = content()
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
+        value = nextValue()
     }
+}
 
-    func makeCoordinator() -> Coordinator {
-        Coordinator()
-    }
+private struct DockSetViewportWidthKey: PreferenceKey {
+    static var defaultValue: CGFloat = 0
 
-    func makeNSView(context: Context) -> NSScrollView {
-        let scrollView = NSScrollView()
-        scrollView.drawsBackground = false
-        scrollView.borderType = .noBorder
-        scrollView.hasVerticalScroller = false
-        scrollView.hasHorizontalScroller = true
-        scrollView.autohidesScrollers = true
-        scrollView.horizontalScrollElasticity = .automatic
-
-        let hostingView = NSHostingView(rootView: content)
-        hostingView.frame = NSRect(origin: .zero, size: hostingView.fittingSize)
-        scrollView.documentView = hostingView
-        context.coordinator.hostingView = hostingView
-        return scrollView
-    }
-
-    func updateNSView(_ scrollView: NSScrollView, context: Context) {
-        guard let hostingView = context.coordinator.hostingView else { return }
-        hostingView.rootView = content
-        hostingView.layoutSubtreeIfNeeded()
-
-        let fittingSize = hostingView.fittingSize
-        let viewportSize = scrollView.contentView.bounds.size
-        hostingView.setFrameSize(NSSize(
-            width: max(fittingSize.width, viewportSize.width),
-            height: max(fittingSize.height, viewportSize.height)
-        ))
-    }
-
-    final class Coordinator {
-        var hostingView: NSHostingView<Content>?
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
+        value = nextValue()
     }
 }
 
