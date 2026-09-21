@@ -162,7 +162,6 @@ private struct DockSetTabBar: View {
                 if shouldScroll {
                     ScrollView(.horizontal) {
                         measuredPicker
-                            .fixedSize(horizontal: true, vertical: false)
                             .padding(.horizontal, 10)
                     }
                     .scrollIndicators(.hidden)
@@ -221,6 +220,10 @@ private struct DockSetTabBar: View {
 
     private var measuredPicker: some View {
         picker
+            // Measure the picker at its intrinsic width. Without this, the
+            // picker accepts the tab bar's proposed width and the overflow
+            // check never switches to the scrollable layout.
+            .fixedSize(horizontal: true, vertical: false)
             .background {
                 GeometryReader { proxy in
                     Color.clear.preference(
