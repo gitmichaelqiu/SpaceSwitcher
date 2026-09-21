@@ -173,6 +173,22 @@ private struct DockSetTabBar: View {
                             .frame(height: SettingsComponentMetrics.listRowHeight, alignment: .center)
                     }
                     .scrollIndicators(.hidden)
+                    .mask {
+                        if tabBarOverflows {
+                            LinearGradient(
+                                stops: [
+                                    .init(color: .clear, location: 0),
+                                    .init(color: .black, location: 0.045),
+                                    .init(color: .black, location: 0.955),
+                                    .init(color: .clear, location: 1)
+                                ],
+                                startPoint: .leading,
+                                endPoint: .trailing
+                            )
+                        } else {
+                            Color.black
+                        }
+                    }
                 }
 
                 if tabBarOverflows {
@@ -232,27 +248,15 @@ private struct DockSetTabBar: View {
     @State private var tabBarViewportWidth: CGFloat = 0
 
     private func tabBarEdgeFade(isLeading: Bool) -> some View {
-        let background = Color(nsColor: .windowBackgroundColor)
-
-        return ZStack {
-            LinearGradient(
-                colors: isLeading
-                    ? [background.opacity(0.96), background.opacity(0.72), background.opacity(0.28), .clear]
-                    : [.clear, background.opacity(0.28), background.opacity(0.72), background.opacity(0.96)],
-                startPoint: .leading,
-                endPoint: .trailing
-            )
-
-            LinearGradient(
-                colors: isLeading
-                    ? [Color.black.opacity(0.32), Color.black.opacity(0.14), .clear]
-                    : [.clear, Color.black.opacity(0.14), Color.black.opacity(0.32)],
-                startPoint: .leading,
-                endPoint: .trailing
-            )
-            .blur(radius: 4)
-        }
-        .frame(width: 44, height: SettingsComponentMetrics.listRowHeight)
+        LinearGradient(
+            colors: isLeading
+                ? [Color.black.opacity(0.46), Color.black.opacity(0.22), .clear]
+                : [.clear, Color.black.opacity(0.22), Color.black.opacity(0.46)],
+            startPoint: .leading,
+            endPoint: .trailing
+        )
+        .frame(width: 52, height: SettingsComponentMetrics.listRowHeight)
+        .blur(radius: 3)
     }
 
     @ViewBuilder
