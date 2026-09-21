@@ -232,8 +232,27 @@ private struct DockSetTabBar: View {
     @State private var tabBarViewportWidth: CGFloat = 0
 
     private func tabBarEdgeFade(isLeading: Bool) -> some View {
-        DockTabEdgeBlur(isLeading: isLeading)
-            .frame(width: 36, height: SettingsComponentMetrics.listRowHeight)
+        let background = Color(nsColor: .windowBackgroundColor)
+
+        return ZStack {
+            LinearGradient(
+                colors: isLeading
+                    ? [background.opacity(0.96), background.opacity(0.72), background.opacity(0.28), .clear]
+                    : [.clear, background.opacity(0.28), background.opacity(0.72), background.opacity(0.96)],
+                startPoint: .leading,
+                endPoint: .trailing
+            )
+
+            LinearGradient(
+                colors: isLeading
+                    ? [Color.black.opacity(0.32), Color.black.opacity(0.14), .clear]
+                    : [.clear, Color.black.opacity(0.14), Color.black.opacity(0.32)],
+                startPoint: .leading,
+                endPoint: .trailing
+            )
+            .blur(radius: 4)
+        }
+        .frame(width: 44, height: SettingsComponentMetrics.listRowHeight)
     }
 
     @ViewBuilder
@@ -283,60 +302,6 @@ private struct DockSetViewportWidthKey: PreferenceKey {
 
     static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
         value = nextValue()
-    }
-}
-
-private struct DockTabEdgeBlur: NSViewRepresentable {
-    let isLeading: Bool
-
-    func makeNSView(context: Context) -> MaskedVisualEffectView {
-        let view = MaskedVisualEffectView(isLeading: isLeading)
-        view.material = .menu
-        view.blendingMode = .withinWindow
-        view.state = .active
-        return view
-    }
-
-    func updateNSView(_ nsView: MaskedVisualEffectView, context: Context) {
-        nsView.isLeading = isLeading
-        nsView.updateMask()
-    }
-}
-
-private final class MaskedVisualEffectView: NSVisualEffectView {
-    var isLeading: Bool {
-        didSet { updateMask() }
-    }
-
-    init(isLeading: Bool) {
-        self.isLeading = isLeading
-        super.init(frame: .zero)
-        wantsLayer = true
-    }
-
-    required init?(coder: NSCoder) {
-        isLeading = true
-        super.init(coder: coder)
-        wantsLayer = true
-    }
-
-    override func layout() {
-        super.layout()
-        updateMask()
-    }
-
-    func updateMask() {
-        guard let layer else { return }
-
-        let mask = (layer.mask as? CAGradientLayer) ?? CAGradientLayer()
-        mask.frame = bounds
-        mask.colors = isLeading
-            ? [NSColor.white.cgColor, NSColor.clear.cgColor]
-            : [NSColor.clear.cgColor, NSColor.white.cgColor]
-        mask.locations = [0, 1]
-        mask.startPoint = CGPoint(x: 0, y: 0.5)
-        mask.endPoint = CGPoint(x: 1, y: 0.5)
-        layer.mask = mask
     }
 }
 
