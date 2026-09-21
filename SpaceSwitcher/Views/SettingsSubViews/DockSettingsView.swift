@@ -10,6 +10,7 @@ struct DockSettingsView: View {
     @State private var selectedSetID: UUID?
     @State private var showingCreateSheet = false
     @State private var newSetName = ""
+    @State private var dockSetPendingDeletion: DockSet?
     
     init(dockManager: DockManager, spaceManager: SpaceManager) {
         self.dockManager = dockManager
@@ -24,7 +25,7 @@ struct DockSettingsView: View {
                 dockManager: dockManager,
                 selectedSetID: $selectedSetID,
                 onCreate: prepareNewSet,
-                onDelete: deleteSet
+                onDelete: requestDeleteSet
             )
             .padding(.horizontal, 24)
             .padding(.vertical, 10)
@@ -89,20 +90,45 @@ struct DockSettingsView: View {
                             Spacer(minLength: 40)
                         }
                         .frame(maxWidth: .infinity, alignment: .leading)
+                        .id(selectedID)
+                        .transition(.opacity)
                     }
                 } else {
                     EmptySelectionView()
+                        .transition(.opacity)
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
-        .animation(.easeInOut(duration: 0.18), value: selectedSetID)
+        .animation(.easeInOut(duration: 0.22), value: selectedSetID)
+        .animation(.easeInOut(duration: 0.22), value: dockManager.config.dockSets)
         .sheet(isPresented: $showingCreateSheet) {
             CreateDockSheet(
                 newSetName: $newSetName,
                 onCancel: { showingCreateSheet = false },
                 onCreate: saveNewSet
             )
+        }
+        .confirmationDialog(
+            "Delete Dock Set",
+            isPresented: Binding(
+                get: { dockSetPendingDeletion != nil },
+                set: { isPresented in
+                    if !isPresented { dockSetPendingDeletion = nil }
+                }
+            )
+        ) {
+            Button("Delete Dock Set", role: .destructive) {
+                if let set = dockSetPendingDeletion {
+                    withAnimation(.easeInOut(duration: 0.22)) {
+                        deleteSet(set)
+                    }
+                }
+                dockSetPendingDeletion = nil
+            }
+            Button("Cancel", role: .cancel) {
+                dockSetPendingDeletion = nil
+            }
         }
     }
 
@@ -111,27 +137,30 @@ struct DockSettingsView: View {
         showingCreateSheet = true
     }
     
+    private func requestDeleteSet(_ set: DockSet) {
+        dockSetPendingDeletion = set
+    }
+
     private func deleteSet(_ set: DockSet) {
-        withAnimation {
-            dockManager.config.dockSets.removeAll { $0.id == set.id }
-            let keys = dockManager.config.spaceAssignments.filter { $0.value == set.id }.map { $0.key }
-            keys.forEach { dockManager.config.spaceAssignments.removeValue(forKey: $0) }
-            
-            // Selection fix
-            if selectedSetID == set.id { selectedSetID = dockManager.config.dockSets.first?.id }
-            
-            // Default set fix: Always ensure one exists if sets are available
-            if dockManager.config.defaultDockSetID == set.id || dockManager.config.defaultDockSetID == nil {
-                dockManager.config.defaultDockSetID = dockManager.config.dockSets.first?.id
-            }
+        dockManager.config.dockSets.removeAll { $0.id == set.id }
+        let keys = dockManager.config.spaceAssignments.filter { $0.value == set.id }.map { $0.key }
+        keys.forEach { dockManager.config.spaceAssignments.removeValue(forKey: $0) }
+
+        // Selection fix
+        if selectedSetID == set.id { selectedSetID = dockManager.config.dockSets.first?.id }
+
+        // Default set fix: Always ensure one exists if sets are available
+        if dockManager.config.defaultDockSetID == set.id || dockManager.config.defaultDockSetID == nil {
+            dockManager.config.defaultDockSetID = dockManager.config.dockSets.first?.id
         }
     }
     
     private func saveNewSet() {
-        dockManager.createNewDockSet(name: newSetName)
-        showingCreateSheet = false
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-            selectedSetID = dockManager.config.dockSets.last?.id
+        guard let createdID = dockManager.createNewDockSet(name: newSetName) else { return }
+
+        withAnimation(.easeInOut(duration: 0.22)) {
+            showingCreateSheet = false
+            selectedSetID = createdID
         }
     }
 

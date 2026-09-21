@@ -517,13 +517,15 @@ class DockManager: ObservableObject {
     
     // MARK: - Data Management & Spacers
     
-    func createNewDockSet(name: String) {
-        guard let tiles = currentDockTiles() else { return }
-        DispatchQueue.main.async {
-            let newSet = DockSet(id: UUID(), name: name, dateCreated: Date(), tiles: tiles)
-            self.config.dockSets.append(newSet)
-            if self.config.defaultDockSetID == nil { self.config.defaultDockSetID = newSet.id }
-        }
+    @MainActor
+    @discardableResult
+    func createNewDockSet(name: String) -> UUID? {
+        guard let tiles = currentDockTiles() else { return nil }
+
+        let newSet = DockSet(id: UUID(), name: name, dateCreated: Date(), tiles: tiles)
+        config.dockSets.append(newSet)
+        if config.defaultDockSetID == nil { config.defaultDockSetID = newSet.id }
+        return newSet.id
     }
 
     /// Replaces a saved dock set with the apps currently pinned in the system Dock.
