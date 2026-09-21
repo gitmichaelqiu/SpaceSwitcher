@@ -152,7 +152,7 @@ private struct DockSetTabBar: View {
     }
 
     var body: some View {
-        HStack(spacing: 8) {
+        HStack(alignment: .center, spacing: 8) {
             ZStack {
                 GeometryReader { proxy in
                     ScrollView(.horizontal, showsIndicators: false) {
@@ -166,7 +166,11 @@ private struct DockSetTabBar: View {
                                     )
                                 }
                             }
-                            .frame(minWidth: proxy.size.width, alignment: .center)
+                            .frame(
+                                minWidth: proxy.size.width,
+                                alignment: tabBarOverflows ? .leading : .center
+                            )
+                            .frame(height: SettingsComponentMetrics.listRowHeight, alignment: .center)
                     }
                     .scrollIndicators(.hidden)
                 }
@@ -228,16 +232,17 @@ private struct DockSetTabBar: View {
     @State private var tabBarViewportWidth: CGFloat = 0
 
     private func tabBarEdgeFade(isLeading: Bool) -> some View {
-        Rectangle()
-            .fill(.ultraThinMaterial)
-            .mask {
-                LinearGradient(
-                    colors: isLeading ? [.black, .clear] : [.clear, .black],
-                    startPoint: .leading,
-                    endPoint: .trailing
-                )
-            }
-            .frame(width: 20, height: SettingsComponentMetrics.listRowHeight)
+        let edgeColor = Color(nsColor: .windowBackgroundColor)
+
+        return LinearGradient(
+            colors: isLeading
+                ? [edgeColor.opacity(0.92), edgeColor.opacity(0.42), .clear]
+                : [.clear, edgeColor.opacity(0.42), edgeColor.opacity(0.92)],
+            startPoint: .leading,
+            endPoint: .trailing
+        )
+        .blur(radius: 2.5)
+        .frame(width: 28, height: SettingsComponentMetrics.listRowHeight)
     }
 
     @ViewBuilder
