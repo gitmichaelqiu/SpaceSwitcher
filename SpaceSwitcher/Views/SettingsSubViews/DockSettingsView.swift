@@ -155,6 +155,11 @@ private struct DockSetTabBar: View {
                 nativePicker
                     .fixedSize(horizontal: true, vertical: false)
             }
+            // NSScrollView has no useful intrinsic height of its own. Keep
+            // the bridge at the same 36-point height as the native tab
+            // control so horizontal overflow never expands the settings
+            // layout vertically.
+            .frame(height: SettingsComponentMetrics.listRowHeight)
             .frame(maxWidth: .infinity)
 
             Button(action: onCreate) {
