@@ -90,18 +90,14 @@ struct DockSettingsView: View {
                             Spacer(minLength: 40)
                         }
                         .frame(maxWidth: .infinity, alignment: .leading)
-                        .id(selectedID)
-                        .transition(.opacity)
                     }
                 } else {
                     EmptySelectionView()
-                        .transition(.opacity)
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         .animation(.easeInOut(duration: 0.22), value: selectedSetID)
-        .animation(.easeInOut(duration: 0.22), value: dockManager.config.dockSets)
         .sheet(isPresented: $showingCreateSheet) {
             CreateDockSheet(
                 newSetName: $newSetName,
@@ -128,6 +124,10 @@ struct DockSettingsView: View {
             }
             Button("Cancel", role: .cancel) {
                 dockSetPendingDeletion = nil
+            }
+        } message: {
+            if let set = dockSetPendingDeletion {
+                Text("Delete “\(set.name)”?")
             }
         }
     }
@@ -156,9 +156,8 @@ struct DockSettingsView: View {
     }
     
     private func saveNewSet() {
-        guard let createdID = dockManager.createNewDockSet(name: newSetName) else { return }
-
         withAnimation(.easeInOut(duration: 0.22)) {
+            guard let createdID = dockManager.createNewDockSet(name: newSetName) else { return }
             showingCreateSheet = false
             selectedSetID = createdID
         }
@@ -259,6 +258,7 @@ private struct DockSetTabBar: View {
             }
         }
         .frame(maxWidth: .infinity)
+        .animation(.easeInOut(duration: 0.22), value: dockManager.config.dockSets)
     }
 
     @State private var tabBarContentWidth: CGFloat = 0
