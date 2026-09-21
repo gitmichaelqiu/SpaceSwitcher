@@ -181,6 +181,10 @@ private struct DockSetTabBar: View {
         return dockManager.config.dockSets.first { $0.id == selectedSetID }
     }
 
+    private var tabGroupID: String {
+        dockManager.config.dockSets.map { $0.id.uuidString }.joined(separator: ":")
+    }
+
     var body: some View {
         HStack(alignment: .center, spacing: 8) {
             ZStack {
@@ -192,6 +196,8 @@ private struct DockSetTabBar: View {
                             }
 
                             nativePicker
+                                .id(tabGroupID)
+                                .transition(.opacity.combined(with: .scale(scale: 0.98)))
                                 .fixedSize(horizontal: true, vertical: false)
                                 .background {
                                     GeometryReader { contentProxy in
