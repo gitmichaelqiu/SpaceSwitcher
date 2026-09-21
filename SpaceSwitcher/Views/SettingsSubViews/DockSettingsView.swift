@@ -143,55 +143,15 @@ private struct DockSetTabBar: View {
     let onCreate: () -> Void
     let onDelete: (DockSet) -> Void
 
-    @State private var availableWidth: CGFloat = 0
-    @State private var pickerWidth: CGFloat = 0
-
     private var selectedSet: DockSet? {
         guard let selectedSetID else { return nil }
         return dockManager.config.dockSets.first { $0.id == selectedSetID }
     }
 
-    private var shouldScroll: Bool {
-        guard availableWidth > 0, pickerWidth > 0 else { return false }
-        return pickerWidth > max(availableWidth - 20, 0)
-    }
-
     var body: some View {
         HStack(spacing: 8) {
-            Group {
-                if shouldScroll {
-                    ScrollView(.horizontal) {
-                        measuredPicker
-                            .padding(.horizontal, 10)
-                    }
-                    .scrollIndicators(.hidden)
-                    .frame(maxWidth: .infinity)
-                } else {
-                    HStack {
-                        Spacer(minLength: 0)
-                        measuredPicker
-                        Spacer(minLength: 0)
-                    }
-                    .padding(.horizontal, 10)
-                }
-            }
-            .frame(maxWidth: .infinity, alignment: .center)
-            .background {
-                GeometryReader { proxy in
-                    Color.clear.preference(
-                        key: DockSetTabAvailableWidthKey.self,
-                        value: proxy.size.width
-                    )
-                }
-            }
-            .onPreferenceChange(DockSetTabAvailableWidthKey.self) { width in
-                guard abs(availableWidth - width) > 0.5 else { return }
-                availableWidth = width
-            }
-            .onPreferenceChange(DockSetTabPickerWidthKey.self) { width in
-                guard abs(pickerWidth - width) > 0.5 else { return }
-                pickerWidth = width
-            }
+            dockSetTabs
+                .frame(maxWidth: .infinity)
 
             Button(action: onCreate) {
                 SettingsIconControlLabel(systemName: "plus")
@@ -218,69 +178,80 @@ private struct DockSetTabBar: View {
         .frame(maxWidth: .infinity)
     }
 
-    private var measuredPicker: some View {
-        picker
-            // Measure the picker at its intrinsic width. Without this, the
-            // picker accepts the tab bar's proposed width and the overflow
-            // check never switches to the scrollable layout.
-            .fixedSize(horizontal: true, vertical: false)
-            .background {
-                GeometryReader { proxy in
-                    Color.clear.preference(
-                        key: DockSetTabPickerWidthKey.self,
-                        value: proxy.size.width
-                    )
+    private var dockSetTabs: some View {
+        GeometryReader { geometry in
+            ScrollViewReader { scrollProxy in
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 0) {
+                        Spacer(minLength: 0)
+
+                        ForEach(dockManager.config.dockSets) { set in
+                            dockSetTab(for: set)
+                                .id(set.id)
+                        }
+
+                        Spacer(minLength: 0)
+                    }
+                    .frame(minWidth: max(geometry.size.width - 8, 0))
+                    .padding(4)
+                }
+                .onAppear {
+                    scrollToSelection(using: scrollProxy, animated: false)
+                }
+                .onChange(of: selectedSetID) { _ in
+                    scrollToSelection(using: scrollProxy, animated: true)
                 }
             }
-    }
-
-    @ViewBuilder
-    private var picker: some View {
-        if #available(macOS 27.0, *) {
-            Picker("Dock Set", selection: $selectedSetID) {
-                pickerOptions
-            }
-            .labelsHidden()
-            .pickerStyle(.tabs)
-            .controlSize(.large)
-        } else {
-            Picker("Dock Set", selection: $selectedSetID) {
-                pickerOptions
-            }
-            .labelsHidden()
-            .pickerStyle(.segmented)
-            .controlSize(.large)
         }
+        .frame(height: 44)
+        .background(
+            Capsule(style: .continuous)
+                .fill(Color(nsColor: .underPageBackgroundColor).opacity(0.72))
+        )
+        .clipShape(Capsule(style: .continuous))
     }
 
-    @ViewBuilder
-    private var pickerOptions: some View {
-        ForEach(dockManager.config.dockSets) { set in
-            Text(set.id == dockManager.activeDockSetID ? "○ \(set.name)" : set.name)
+    private func dockSetTab(for set: DockSet) -> some View {
+        let isSelected = set.id == selectedSetID
+        let isActive = set.id == dockManager.activeDockSetID
+        let title = isActive ? "○ \(set.name)" : set.name
+
+        return Button {
+            selectedSetID = set.id
+        } label: {
+            Text(title)
                 .lineLimit(1)
-                .accessibilityLabel(
-                    set.id == dockManager.activeDockSetID
-                        ? "\(set.name), active"
-                        : set.name
-                )
-                .tag(Optional(set.id))
+                .padding(.horizontal, 20)
+                .frame(height: 36)
+                .foregroundStyle(Color.primary)
+                .background {
+                    if isSelected {
+                        Capsule(style: .continuous)
+                            .fill(Color(nsColor: .controlBackgroundColor))
+                            .overlay {
+                                Capsule(style: .continuous)
+                                    .stroke(Color.white.opacity(0.14), lineWidth: 1)
+                            }
+                            .shadow(color: .black.opacity(0.18), radius: 2, y: 1)
+                    }
+                }
         }
+        .buttonStyle(.plain)
+        .contentShape(Rectangle())
+        .help(set.name)
+        .accessibilityLabel(isActive ? "\(set.name), active" : set.name)
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
-}
 
-private struct DockSetTabPickerWidthKey: PreferenceKey {
-    static let defaultValue: CGFloat = 0
-
-    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
-        value = max(value, nextValue())
-    }
-}
-
-private struct DockSetTabAvailableWidthKey: PreferenceKey {
-    static let defaultValue: CGFloat = 0
-
-    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
-        value = nextValue()
+    private func scrollToSelection(using proxy: ScrollViewProxy, animated: Bool) {
+        guard let selectedSetID else { return }
+        if animated {
+            withAnimation(.easeInOut(duration: 0.2)) {
+                proxy.scrollTo(selectedSetID, anchor: .center)
+            }
+        } else {
+            proxy.scrollTo(selectedSetID, anchor: .center)
+        }
     }
 }
 
