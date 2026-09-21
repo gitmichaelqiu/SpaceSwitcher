@@ -232,17 +232,16 @@ private struct DockSetTabBar: View {
     @State private var tabBarViewportWidth: CGFloat = 0
 
     private func tabBarEdgeFade(isLeading: Bool) -> some View {
-        let edgeColor = Color(nsColor: .windowBackgroundColor)
-
-        return LinearGradient(
-            colors: isLeading
-                ? [edgeColor.opacity(0.92), edgeColor.opacity(0.42), .clear]
-                : [.clear, edgeColor.opacity(0.42), edgeColor.opacity(0.92)],
-            startPoint: .leading,
-            endPoint: .trailing
-        )
-        .blur(radius: 2.5)
-        .frame(width: 28, height: SettingsComponentMetrics.listRowHeight)
+        Rectangle()
+            .fill(.regularMaterial)
+            .mask {
+                LinearGradient(
+                    colors: isLeading ? [.black, .clear] : [.clear, .black],
+                    startPoint: .leading,
+                    endPoint: .trailing
+                )
+            }
+            .frame(width: 36, height: SettingsComponentMetrics.listRowHeight)
     }
 
     @ViewBuilder
