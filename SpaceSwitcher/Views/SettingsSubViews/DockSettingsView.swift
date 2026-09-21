@@ -1,4 +1,5 @@
 import SwiftUI
+import AppKit
 import UniformTypeIdentifiers
 
 // MARK: - Main Container
@@ -148,120 +149,117 @@ private struct DockSetTabBar: View {
         return dockManager.config.dockSets.first { $0.id == selectedSetID }
     }
 
-    private var hasDeleteButton: Bool {
-        selectedSet != nil && dockManager.config.dockSets.count > 1
-    }
-
-    private var controlWidth: CGFloat {
-        SettingsComponentMetrics.iconButtonSize
-            + (hasDeleteButton ? SettingsComponentMetrics.iconButtonSize + 8 : 0)
-    }
-
     var body: some View {
-        GeometryReader { geometry in
-            HStack(spacing: 8) {
-                dockSetTabs
-                    .frame(width: max(geometry.size.width - controlWidth - 8, 0))
+        HStack(spacing: 8) {
+            NativeHorizontalScrollView {
+                nativePicker
+                    .fixedSize(horizontal: true, vertical: false)
+            }
+            .frame(maxWidth: .infinity)
 
-                Button(action: onCreate) {
-                    SettingsIconControlLabel(systemName: "plus")
-                }
+            Button(action: onCreate) {
+                SettingsIconControlLabel(systemName: "plus")
+            }
                 .buttonStyle(.bordered)
                 .controlSize(.regular)
                 .settingsIconControlFrame()
                 .help("New Dock Set")
                 .accessibilityLabel("New Dock Set")
 
-                if let selectedSet, hasDeleteButton {
-                    Button(role: .destructive) {
-                        onDelete(selectedSet)
-                    } label: {
-                        SettingsIconControlLabel(systemName: "trash")
-                    }
-                    .buttonStyle(.bordered)
-                    .controlSize(.regular)
-                    .settingsIconControlFrame()
-                    .help("Delete Dock Set")
-                    .accessibilityLabel("Delete Dock Set")
+            if let selectedSet, dockManager.config.dockSets.count > 1 {
+                Button(role: .destructive) {
+                    onDelete(selectedSet)
+                } label: {
+                    SettingsIconControlLabel(systemName: "trash")
                 }
+                .buttonStyle(.bordered)
+                .controlSize(.regular)
+                .settingsIconControlFrame()
+                .help("Delete Dock Set")
+                .accessibilityLabel("Delete Dock Set")
             }
         }
         .frame(maxWidth: .infinity)
-        .frame(height: 44)
     }
 
-    private var dockSetTabs: some View {
-        ScrollViewReader { scrollProxy in
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 0) {
-                    ForEach(dockManager.config.dockSets) { set in
-                        dockSetTab(for: set)
-                            .id(set.id)
-                    }
-                }
-                .padding(4)
-                // Keep the content wider than the viewport when necessary;
-                // otherwise nested SwiftUI scroll views may collapse the row
-                // to the viewport width and clip the trailing tabs.
-                .fixedSize(horizontal: true, vertical: false)
+    @ViewBuilder
+    private var nativePicker: some View {
+        if #available(macOS 27.0, *) {
+            Picker("Dock Set", selection: $selectedSetID) {
+                pickerOptions
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .onAppear {
-                scrollToSelection(using: scrollProxy, animated: false)
-            }
-            .onChange(of: selectedSetID) { _ in
-                scrollToSelection(using: scrollProxy, animated: true)
-            }
-        }
-        .frame(height: 44)
-        .background(
-            Capsule(style: .continuous)
-                .fill(Color(nsColor: .underPageBackgroundColor).opacity(0.72))
-        )
-        .clipShape(Capsule(style: .continuous))
-    }
-
-    private func dockSetTab(for set: DockSet) -> some View {
-        let isSelected = set.id == selectedSetID
-        let isActive = set.id == dockManager.activeDockSetID
-        let title = isActive ? "○ \(set.name)" : set.name
-
-        return Button {
-            selectedSetID = set.id
-        } label: {
-            Text(title)
-                .lineLimit(1)
-                .padding(.horizontal, 20)
-                .frame(height: 36)
-                .foregroundStyle(Color.primary)
-                .background {
-                    if isSelected {
-                        Capsule(style: .continuous)
-                            .fill(Color(nsColor: .controlBackgroundColor))
-                            .overlay {
-                                Capsule(style: .continuous)
-                                    .stroke(Color.white.opacity(0.14), lineWidth: 1)
-                            }
-                            .shadow(color: .black.opacity(0.18), radius: 2, y: 1)
-                    }
-                }
-        }
-        .buttonStyle(.plain)
-        .contentShape(Rectangle())
-        .help(set.name)
-        .accessibilityLabel(isActive ? "\(set.name), active" : set.name)
-        .accessibilityAddTraits(isSelected ? .isSelected : [])
-    }
-
-    private func scrollToSelection(using proxy: ScrollViewProxy, animated: Bool) {
-        guard let selectedSetID else { return }
-        if animated {
-            withAnimation(.easeInOut(duration: 0.2)) {
-                proxy.scrollTo(selectedSetID, anchor: .center)
-            }
+            .labelsHidden()
+            .pickerStyle(.tabs)
+            .controlSize(.large)
         } else {
-            proxy.scrollTo(selectedSetID, anchor: .center)
+            Picker("Dock Set", selection: $selectedSetID) {
+                pickerOptions
+            }
+            .labelsHidden()
+            .pickerStyle(.segmented)
+            .controlSize(.large)
         }
+    }
+
+    @ViewBuilder
+    private var pickerOptions: some View {
+        ForEach(dockManager.config.dockSets) { set in
+            Text(set.id == dockManager.activeDockSetID ? "○ \(set.name)" : set.name)
+                .lineLimit(1)
+                .accessibilityLabel(
+                    set.id == dockManager.activeDockSetID
+                        ? "\(set.name), active"
+                        : set.name
+                )
+                .tag(Optional(set.id))
+        }
+    }
+}
+
+/// Keeps the native SwiftUI tab picker intact while giving it a real AppKit
+/// scroll document whose width is based on the picker's intrinsic content.
+private struct NativeHorizontalScrollView<Content: View>: NSViewRepresentable {
+    let content: Content
+
+    init(@ViewBuilder content: () -> Content) {
+        self.content = content()
+    }
+
+    func makeCoordinator() -> Coordinator {
+        Coordinator()
+    }
+
+    func makeNSView(context: Context) -> NSScrollView {
+        let scrollView = NSScrollView()
+        scrollView.drawsBackground = false
+        scrollView.borderType = .noBorder
+        scrollView.hasVerticalScroller = false
+        scrollView.hasHorizontalScroller = true
+        scrollView.autohidesScrollers = true
+        scrollView.horizontalScrollElasticity = .automatic
+
+        let hostingView = NSHostingView(rootView: content)
+        hostingView.frame = NSRect(origin: .zero, size: hostingView.fittingSize)
+        scrollView.documentView = hostingView
+        context.coordinator.hostingView = hostingView
+        return scrollView
+    }
+
+    func updateNSView(_ scrollView: NSScrollView, context: Context) {
+        guard let hostingView = context.coordinator.hostingView else { return }
+        hostingView.rootView = content
+        hostingView.layoutSubtreeIfNeeded()
+
+        let fittingSize = hostingView.fittingSize
+        let viewportSize = scrollView.contentView.bounds.size
+        hostingView.setFrameSize(NSSize(
+            width: max(fittingSize.width, viewportSize.width),
+            height: max(fittingSize.height, viewportSize.height)
+        ))
+    }
+
+    final class Coordinator {
+        var hostingView: NSHostingView<Content>?
     }
 }
 
