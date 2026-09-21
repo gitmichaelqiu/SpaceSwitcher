@@ -144,6 +144,8 @@ private struct DockSetTabBar: View {
     let onCreate: () -> Void
     let onDelete: (DockSet) -> Void
 
+    private let tabBarFadeWidth: CGFloat = 32
+
     @State private var tabBarOverflows = false
 
     private var selectedSet: DockSet? {
@@ -156,48 +158,34 @@ private struct DockSetTabBar: View {
             ZStack {
                 GeometryReader { proxy in
                     ScrollView(.horizontal, showsIndicators: false) {
-                        nativePicker
-                            .fixedSize(horizontal: true, vertical: false)
-                            .background {
-                                GeometryReader { contentProxy in
-                                    Color.clear.preference(
-                                        key: DockSetPickerWidthKey.self,
-                                        value: contentProxy.size.width
-                                    )
-                                }
+                        HStack(spacing: 0) {
+                            if tabBarOverflows {
+                                Color.clear.frame(width: tabBarFadeWidth)
                             }
-                            .frame(
-                                minWidth: proxy.size.width,
-                                alignment: tabBarOverflows ? .leading : .center
-                            )
-                            .frame(height: SettingsComponentMetrics.listRowHeight, alignment: .center)
+
+                            nativePicker
+                                .fixedSize(horizontal: true, vertical: false)
+                                .background {
+                                    GeometryReader { contentProxy in
+                                        Color.clear.preference(
+                                            key: DockSetPickerWidthKey.self,
+                                            value: contentProxy.size.width
+                                        )
+                                    }
+                                }
+
+                            if tabBarOverflows {
+                                Color.clear.frame(width: 6)
+                            }
+                        }
+                        .frame(
+                            minWidth: proxy.size.width,
+                            alignment: tabBarOverflows ? .leading : .center
+                        )
+                        .frame(height: SettingsComponentMetrics.listRowHeight, alignment: .center)
                     }
                     .scrollIndicators(.hidden)
-                    .mask {
-                        if tabBarOverflows {
-                            LinearGradient(
-                                stops: [
-                                    .init(color: .clear, location: 0),
-                                    .init(color: .black, location: 0.045),
-                                    .init(color: .black, location: 0.955),
-                                    .init(color: .clear, location: 1)
-                                ],
-                                startPoint: .leading,
-                                endPoint: .trailing
-                            )
-                        } else {
-                            Color.black
-                        }
-                    }
-                }
-
-                if tabBarOverflows {
-                    HStack(spacing: 0) {
-                        tabBarEdgeFade(isLeading: true)
-                        Spacer(minLength: 0)
-                        tabBarEdgeFade(isLeading: false)
-                    }
-                    .allowsHitTesting(false)
+                    .mask(tabBarMask)
                 }
             }
             .frame(height: SettingsComponentMetrics.listRowHeight)
@@ -247,16 +235,25 @@ private struct DockSetTabBar: View {
     @State private var tabBarContentWidth: CGFloat = 0
     @State private var tabBarViewportWidth: CGFloat = 0
 
-    private func tabBarEdgeFade(isLeading: Bool) -> some View {
-        LinearGradient(
-            colors: isLeading
-                ? [Color.black.opacity(0.46), Color.black.opacity(0.22), .clear]
-                : [.clear, Color.black.opacity(0.22), Color.black.opacity(0.46)],
-            startPoint: .leading,
-            endPoint: .trailing
-        )
-        .frame(width: 52, height: SettingsComponentMetrics.listRowHeight)
-        .blur(radius: 3)
+    private var tabBarMask: some View {
+        HStack(spacing: 0) {
+            LinearGradient(
+                colors: [.clear, .black],
+                startPoint: .leading,
+                endPoint: .trailing
+            )
+            .frame(width: tabBarFadeWidth)
+
+            Rectangle()
+                .fill(Color.black)
+
+            LinearGradient(
+                colors: [.black, .clear],
+                startPoint: .leading,
+                endPoint: .trailing
+            )
+            .frame(width: tabBarFadeWidth)
+        }
     }
 
     @ViewBuilder
