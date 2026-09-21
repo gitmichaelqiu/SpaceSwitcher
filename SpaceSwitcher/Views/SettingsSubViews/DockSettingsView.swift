@@ -148,59 +148,69 @@ private struct DockSetTabBar: View {
         return dockManager.config.dockSets.first { $0.id == selectedSetID }
     }
 
-    var body: some View {
-        HStack(spacing: 8) {
-            dockSetTabs
-                .frame(maxWidth: .infinity)
+    private var hasDeleteButton: Bool {
+        selectedSet != nil && dockManager.config.dockSets.count > 1
+    }
 
-            Button(action: onCreate) {
-                SettingsIconControlLabel(systemName: "plus")
-            }
+    private var controlWidth: CGFloat {
+        SettingsComponentMetrics.iconButtonSize
+            + (hasDeleteButton ? SettingsComponentMetrics.iconButtonSize + 8 : 0)
+    }
+
+    var body: some View {
+        GeometryReader { geometry in
+            HStack(spacing: 8) {
+                dockSetTabs
+                    .frame(width: max(geometry.size.width - controlWidth - 8, 0))
+
+                Button(action: onCreate) {
+                    SettingsIconControlLabel(systemName: "plus")
+                }
                 .buttonStyle(.bordered)
                 .controlSize(.regular)
                 .settingsIconControlFrame()
                 .help("New Dock Set")
                 .accessibilityLabel("New Dock Set")
 
-            if let selectedSet, dockManager.config.dockSets.count > 1 {
-                Button(role: .destructive) {
-                    onDelete(selectedSet)
-                } label: {
-                    SettingsIconControlLabel(systemName: "trash")
+                if let selectedSet, hasDeleteButton {
+                    Button(role: .destructive) {
+                        onDelete(selectedSet)
+                    } label: {
+                        SettingsIconControlLabel(systemName: "trash")
+                    }
+                    .buttonStyle(.bordered)
+                    .controlSize(.regular)
+                    .settingsIconControlFrame()
+                    .help("Delete Dock Set")
+                    .accessibilityLabel("Delete Dock Set")
                 }
-                .buttonStyle(.bordered)
-                .controlSize(.regular)
-                .settingsIconControlFrame()
-                .help("Delete Dock Set")
-                .accessibilityLabel("Delete Dock Set")
             }
         }
         .frame(maxWidth: .infinity)
+        .frame(height: 44)
     }
 
     private var dockSetTabs: some View {
-        GeometryReader { geometry in
-            ScrollViewReader { scrollProxy in
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: 0) {
-                        Spacer(minLength: 0)
-
-                        ForEach(dockManager.config.dockSets) { set in
-                            dockSetTab(for: set)
-                                .id(set.id)
-                        }
-
-                        Spacer(minLength: 0)
+        ScrollViewReader { scrollProxy in
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 0) {
+                    ForEach(dockManager.config.dockSets) { set in
+                        dockSetTab(for: set)
+                            .id(set.id)
                     }
-                    .frame(minWidth: max(geometry.size.width - 8, 0))
-                    .padding(4)
                 }
-                .onAppear {
-                    scrollToSelection(using: scrollProxy, animated: false)
-                }
-                .onChange(of: selectedSetID) { _ in
-                    scrollToSelection(using: scrollProxy, animated: true)
-                }
+                .padding(4)
+                // Keep the content wider than the viewport when necessary;
+                // otherwise nested SwiftUI scroll views may collapse the row
+                // to the viewport width and clip the trailing tabs.
+                .fixedSize(horizontal: true, vertical: false)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .onAppear {
+                scrollToSelection(using: scrollProxy, animated: false)
+            }
+            .onChange(of: selectedSetID) { _ in
+                scrollToSelection(using: scrollProxy, animated: true)
             }
         }
         .frame(height: 44)
