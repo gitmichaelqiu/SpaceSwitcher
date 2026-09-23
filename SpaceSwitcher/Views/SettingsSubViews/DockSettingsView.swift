@@ -142,12 +142,20 @@ struct DockSettingsView: View {
     }
 
     private func deleteSet(_ set: DockSet) {
+        let deletedIndex = dockManager.config.dockSets.firstIndex { $0.id == set.id }
+        let wasSelected = selectedSetID == set.id
+
         dockManager.config.dockSets.removeAll { $0.id == set.id }
         let keys = dockManager.config.spaceAssignments.filter { $0.value == set.id }.map { $0.key }
         keys.forEach { dockManager.config.spaceAssignments.removeValue(forKey: $0) }
 
-        // Selection fix
-        if selectedSetID == set.id { selectedSetID = dockManager.config.dockSets.first?.id }
+        if wasSelected {
+            let previousIndex = max((deletedIndex ?? 1) - 1, 0)
+            let remainingSets = dockManager.config.dockSets
+            selectedSetID = remainingSets.indices.contains(previousIndex)
+                ? remainingSets[previousIndex].id
+                : remainingSets.first?.id
+        }
 
         // Default set fix: Always ensure one exists if sets are available
         if dockManager.config.defaultDockSetID == set.id || dockManager.config.defaultDockSetID == nil {
