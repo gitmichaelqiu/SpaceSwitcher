@@ -586,7 +586,7 @@ class DockManager: ObservableObject {
 
     func createSpacerTile(isSmall: Bool) -> DockTile {
         let type = isSmall ? "small-spacer-tile" : "spacer-tile"
-        let label = isSmall ? "Small Spacer" : "Large Spacer"
+        let label = NSLocalizedString(isSmall ? "Small spacer" : "Large spacer", comment: "Dock spacer item name")
         
         let rawDict: [String: Any] = [
             "tile-data": [:],
@@ -609,9 +609,9 @@ class DockManager: ObservableObject {
             
             if let tileData = itemDict["tile-data"] as? [String: Any] {
                 if tileType == "spacer-tile" {
-                    label = "Large Spacer"
+                    label = NSLocalizedString("Large spacer", comment: "Dock spacer item name")
                 } else if tileType == "small-spacer-tile" {
-                    label = "Small Spacer"
+                    label = NSLocalizedString("Small spacer", comment: "Dock spacer item name")
                 } else {
                     label = tileData["file-label"] as? String ?? "Unknown"
                     bundleID = tileData["bundle-identifier"] as? String

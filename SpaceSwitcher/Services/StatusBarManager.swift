@@ -78,7 +78,7 @@ class StatusBarManager: NSObject {
     private func createMenu() -> NSMenu {
         let menu = NSMenu()
 
-        let rulesItem = NSMenuItem(title: NSLocalizedString("Rule Automation", comment: ""),
+        let rulesItem = NSMenuItem(title: NSLocalizedString("Rule automation", comment: ""),
                             action: #selector(toggleRules),
                             keyEquivalent: "")
         rulesItem.target = self
@@ -86,7 +86,7 @@ class StatusBarManager: NSObject {
         rulesItem.image = NSImage(systemSymbolName: "list.bullet.below.rectangle", accessibilityDescription: nil)
         menu.addItem(rulesItem)
         
-        let docksItem = NSMenuItem(title: NSLocalizedString("Dock Automation", comment: ""),
+        let docksItem = NSMenuItem(title: NSLocalizedString("Dock automation", comment: ""),
                                    action: #selector(toggleDocks),
                                    keyEquivalent: "")
         docksItem.target = self

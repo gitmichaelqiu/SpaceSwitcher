@@ -102,6 +102,16 @@
         }
       }
     },
+    "Action definitions" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "操作定义"
+          }
+        }
+      }
+    },
     "Activate the application and bring its windows to the foreground." : {
       "localizations" : {
         "zh-Hans" : {
@@ -112,7 +122,7 @@
         }
       }
     },
-    "Add Action" : {
+    "Add action" : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -122,10 +132,10 @@
         }
       }
     },
-    "Add Application" : {
+    "Add application" : {
 
     },
-    "Add Dock Item" : {
+    "Add Dock item" : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -156,7 +166,7 @@
         }
       }
     },
-    "Add First Item" : {
+    "Add first item" : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -166,7 +176,7 @@
         }
       }
     },
-    "Add Large Spacer" : {
+    "Add large spacer" : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -176,7 +186,7 @@
         }
       }
     },
-    "Add New Rule" : {
+    "Add new rule" : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -186,7 +196,7 @@
         }
       }
     },
-    "Add Small Spacer" : {
+    "Add small spacer" : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -196,7 +206,17 @@
         }
       }
     },
-    "Add Workflow Group" : {
+    "Large spacer" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "大间距"
+          }
+        }
+      }
+    },
+    "Add workflow group" : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -206,7 +226,7 @@
         }
       }
     },
-    "All Apps" : {
+    "All apps" : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -216,7 +236,7 @@
         }
       }
     },
-    "App Shortcut" : {
+    "App shortcut" : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -226,7 +246,7 @@
         }
       }
     },
-    "App Shortcut..." : {
+    "App shortcut..." : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -236,7 +256,7 @@
         }
       }
     },
-    "Apply Now" : {
+    "Apply now" : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -246,7 +266,7 @@
         }
       }
     },
-    "Apply Preset" : {
+    "Apply preset" : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -256,7 +276,7 @@
         }
       }
     },
-    "Apply Preset?" : {
+    "Apply preset?" : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -317,7 +337,7 @@
         }
       }
     },
-    "Bring to Front" : {
+    "Bring to front" : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -337,7 +357,7 @@
         }
       }
     },
-    "Check for Updates" : {
+    "Check for updates" : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -347,7 +367,7 @@
         }
       }
     },
-    "Check Now" : {
+    "Check now" : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -377,7 +397,7 @@
         }
       }
     },
-    "Choose Shortcut Modifiers" : {
+    "Choose shortcut modifiers" : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -424,7 +444,7 @@
     "Control (⌃)" : {
       "shouldTranslate" : false
     },
-    "Could Not Read Current Dock" : {
+    "Could not read current Dock" : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -444,7 +464,7 @@
         }
       }
     },
-    "Create First Rule" : {
+    "Create first rule" : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -454,7 +474,7 @@
         }
       }
     },
-    "Create Set" : {
+    "Create set" : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -464,7 +484,7 @@
         }
       }
     },
-    "Default Set" : {
+    "Default set" : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -477,7 +497,7 @@
     "Delete “%@”?" : {
 
     },
-    "Delete Dock Set" : {
+    "Delete Dock set" : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -487,7 +507,7 @@
         }
       }
     },
-    "Delete Rule" : {
+    "Delete rule" : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -497,7 +517,7 @@
         }
       }
     },
-    "Delete Rule?" : {
+    "Delete rule?" : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -510,7 +530,7 @@
     "DesktopRenamer SpaceAPI" : {
       "shouldTranslate" : false
     },
-    "Dock Automation" : {
+    "Dock automation" : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -520,7 +540,7 @@
         }
       }
     },
-    "Dock Set" : {
+    "Dock set" : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -570,7 +590,7 @@
         }
       }
     },
-    "Edit Rule" : {
+    "Edit rule" : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -590,7 +610,7 @@
         }
       }
     },
-    "Enable Rule" : {
+    "Enable rule" : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -732,7 +752,7 @@
         }
       }
     },
-    "Hide Minimized Windows Outside Source Space" : {
+    "Hide minimized windows outside source space" : {
       "comment" : "Rule preset title",
       "localizations" : {
         "zh-Hans" : {
@@ -753,7 +773,7 @@
         }
       }
     },
-    "Hide Windows Outside Source Space" : {
+    "Hide windows outside source space" : {
       "comment" : "Rule preset title",
       "localizations" : {
         "zh-Hans" : {
@@ -785,7 +805,7 @@
         }
       }
     },
-    "Input Events" : {
+    "Input events" : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -876,7 +896,7 @@
         }
       }
     },
-    "Minimize Windows Outside Source Space" : {
+    "Minimize windows outside source space" : {
       "comment" : "Rule preset title",
       "localizations" : {
         "zh-Hans" : {
@@ -927,7 +947,7 @@
         }
       }
     },
-    "New Dock Set" : {
+    "New Dock set" : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -1090,7 +1110,7 @@
         }
       }
     },
-    "Record Shortcut" : {
+    "Record shortcut" : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -1110,7 +1130,7 @@
         }
       }
     },
-    "Remove Action" : {
+    "Remove action" : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -1120,7 +1140,7 @@
         }
       }
     },
-    "Remove Condition Block" : {
+    "Remove condition block" : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -1130,7 +1150,7 @@
         }
       }
     },
-    "Remove Dock Item" : {
+    "Remove Dock item" : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -1140,7 +1160,7 @@
         }
       }
     },
-    "Remove Group" : {
+    "Remove group" : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -1150,7 +1170,7 @@
         }
       }
     },
-    "Remove Workflow Group" : {
+    "Remove workflow group" : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -1160,7 +1180,7 @@
         }
       }
     },
-    "Remove Workflow Group?" : {
+    "Remove workflow group?" : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -1170,7 +1190,7 @@
         }
       }
     },
-    "Replace with Current Dock Items" : {
+    "Replace with current Dock items" : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -1220,7 +1240,7 @@
         }
       }
     },
-    "Restore Previous App" : {
+    "Restore previous app" : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -1263,7 +1283,7 @@
         }
       }
     },
-    "Rule Automation" : {
+    "Rule automation" : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -1303,7 +1323,7 @@
         }
       }
     },
-    "Save Rule" : {
+    "Save rule" : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -1323,7 +1343,17 @@
         }
       }
     },
-    "Select a Dock Set to edit its configuration" : {
+    "Small spacer" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "小间距"
+          }
+        }
+      }
+    },
+    "Select a Dock set to edit its configuration" : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -1333,7 +1363,7 @@
         }
       }
     },
-    "Select Application" : {
+    "Select application" : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -1363,7 +1393,7 @@
     "Shift (⇧)" : {
       "shouldTranslate" : false
     },
-    "Shortcut Options" : {
+    "Shortcut options" : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -1390,7 +1420,7 @@
         }
       }
     },
-    "Source Space" : {
+    "Source space" : {
       "comment" : "Special rule condition matching a window's current desktop",
       "localizations" : {
         "zh-Hans" : {
@@ -1485,7 +1515,7 @@
     "Switcher" : {
       "shouldTranslate" : false
     },
-    "System Shortcut" : {
+    "System shortcut" : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -1495,7 +1525,7 @@
         }
       }
     },
-    "System Shortcut..." : {
+    "System shortcut..." : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -1581,7 +1611,7 @@
         }
       }
     },
-    "Wait for App to Be Frontmost" : {
+    "Wait for app to be frontmost" : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -1591,7 +1621,7 @@
         }
       }
     },
-    "window is frontmost" : {
+    "Window is frontmost" : {
       "comment" : "Condition matching the frontmost window",
       "localizations" : {
         "zh-Hans" : {
@@ -1602,7 +1632,7 @@
         }
       }
     },
-    "window is fullscreen" : {
+    "Window is fullscreen" : {
       "comment" : "Condition matching fullscreen windows",
       "localizations" : {
         "zh-Hans" : {
@@ -1613,7 +1643,7 @@
         }
       }
     },
-    "window is hidden" : {
+    "Window is hidden" : {
       "comment" : "Condition matching hidden windows",
       "localizations" : {
         "zh-Hans" : {
@@ -1624,7 +1654,7 @@
         }
       }
     },
-    "window is minimized" : {
+    "Window is minimized" : {
       "comment" : "Condition matching minimized windows",
       "localizations" : {
         "zh-Hans" : {

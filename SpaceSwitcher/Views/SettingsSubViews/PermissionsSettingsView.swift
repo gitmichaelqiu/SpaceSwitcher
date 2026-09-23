@@ -27,7 +27,7 @@ struct PermissionsSettingsView: View {
 
                     Divider()
 
-                    SettingsRow("Input Events") {
+                    SettingsRow("Input events") {
                         HStack(spacing: 8) {
                             PermissionStatusIcon(isGranted: permissionManager.isEventSynthesisGranted)
 

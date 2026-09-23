@@ -13,13 +13,13 @@ enum RuleCondition: String, CaseIterable, Codable, Hashable, Identifiable {
     var localizedString: String {
         switch self {
         case .windowMinimized:
-            return NSLocalizedString("window is minimized", comment: "Condition matching minimized windows")
+            return NSLocalizedString("Window is minimized", comment: "Condition matching minimized windows")
         case .windowHidden:
-            return NSLocalizedString("window is hidden", comment: "Condition matching hidden windows")
+            return NSLocalizedString("Window is hidden", comment: "Condition matching hidden windows")
         case .windowFrontmost:
-            return NSLocalizedString("window is frontmost", comment: "Condition matching the frontmost window")
+            return NSLocalizedString("Window is frontmost", comment: "Condition matching the frontmost window")
         case .windowFullscreen:
-            return NSLocalizedString("window is fullscreen", comment: "Condition matching fullscreen windows")
+            return NSLocalizedString("Window is fullscreen", comment: "Condition matching fullscreen windows")
         }
     }
 
@@ -79,7 +79,7 @@ enum WindowAction: Identifiable, Codable, Equatable, Hashable {
         case .restore: return NSLocalizedString("Restore", comment: "")
         case .hide: return NSLocalizedString("Hide", comment: "")
         case .minimize: return NSLocalizedString("Minimize", comment: "")
-        case .bringToFront: return NSLocalizedString("Bring to Front", comment: "")
+        case .bringToFront: return NSLocalizedString("Bring to front", comment: "")
         case .ifCondition(let condition):
             return String(
                 format: NSLocalizedString("If %@", comment: "Conditional rule action"),
@@ -88,9 +88,9 @@ enum WindowAction: Identifiable, Codable, Equatable, Hashable {
         case .endIf:
             return NSLocalizedString("End If", comment: "End of a conditional rule action block")
         case .hotkey(let code, let mods, _, _):
-            return NSLocalizedString("App Shortcut", comment: "") + ": " + ShortcutHelper.format(code: code, modifiers: mods)
+            return NSLocalizedString("App shortcut", comment: "") + ": " + ShortcutHelper.format(code: code, modifiers: mods)
         case .globalHotkey(let code, let mods):
-            return NSLocalizedString("System Shortcut", comment: "") + ": " + ShortcutHelper.format(code: code, modifiers: mods)
+            return NSLocalizedString("System shortcut", comment: "") + ": " + ShortcutHelper.format(code: code, modifiers: mods)
         }
     }
 
@@ -352,17 +352,17 @@ enum RulePreset: String, CaseIterable, Identifiable {
         switch self {
         case .hideMinimizedOutsideSource:
             return NSLocalizedString(
-                "Hide Minimized Windows Outside Source Space",
+                "Hide minimized windows outside source space",
                 comment: "Rule preset title"
             )
         case .hideOutsideSource:
             return NSLocalizedString(
-                "Hide Windows Outside Source Space",
+                "Hide windows outside source space",
                 comment: "Rule preset title"
             )
         case .minimizeOutsideSource:
             return NSLocalizedString(
-                "Minimize Windows Outside Source Space",
+                "Minimize windows outside source space",
                 comment: "Rule preset title"
             )
         }

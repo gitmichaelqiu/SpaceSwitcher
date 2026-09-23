@@ -30,7 +30,7 @@ struct RulesView: View {
                     Button {
                         presentNewRuleEditor()
                     } label: {
-                        Label("Add New Rule", systemImage: "plus")
+                        Label("Add new rule", systemImage: "plus")
                     }
                     .buttonStyle(.borderedProminent)
                     .frame(maxWidth: .infinity, alignment: .center)
@@ -72,7 +72,7 @@ struct RulesView: View {
             }
         }
         .confirmationDialog(
-            "Delete Rule?",
+            "Delete rule?",
             isPresented: Binding(
                 get: { rulePendingDeletion != nil },
                 set: { isPresented in
@@ -80,7 +80,7 @@ struct RulesView: View {
                 }
             )
         ) {
-            Button("Delete Rule", role: .destructive) {
+            Button("Delete rule", role: .destructive) {
                 if let rule = rulePendingDeletion {
                     withAnimation {
                         ruleManager.deleteRule(rule)
@@ -184,7 +184,7 @@ struct RulesView: View {
                 } description: {
                     Text("Create a rule to control applications by desktop space.")
                 } actions: {
-                    Button("Create First Rule") {
+                    Button("Create first rule") {
                         presentNewRuleEditor()
                     }
                     .buttonStyle(.borderedProminent)
@@ -196,7 +196,7 @@ struct RulesView: View {
                         .foregroundStyle(.secondary)
                     Text("No automation rules yet.")
                         .foregroundStyle(.secondary)
-                    Button("Create First Rule") {
+                    Button("Create first rule") {
                         presentNewRuleEditor()
                     }
                     .buttonStyle(.borderedProminent)
@@ -216,7 +216,7 @@ struct RulesView: View {
     private var pendingDeletionApplicationName: String {
         guard let rule = rulePendingDeletion else { return "this application" }
         if rule.appliesToAllApps {
-            return NSLocalizedString("All Apps", comment: "")
+            return NSLocalizedString("All apps", comment: "")
         }
         guard !rule.appBundleID.isEmpty else { return rule.appName }
         return resolvedApplicationName(
@@ -251,7 +251,7 @@ struct RuleRow: View {
 
         if group.usesSourceSpace {
             items.insert(
-                String(localized: "Source Space", comment: "Special rule condition matching a window's current desktop"),
+                String(localized: "Source space", comment: "Special rule condition matching a window's current desktop"),
                 at: 0
             )
         }
@@ -275,9 +275,9 @@ struct RuleRow: View {
                 VStack(alignment: .leading, spacing: 2) {
                     Group {
                         if rule.appliesToAllApps {
-                            Text("All Apps")
+                            Text("All apps")
                         } else if rule.appBundleID.isEmpty {
-                            Text("Select Application")
+                            Text("Select application")
                         } else {
                             Text(resolvedApplicationName(
                                 bundleIdentifier: rule.appBundleID,
@@ -303,20 +303,20 @@ struct RuleRow: View {
                 .toggleStyle(.switch)
                 .controlSize(.small)
                 .help("Enable or disable this rule.")
-                .accessibilityLabel("Enable Rule")
+                .accessibilityLabel("Enable rule")
 
                 Button("Edit", systemImage: "pencil", action: onEdit)
                 .buttonStyle(.bordered)
                 .controlSize(.small)
-                .help("Edit Rule")
+                .help("Edit rule")
 
                 Button(role: .destructive, action: onDelete) {
                     SettingsDestructiveIconLabel(systemName: "trash")
                 }
                 .buttonStyle(.borderless)
                 .controlSize(.small)
-                .help("Delete Rule")
-                .accessibilityLabel("Delete Rule")
+                .help("Delete rule")
+                .accessibilityLabel("Delete rule")
             }
             .padding(.horizontal, SettingsComponentMetrics.rowHorizontalPadding)
             .padding(.vertical, SettingsComponentMetrics.rowVerticalPadding)
