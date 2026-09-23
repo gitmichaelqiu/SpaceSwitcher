@@ -497,7 +497,7 @@ struct DockItemsListView: View {
         SettingsSection(
             "Dock Items",
             accessory: {
-                HStack(spacing: 8) {
+                HStack(spacing: 4) {
                     Button {
                         forceApply()
                     } label: {
@@ -505,14 +505,15 @@ struct DockItemsListView: View {
                             .font(.system(size: 11, weight: .semibold))
                     }
                     .buttonStyle(.bordered)
-                    .controlSize(.small)
+                    .controlSize(.regular)
+                    .frame(height: SettingsComponentMetrics.iconButtonSize)
                     
                     Button {
                         addAppToSelectedSet()
                     } label: {
                         SettingsIconControlLabel(systemName: "plus")
                     }
-                    .buttonStyle(.borderless)
+                    .buttonStyle(.bordered)
                     .controlSize(.regular)
                     .settingsIconControlFrame()
                     .help("Add Application")
@@ -532,7 +533,8 @@ struct DockItemsListView: View {
                     } label: {
                         SettingsIconControlLabel(systemName: "chevron.down")
                     }
-                    .menuStyle(.borderlessButton)
+                    .menuStyle(.button)
+                    .buttonStyle(.bordered)
                     .menuIndicator(.hidden)
                     .controlSize(.regular)
                     .settingsIconControlFrame()
