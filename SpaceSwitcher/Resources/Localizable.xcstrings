@@ -4,6 +4,17 @@
     "" : {
       "shouldTranslate" : false
     },
+    "%@\n\n%@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@\n\n%2$@"
+          }
+        }
+      },
+      "shouldTranslate" : false
+    },
     "%lld" : {
       "shouldTranslate" : false
     },
@@ -111,7 +122,11 @@
         }
       }
     },
+    "Add Application" : {
+
+    },
     "Add Application..." : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -217,6 +232,37 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "立即应用"
+          }
+        }
+      }
+    },
+    "Apply Preset" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "应用预设"
+          }
+        }
+      }
+    },
+    "Apply Preset?" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "应用预设？"
+          }
+        }
+      }
+    },
+    "Applying this preset will replace the workflow groups and fallback actions. The selected application will be preserved." : {
+      "comment" : "Rule preset replacement warning",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "应用此预设将替换工作流组和后备操作。所选应用程序将保留。"
           }
         }
       }
@@ -417,6 +463,9 @@
           }
         }
       }
+    },
+    "Delete “%@”?" : {
+
     },
     "Delete Dock Set" : {
       "localizations" : {
@@ -673,12 +722,34 @@
         }
       }
     },
+    "Hide Minimized Windows Outside Source Space" : {
+      "comment" : "Rule preset title",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "隐藏来源桌面之外的最小化窗口"
+          }
+        }
+      }
+    },
     "Hide the application." : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "隐藏应用程序。"
+          }
+        }
+      }
+    },
+    "Hide Windows Outside Source Space" : {
+      "comment" : "Rule preset title",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "隐藏来源桌面之外的窗口"
           }
         }
       }
@@ -795,6 +866,17 @@
         }
       }
     },
+    "Minimize Windows Outside Source Space" : {
+      "comment" : "Rule preset title",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "最小化来源桌面之外的窗口"
+          }
+        }
+      }
+    },
     "More Apps" : {
       "localizations" : {
         "zh-Hans" : {
@@ -804,6 +886,9 @@
           }
         }
       }
+    },
+    "More Dock Item Actions" : {
+
     },
     "My GitHub" : {
       "localizations" : {
@@ -951,6 +1036,16 @@
         }
       }
     },
+    "Presets" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "预设"
+          }
+        }
+      }
+    },
     "Quit" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -964,6 +1059,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "退出"
+          }
+        }
+      }
+    },
+    "Real-time video enhancing player." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "实时视频增强播放器。"
           }
         }
       }
@@ -1118,6 +1223,39 @@
         }
       }
     },
+    "Restore windows on their source space and hide them elsewhere only when minimized." : {
+      "comment" : "Rule preset description",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在窗口来源桌面恢复窗口，仅在其他桌面上将最小化的窗口隐藏。"
+          }
+        }
+      }
+    },
+    "Restore windows on their source space and hide them elsewhere." : {
+      "comment" : "Rule preset description",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在窗口来源桌面恢复窗口，并在其他桌面上隐藏窗口。"
+          }
+        }
+      }
+    },
+    "Restore windows on their source space and minimize them elsewhere." : {
+      "comment" : "Rule preset description",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在窗口来源桌面恢复窗口，并在其他桌面上最小化窗口。"
+          }
+        }
+      }
+    },
     "Rule Automation" : {
       "localizations" : {
         "zh-Hans" : {
@@ -1134,6 +1272,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "规则"
+          }
+        }
+      }
+    },
+    "Rules are evaluated from top to bottom. The first matching rule wins." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "规则按从上到下的顺序执行。第一个匹配的规则优先。"
           }
         }
       }

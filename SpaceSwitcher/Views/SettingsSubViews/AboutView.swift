@@ -89,6 +89,13 @@ struct AboutView: View {
                             description: NSLocalizedString("Let you right-click with the Option key.", comment: ""),
                             url: "https://optclicker.mqiu.dev"
                         )
+
+                        OtherAppRow(
+                            imageName: "VTPlayerIcon\(iconSuffix)",
+                            appName: "VTPlayer",
+                            description: NSLocalizedString("Real-time video enhancing player.", comment: ""),
+                            url: "https://github.com/gitmichaelqiu/VTPlayer"
+                        )
                     }
                 }
 

@@ -8,10 +8,13 @@
 
 /* Begin PBXBuildFile section */
 		46624E022FAEFE8C0081A9A3 /* Sparkle in Frameworks */ = {isa = PBXBuildFile; productRef = 46624E012FAEFE8C0081A9A3 /* Sparkle */; };
+		5A2090012FAEFE8C0081A9A3 /* XCTest.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 5A2090082FAEFE8C0081A9A3 /* XCTest.framework */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
 		4626DBF82ECDF2730061E05F /* SpaceSwitcher.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = SpaceSwitcher.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		5A2090032FAEFE8C0081A9A3 /* SpaceSwitcherTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = SpaceSwitcherTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		5A2090082FAEFE8C0081A9A3 /* XCTest.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = XCTest.framework; path = System/Library/Frameworks/XCTest.framework; sourceTree = SDKROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -33,6 +36,11 @@
 			path = SpaceSwitcher;
 			sourceTree = "<group>";
 		};
+		5A2090052FAEFE8C0081A9A3 /* SpaceSwitcherTests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = SpaceSwitcherTests;
+			sourceTree = "<group>";
+		};
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -44,6 +52,14 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		5A2090092FAEFE8C0081A9A3 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				5A2090012FAEFE8C0081A9A3 /* XCTest.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -51,6 +67,7 @@
 			isa = PBXGroup;
 			children = (
 				4626DBFA2ECDF2730061E05F /* SpaceSwitcher */,
+				5A2090052FAEFE8C0081A9A3 /* SpaceSwitcherTests */,
 				4626DBF92ECDF2730061E05F /* Products */,
 			);
 			sourceTree = "<group>";
@@ -59,6 +76,7 @@
 			isa = PBXGroup;
 			children = (
 				4626DBF82ECDF2730061E05F /* SpaceSwitcher.app */,
+				5A2090032FAEFE8C0081A9A3 /* SpaceSwitcherTests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -89,6 +107,27 @@
 			productReference = 4626DBF82ECDF2730061E05F /* SpaceSwitcher.app */;
 			productType = "com.apple.product-type.application";
 		};
+		5A20900C2FAEFE8C0081A9A3 /* SpaceSwitcherTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 5A2090132FAEFE8C0081A9A3 /* Build configuration list for PBXNativeTarget "SpaceSwitcherTests" */;
+			buildPhases = (
+				5A20900A2FAEFE8C0081A9A3 /* Sources */,
+				5A2090092FAEFE8C0081A9A3 /* Frameworks */,
+				5A20900B2FAEFE8C0081A9A3 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				5A20900E2FAEFE8C0081A9A3 /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				5A2090052FAEFE8C0081A9A3 /* SpaceSwitcherTests */,
+			);
+			name = SpaceSwitcherTests;
+			productName = SpaceSwitcherTests;
+			productReference = 5A2090032FAEFE8C0081A9A3 /* SpaceSwitcherTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -101,6 +140,10 @@
 				TargetAttributes = {
 					4626DBF72ECDF2730061E05F = {
 						CreatedOnToolsVersion = 26.0;
+					};
+					5A20900C2FAEFE8C0081A9A3 = {
+						CreatedOnToolsVersion = 26.0;
+						TestTargetID = 4626DBF72ECDF2730061E05F;
 					};
 				};
 			};
@@ -123,12 +166,20 @@
 			projectRoot = "";
 			targets = (
 				4626DBF72ECDF2730061E05F /* SpaceSwitcher */,
+				5A20900C2FAEFE8C0081A9A3 /* SpaceSwitcherTests */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
 		4626DBF62ECDF2730061E05F /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		5A20900B2FAEFE8C0081A9A3 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -145,7 +196,32 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		5A20900A2FAEFE8C0081A9A3 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		5A20900E2FAEFE8C0081A9A3 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 4626DBF72ECDF2730061E05F /* SpaceSwitcher */;
+			targetProxy = 5A20900D2FAEFE8C0081A9A3 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin PBXContainerItemProxy section */
+		5A20900D2FAEFE8C0081A9A3 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 4626DBF02ECDF2730061E05F /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 4626DBF72ECDF2730061E05F;
+			remoteInfo = SpaceSwitcher;
+		};
+/* End PBXContainerItemProxy section */
 
 /* Begin XCBuildConfiguration section */
 		4626DC012ECDF2740061E05F /* Debug */ = {
@@ -378,6 +454,40 @@
 			};
 			name = Release;
 		};
+		5A2090112FAEFE8C0081A9A3 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				GENERATE_INFOPLIST_FILE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 13.0;
+				PRODUCT_BUNDLE_IDENTIFIER = michaelqiu.SpaceSwitcherTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/SpaceSwitcher.app/Contents/MacOS/SpaceSwitcher";
+				WRAPPER_EXTENSION = xctest;
+			};
+			name = Debug;
+		};
+		5A2090122FAEFE8C0081A9A3 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				GENERATE_INFOPLIST_FILE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 13.0;
+				PRODUCT_BUNDLE_IDENTIFIER = michaelqiu.SpaceSwitcherTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/SpaceSwitcher.app/Contents/MacOS/SpaceSwitcher";
+				WRAPPER_EXTENSION = xctest;
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -395,6 +505,15 @@
 			buildConfigurations = (
 				4626DC042ECDF2740061E05F /* Debug */,
 				4626DC052ECDF2740061E05F /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		5A2090132FAEFE8C0081A9A3 /* Build configuration list for PBXNativeTarget "SpaceSwitcherTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				5A2090112FAEFE8C0081A9A3 /* Debug */,
+				5A2090122FAEFE8C0081A9A3 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

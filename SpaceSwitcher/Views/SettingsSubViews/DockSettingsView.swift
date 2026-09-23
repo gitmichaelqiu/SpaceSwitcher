@@ -1,4 +1,5 @@
 import SwiftUI
+import AppKit
 import UniformTypeIdentifiers
 
 // MARK: - Main Container
@@ -9,6 +10,7 @@ struct DockSettingsView: View {
     @State private var selectedSetID: UUID?
     @State private var showingCreateSheet = false
     @State private var newSetName = ""
+    @State private var dockSetPendingDeletion: DockSet?
     
     init(dockManager: DockManager, spaceManager: SpaceManager) {
         self.dockManager = dockManager
@@ -23,10 +25,10 @@ struct DockSettingsView: View {
                 dockManager: dockManager,
                 selectedSetID: $selectedSetID,
                 onCreate: prepareNewSet,
-                onDelete: deleteSet
+                onDelete: requestDeleteSet
             )
             .padding(.horizontal, 24)
-            .padding(.vertical, 10)
+            .frame(height: titleHeaderHeight, alignment: .center)
 
             Divider()
 
@@ -95,13 +97,38 @@ struct DockSettingsView: View {
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
-        .animation(.easeInOut(duration: 0.18), value: selectedSetID)
+        .animation(.easeInOut(duration: 0.22), value: selectedSetID)
         .sheet(isPresented: $showingCreateSheet) {
             CreateDockSheet(
                 newSetName: $newSetName,
                 onCancel: { showingCreateSheet = false },
                 onCreate: saveNewSet
             )
+        }
+        .confirmationDialog(
+            "Delete Dock Set",
+            isPresented: Binding(
+                get: { dockSetPendingDeletion != nil },
+                set: { isPresented in
+                    if !isPresented { dockSetPendingDeletion = nil }
+                }
+            )
+        ) {
+            Button("Delete Dock Set", role: .destructive) {
+                if let set = dockSetPendingDeletion {
+                    withAnimation(.easeInOut(duration: 0.22)) {
+                        deleteSet(set)
+                    }
+                }
+                dockSetPendingDeletion = nil
+            }
+            Button("Cancel", role: .cancel) {
+                dockSetPendingDeletion = nil
+            }
+        } message: {
+            if let set = dockSetPendingDeletion {
+                Text("Delete “\(set.name)”?")
+            }
         }
     }
 
@@ -110,27 +137,37 @@ struct DockSettingsView: View {
         showingCreateSheet = true
     }
     
+    private func requestDeleteSet(_ set: DockSet) {
+        dockSetPendingDeletion = set
+    }
+
     private func deleteSet(_ set: DockSet) {
-        withAnimation {
-            dockManager.config.dockSets.removeAll { $0.id == set.id }
-            let keys = dockManager.config.spaceAssignments.filter { $0.value == set.id }.map { $0.key }
-            keys.forEach { dockManager.config.spaceAssignments.removeValue(forKey: $0) }
-            
-            // Selection fix
-            if selectedSetID == set.id { selectedSetID = dockManager.config.dockSets.first?.id }
-            
-            // Default set fix: Always ensure one exists if sets are available
-            if dockManager.config.defaultDockSetID == set.id || dockManager.config.defaultDockSetID == nil {
-                dockManager.config.defaultDockSetID = dockManager.config.dockSets.first?.id
-            }
+        let deletedIndex = dockManager.config.dockSets.firstIndex { $0.id == set.id }
+        let wasSelected = selectedSetID == set.id
+
+        dockManager.config.dockSets.removeAll { $0.id == set.id }
+        let keys = dockManager.config.spaceAssignments.filter { $0.value == set.id }.map { $0.key }
+        keys.forEach { dockManager.config.spaceAssignments.removeValue(forKey: $0) }
+
+        if wasSelected {
+            let previousIndex = max((deletedIndex ?? 1) - 1, 0)
+            let remainingSets = dockManager.config.dockSets
+            selectedSetID = remainingSets.indices.contains(previousIndex)
+                ? remainingSets[previousIndex].id
+                : remainingSets.first?.id
+        }
+
+        // Default set fix: Always ensure one exists if sets are available
+        if dockManager.config.defaultDockSetID == set.id || dockManager.config.defaultDockSetID == nil {
+            dockManager.config.defaultDockSetID = dockManager.config.dockSets.first?.id
         }
     }
     
     private func saveNewSet() {
-        dockManager.createNewDockSet(name: newSetName)
-        showingCreateSheet = false
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-            selectedSetID = dockManager.config.dockSets.last?.id
+        withAnimation(.easeInOut(duration: 0.22)) {
+            guard let createdID = dockManager.createNewDockSet(name: newSetName) else { return }
+            showingCreateSheet = false
+            selectedSetID = createdID
         }
     }
 
@@ -143,55 +180,73 @@ private struct DockSetTabBar: View {
     let onCreate: () -> Void
     let onDelete: (DockSet) -> Void
 
-    @State private var availableWidth: CGFloat = 0
-    @State private var pickerWidth: CGFloat = 0
+    private let tabBarFadeWidth: CGFloat = 32
+
+    @State private var tabBarOverflows = false
 
     private var selectedSet: DockSet? {
         guard let selectedSetID else { return nil }
         return dockManager.config.dockSets.first { $0.id == selectedSetID }
     }
 
-    private var shouldScroll: Bool {
-        guard availableWidth > 0, pickerWidth > 0 else { return false }
-        return pickerWidth > max(availableWidth - 20, 0)
+    private var tabGroupID: String {
+        dockManager.config.dockSets.map { $0.id.uuidString }.joined(separator: ":")
     }
 
     var body: some View {
-        HStack(spacing: 8) {
-            Group {
-                if shouldScroll {
-                    ScrollView(.horizontal) {
-                        measuredPicker
-                            .fixedSize(horizontal: true, vertical: false)
-                            .padding(.horizontal, 10)
+        HStack(alignment: .center, spacing: 8) {
+            ZStack {
+                GeometryReader { proxy in
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        HStack(spacing: 0) {
+                            if tabBarOverflows {
+                                Color.clear.frame(width: tabBarFadeWidth)
+                            }
+
+                            nativePicker
+                                .id(tabGroupID)
+                                .transition(.opacity.combined(with: .scale(scale: 0.98)))
+                                .fixedSize(horizontal: true, vertical: false)
+                                .background {
+                                    GeometryReader { contentProxy in
+                                        Color.clear.preference(
+                                            key: DockSetPickerWidthKey.self,
+                                            value: contentProxy.size.width
+                                        )
+                                    }
+                                }
+
+                            if tabBarOverflows {
+                                Color.clear.frame(width: 6)
+                            }
+                        }
+                        .frame(
+                            minWidth: proxy.size.width,
+                            alignment: tabBarOverflows ? .leading : .center
+                        )
+                        .frame(height: SettingsComponentMetrics.listRowHeight, alignment: .center)
                     }
                     .scrollIndicators(.hidden)
-                    .frame(maxWidth: .infinity)
-                } else {
-                    HStack {
-                        Spacer(minLength: 0)
-                        measuredPicker
-                        Spacer(minLength: 0)
-                    }
-                    .padding(.horizontal, 10)
+                    .mask(tabBarMask)
                 }
             }
-            .frame(maxWidth: .infinity, alignment: .center)
+            .frame(height: SettingsComponentMetrics.listRowHeight)
+            .frame(maxWidth: .infinity)
             .background {
                 GeometryReader { proxy in
                     Color.clear.preference(
-                        key: DockSetTabAvailableWidthKey.self,
+                        key: DockSetViewportWidthKey.self,
                         value: proxy.size.width
                     )
                 }
             }
-            .onPreferenceChange(DockSetTabAvailableWidthKey.self) { width in
-                guard abs(availableWidth - width) > 0.5 else { return }
-                availableWidth = width
+            .onPreferenceChange(DockSetPickerWidthKey.self) { width in
+                tabBarContentWidth = width
+                tabBarOverflows = width > tabBarViewportWidth + 0.5
             }
-            .onPreferenceChange(DockSetTabPickerWidthKey.self) { width in
-                guard abs(pickerWidth - width) > 0.5 else { return }
-                pickerWidth = width
+            .onPreferenceChange(DockSetViewportWidthKey.self) { width in
+                tabBarViewportWidth = width
+                tabBarOverflows = tabBarContentWidth > width + 0.5
             }
 
             Button(action: onCreate) {
@@ -217,22 +272,35 @@ private struct DockSetTabBar: View {
             }
         }
         .frame(maxWidth: .infinity)
+        .animation(.easeInOut(duration: 0.22), value: dockManager.config.dockSets)
     }
 
-    private var measuredPicker: some View {
-        picker
-            .background {
-                GeometryReader { proxy in
-                    Color.clear.preference(
-                        key: DockSetTabPickerWidthKey.self,
-                        value: proxy.size.width
-                    )
-                }
-            }
+    @State private var tabBarContentWidth: CGFloat = 0
+    @State private var tabBarViewportWidth: CGFloat = 0
+
+    private var tabBarMask: some View {
+        HStack(spacing: 0) {
+            LinearGradient(
+                colors: [.clear, .black],
+                startPoint: .leading,
+                endPoint: .trailing
+            )
+            .frame(width: tabBarFadeWidth)
+
+            Rectangle()
+                .fill(Color.black)
+
+            LinearGradient(
+                colors: [.black, .clear],
+                startPoint: .leading,
+                endPoint: .trailing
+            )
+            .frame(width: tabBarFadeWidth)
+        }
     }
 
     @ViewBuilder
-    private var picker: some View {
+    private var nativePicker: some View {
         if #available(macOS 27.0, *) {
             Picker("Dock Set", selection: $selectedSetID) {
                 pickerOptions
@@ -265,16 +333,16 @@ private struct DockSetTabBar: View {
     }
 }
 
-private struct DockSetTabPickerWidthKey: PreferenceKey {
-    static let defaultValue: CGFloat = 0
+private struct DockSetPickerWidthKey: PreferenceKey {
+    static var defaultValue: CGFloat = 0
 
     static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
-        value = max(value, nextValue())
+        value = nextValue()
     }
 }
 
-private struct DockSetTabAvailableWidthKey: PreferenceKey {
-    static let defaultValue: CGFloat = 0
+private struct DockSetViewportWidthKey: PreferenceKey {
+    static var defaultValue: CGFloat = 0
 
     static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
         value = nextValue()
@@ -439,6 +507,17 @@ struct DockItemsListView: View {
                     .buttonStyle(.bordered)
                     .controlSize(.small)
                     
+                    Button {
+                        addAppToSelectedSet()
+                    } label: {
+                        SettingsIconControlLabel(systemName: "plus")
+                    }
+                    .buttonStyle(.borderless)
+                    .controlSize(.regular)
+                    .settingsIconControlFrame()
+                    .help("Add Application")
+                    .accessibilityLabel("Add Application")
+
                     Menu {
                         Button {
                             replaceWithCurrentDock()
@@ -448,16 +527,17 @@ struct DockItemsListView: View {
 
                         Divider()
 
-                        Button { addAppToSelectedSet() } label: { Label("Add Application...", systemImage: "plus.app") }
-                        Divider()
                         Button { addSpacerToSelectedSet(isSmall: false) } label: { Label("Add Large Spacer", systemImage: "square") }
                         Button { addSpacerToSelectedSet(isSmall: true) } label: { Label("Add Small Spacer", systemImage: "square.dashed") }
                     } label: {
-                        SettingsIconControlLabel(systemName: "plus")
+                        SettingsIconControlLabel(systemName: "chevron.down")
                     }
                     .menuStyle(.borderlessButton)
+                    .menuIndicator(.hidden)
                     .controlSize(.regular)
                     .settingsIconControlFrame()
+                    .help("More Dock Item Actions")
+                    .accessibilityLabel("More Dock Item Actions")
                 }
             }
         ) {

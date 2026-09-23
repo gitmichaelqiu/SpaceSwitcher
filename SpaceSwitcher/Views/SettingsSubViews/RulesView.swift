@@ -115,7 +115,10 @@ struct RulesView: View {
 
     private var perAppAutomationSection: some View {
         VStack(alignment: .leading, spacing: SettingsComponentMetrics.sectionSpacing) {
-            SettingsSectionTitle("Per-App Automation")
+            SettingsSectionTitle(
+                "Per-App Automation",
+                helperText: "Rules are evaluated from top to bottom. The first matching rule wins."
+            )
 
             if ruleManager.rules.isEmpty {
                 SettingsSection {
@@ -123,22 +126,54 @@ struct RulesView: View {
                         .frame(maxWidth: .infinity, minHeight: 280)
                 }
             } else {
-                ForEach(ruleManager.rules) { rule in
-                    SettingsSection {
-                        RuleRow(
-                            rule: rule,
-                            availableSpaces: spaceManager.availableSpaces,
-                            onEdit: { presentedRuleSheet = .edit(rule) },
-                            onDelete: { rulePendingDeletion = rule },
-                            onToggle: { updatedRule in
-                                ruleManager.updateRule(updatedRule)
-                            }
+                ReorderableSettingsList(
+                    items: reorderableRules,
+                    rowContent: { item, context in
+                        SettingsSection {
+                            RuleRow(
+                                rule: item.rule,
+                                availableSpaces: spaceManager.availableSpaces,
+                                onEdit: { presentedRuleSheet = .edit(item.rule) },
+                                onDelete: { rulePendingDeletion = item.rule },
+                                onToggle: { updatedRule in
+                                    ruleManager.updateRule(updatedRule)
+                                }
+                            )
+                        }
+                        .padding(
+                            .bottom,
+                            context.isLast ? 0 : SettingsComponentMetrics.sectionSpacing
                         )
+                    },
+                    dragPreview: { item in
+                        SettingsSection {
+                            RuleRow(
+                                rule: item.rule,
+                                availableSpaces: spaceManager.availableSpaces,
+                                onEdit: {},
+                                onDelete: {},
+                                onToggle: { _ in }
+                            )
+                        }
+                        .frame(minWidth: 420)
+                    },
+                    moveBefore: { sourceID, targetID in
+                        withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                            ruleManager.moveRule(sourceID: sourceID, before: targetID)
+                        }
+                    },
+                    moveToEnd: { sourceID in
+                        withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                            _ = ruleManager.moveRuleToEnd(sourceID: sourceID)
+                        }
                     }
-                    .transition(.opacity)
-                }
+                )
             }
         }
+    }
+
+    private var reorderableRules: [ReorderableRule] {
+        ruleManager.rules.map(ReorderableRule.init)
     }
     
     private var emptyState: some View {
@@ -191,6 +226,14 @@ struct RulesView: View {
     }
 }
 
+private struct ReorderableRule: Identifiable {
+    let rule: AppRule
+
+    var id: String {
+        rule.id.uuidString
+    }
+}
+
 struct RuleRow: View {
     let rule: AppRule
     let availableSpaces: [SpaceInfo]
@@ -220,6 +263,12 @@ struct RuleRow: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             HStack(spacing: 12) {
+                Image(systemName: "line.3.horizontal")
+                    .font(.caption)
+                    .foregroundStyle(.tertiary)
+                    .frame(width: 16, height: 20)
+                    .accessibilityLabel("Drag to rearrange")
+
                 appIcon
                     .frame(width: 20, height: 20)
 
