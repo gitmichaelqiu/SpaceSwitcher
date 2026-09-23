@@ -40,7 +40,6 @@ struct SettingsView: View {
 
     @StateObject private var navigationState = SettingsNavigationState()
     @State private var selectedTab: SettingsTab?
-    @State private var columnVisibility: NavigationSplitViewVisibility = .all
     @State private var searchText = ""
     @State private var isIndexingSettings = true
 
@@ -58,7 +57,7 @@ struct SettingsView: View {
 
     var body: some View {
         ZStack {
-            NavigationSplitView(columnVisibility: $columnVisibility) {
+            NavigationSplitView(columnVisibility: .constant(.all)) {
                 sidebar
             } detail: {
                 detailView
