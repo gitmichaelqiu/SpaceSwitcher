@@ -502,11 +502,10 @@ struct DockItemsListView: View {
                         forceApply()
                     } label: {
                         Text("Apply Now")
-                            .font(.system(size: 13, weight: .semibold))
                     }
                     .buttonStyle(.bordered)
-                    .controlSize(.regular)
-                    .frame(height: SettingsComponentMetrics.iconButtonSize)
+                    .controlSize(.small)
+                    .frame(height: SettingsComponentMetrics.compactIconButtonSize)
 
                     Menu {
                         Button {
@@ -540,8 +539,8 @@ struct DockItemsListView: View {
                     .menuStyle(.button)
                     .buttonStyle(.bordered)
                     .menuIndicator(.hidden)
-                    .controlSize(.regular)
-                    .settingsIconControlFrame()
+                    .controlSize(.small)
+                    .settingsIconControlFrame(size: SettingsComponentMetrics.compactIconButtonSize)
                     .help("Add Dock Item")
                     .accessibilityLabel("Add Dock Item")
                 }

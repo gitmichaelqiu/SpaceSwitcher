@@ -392,6 +392,7 @@ enum SettingsComponentMetrics {
     static let listRowHeight: CGFloat = 36
     static let untitledSectionTopAdjustment: CGFloat = -10
     static let iconButtonSize: CGFloat = 32
+    static let compactIconButtonSize: CGFloat = 28
     static let iconGlyphSize: CGFloat = 12
 }
 
@@ -416,9 +417,8 @@ struct SettingsDestructiveIconLabel: View {
 }
 
 extension View {
-    func settingsIconControlFrame() -> some View {
-        frame(width: SettingsComponentMetrics.iconButtonSize,
-              height: SettingsComponentMetrics.iconButtonSize)
+    func settingsIconControlFrame(size: CGFloat = SettingsComponentMetrics.iconButtonSize) -> some View {
+        frame(width: size, height: size)
     }
 }
 
