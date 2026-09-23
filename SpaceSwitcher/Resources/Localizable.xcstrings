@@ -125,6 +125,16 @@
     "Add Application" : {
 
     },
+    "Add Dock Item" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "添加 Dock 项目"
+          }
+        }
+      }
+    },
     "Add Application..." : {
       "extractionState" : "stale",
       "localizations" : {
@@ -886,9 +896,6 @@
           }
         }
       }
-    },
-    "More Dock Item Actions" : {
-
     },
     "My GitHub" : {
       "localizations" : {

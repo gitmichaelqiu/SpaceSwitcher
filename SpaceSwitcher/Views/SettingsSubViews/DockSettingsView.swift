@@ -502,44 +502,48 @@ struct DockItemsListView: View {
                         forceApply()
                     } label: {
                         Text("Apply Now")
-                            .font(.system(size: 11, weight: .semibold))
+                            .font(.system(size: 13, weight: .semibold))
                     }
                     .buttonStyle(.bordered)
                     .controlSize(.regular)
                     .frame(height: SettingsComponentMetrics.iconButtonSize)
-                    
-                    Button {
-                        addAppToSelectedSet()
-                    } label: {
-                        SettingsIconControlLabel(systemName: "plus")
-                    }
-                    .buttonStyle(.bordered)
-                    .controlSize(.regular)
-                    .settingsIconControlFrame()
-                    .help("Add Application")
-                    .accessibilityLabel("Add Application")
 
                     Menu {
+                        Button {
+                            addAppToSelectedSet()
+                        } label: {
+                            Label("Add Application", systemImage: "plus.app")
+                        }
+
+                        Button {
+                            addSpacerToSelectedSet(isSmall: false)
+                        } label: {
+                            Label("Add Large Spacer", systemImage: "square")
+                        }
+
+                        Button {
+                            addSpacerToSelectedSet(isSmall: true)
+                        } label: {
+                            Label("Add Small Spacer", systemImage: "square.dashed")
+                        }
+
+                        Divider()
+
                         Button {
                             replaceWithCurrentDock()
                         } label: {
                             Label("Replace with Current Dock Items", systemImage: "arrow.down.doc")
                         }
-
-                        Divider()
-
-                        Button { addSpacerToSelectedSet(isSmall: false) } label: { Label("Add Large Spacer", systemImage: "square") }
-                        Button { addSpacerToSelectedSet(isSmall: true) } label: { Label("Add Small Spacer", systemImage: "square.dashed") }
                     } label: {
-                        SettingsIconControlLabel(systemName: "chevron.down")
+                        SettingsIconControlLabel(systemName: "plus")
                     }
                     .menuStyle(.button)
                     .buttonStyle(.bordered)
                     .menuIndicator(.hidden)
                     .controlSize(.regular)
                     .settingsIconControlFrame()
-                    .help("More Dock Item Actions")
-                    .accessibilityLabel("More Dock Item Actions")
+                    .help("Add Dock Item")
+                    .accessibilityLabel("Add Dock Item")
                 }
             }
         ) {
