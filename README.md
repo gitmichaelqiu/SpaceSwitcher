@@ -81,6 +81,8 @@ The Rule Editor includes three editable presets for common source-space workflow
 
 Presets replace only the workflow groups and fallback actions. The selected application, rule identity, and enabled state are preserved.
 
+Rules are evaluated from top to bottom. The first rule that produces actions for a window claims that window, so place app-specific rules above an `All Apps` catch-all when they should take precedence. Drag rules in the Rules tab to change their priority; new rules are added at the bottom.
+
 ## 🛜 SpaceAPI Prerequisite
 
 <img src="https://github.com/gitmichaelqiu/DesktopRenamer/raw/main/DesktopRenamer/Resources/DesktopRenamerIcon_Default.png?raw=true" width="120"/>
