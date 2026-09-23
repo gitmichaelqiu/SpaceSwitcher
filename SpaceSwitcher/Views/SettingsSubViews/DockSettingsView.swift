@@ -507,6 +507,17 @@ struct DockItemsListView: View {
                     .buttonStyle(.bordered)
                     .controlSize(.small)
                     
+                    Button {
+                        addAppToSelectedSet()
+                    } label: {
+                        SettingsIconControlLabel(systemName: "plus")
+                    }
+                    .buttonStyle(.borderless)
+                    .controlSize(.regular)
+                    .settingsIconControlFrame()
+                    .help("Add Application")
+                    .accessibilityLabel("Add Application")
+
                     Menu {
                         Button {
                             replaceWithCurrentDock()
@@ -516,16 +527,17 @@ struct DockItemsListView: View {
 
                         Divider()
 
-                        Button { addAppToSelectedSet() } label: { Label("Add Application...", systemImage: "plus.app") }
-                        Divider()
                         Button { addSpacerToSelectedSet(isSmall: false) } label: { Label("Add Large Spacer", systemImage: "square") }
                         Button { addSpacerToSelectedSet(isSmall: true) } label: { Label("Add Small Spacer", systemImage: "square.dashed") }
                     } label: {
-                        SettingsIconControlLabel(systemName: "plus")
+                        SettingsIconControlLabel(systemName: "chevron.down")
                     }
                     .menuStyle(.borderlessButton)
+                    .menuIndicator(.hidden)
                     .controlSize(.regular)
                     .settingsIconControlFrame()
+                    .help("More Dock Item Actions")
+                    .accessibilityLabel("More Dock Item Actions")
                 }
             }
         ) {
