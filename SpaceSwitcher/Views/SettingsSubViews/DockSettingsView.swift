@@ -505,7 +505,7 @@ struct DockItemsListView: View {
                     }
                     .buttonStyle(.bordered)
                     .controlSize(.small)
-                    .frame(height: SettingsComponentMetrics.compactIconButtonSize)
+                    .frame(height: SettingsComponentMetrics.compactControlHeight)
 
                     Menu {
                         Button {

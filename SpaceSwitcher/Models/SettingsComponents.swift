@@ -392,7 +392,8 @@ enum SettingsComponentMetrics {
     static let listRowHeight: CGFloat = 36
     static let untitledSectionTopAdjustment: CGFloat = -10
     static let iconButtonSize: CGFloat = 32
-    static let compactIconButtonSize: CGFloat = 28
+    static let compactControlHeight: CGFloat = 28
+    static let compactIconButtonSize: CGFloat = 24
     static let iconGlyphSize: CGFloat = 12
 }
 
