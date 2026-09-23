@@ -28,7 +28,7 @@ struct DockSettingsView: View {
                 onDelete: requestDeleteSet
             )
             .padding(.horizontal, 24)
-            .padding(.vertical, 10)
+            .frame(height: titleHeaderHeight, alignment: .center)
 
             Divider()
 
