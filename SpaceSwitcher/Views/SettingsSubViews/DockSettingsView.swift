@@ -535,12 +535,18 @@ struct DockItemsListView: View {
                         }
                     } label: {
                         SettingsIconControlLabel(systemName: "plus")
+                            .frame(
+                                width: SettingsComponentMetrics.compactControlHeight,
+                                height: SettingsComponentMetrics.compactControlHeight
+                            )
+                            .background {
+                                RoundedRectangle(cornerRadius: 7, style: .continuous)
+                                    .fill(Color(nsColor: .controlBackgroundColor))
+                            }
+                            .contentShape(RoundedRectangle(cornerRadius: 7, style: .continuous))
                     }
-                    .menuStyle(.button)
-                    .buttonStyle(.bordered)
+                    .menuStyle(.borderlessButton)
                     .menuIndicator(.hidden)
-                    .controlSize(.small)
-                    .settingsIconControlFrame(size: SettingsComponentMetrics.compactIconButtonSize)
                     .help("Add Dock Item")
                     .accessibilityLabel("Add Dock Item")
                 }
