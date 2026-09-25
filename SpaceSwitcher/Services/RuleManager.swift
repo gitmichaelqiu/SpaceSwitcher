@@ -61,11 +61,11 @@ class RuleManager: ObservableObject {
     }
 
     private func setupBindings() {
-        spaceManager?.$currentSpaceID
+        spaceManager?.$ruleEvaluationSpaceID
             .dropFirst().removeDuplicates()
             .sink { [weak self] spaceID in
                 guard let self = self, let spaceID = spaceID else { return }
-                self.debugLog("space change received: current=\(spaceID), settling=150ms")
+                self.debugLog("space change received: evaluationSpace=\(spaceID), activeDisplaySpace=\(self.spaceManager?.currentSpaceID ?? "nil"), settling=150ms")
                 // SpaceAPI can publish the new desktop before WindowServer and
                 // Accessibility have finished updating window membership.
                 self.applyRules(for: spaceID, settlingDelay: 150_000_000)
@@ -106,8 +106,8 @@ class RuleManager: ObservableObject {
             if settlingDelay > 0 {
                 try? await Task.sleep(nanoseconds: settlingDelay)
                 guard !Task.isCancelled,
-                      self.spaceManager?.currentSpaceID == spaceID else {
-                    self.debugLog("apply cancelled after settling: requested=\(spaceID), current=\(self.spaceManager?.currentSpaceID ?? "nil")")
+                      self.spaceManager?.ruleEvaluationSpaceID == spaceID else {
+                    self.debugLog("apply cancelled after settling: requested=\(spaceID), evaluationSpace=\(self.spaceManager?.ruleEvaluationSpaceID ?? "nil"), activeDisplaySpace=\(self.spaceManager?.currentSpaceID ?? "nil")")
                     return
                 }
             }

@@ -8,6 +8,12 @@ enum SpaceAPIAvailability: Equatable {
     case unavailable
 }
 
+enum RuleSpaceTransitionDetector {
+    static func didVisibleSpacesChange(from previous: Set<String>, to current: Set<String>) -> Bool {
+        previous != current
+    }
+}
+
 final class SpaceManager: ObservableObject {
     // DesktopRenamer changed its application bundle identifier. Keep the
     // legacy identifier for users who still have the older release installed.
@@ -34,6 +40,9 @@ final class SpaceManager: ObservableObject {
     private lazy var legacyReturnSpaceList = Notification.Name("\(apiPrefix).ReturnSpaceList")
 
     @Published var currentSpaceID: String?
+    /// The active-display space captured at the last actual visible-space transition.
+    /// Unlike `currentSpaceID`, this does not change when focus moves between displays.
+    @Published private(set) var ruleEvaluationSpaceID: String?
     @Published var currentSpaceName: String = "Unknown"
     @Published var availableSpaces: [SpaceInfo] = []
     @Published var isAPIEnabled: Bool = false
@@ -47,6 +56,7 @@ final class SpaceManager: ObservableObject {
     private var structuredProbeGeneration = 0
     private var pendingRequests: [String: String] = [:]
     private var lastSnapshotRevision: UInt64?
+    private var currentVisibleSpaceIDs = Set<String>()
 
     init() {
         startListening()
@@ -346,11 +356,27 @@ final class SpaceManager: ObservableObject {
         }.sorted { $0.number < $1.number }
 
         let currentSpaceIDs = snapshot["currentSpaceIDs"] as? [String] ?? []
-        currentSpaceID = currentSpaceIDs.first ?? snapshot["currentSpaceID"] as? String
+        let snapshotCurrentSpaceID = snapshot["currentSpaceID"] as? String
+        let nextVisibleSpaceIDs = currentSpaceIDs.isEmpty
+            ? Set(snapshotCurrentSpaceID.map { [$0] } ?? [])
+            : Set(currentSpaceIDs)
+        let nextCurrentSpaceID = snapshotCurrentSpaceID
+            ?? nextVisibleSpaceIDs.sorted().first
+        let visibleSpacesChanged = RuleSpaceTransitionDetector.didVisibleSpacesChange(
+            from: currentVisibleSpaceIDs,
+            to: nextVisibleSpaceIDs
+        )
+
+        currentSpaceID = nextCurrentSpaceID
         currentSpaceName = snapshot["currentSpaceName"] as? String ?? "Unknown"
         availableSpaces = spaces
         isAPIEnabled = true
         apiAvailability = .available
+
+        if visibleSpacesChanged {
+            currentVisibleSpaceIDs = nextVisibleSpaceIDs
+            ruleEvaluationSpaceID = nextCurrentSpaceID
+        }
 
         if let revision {
             lastSnapshotRevision = revision
@@ -394,6 +420,7 @@ final class SpaceManager: ObservableObject {
               let info = notification.userInfo else { return }
 
         currentSpaceID = info["spaceUUID"] as? String
+        ruleEvaluationSpaceID = currentSpaceID
         currentSpaceName = info["spaceName"] as? String ?? "Unknown"
         isAPIEnabled = true
         apiAvailability = .available
@@ -454,5 +481,7 @@ final class SpaceManager: ObservableObject {
         availableSpaces.removeAll()
         currentSpaceName = "Disconnected"
         currentSpaceID = nil
+        ruleEvaluationSpaceID = nil
+        currentVisibleSpaceIDs.removeAll()
     }
 }
