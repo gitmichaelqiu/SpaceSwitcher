@@ -382,9 +382,11 @@ struct DockSpaceAssignmentView: View {
                     VStack(alignment: .leading, spacing: 14) {
                         ForEach(displayGroups) { group in
                             VStack(alignment: .leading, spacing: 8) {
-                                Text(group.name)
-                                    .font(.headline)
-                                    .padding(.leading, 4)
+                                if displayGroups.count > 1 {
+                                    Text(group.name)
+                                        .font(.headline)
+                                        .padding(.leading, 4)
+                                }
 
                                 LazyVGrid(
                                     columns: [GridItem(.adaptive(minimum: 110, maximum: 140))],

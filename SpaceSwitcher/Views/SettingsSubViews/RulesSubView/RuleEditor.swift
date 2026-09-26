@@ -772,12 +772,14 @@ struct SpaceConditionRow: View {
                 VStack(alignment: .leading, spacing: 0) {
                     ForEach(displayGroups) { displayGroup in
                         VStack(alignment: .leading, spacing: 0) {
-                            Text(verbatim: displayGroup.name)
-                                .font(.caption.weight(.semibold))
-                                .foregroundStyle(.secondary)
-                                .lineLimit(1)
-                                .padding(.horizontal, 8)
-                                .padding(.vertical, 5)
+                            if displayGroups.count > 1 {
+                                Text(verbatim: displayGroup.name)
+                                    .font(.caption.weight(.semibold))
+                                    .foregroundStyle(.secondary)
+                                    .lineLimit(1)
+                                    .padding(.horizontal, 8)
+                                    .padding(.vertical, 5)
+                            }
 
                             ForEach(displayGroup.spaces) { space in
                                 SpacePickerToggleRow(
