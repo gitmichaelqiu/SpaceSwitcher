@@ -112,6 +112,16 @@
         }
       }
     },
+    "Definitions" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "定义"
+          }
+        }
+      }
+    },
     "Activate the application and bring its windows to the foreground." : {
       "localizations" : {
         "zh-Hans" : {
