@@ -344,10 +344,13 @@ class RuleManager: ObservableObject {
                 let canApplyAppVisibility = targetWindows.count == allWindows.count
                 let wasHidden = canApplyAppVisibility && app.isHidden
                 debugLog("show: canApplyAppVisibility=\(canApplyAppVisibility) appHiddenBefore=\(app.isHidden) managedAppHide=\(managedAppHides[app.processIdentifier] != nil)")
-                if canApplyAppVisibility,
-                   managedAppHides[app.processIdentifier] != nil,
-                   unhideAppWithoutActivation(app) {
-                    managedAppHides.removeValue(forKey: app.processIdentifier)
+                if canApplyAppVisibility {
+                    // Show is intentionally forceful: the app may have been
+                    // hidden outside SpaceSwitcher, so do not gate this on our
+                    // managed-hide bookkeeping (which Restore uses instead).
+                    if unhideAppWithoutActivation(app) {
+                        managedAppHides.removeValue(forKey: app.processIdentifier)
+                    }
                 }
 
                 for window in targetWindows {
