@@ -96,6 +96,13 @@ struct AboutView: View {
                             description: NSLocalizedString("Real-time video enhancing player.", comment: ""),
                             url: "https://github.com/gitmichaelqiu/VTPlayer"
                         )
+
+                        OtherAppRow(
+                            imageName: "WallPainterIcon\(iconSuffix)",
+                            appName: "WallPainter",
+                            description: NSLocalizedString("Set Aerial wallpapers in each space and in each theme.", comment: ""),
+                            url: "https://github.com/gitmichaelqiu/WallPainter"
+                        )
                     }
                 }
 

@@ -1357,6 +1357,16 @@
         }
       }
     },
+    "Set Aerial wallpapers in each space and in each theme." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "为每个桌面和每种主题设置 Aerial 壁纸。"
+          }
+        }
+      }
+    },
     "Settings" : {
       "extractionState" : "manual",
       "localizations" : {
