@@ -911,6 +911,16 @@
         }
       }
     },
+    "Media Suite" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "媒体套件"
+          }
+        }
+      }
+    },
     "My GitHub" : {
       "localizations" : {
         "zh-Hans" : {
@@ -1676,6 +1686,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "工作流组 %lld"
+          }
+        }
+      }
+    },
+    "Workflow Suite" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "工作流套件"
           }
         }
       }

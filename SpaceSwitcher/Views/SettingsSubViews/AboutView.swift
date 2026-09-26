@@ -75,34 +75,50 @@ struct AboutView: View {
                         .font(.headline)
                         .foregroundColor(.primary)
                     
-                    VStack(spacing: 12) {
-                        OtherAppRow(
-                            imageName: "DesktopRenamerIcon\(iconSuffix)",
-                            appName: "DesktopRenamer",
-                            description: NSLocalizedString("The essential tool for naming and organizing your desktop spaces.", comment: ""),
-                            url: "https://desktoprenamer.mqiu.dev"
-                        )
-                        
-                        OtherAppRow(
-                            imageName: "OptClickerIcon\(iconSuffix)",
-                            appName: "OptClicker",
-                            description: NSLocalizedString("Let you right-click with the Option key.", comment: ""),
-                            url: "https://optclicker.mqiu.dev"
-                        )
+                    VStack(alignment: .leading, spacing: 20) {
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("Workflow Suite")
+                                .font(.subheadline.weight(.semibold))
+                                .foregroundColor(.secondary)
 
-                        OtherAppRow(
-                            imageName: "VTPlayerIcon\(iconSuffix)",
-                            appName: "VTPlayer",
-                            description: NSLocalizedString("Real-time video enhancing player.", comment: ""),
-                            url: "https://github.com/gitmichaelqiu/VTPlayer"
-                        )
+                            VStack(spacing: 12) {
+                                OtherAppRow(
+                                    imageName: "DesktopRenamerIcon\(iconSuffix)",
+                                    appName: "DesktopRenamer",
+                                    description: NSLocalizedString("The essential tool for naming and organizing your desktop spaces.", comment: ""),
+                                    url: "https://desktoprenamer.mqiu.dev"
+                                )
 
-                        OtherAppRow(
-                            imageName: "WallPainterIcon\(iconSuffix)",
-                            appName: "WallPainter",
-                            description: NSLocalizedString("Set Aerial wallpapers in each space and in each theme.", comment: ""),
-                            url: "https://github.com/gitmichaelqiu/WallPainter"
-                        )
+                                OtherAppRow(
+                                    imageName: "OptClickerIcon\(iconSuffix)",
+                                    appName: "OptClicker",
+                                    description: NSLocalizedString("Let you right-click with the Option key.", comment: ""),
+                                    url: "https://optclicker.mqiu.dev"
+                                )
+                            }
+                        }
+
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("Media Suite")
+                                .font(.subheadline.weight(.semibold))
+                                .foregroundColor(.secondary)
+
+                            VStack(spacing: 12) {
+                                OtherAppRow(
+                                    imageName: "VTPlayerIcon\(iconSuffix)",
+                                    appName: "VTPlayer",
+                                    description: NSLocalizedString("Real-time video enhancing player.", comment: ""),
+                                    url: "https://github.com/gitmichaelqiu/VTPlayer"
+                                )
+
+                                OtherAppRow(
+                                    imageName: "WallPainterIcon\(iconSuffix)",
+                                    appName: "WallPainter",
+                                    description: NSLocalizedString("Set Aerial wallpapers in each space and in each theme.", comment: ""),
+                                    url: "https://github.com/gitmichaelqiu/WallPainter"
+                                )
+                            }
+                        }
                     }
                 }
 
