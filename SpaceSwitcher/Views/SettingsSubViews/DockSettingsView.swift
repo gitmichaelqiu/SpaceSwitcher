@@ -425,27 +425,9 @@ struct DockSpaceAssignmentView: View {
         )
     }
 
-    private var displayGroups: [DockDisplaySpaceGroup] {
-        Dictionary(grouping: spaceManager.availableSpaces, by: \.displayID)
-            .map { displayID, spaces in
-                DockDisplaySpaceGroup(
-                    id: displayID,
-                    name: spaces.first?.displayName ?? displayID,
-                    spaces: spaces.sorted { $0.number < $1.number }
-                )
-            }
-            .sorted { lhs, rhs in
-                if lhs.id.caseInsensitiveCompare("Main") == .orderedSame { return true }
-                if rhs.id.caseInsensitiveCompare("Main") == .orderedSame { return false }
-                return lhs.name.localizedStandardCompare(rhs.name) == .orderedAscending
-            }
+    private var displayGroups: [SpaceDisplayGroup] {
+        SpaceDisplayGroup.make(from: spaceManager.availableSpaces)
     }
-}
-
-private struct DockDisplaySpaceGroup: Identifiable {
-    let id: String
-    let name: String
-    let spaces: [SpaceInfo]
 }
 
 private struct DockSpaceCard: View {

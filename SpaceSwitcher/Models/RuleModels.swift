@@ -454,3 +454,25 @@ struct SpaceInfo: Identifiable, Codable, Hashable {
     static func == (lhs: SpaceInfo, rhs: SpaceInfo) -> Bool { lhs.id == rhs.id }
     func hash(into hasher: inout Hasher) { hasher.combine(id) }
 }
+
+struct SpaceDisplayGroup: Identifiable {
+    let id: String
+    let name: String
+    let spaces: [SpaceInfo]
+
+    static func make(from spaces: [SpaceInfo]) -> [SpaceDisplayGroup] {
+        Dictionary(grouping: spaces, by: \.displayID)
+            .map { displayID, displaySpaces in
+                SpaceDisplayGroup(
+                    id: displayID,
+                    name: displaySpaces.first?.displayName ?? displayID,
+                    spaces: displaySpaces.sorted { $0.number < $1.number }
+                )
+            }
+            .sorted { lhs, rhs in
+                if lhs.id.caseInsensitiveCompare("Main") == .orderedSame { return true }
+                if rhs.id.caseInsensitiveCompare("Main") == .orderedSame { return false }
+                return lhs.name.localizedStandardCompare(rhs.name) == .orderedAscending
+            }
+    }
+}

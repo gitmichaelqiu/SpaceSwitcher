@@ -770,20 +770,31 @@ struct SpaceConditionRow: View {
 
             ScrollView(.vertical) {
                 VStack(alignment: .leading, spacing: 0) {
-                    ForEach(availableSpaces) { space in
-                        SpacePickerToggleRow(
-                            title: spaceDisplayName(space),
-                            isOn: Binding(
-                                get: { group.targetSpaceIDs.contains(space.id) },
-                                set: { isSelected in
-                                    if isSelected {
-                                        group.targetSpaceIDs.insert(space.id)
-                                    } else {
-                                        group.targetSpaceIDs.remove(space.id)
-                                    }
-                                }
-                            )
-                        )
+                    ForEach(displayGroups) { displayGroup in
+                        VStack(alignment: .leading, spacing: 0) {
+                            Text(verbatim: displayGroup.name)
+                                .font(.caption.weight(.semibold))
+                                .foregroundStyle(.secondary)
+                                .lineLimit(1)
+                                .padding(.horizontal, 8)
+                                .padding(.vertical, 5)
+
+                            ForEach(displayGroup.spaces) { space in
+                                SpacePickerToggleRow(
+                                    title: spaceDisplayName(space),
+                                    isOn: Binding(
+                                        get: { group.targetSpaceIDs.contains(space.id) },
+                                        set: { isSelected in
+                                            if isSelected {
+                                                group.targetSpaceIDs.insert(space.id)
+                                            } else {
+                                                group.targetSpaceIDs.remove(space.id)
+                                            }
+                                        }
+                                    )
+                                )
+                            }
+                        }
                     }
                 }
             }
@@ -792,6 +803,10 @@ struct SpaceConditionRow: View {
         .padding(.vertical, 6)
         .padding(.horizontal, 8)
         .frame(width: 220)
+    }
+
+    private var displayGroups: [SpaceDisplayGroup] {
+        SpaceDisplayGroup.make(from: availableSpaces)
     }
 }
 
