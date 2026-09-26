@@ -111,13 +111,13 @@ struct RuleEditor: View {
                 showingLegend.toggle()
             } label: {
                 Label(
-                    "Action Definitions",
+                    "Definitions",
                     systemImage: "info.circle"
                 )
             }
             .buttonStyle(.bordered)
             .controlSize(.small)
-            .help("Action definitions")
+            .help("Definitions")
             .popover(isPresented: $showingLegend, arrowEdge: .top) {
                 actionDefinitionsPopover
             }
@@ -634,7 +634,7 @@ struct RuleEditor: View {
     private var actionDefinitionsPopover: some View {
         ScrollView(.vertical) {
             VStack(alignment: .leading, spacing: 16) {
-                Text("Action Definitions")
+                Text("Definitions")
                     .font(.headline)
 
                 legendItem(name: "Show", desc: "Forcefully unhide and unminimize the application, regardless of its previous state.")
