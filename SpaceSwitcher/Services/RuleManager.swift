@@ -116,6 +116,10 @@ class RuleManager: ObservableObject {
             self.debugLog("rule order: \(orderedRules.map { $0.appName.isEmpty ? "<all>" : $0.appName }.joined(separator: " -> "))")
             self.debugLog("candidate applications=\(applications.count)")
 
+            // Snapshot and evaluate every app before executing anything. Actions
+            // such as Bring to Front or shortcuts can change the focused window;
+            // frontmost conditions must all observe the same pre-action state.
+            var executionBatches: [ApplicationExecutionBatch] = []
             for application in applications {
                 if Task.isCancelled { return }
 
@@ -142,8 +146,19 @@ class RuleManager: ObservableObject {
                     self.debugLog("  rule=\(plan.ruleID.uuidString.prefix(8)) actions=\(self.actionDebugSummary(plan.actions)) windows=[\(plan.windows.map { String($0.id) }.joined(separator: ","))]")
                 }
 
+                executionBatches.append(
+                    ApplicationExecutionBatch(
+                        application: application,
+                        snapshot: liveSnapshot,
+                        plans: plans
+                    )
+                )
+            }
+
+            for batch in executionBatches {
+                if Task.isCancelled { return }
                 var didPerformGlobalHotkey = false
-                for plan in plans {
+                for plan in batch.plans {
                     if Task.isCancelled { return }
 
                     let hasGlobalHotkey = plan.actions.contains {
@@ -153,8 +168,8 @@ class RuleManager: ObservableObject {
 
                     await self.perform(
                         actions: plan.actions,
-                        on: application,
-                        allWindows: liveSnapshot.windows,
+                        on: batch.application,
+                        allWindows: batch.snapshot.windows,
                         targetWindows: plan.windows,
                         performGlobalHotkeys: hasGlobalHotkey && !didPerformGlobalHotkey
                     )
@@ -170,6 +185,12 @@ class RuleManager: ObservableObject {
     private struct LiveApplicationSnapshot {
         let model: RuleApplicationSnapshot
         let windows: [RuleWindowTarget]
+    }
+
+    private struct ApplicationExecutionBatch {
+        let application: NSRunningApplication
+        let snapshot: LiveApplicationSnapshot
+        let plans: [RuleWindowPlan]
     }
 
     private func snapshot(for application: NSRunningApplication) -> LiveApplicationSnapshot {
