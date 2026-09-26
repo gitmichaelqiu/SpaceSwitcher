@@ -11,6 +11,16 @@
 		5A2090012FAEFE8C0081A9A3 /* XCTest.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 5A2090082FAEFE8C0081A9A3 /* XCTest.framework */; };
 /* End PBXBuildFile section */
 
+/* Begin PBXContainerItemProxy section */
+		5A20900D2FAEFE8C0081A9A3 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 4626DBF02ECDF2730061E05F /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 4626DBF72ECDF2730061E05F;
+			remoteInfo = SpaceSwitcher;
+		};
+/* End PBXContainerItemProxy section */
+
 /* Begin PBXFileReference section */
 		4626DBF82ECDF2730061E05F /* SpaceSwitcher.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = SpaceSwitcher.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		5A2090032FAEFE8C0081A9A3 /* SpaceSwitcherTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = SpaceSwitcherTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -69,6 +79,7 @@
 				4626DBFA2ECDF2730061E05F /* SpaceSwitcher */,
 				5A2090052FAEFE8C0081A9A3 /* SpaceSwitcherTests */,
 				4626DBF92ECDF2730061E05F /* Products */,
+				46C9D9E1306375D20076A3C1 /* Recovered References */,
 			);
 			sourceTree = "<group>";
 		};
@@ -79,6 +90,14 @@
 				5A2090032FAEFE8C0081A9A3 /* SpaceSwitcherTests.xctest */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		46C9D9E1306375D20076A3C1 /* Recovered References */ = {
+			isa = PBXGroup;
+			children = (
+				5A2090082FAEFE8C0081A9A3 /* XCTest.framework */,
+			);
+			name = "Recovered References";
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -213,16 +232,6 @@
 		};
 /* End PBXTargetDependency section */
 
-/* Begin PBXContainerItemProxy section */
-		5A20900D2FAEFE8C0081A9A3 /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = 4626DBF02ECDF2730061E05F /* Project object */;
-			proxyType = 1;
-			remoteGlobalIDString = 4626DBF72ECDF2730061E05F;
-			remoteInfo = SpaceSwitcher;
-		};
-/* End PBXContainerItemProxy section */
-
 /* Begin XCBuildConfiguration section */
 		4626DC012ECDF2740061E05F /* Debug */ = {
 			isa = XCBuildConfiguration;
@@ -356,7 +365,7 @@
 				AUTOMATION_APPLE_EVENTS = NO;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 5;
+				CURRENT_PROJECT_VERSION = 6;
 				DEVELOPMENT_TEAM = W94S87F4LJ;
 				ENABLE_APP_SANDBOX = NO;
 				ENABLE_HARDENED_RUNTIME = NO;
@@ -382,7 +391,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 13.0;
-				MARKETING_VERSION = 1.0.0;
+				MARKETING_VERSION = 1.1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = michaelqiu.SpaceSwitcher;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;
@@ -409,7 +418,7 @@
 				AUTOMATION_APPLE_EVENTS = NO;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 5;
+				CURRENT_PROJECT_VERSION = 6;
 				DEVELOPMENT_TEAM = W94S87F4LJ;
 				ENABLE_APP_SANDBOX = NO;
 				ENABLE_HARDENED_RUNTIME = NO;
@@ -435,7 +444,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 13.0;
-				MARKETING_VERSION = 1.0.0;
+				MARKETING_VERSION = 1.1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = michaelqiu.SpaceSwitcher;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;
