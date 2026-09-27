@@ -52,6 +52,8 @@ enum WindowAction: Identifiable, Codable, Equatable, Hashable {
     case hide
     case minimize
     case bringToFront
+    case ifCondition(RuleCondition)
+    case endIf
     // Standard App-Specific Hotkey
     case hotkey(keyCode: Int, modifiers: UInt, restoreWindow: Bool, waitFrontmost: Bool)
     // NEW: Global System Hotkey
@@ -64,6 +66,8 @@ enum WindowAction: Identifiable, Codable, Equatable, Hashable {
         case .hide: return "hide"
         case .minimize: return "minimize"
         case .bringToFront: return "bringToFront"
+        case .ifCondition(let condition): return "if-\(condition.rawValue)"
+        case .endIf: return "endIf"
         case .hotkey(let k, let m, _, _): return "hotkey-\(k)-\(m)"
         case .globalHotkey(let k, let m): return "global-\(k)-\(m)"
         }
@@ -90,7 +94,9 @@ enum WindowAction: Identifiable, Codable, Equatable, Hashable {
         }
     }
 
-    private enum CodingKeys: String, CodingKey { case type, keyCode, modifiers, restoreWindow, waitFrontmost }
+    private enum CodingKeys: String, CodingKey {
+        case type, condition, keyCode, modifiers, restoreWindow, waitFrontmost
+    }
     
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
@@ -101,6 +107,10 @@ enum WindowAction: Identifiable, Codable, Equatable, Hashable {
         case "hide": self = .hide
         case "minimize": self = .minimize
         case "bringToFront": self = .bringToFront
+        case "if":
+            let condition = try container.decode(RuleCondition.self, forKey: .condition)
+            self = .ifCondition(condition)
+        case "endIf": self = .endIf
         case "hotkey":
             let c = try container.decode(Int.self, forKey: .keyCode)
             let m = try container.decode(UInt.self, forKey: .modifiers)
@@ -123,6 +133,10 @@ enum WindowAction: Identifiable, Codable, Equatable, Hashable {
         case .hide: try container.encode("hide", forKey: .type)
         case .minimize: try container.encode("minimize", forKey: .type)
         case .bringToFront: try container.encode("bringToFront", forKey: .type)
+        case .ifCondition(let condition):
+            try container.encode("if", forKey: .type)
+            try container.encode(condition, forKey: .condition)
+        case .endIf: try container.encode("endIf", forKey: .type)
         case .hotkey(let c, let m, let r, let w):
             try container.encode("hotkey", forKey: .type)
             try container.encode(c, forKey: .keyCode)
@@ -135,6 +149,11 @@ enum WindowAction: Identifiable, Codable, Equatable, Hashable {
             try container.encode(m, forKey: .modifiers)
         }
     }
+}
+
+private enum LegacyWindowCondition: String, Codable {
+    case none
+    case minimized
 }
 
 // MARK: - Action Wrapper
@@ -220,7 +239,7 @@ struct RuleGroup: Identifiable, Codable, Equatable {
     }
 
     private enum CodingKeys: String, CodingKey {
-        case id, targetSpaceIDs, usesSourceSpace, sourceSpaceID, actions
+        case id, targetSpaceIDs, usesSourceSpace, sourceSpaceID, windowCondition, actions
     }
 
     init(from decoder: Decoder) throws {
@@ -236,6 +255,14 @@ struct RuleGroup: Identifiable, Codable, Equatable {
             usesSourceSpace = value
         } else {
             usesSourceSpace = try container.decodeIfPresent(String.self, forKey: .sourceSpaceID) != nil
+        }
+
+        // Older versions stored a single group-level minimized condition. Keep
+        // decoding that key so existing rules retain their behavior while the
+        // in-memory model uses the flat conditional action representation.
+        if try container.decodeIfPresent(LegacyWindowCondition.self, forKey: .windowCondition) == .minimized {
+            actions.insert(ActionItem(.ifCondition(.windowMinimized)), at: 0)
+            actions.append(ActionItem(.endIf))
         }
     }
 
@@ -391,7 +418,39 @@ enum RulePreset: String, CaseIterable, Identifiable {
 }
 
 struct SpaceInfo: Identifiable, Codable, Hashable {
-    let id: String; let name: String; let number: Int
+    let id: String
+    let name: String
+    let number: Int
+    let displayID: String
+    let displayName: String
+
+    init(
+        id: String,
+        name: String,
+        number: Int,
+        displayID: String = "Main",
+        displayName: String = "Main Display"
+    ) {
+        self.id = id
+        self.name = name
+        self.number = number
+        self.displayID = displayID
+        self.displayName = displayName
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decode(String.self, forKey: .id)
+        name = try container.decode(String.self, forKey: .name)
+        number = try container.decode(Int.self, forKey: .number)
+        displayID = try container.decodeIfPresent(String.self, forKey: .displayID) ?? "Main"
+        displayName = try container.decodeIfPresent(String.self, forKey: .displayName) ?? displayID
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case id, name, number, displayID, displayName
+    }
+
     static func == (lhs: SpaceInfo, rhs: SpaceInfo) -> Bool { lhs.id == rhs.id }
     func hash(into hasher: inout Hasher) { hasher.combine(id) }
 }

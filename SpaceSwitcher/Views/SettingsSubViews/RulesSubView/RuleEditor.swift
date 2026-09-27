@@ -329,7 +329,7 @@ struct RuleEditor: View {
                 .buttonStyle(.bordered)
                 .frame(maxWidth: .infinity, alignment: .center)
 
-                SettingsSection("Fallback Behavior", helperText: "Actions used when no workflow group matches the current space.") {
+                SettingsSection("Fallback Behavior") {
                     if workingRule.elseActions.isEmpty {
                         Label("No fallback actions", systemImage: "arrow.turn.down.right")
                             .foregroundStyle(.secondary)
@@ -342,11 +342,18 @@ struct RuleEditor: View {
                     }
 
                     AddActionRow {
-                        actionMenu { action in
-                            withAnimation {
-                                workingRule.elseActions.append(ActionItem(action))
+                        actionMenu(
+                            addAction: { action in
+                                withAnimation {
+                                    insertAction(action, into: &workingRule.elseActions)
+                                }
+                            },
+                            addCondition: { condition in
+                                withAnimation {
+                                    appendConditionBlock(condition, to: &workingRule.elseActions)
+                                }
                             }
-                        }
+                        )
                     }
                 }
             }
@@ -413,12 +420,17 @@ struct RuleEditor: View {
     }
     
     @ViewBuilder private func actionMenu(for id: UUID) -> some View {
-        actionMenu { action in
-            addActionToGroup(id: id, action: action)
-        }
+        actionMenu(
+            addAction: { action in addActionToGroup(id: id, action: action) },
+            addCondition: { condition in addConditionToGroup(id: id, condition: condition) }
+        )
     }
 
-    @ViewBuilder private func actionMenu(addAction: @escaping (WindowAction) -> Void) -> some View {
+    @ViewBuilder
+    private func actionMenu(
+        addAction: @escaping (WindowAction) -> Void,
+        addCondition: @escaping (RuleCondition) -> Void
+    ) -> some View {
         Button { addAction(.show) } label: {
             Label("Show", systemImage: "eye")
         }
@@ -436,6 +448,12 @@ struct RuleEditor: View {
         }
         Divider()
         Button {
+            addCondition(.windowMinimized)
+        } label: {
+            Label("If", systemImage: "arrow.triangle.branch")
+        }
+        Divider()
+        Button {
             addAction(.hotkey(keyCode: -1, modifiers: 0, restoreWindow: false, waitFrontmost: true))
         } label: {
             Label("App shortcut...", systemImage: "app")
@@ -445,6 +463,21 @@ struct RuleEditor: View {
         } label: {
             Label("System shortcut...", systemImage: "globe")
         }
+    }
+
+    private func insertAction(_ action: WindowAction, into actions: inout [ActionItem]) {
+        let item = ActionItem(action)
+        if let lastIndex = actions.indices.last,
+           case .endIf = actions[lastIndex].value {
+            actions.insert(item, at: lastIndex)
+        } else {
+            actions.append(item)
+        }
+    }
+
+    private func appendConditionBlock(_ condition: RuleCondition, to actions: inout [ActionItem]) {
+        actions.append(ActionItem(.ifCondition(condition)))
+        actions.append(ActionItem(.endIf))
     }
 
     private func removeGroup(id: UUID) {
@@ -464,7 +497,7 @@ struct RuleEditor: View {
             return "Every workflow group must target at least one space."
         }
 
-        if workingRule.groups.contains(where: { $0.actions.isEmpty }) {
+        if workingRule.groups.contains(where: { !containsExecutableAction($0.actions) }) {
             return "Every workflow group must contain at least one action."
         }
 
@@ -474,8 +507,14 @@ struct RuleEditor: View {
         }
 
         let allActions = workingRule.groups.flatMap(\.actions) + workingRule.elseActions
-        if allActions.isEmpty {
+        if !allActions.contains(where: isExecutableAction) {
             return "Add at least one action before saving."
+        }
+
+        for actions in workingRule.groups.map(\.actions) + [workingRule.elseActions] {
+            if let conditionError = conditionValidationMessage(for: actions) {
+                return conditionError
+            }
         }
 
         if allActions.contains(where: { action in
@@ -490,6 +529,49 @@ struct RuleEditor: View {
         }
 
         return nil
+    }
+
+    private func containsExecutableAction(_ actions: [ActionItem]) -> Bool {
+        actions.contains(where: isExecutableAction)
+    }
+
+    private func isExecutableAction(_ item: ActionItem) -> Bool {
+        switch item.value {
+        case .ifCondition(_), .endIf:
+            return false
+        default:
+            return true
+        }
+    }
+
+    private func conditionValidationMessage(for actions: [ActionItem]) -> LocalizedStringKey? {
+        var hasOpenCondition = false
+        var hasEnclosedAction = false
+
+        for item in actions {
+            switch item.value {
+            case .ifCondition(_):
+                if hasOpenCondition {
+                    return "Conditions cannot be nested."
+                }
+                hasOpenCondition = true
+                hasEnclosedAction = false
+            case .endIf:
+                guard hasOpenCondition else {
+                    return "End If must follow an If action."
+                }
+                guard hasEnclosedAction else {
+                    return "Every If block must contain an action."
+                }
+                hasOpenCondition = false
+            default:
+                if hasOpenCondition {
+                    hasEnclosedAction = true
+                }
+            }
+        }
+
+        return hasOpenCondition ? "Every If action must have an End If." : nil
     }
     
     private func selectApp(name: String, id: String) {
@@ -623,6 +705,7 @@ private struct ApplicationPickerRow<LabelContent: View>: View {
 struct SpaceConditionRow: View {
     @Binding var group: RuleGroup
     let availableSpaces: [SpaceInfo]
+    @State private var isPickerPresented = false
 
     private var selectedSpaces: [SpaceInfo] {
         availableSpaces.filter { group.targetSpaceIDs.contains($0.id) }
@@ -647,17 +730,15 @@ struct SpaceConditionRow: View {
                 Text("No spaces detected")
                     .foregroundStyle(.secondary)
             } else {
-                Menu {
-                    Toggle(
-                        "Source Space",
-                        isOn: Binding(
-                            get: { group.usesSourceSpace },
-                            set: { group.usesSourceSpace = $0 }
-                        )
-                    )
+                Button {
+                    isPickerPresented = true
+                } label: {
+                    HStack(spacing: 4) {
+                        Text(selectedSpacesTitle)
+                            .lineLimit(1)
 
-                    if !availableSpaces.isEmpty {
-                        Divider()
+                        Image(systemName: "chevron.down")
+                            .font(.caption2.weight(.semibold))
                     }
                 }
                 .buttonStyle(.borderless)
@@ -717,13 +798,9 @@ struct SpaceConditionRow: View {
                             }
                         }
                     }
-                } label: {
-                    Text(selectedSpacesTitle)
-                        .lineLimit(1)
                 }
-                .menuStyle(.borderlessButton)
-                .frame(minWidth: 180, maxWidth: 280, alignment: .trailing)
             }
+            .frame(maxHeight: 252)
         }
         .padding(.vertical, 6)
         .padding(.horizontal, 8)
@@ -812,8 +889,13 @@ struct ActionListRows: View {
     }
 
     private func removeAction(id: UUID) {
+        guard let index = actions.firstIndex(where: { $0.id == id }) else { return }
         withAnimation(.easeInOut(duration: 0.2)) {
-            actions.removeAll { $0.id == id }
+            if let blockRange = conditionBlockRange(containing: index) {
+                actions.removeSubrange(blockRange)
+            } else {
+                actions.remove(at: index)
+            }
         }
     }
 
@@ -821,24 +903,61 @@ struct ActionListRows: View {
         guard let sourceUUID = UUID(uuidString: sourceID),
               let targetUUID = UUID(uuidString: targetID),
               let sourceIndex = actions.firstIndex(where: { $0.id == sourceUUID }),
-              let targetIndex = actions.firstIndex(where: { $0.id == targetUUID }),
-              sourceIndex != targetIndex else { return false }
+              actions.contains(where: { $0.id == targetUUID }) else { return false }
+
+        let sourceRange = conditionBlockRange(containing: sourceIndex)
+            ?? sourceIndex...sourceIndex
+        guard !sourceRange.contains(where: { actions[$0].id == targetUUID }) else {
+            return false
+        }
 
         withAnimation(.easeInOut(duration: 0.2)) {
-            let movedAction = actions.remove(at: sourceIndex)
-            let destinationIndex = sourceIndex < targetIndex ? targetIndex - 1 : targetIndex
-            actions.insert(movedAction, at: destinationIndex)
+            let movedActions = Array(actions[sourceRange])
+            actions.removeSubrange(sourceRange)
+            let destinationIndex = actions.firstIndex(where: { $0.id == targetUUID }) ?? actions.endIndex
+            actions.insert(contentsOf: movedActions, at: destinationIndex)
         }
         return true
     }
 
     private func moveActionToEnd(sourceID: String) {
         guard let sourceUUID = UUID(uuidString: sourceID),
-              let sourceIndex = actions.firstIndex(where: { $0.id == sourceUUID }),
-              sourceIndex < actions.count - 1 else { return }
+              let sourceIndex = actions.firstIndex(where: { $0.id == sourceUUID }) else { return }
+
+        let sourceRange = conditionBlockRange(containing: sourceIndex)
+            ?? sourceIndex...sourceIndex
+        guard sourceRange.upperBound < actions.endIndex else { return }
 
         withAnimation(.easeInOut(duration: 0.2)) {
-            actions.append(actions.remove(at: sourceIndex))
+            let movedActions = Array(actions[sourceRange])
+            actions.removeSubrange(sourceRange)
+            actions.append(contentsOf: movedActions)
+        }
+    }
+
+    private func conditionBlockRange(containing index: Int) -> ClosedRange<Int>? {
+        guard actions.indices.contains(index) else { return nil }
+
+        switch actions[index].value {
+        case .ifCondition(_):
+            guard index + 1 < actions.endIndex else { return nil }
+            guard let endIndex = actions[(index + 1)...].firstIndex(where: {
+                if case .endIf = $0.value { return true }
+                return false
+            }) else {
+                return nil
+            }
+            return index...endIndex
+        case .endIf:
+            guard let startIndex = actions[..<index].lastIndex(where: {
+                if case .ifCondition(_) = $0.value { return true }
+                return false
+            }) else {
+                return nil
+            }
+            return startIndex...index
+        default:
+            return nil
         }
     }
 
@@ -871,6 +990,8 @@ struct ActionListRows: View {
         case .hide: return "eye.slash"
         case .minimize: return "arrow.down.right.and.arrow.up.left"
         case .bringToFront: return "arrow.up.forward.app"
+        case .ifCondition(_): return "arrow.triangle.branch"
+        case .endIf: return "arrow.turn.down.right"
         case .hotkey, .globalHotkey: return "keyboard"
         }
     }
@@ -933,6 +1054,31 @@ struct ActionRowContent: View {
 
             Group {
                 switch item.value {
+                case .ifCondition(_):
+                    HStack(spacing: 8) {
+                        Label("If", systemImage: "arrow.triangle.branch")
+                            .font(.body)
+
+                        Picker(
+                            "Condition",
+                            selection: Binding(
+                                get: { conditionForPicker },
+                                set: { item.value = .ifCondition($0) }
+                            )
+                        ) {
+                            ForEach(RuleCondition.allCases) { condition in
+                                Text(condition.localizedString)
+                                    .tag(condition)
+                            }
+                        }
+                        .labelsHidden()
+                        .pickerStyle(.menu)
+                    }
+
+                case .endIf:
+                    Label("End If", systemImage: "arrow.turn.down.right")
+                        .font(.body)
+
                 case .globalHotkey(let code, let mods):
                     HStack(spacing: 8) {
                         Label("System shortcut", systemImage: "globe")
@@ -1005,8 +1151,8 @@ struct ActionRowContent: View {
             }
             .buttonStyle(.borderless)
             .controlSize(.regular)
-            .help("Remove Action")
-            .accessibilityLabel("Remove Action")
+            .help(deletionHelp)
+            .accessibilityLabel(deletionHelp)
         }
         .frame(height: SettingsComponentMetrics.listRowHeight)
         .onDisappear(perform: stopRecording)
@@ -1030,6 +1176,8 @@ struct ActionRowContent: View {
         case .hide: return "eye.slash"
         case .minimize: return "arrow.down.right.and.arrow.up.left"
         case .bringToFront: return "arrow.up.forward.app"
+        case .ifCondition(_): return "arrow.triangle.branch"
+        case .endIf: return "arrow.turn.down.right"
         case .hotkey, .globalHotkey: return "keyboard"
         }
     }
