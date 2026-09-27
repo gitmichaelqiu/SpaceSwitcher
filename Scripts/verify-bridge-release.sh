@@ -107,7 +107,7 @@ STAGED_APP="$EXPANDED_PACKAGE/Payload/Applications/$STAGED_APPLICATION_NAME"
 assert_equal "staged app bundle ID" "$CURRENT_BUNDLE_IDENTIFIER" "$(read_plist_value "$STAGED_APP/Contents/Info.plist" CFBundleIdentifier)"
 assert_equal "staged app signing team" "$EXPECTED_TEAM_IDENTIFIER" "$(team_identifier_for_app "$STAGED_APP")"
 assert_equal "staged app build" "$PACKAGE_VERSION" "$(read_plist_value "$STAGED_APP/Contents/Info.plist" CFBundleVersion)"
-assert_equal "staged app feed URL" "https://raw.githubusercontent.com/gitmichaelqiu/SpaceSwitcher/dev/appcast.xml" "$(read_plist_value "$STAGED_APP/Contents/Info.plist" SUFeedURL)"
+assert_equal "staged app feed URL" "https://raw.githubusercontent.com/gitmichaelqiu/SpaceSwitcher/main/appcast.xml" "$(read_plist_value "$STAGED_APP/Contents/Info.plist" SUFeedURL)"
 if ! codesign --verify --deep --strict "$STAGED_APP" >/dev/null 2>&1; then
     echo "warning: staged app signature is not trusted locally; manual approval is required" >&2
 fi
