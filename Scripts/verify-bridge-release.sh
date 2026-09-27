@@ -3,6 +3,7 @@ set -euo pipefail
 
 LEGACY_BUNDLE_IDENTIFIER="michaelqiu.SpaceSwitcher"
 CURRENT_BUNDLE_IDENTIFIER="dev.mqiu.SpaceSwitcher"
+EXPECTED_TEAM_IDENTIFIER="W94S87F4LJ"
 STAGED_APPLICATION_NAME="SpaceSwitcher-Migration.app"
 
 die() {
@@ -12,6 +13,11 @@ die() {
 
 read_plist_value() {
     /usr/libexec/PlistBuddy -c "Print :$2" "$1" 2>/dev/null
+}
+
+team_identifier_for_app() {
+    codesign -dv --verbose=4 "$1" 2>&1 \
+        | awk -F= '$1 == "TeamIdentifier" { print $2; exit }'
 }
 
 assert_equal() {
@@ -77,6 +83,7 @@ BRIDGE_APP="$MOUNT_POINT/SpaceSwitcher.app"
 [[ -f "$BRIDGE_APP/Contents/Info.plist" ]] || die "SpaceSwitcher.app missing from bridge DMG"
 APP_INFO_PLIST="$BRIDGE_APP/Contents/Info.plist"
 assert_equal "bridge bundle ID" "$LEGACY_BUNDLE_IDENTIFIER" "$(read_plist_value "$APP_INFO_PLIST" CFBundleIdentifier)"
+assert_equal "bridge signing team" "$EXPECTED_TEAM_IDENTIFIER" "$(team_identifier_for_app "$BRIDGE_APP")"
 assert_equal "bridge version" "$MARKETING_VERSION" "$(read_plist_value "$APP_INFO_PLIST" CFBundleShortVersionString)"
 assert_equal "bridge build" "$BUILD_NUMBER" "$(read_plist_value "$APP_INFO_PLIST" CFBundleVersion)"
 assert_equal "bridge feed URL" "$FEED_URL" "$(read_plist_value "$APP_INFO_PLIST" SUFeedURL)"
@@ -98,6 +105,7 @@ pkgutil --expand-full "$MIGRATION_PACKAGE" "$EXPANDED_PACKAGE" >/dev/null
 STAGED_APP="$EXPANDED_PACKAGE/Payload/Applications/$STAGED_APPLICATION_NAME"
 [[ -f "$STAGED_APP/Contents/Info.plist" ]] || die "staged app missing from migration package"
 assert_equal "staged app bundle ID" "$CURRENT_BUNDLE_IDENTIFIER" "$(read_plist_value "$STAGED_APP/Contents/Info.plist" CFBundleIdentifier)"
+assert_equal "staged app signing team" "$EXPECTED_TEAM_IDENTIFIER" "$(team_identifier_for_app "$STAGED_APP")"
 assert_equal "staged app build" "$PACKAGE_VERSION" "$(read_plist_value "$STAGED_APP/Contents/Info.plist" CFBundleVersion)"
 assert_equal "staged app feed URL" "https://raw.githubusercontent.com/gitmichaelqiu/SpaceSwitcher/dev/appcast.xml" "$(read_plist_value "$STAGED_APP/Contents/Info.plist" SUFeedURL)"
 if ! codesign --verify --deep --strict "$STAGED_APP" >/dev/null 2>&1; then

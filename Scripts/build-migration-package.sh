@@ -3,6 +3,7 @@ set -euo pipefail
 
 LEGACY_BUNDLE_IDENTIFIER="michaelqiu.SpaceSwitcher"
 CURRENT_BUNDLE_IDENTIFIER="dev.mqiu.SpaceSwitcher"
+EXPECTED_TEAM_IDENTIFIER="W94S87F4LJ"
 STAGED_APPLICATION_NAME="SpaceSwitcher-Migration.app"
 DEFAULT_PACKAGE_IDENTIFIER="dev.mqiu.SpaceSwitcher.migration"
 
@@ -30,6 +31,11 @@ to_absolute_path() {
 
 read_plist_value() {
     /usr/libexec/PlistBuddy -c "Print :$2" "$1" 2>/dev/null
+}
+
+team_identifier_for_app() {
+    codesign -dv --verbose=4 "$1" 2>&1 \
+        | awk -F= '$1 == "TeamIdentifier" { print $2; exit }'
 }
 
 APP_PATH=""
@@ -102,6 +108,8 @@ APP_INFO_PLIST="$APP_PATH/Contents/Info.plist"
     || die "app CFBundleVersion does not match --version"
 [[ "$(read_plist_value "$APP_INFO_PLIST" SUFeedURL)" == "$FEED_URL" ]] \
     || die "app SUFeedURL does not match --feed-url"
+[[ "$(team_identifier_for_app "$APP_PATH")" == "$EXPECTED_TEAM_IDENTIFIER" ]] \
+    || die "app must be signed by team $EXPECTED_TEAM_IDENTIFIER"
 
 mkdir -p "$(dirname "$OUTPUT_PATH")"
 WORK_DIR="$(mktemp -d "${TMPDIR:-/tmp}/SpaceSwitcherMigrationPackage.XXXXXX")"

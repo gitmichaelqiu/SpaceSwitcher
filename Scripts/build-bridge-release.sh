@@ -2,8 +2,10 @@
 set -euo pipefail
 
 LEGACY_BUNDLE_IDENTIFIER="michaelqiu.SpaceSwitcher"
+EXPECTED_TEAM_IDENTIFIER="W94S87F4LJ"
 DEFAULT_STAGING_PATH="/Applications/SpaceSwitcher-Migration.app"
-PROJECT_PATH="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -P)/SpaceSwitcher.xcodeproj"
+PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -P)"
+PROJECT_PATH="$PROJECT_ROOT/SpaceSwitcher.xcodeproj"
 
 usage() {
     cat <<'EOF'
@@ -35,6 +37,11 @@ to_absolute_path() {
 
 read_plist_value() {
     /usr/libexec/PlistBuddy -c "Print :$2" "$1" 2>/dev/null
+}
+
+team_identifier_for_app() {
+    codesign -dv --verbose=4 "$1" 2>&1 \
+        | awk -F= '$1 == "TeamIdentifier" { print $2; exit }'
 }
 
 MARKETING_VERSION=""
@@ -103,17 +110,21 @@ if [[ -n "$SOURCE_PACKAGES" ]]; then
     BUILD_ARGUMENTS+=(-clonedSourcePackagesDirPath "$SOURCE_PACKAGES")
 fi
 
+BRIDGE_INFO_PLIST="$WORK_DIR/Bridge-Info.plist"
+ditto "$PROJECT_ROOT/SpaceSwitcher/info.plist" "$BRIDGE_INFO_PLIST"
+/usr/libexec/PlistBuddy -c "Set :SUFeedURL $FEED_URL" "$BRIDGE_INFO_PLIST"
+/usr/libexec/PlistBuddy -c "Add :SpaceSwitcherMigrationPackageURL string $PACKAGE_URL" "$BRIDGE_INFO_PLIST"
+/usr/libexec/PlistBuddy -c "Add :SpaceSwitcherMigrationPackageSHA256 string $(printf '%s' "$PACKAGE_SHA256" | tr '[:upper:]' '[:lower:]')" "$BRIDGE_INFO_PLIST"
+/usr/libexec/PlistBuddy -c "Add :SpaceSwitcherMigrationPackageVersion string $PACKAGE_VERSION" "$BRIDGE_INFO_PLIST"
+/usr/libexec/PlistBuddy -c 'Add :SpaceSwitcherMigrationAllowManualApproval bool true' "$BRIDGE_INFO_PLIST"
+/usr/libexec/PlistBuddy -c "Add :SpaceSwitcherMigrationStagingPath string $STAGING_PATH" "$BRIDGE_INFO_PLIST"
+/usr/libexec/PlistBuddy -c "Add :SpaceSwitcherReleaseTag string $RELEASE_TAG" "$BRIDGE_INFO_PLIST"
+
 xcodebuild archive "${BUILD_ARGUMENTS[@]}" \
+    INFOPLIST_FILE="$BRIDGE_INFO_PLIST" \
     PRODUCT_BUNDLE_IDENTIFIER="$LEGACY_BUNDLE_IDENTIFIER" \
     MARKETING_VERSION="$MARKETING_VERSION" \
     CURRENT_PROJECT_VERSION="$BUILD_NUMBER" \
-    INFOPLIST_KEY_SUFeedURL="$FEED_URL" \
-    INFOPLIST_KEY_SpaceSwitcherMigrationPackageURL="$PACKAGE_URL" \
-    INFOPLIST_KEY_SpaceSwitcherMigrationPackageSHA256="$(printf '%s' "$PACKAGE_SHA256" | tr '[:upper:]' '[:lower:]')" \
-    INFOPLIST_KEY_SpaceSwitcherMigrationPackageVersion="$PACKAGE_VERSION" \
-    INFOPLIST_KEY_SpaceSwitcherMigrationAllowManualApproval=YES \
-    INFOPLIST_KEY_SpaceSwitcherMigrationStagingPath="$STAGING_PATH" \
-    INFOPLIST_KEY_SpaceSwitcherReleaseTag="$RELEASE_TAG" \
     CODE_SIGN_STYLE=Automatic
 
 ARCHIVED_APP="$WORK_DIR/SpaceSwitcherBridge.xcarchive/Products/Applications/SpaceSwitcher.app"
@@ -123,6 +134,8 @@ APP_INFO_PLIST="$ARCHIVED_APP/Contents/Info.plist"
     || die "bridge bundle identifier mismatch"
 [[ "$(read_plist_value "$APP_INFO_PLIST" CFBundleVersion)" == "$BUILD_NUMBER" ]] \
     || die "bridge build number mismatch"
+[[ "$(team_identifier_for_app "$ARCHIVED_APP")" == "$EXPECTED_TEAM_IDENTIFIER" ]] \
+    || die "bridge must be signed by team $EXPECTED_TEAM_IDENTIFIER to update existing installations"
 [[ "$(read_plist_value "$APP_INFO_PLIST" SUFeedURL)" == "$FEED_URL" ]] \
     || die "bridge feed URL mismatch"
 [[ "$(read_plist_value "$APP_INFO_PLIST" SpaceSwitcherMigrationPackageURL)" == "$PACKAGE_URL" ]] \
