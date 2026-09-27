@@ -57,8 +57,8 @@ struct AboutView: View {
                         AboutLinkRow(title: NSLocalizedString("Report an issue", comment: ""), url: "https://github.com/gitmichaelqiu/SpaceSwitcher/issues")
                         AboutLinkRow(title: NSLocalizedString("SpaceSwitcher's website", comment: ""), url: "https://spaceswitcher.mqiu.dev")
                         AboutLinkRow(title: NSLocalizedString("SpaceSwitcher's GitHub", comment: ""), url: "https://github.com/gitmichaelqiu/SpaceSwitcher")
-                        AboutLinkRow(title: NSLocalizedString("My website", comment: ""), url: "https://mqiu.dev")
-                        AboutLinkRow(title: NSLocalizedString("My GitHub", comment: ""), url: "https://github.com/gitmichaelqiu")
+                        AboutLinkRow(title: NSLocalizedString("Author's website", comment: ""), url: "https://mqiu.dev")
+                        AboutLinkRow(title: NSLocalizedString("Author's GitHub", comment: ""), url: "https://github.com/gitmichaelqiu")
                     }
                 }
 

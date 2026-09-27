@@ -52,6 +52,26 @@
         }
       }
     },
+    "Author's GitHub" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "作者的 GitHub"
+          }
+        }
+      }
+    },
+    "Author's website" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "作者的网站"
+          }
+        }
+      }
+    },
     "Accessibility" : {
       "localizations" : {
         "zh-Hans" : {
@@ -897,26 +917,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "更多应用"
-          }
-        }
-      }
-    },
-    "My GitHub" : {
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "我的 GitHub"
-          }
-        }
-      }
-    },
-    "My website" : {
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "我的网站"
           }
         }
       }
