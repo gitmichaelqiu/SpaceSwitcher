@@ -1,7 +1,19 @@
 <?xml version="1.0" standalone="yes"?>
-<rss xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle" version="2.0">
+<rss xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle"
+     xmlns:spaceswitcher="https://mqiu.dev/xml-namespaces/spaceswitcher"
+     version="2.0">
     <channel>
         <title>SpaceSwitcher</title>
+        <item>
+            <title>1.1.0</title>
+            <pubDate>Sun, 27 Sep 2026 14:36:50 +0800</pubDate>
+            <sparkle:version>6</sparkle:version>
+            <sparkle:shortVersionString>1.1.0</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>13.0</sparkle:minimumSystemVersion>
+            <spaceswitcher:targetBundleIdentifier>michaelqiu.SpaceSwitcher</spaceswitcher:targetBundleIdentifier>
+            <enclosure url="https://github.com/gitmichaelqiu/SpaceSwitcher/releases/download/v1.1.0-bridge/SpaceSwitcher-1.1.0-bridge.dmg" length="29252605" type="application/octet-stream" sparkle:edSignature="zCoN38MMDv5nvxkFFMsldBRpBkaKvVCCeK633vADjY+NGqj0UP4CcL/s4RIVnly5yVu8Me/nDGaTHfnguddPCw=="/>
+            <sparkle:releaseNotesLink>https://github.com/gitmichaelqiu/SpaceSwitcher/releases/tag/v1.1.0-bridge</sparkle:releaseNotesLink>
+        </item>
         <item>
             <title>1.0.0</title>
             <pubDate>Sun, 10 May 2026 17:31:34 +0800</pubDate>
