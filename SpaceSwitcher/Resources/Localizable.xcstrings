@@ -32,16 +32,6 @@
     "↺" : {
       "shouldTranslate" : false
     },
-    "A powerful utility for macOS that gives you per-space control over your applications and Dock. Part of the macOSers productivity bundle." : {
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "一款强大的 macOS 效率工具，可让您针对每个桌面空间独立控制应用程序和 Dock。macOSers 生产力套件的一部分。"
-          }
-        }
-      }
-    },
     "About" : {
       "localizations" : {
         "zh-Hans" : {
@@ -869,6 +859,16 @@
         }
       }
     },
+    "Media Suite" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "媒体套件"
+          }
+        }
+      }
+    },
     "Minimize" : {
       "comment" : "Action: Minimize Window",
       "localizations" : {
@@ -907,16 +907,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "更多应用"
-          }
-        }
-      }
-    },
-    "Media Suite" : {
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "媒体套件"
           }
         }
       }

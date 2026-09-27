@@ -47,13 +47,6 @@ struct AboutView: View {
                     }
                 }
 
-                // Description Section
-                Text("A powerful utility for macOS that gives you per-space control over your applications and Dock. Part of the macOSers productivity bundle.")
-                    .font(.body)
-                    .foregroundColor(.secondary)
-                    .lineSpacing(4)
-                    .frame(maxWidth: 500, alignment: .leading)
-
                 // Links Section
                 VStack(alignment: .leading, spacing: 12) {
                     Text("Links")
