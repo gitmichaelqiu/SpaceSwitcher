@@ -62,6 +62,16 @@
         }
       }
     },
+    "Accessibility and input events" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "辅助功能和输入事件"
+          }
+        }
+      }
+    },
     "Accessibility controls both window automation and input events." : {
       "localizations" : {
         "zh-Hans" : {
@@ -774,16 +784,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "如果 %@"
-          }
-        }
-      }
-    },
-    "Input events" : {
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "输入事件"
           }
         }
       }

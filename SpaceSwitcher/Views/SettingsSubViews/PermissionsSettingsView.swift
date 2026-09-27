@@ -15,23 +15,11 @@ struct PermissionsSettingsView: View {
                     "Permissions",
                     helperText: "Accessibility controls both window automation and input events."
                 ) {
-                    SettingsRow("Accessibility") {
+                    SettingsRow("Accessibility and input events") {
                         HStack(spacing: 8) {
-                            PermissionStatusIcon(isGranted: permissionManager.isAccessibilityGranted)
+                            PermissionStatusIcon(isGranted: permissionManager.hasAccessibilityPermission)
 
-                            Button(permissionManager.isAccessibilityGranted ? "Settings" : "Grant") {
-                                permissionManager.requestAccessibilityPermission()
-                            }
-                        }
-                    }
-
-                    Divider()
-
-                    SettingsRow("Input events") {
-                        HStack(spacing: 8) {
-                            PermissionStatusIcon(isGranted: permissionManager.isEventSynthesisGranted)
-
-                            Button(permissionManager.isEventSynthesisGranted ? "Settings" : "Grant") {
+                            Button(permissionManager.hasAccessibilityPermission ? "Settings" : "Grant") {
                                 permissionManager.requestAccessibilityPermission()
                             }
                         }
