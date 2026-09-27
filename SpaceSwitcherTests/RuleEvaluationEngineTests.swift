@@ -253,6 +253,40 @@ final class RuleEvaluationEngineTests: XCTestCase {
         XCTAssertEqual(plans[0].windowIDs, [101, 102])
     }
 
+    func testManagedApplicationRestoreRespectsEarlierMatchingFixedSpaceGroup() {
+        let rule = makeRule(
+            id: uuid(1),
+            appBundleID: "com.example.editor",
+            groups: [
+                RuleGroup(
+                    targetSpaceIDs: ["source"],
+                    actions: [ActionItem(.hide)]
+                ),
+                RuleGroup(
+                    targetSpaceIDs: [],
+                    actions: [ActionItem(.restore)],
+                    usesSourceSpace: true
+                )
+            ]
+        )
+        let application = makeApplication(
+            bundleIdentifier: "com.example.editor",
+            windows: [makeWindow(id: 101, spaces: ["source"])],
+            managedAppHideSourceSpaceIDs: ["source"]
+        )
+
+        let plans = RuleEvaluationEngine.plans(
+            for: application,
+            rules: [rule],
+            currentSpaceID: "source"
+        )
+
+        XCTAssertEqual(plans.count, 1)
+        XCTAssertEqual(plans[0].ruleID, rule.id)
+        XCTAssertEqual(plans[0].actions, [.hide])
+        XCTAssertEqual(plans[0].windowIDs, [101])
+    }
+
     func testRuleOrderAndRuleOrderingRoundTrip() throws {
         let first = makeRule(id: uuid(1), appBundleID: "com.example.first")
         let second = makeRule(id: uuid(2), appBundleID: "com.example.second")

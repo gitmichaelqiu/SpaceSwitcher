@@ -207,20 +207,17 @@ enum RuleEvaluationEngine {
         application: RuleApplicationSnapshot,
         currentSpaceID: String
     ) -> [WindowAction]? {
-        guard application.managedAppHideSourceSpaceIDs.contains(currentSpaceID),
-              let sourceGroup = rule.groups.first(where: { $0.usesSourceSpace }) else {
-            return nil
-        }
+        guard application.managedAppHideSourceSpaceIDs.contains(currentSpaceID) else { return nil }
 
         for window in application.windows where window.spaceIDs.contains(currentSpaceID) {
-            guard groupMatches(
-                sourceGroup,
+            let rawActions = selectedActions(
+                for: rule,
                 currentSpaceID: currentSpaceID,
                 window: window,
                 managedSourceSpaceIDs: application.managedAppHideSourceSpaceIDs
-            ) else { continue }
+            )
 
-            let actions = evaluatedActions(sourceGroup.actions, window: window)
+            let actions = evaluatedActions(rawActions, window: window)
             if actions.contains(where: { action in
                 if case .restore = action { return true }
                 return false
