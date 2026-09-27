@@ -9,10 +9,10 @@ legacy defaults domain before the app bundle is replaced. The app's
 `SUPublicEDKey` is stored in `SpaceSwitcher/info.plist`; release verification
 checks the key in both the bridge and staged app bundles.
 
-For the 1.1.3 migration reliability fix, build the current-ID app from this
-`main` checkout with build number `9`; use that archived app both for the normal
-release DMG and the migration package. Keep `CFBundleVersion` aligned. The
-current distribution uses manual approval: the package and bridge are not notarized,
+For the 1.1.2 migration fix, build the current-ID app from this `main` checkout
+with build number `8`; use that archived app both for the normal release DMG
+and the migration package. Keep `CFBundleVersion` aligned. The current
+distribution uses manual approval: the package and bridge are not notarized,
 and users may need to approve them in macOS.
 
 ## Build the migration package
@@ -24,20 +24,20 @@ bridge; the URL and exact checksum are embedded in the bridge.
 ```sh
 xcodebuild -project SpaceSwitcher.xcodeproj -scheme SpaceSwitcher \
   -configuration Release -destination 'generic/platform=macOS' \
-  -archivePath /tmp/SpaceSwitcher-1.1.3.xcarchive archive
-ARCHIVED_APP=/tmp/SpaceSwitcher-1.1.3.xcarchive/Products/Applications/SpaceSwitcher.app
-mkdir -p /tmp/SpaceSwitcher-1.1.3-dmg
-ditto "$ARCHIVED_APP" /tmp/SpaceSwitcher-1.1.3-dmg/SpaceSwitcher.app
-ln -s /Applications /tmp/SpaceSwitcher-1.1.3-dmg/Applications
-hdiutil create -volname "SpaceSwitcher 1.1.3" -srcfolder /tmp/SpaceSwitcher-1.1.3-dmg \
-  -format UDZO /tmp/SpaceSwitcher.1.1.3.dmg
+  -archivePath /tmp/SpaceSwitcher-1.1.2.xcarchive archive
+ARCHIVED_APP=/tmp/SpaceSwitcher-1.1.2.xcarchive/Products/Applications/SpaceSwitcher.app
+mkdir -p /tmp/SpaceSwitcher-1.1.2-dmg
+ditto "$ARCHIVED_APP" /tmp/SpaceSwitcher-1.1.2-dmg/SpaceSwitcher.app
+ln -s /Applications /tmp/SpaceSwitcher-1.1.2-dmg/Applications
+hdiutil create -volname "SpaceSwitcher 1.1.2" -srcfolder /tmp/SpaceSwitcher-1.1.2-dmg \
+  -format UDZO /tmp/SpaceSwitcher.1.1.2.dmg
 Scripts/build-migration-package.sh \
   --app "$ARCHIVED_APP" \
-  --version 9 \
+  --version 8 \
   --feed-url https://raw.githubusercontent.com/gitmichaelqiu/SpaceSwitcher/main/appcast.xml \
-  --output /tmp/SpaceSwitcher-migration-9.pkg \
+  --output /tmp/SpaceSwitcher-migration-8.pkg \
   --manual-approval
-shasum -a 256 /tmp/SpaceSwitcher-migration-9.pkg
+shasum -a 256 /tmp/SpaceSwitcher-migration-8.pkg
 ```
 
 Upload the package to its final release URL before continuing. Do not change
@@ -51,21 +51,21 @@ updates. Use the exact package URL and checksum returned above.
 
 ```sh
 Scripts/build-bridge-release.sh \
-  --version 1.1.3 --build-number 9 --release-tag bridge \
+  --version 1.1.2 --build-number 8 --release-tag bridge \
   --feed-url https://raw.githubusercontent.com/gitmichaelqiu/SpaceSwitcher/main/appcast.xml \
-  --package-url https://github.com/gitmichaelqiu/SpaceSwitcher/releases/download/v1.1.3-bridge/SpaceSwitcher-migration-9.pkg \
-  --package-sha256 PACKAGE_SHA256 --package-version 9 \
+  --package-url https://github.com/gitmichaelqiu/SpaceSwitcher/releases/download/v1.1.2-bridge/SpaceSwitcher-migration-8.pkg \
+  --package-sha256 PACKAGE_SHA256 --package-version 8 \
   --output-dir /tmp/SpaceSwitcher-bridge-release \
   --source-packages /path/to/SpaceSwitcher/SourcePackages \
   --manual-approval
 
 Scripts/verify-bridge-release.sh \
-  --bridge-dmg /tmp/SpaceSwitcher-bridge-release/SpaceSwitcher-1.1.3-bridge.dmg \
-  --migration-package /tmp/SpaceSwitcher-migration-9.pkg \
-  --version 1.1.3 --build-number 9 --release-tag bridge \
+  --bridge-dmg /tmp/SpaceSwitcher-bridge-release/SpaceSwitcher-1.1.2-bridge.dmg \
+  --migration-package /tmp/SpaceSwitcher-migration-8.pkg \
+  --version 1.1.2 --build-number 8 --release-tag bridge \
   --feed-url https://raw.githubusercontent.com/gitmichaelqiu/SpaceSwitcher/main/appcast.xml \
-  --package-url https://github.com/gitmichaelqiu/SpaceSwitcher/releases/download/v1.1.3-bridge/SpaceSwitcher-migration-9.pkg \
-  --package-sha256 PACKAGE_SHA256 --package-version 9 \
+  --package-url https://github.com/gitmichaelqiu/SpaceSwitcher/releases/download/v1.1.2-bridge/SpaceSwitcher-migration-8.pkg \
+  --package-sha256 PACKAGE_SHA256 --package-version 8 \
   --manual-approval
 ```
 
