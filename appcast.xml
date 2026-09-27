@@ -5,6 +5,27 @@
     <channel>
         <title>SpaceSwitcher</title>
         <item>
+            <title>1.1.2</title>
+            <pubDate>Sun, 27 Sep 2026 15:59:32 +0800</pubDate>
+            <sparkle:version>8</sparkle:version>
+            <sparkle:shortVersionString>1.1.2</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>13.0</sparkle:minimumSystemVersion>
+            <spaceswitcher:targetBundleIdentifier>michaelqiu.SpaceSwitcher</spaceswitcher:targetBundleIdentifier>
+            <enclosure url="https://github.com/gitmichaelqiu/SpaceSwitcher/releases/download/v1.1.2-bridge/SpaceSwitcher-1.1.2-bridge.dmg" length="29281970" type="application/octet-stream" sparkle:edSignature="L7Z3x2MGooJ8y3xJT4rXUkcItkW1oa3bW0bnNPrMakNmhq8W5oBJxIYNcL7thy0ZWF304A1gozwh8PQvGMb0Bw=="/>
+            <sparkle:releaseNotesLink>https://github.com/gitmichaelqiu/SpaceSwitcher/releases/tag/v1.1.2-bridge</sparkle:releaseNotesLink>
+        </item>
+        <item>
+            <title>1.1.2</title>
+            <pubDate>Sun, 27 Sep 2026 15:59:11 +0800</pubDate>
+            <sparkle:version>8</sparkle:version>
+            <sparkle:shortVersionString>1.1.2</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>13.0</sparkle:minimumSystemVersion>
+            <sparkle:channel>dev-mqiu</sparkle:channel>
+            <spaceswitcher:targetBundleIdentifier>dev.mqiu.SpaceSwitcher</spaceswitcher:targetBundleIdentifier>
+            <enclosure url="https://github.com/gitmichaelqiu/SpaceSwitcher/releases/download/v1.1.2/SpaceSwitcher.1.1.2.dmg" length="29281786" type="application/octet-stream" sparkle:edSignature="qV6w0pdmlv87K4h0Lk/N/efCoh0bg2/HqghN0+UBK2r38Dbn7V5HEIpSwpZr7HC21CI0oHKGQc+zTAPNp6AZAA=="/>
+            <sparkle:releaseNotesLink>https://github.com/gitmichaelqiu/SpaceSwitcher/releases/tag/v1.1.2</sparkle:releaseNotesLink>
+        </item>
+        <item>
             <title>1.1.1</title>
             <pubDate>Sun, 27 Sep 2026 15:45:27 +0800</pubDate>
             <sparkle:version>7</sparkle:version>
