@@ -73,6 +73,22 @@ enum SpaceSwitcherMigrationStorage {
     }
 }
 
+struct MigrationInstallerLaunchGate {
+    private(set) var installerWasObserved = false
+
+    mutating func shouldLaunchStagedApplication(
+        installerIsRunning: Bool,
+        stagedApplicationIsValid: Bool
+    ) -> Bool {
+        guard !installerIsRunning else {
+            installerWasObserved = true
+            return false
+        }
+
+        return installerWasObserved && stagedApplicationIsValid
+    }
+}
+
 struct SpaceSwitcherMigrationManifest: Codable {
     static let currentSchemaVersion = 1
 
