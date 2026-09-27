@@ -4,6 +4,7 @@ set -euo pipefail
 LEGACY_BUNDLE_IDENTIFIER="michaelqiu.SpaceSwitcher"
 CURRENT_BUNDLE_IDENTIFIER="dev.mqiu.SpaceSwitcher"
 EXPECTED_TEAM_IDENTIFIER="W94S87F4LJ"
+EXPECTED_SPARKLE_PUBLIC_KEY="e9YKamydRddgnYK6Kq41W0vPbwI4F9XJAhks/9rzT0w="
 STAGED_APPLICATION_NAME="SpaceSwitcher-Migration.app"
 
 die() {
@@ -87,6 +88,7 @@ assert_equal "bridge signing team" "$EXPECTED_TEAM_IDENTIFIER" "$(team_identifie
 assert_equal "bridge version" "$MARKETING_VERSION" "$(read_plist_value "$APP_INFO_PLIST" CFBundleShortVersionString)"
 assert_equal "bridge build" "$BUILD_NUMBER" "$(read_plist_value "$APP_INFO_PLIST" CFBundleVersion)"
 assert_equal "bridge feed URL" "$FEED_URL" "$(read_plist_value "$APP_INFO_PLIST" SUFeedURL)"
+assert_equal "bridge Sparkle public key" "$EXPECTED_SPARKLE_PUBLIC_KEY" "$(read_plist_value "$APP_INFO_PLIST" SUPublicEDKey)"
 assert_equal "bridge package URL" "$PACKAGE_URL" "$(read_plist_value "$APP_INFO_PLIST" SpaceSwitcherMigrationPackageURL)"
 assert_equal "bridge package checksum" "$(printf '%s' "$PACKAGE_SHA256" | tr '[:upper:]' '[:lower:]')" "$(read_plist_value "$APP_INFO_PLIST" SpaceSwitcherMigrationPackageSHA256)"
 assert_equal "bridge package build" "$PACKAGE_VERSION" "$(read_plist_value "$APP_INFO_PLIST" SpaceSwitcherMigrationPackageVersion)"
@@ -108,6 +110,7 @@ assert_equal "staged app bundle ID" "$CURRENT_BUNDLE_IDENTIFIER" "$(read_plist_v
 assert_equal "staged app signing team" "$EXPECTED_TEAM_IDENTIFIER" "$(team_identifier_for_app "$STAGED_APP")"
 assert_equal "staged app build" "$PACKAGE_VERSION" "$(read_plist_value "$STAGED_APP/Contents/Info.plist" CFBundleVersion)"
 assert_equal "staged app feed URL" "https://raw.githubusercontent.com/gitmichaelqiu/SpaceSwitcher/main/appcast.xml" "$(read_plist_value "$STAGED_APP/Contents/Info.plist" SUFeedURL)"
+assert_equal "staged app Sparkle public key" "$EXPECTED_SPARKLE_PUBLIC_KEY" "$(read_plist_value "$STAGED_APP/Contents/Info.plist" SUPublicEDKey)"
 if ! codesign --verify --deep --strict "$STAGED_APP" >/dev/null 2>&1; then
     echo "warning: staged app signature is not trusted locally; manual approval is required" >&2
 fi
