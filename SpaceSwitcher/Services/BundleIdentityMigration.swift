@@ -74,18 +74,41 @@ enum SpaceSwitcherMigrationStorage {
 }
 
 struct MigrationInstallerLaunchGate {
-    private(set) var installerWasObserved = false
+    enum Decision: Equatable {
+        case waitingForInstaller
+        case waitingForStagedApplication
+        case launchStagedApplication
+        case stagingFailed
+    }
 
-    mutating func shouldLaunchStagedApplication(
+    static let stagedApplicationGracePeriod: TimeInterval = 30
+
+    private(set) var installerWasObserved = false
+    private var installerExitObservedAt: Date?
+
+    mutating func decision(
         installerIsRunning: Bool,
-        stagedApplicationIsValid: Bool
-    ) -> Bool {
-        guard !installerIsRunning else {
+        stagedApplicationIsValid: Bool,
+        now: Date = Date()
+    ) -> Decision {
+        if installerIsRunning {
             installerWasObserved = true
-            return false
+            installerExitObservedAt = nil
+            return .waitingForInstaller
         }
 
-        return installerWasObserved && stagedApplicationIsValid
+        guard installerWasObserved else { return .waitingForInstaller }
+        if stagedApplicationIsValid { return .launchStagedApplication }
+
+        if installerExitObservedAt == nil {
+            installerExitObservedAt = now
+            return .waitingForStagedApplication
+        }
+
+        guard let exitObservedAt = installerExitObservedAt else { return .waitingForStagedApplication }
+        return now.timeIntervalSince(exitObservedAt) >= Self.stagedApplicationGracePeriod
+            ? .stagingFailed
+            : .waitingForStagedApplication
     }
 }
 

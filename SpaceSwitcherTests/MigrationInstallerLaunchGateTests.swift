@@ -5,41 +5,84 @@ final class MigrationInstallerLaunchGateTests: XCTestCase {
     func testPreexistingStagedAppDoesNotLaunchBeforeInstallerWasObserved() {
         var gate = MigrationInstallerLaunchGate()
 
-        XCTAssertFalse(gate.shouldLaunchStagedApplication(
+        XCTAssertEqual(gate.decision(
             installerIsRunning: false,
             stagedApplicationIsValid: true
-        ))
+        ), .waitingForInstaller)
         XCTAssertFalse(gate.installerWasObserved)
     }
 
     func testValidStagedAppLaunchesOnlyAfterObservedInstallerExits() {
         var gate = MigrationInstallerLaunchGate()
 
-        XCTAssertFalse(gate.shouldLaunchStagedApplication(
+        XCTAssertEqual(gate.decision(
             installerIsRunning: true,
             stagedApplicationIsValid: true
-        ))
+        ), .waitingForInstaller)
         XCTAssertTrue(gate.installerWasObserved)
-        XCTAssertFalse(gate.shouldLaunchStagedApplication(
+        XCTAssertEqual(gate.decision(
             installerIsRunning: true,
             stagedApplicationIsValid: true
-        ))
-        XCTAssertTrue(gate.shouldLaunchStagedApplication(
+        ), .waitingForInstaller)
+        XCTAssertEqual(gate.decision(
             installerIsRunning: false,
             stagedApplicationIsValid: true
-        ))
+        ), .launchStagedApplication)
     }
 
-    func testInstallerExitWithoutExpectedStagedAppDoesNotLaunch() {
+    func testInstallerExitWaitsForStagedAppToFinishAppearing() {
         var gate = MigrationInstallerLaunchGate()
+        let start = Date(timeIntervalSince1970: 100)
 
-        XCTAssertFalse(gate.shouldLaunchStagedApplication(
+        XCTAssertEqual(gate.decision(
             installerIsRunning: true,
-            stagedApplicationIsValid: false
-        ))
-        XCTAssertFalse(gate.shouldLaunchStagedApplication(
+            stagedApplicationIsValid: false,
+            now: start
+        ), .waitingForInstaller)
+        XCTAssertEqual(gate.decision(
             installerIsRunning: false,
-            stagedApplicationIsValid: false
-        ))
+            stagedApplicationIsValid: false,
+            now: start.addingTimeInterval(1)
+        ), .waitingForStagedApplication)
+        XCTAssertEqual(gate.decision(
+            installerIsRunning: false,
+            stagedApplicationIsValid: true,
+            now: start.addingTimeInterval(5)
+        ), .launchStagedApplication)
+    }
+
+    func testStagingFailureIsReportedOnlyAfterGracePeriod() {
+        var gate = MigrationInstallerLaunchGate()
+        let start = Date(timeIntervalSince1970: 100)
+
+        _ = gate.decision(installerIsRunning: true, stagedApplicationIsValid: false, now: start)
+        XCTAssertEqual(gate.decision(
+            installerIsRunning: false,
+            stagedApplicationIsValid: false,
+            now: start.addingTimeInterval(1)
+        ), .waitingForStagedApplication)
+        XCTAssertEqual(gate.decision(
+            installerIsRunning: false,
+            stagedApplicationIsValid: false,
+            now: start.addingTimeInterval(MigrationInstallerLaunchGate.stagedApplicationGracePeriod + 1)
+        ), .stagingFailed)
+    }
+
+    func testInstallerRestartResetsPostInstallGracePeriod() {
+        var gate = MigrationInstallerLaunchGate()
+        let start = Date(timeIntervalSince1970: 100)
+
+        _ = gate.decision(installerIsRunning: true, stagedApplicationIsValid: false, now: start)
+        _ = gate.decision(installerIsRunning: false, stagedApplicationIsValid: false, now: start.addingTimeInterval(1))
+        XCTAssertEqual(gate.decision(
+            installerIsRunning: true,
+            stagedApplicationIsValid: false,
+            now: start.addingTimeInterval(40)
+        ), .waitingForInstaller)
+        XCTAssertEqual(gate.decision(
+            installerIsRunning: false,
+            stagedApplicationIsValid: false,
+            now: start.addingTimeInterval(41)
+        ), .waitingForStagedApplication)
     }
 }
