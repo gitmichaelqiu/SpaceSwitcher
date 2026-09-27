@@ -13,9 +13,9 @@ struct PermissionsSettingsView: View {
             VStack(alignment: .leading, spacing: SettingsComponentMetrics.sectionSpacing) {
                 SettingsSection(
                     "Permissions",
-                    helperText: "Accessibility controls both window automation and input events."
+                    helperText: "Required for window automation and keyboard shortcuts."
                 ) {
-                    SettingsRow("Accessibility and input events") {
+                    SettingsRow("Accessibility") {
                         HStack(spacing: 8) {
                             PermissionStatusIcon(isGranted: permissionManager.hasAccessibilityPermission)
 

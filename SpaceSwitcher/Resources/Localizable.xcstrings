@@ -62,22 +62,12 @@
         }
       }
     },
-    "Accessibility and input events" : {
+    "Required for window automation and keyboard shortcuts." : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "辅助功能和输入事件"
-          }
-        }
-      }
-    },
-    "Accessibility controls both window automation and input events." : {
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "辅助功能权限同时支持窗口自动化和输入事件。"
+            "value" : "窗口自动化和键盘快捷键所需的权限。"
           }
         }
       }
