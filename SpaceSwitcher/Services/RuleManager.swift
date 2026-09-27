@@ -47,7 +47,7 @@ class RuleManager: ObservableObject {
     // Tracks the current rule enforcement process
     private var enforcementTask: Task<Void, Never>?
     private var rulesRefreshTask: Task<Void, Never>?
-    private let debugLogger = Logger(subsystem: "com.michaelqiu.SpaceSwitcher", category: "Rules")
+    private let debugLogger = Logger(subsystem: "dev.mqiu.SpaceSwitcher", category: "Rules")
     
     init() { 
         loadRules() 

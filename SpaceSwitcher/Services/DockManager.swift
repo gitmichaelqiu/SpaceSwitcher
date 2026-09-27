@@ -27,7 +27,7 @@ class DockManager: ObservableObject {
     private let configKey = "SpaceSwitcherDockConfig"
     
     // Logger for debugging
-    private let logger = Logger(subsystem: "com.michaelqiu.SpaceSwitcher", category: "DockManager")
+    private let logger = Logger(subsystem: "dev.mqiu.SpaceSwitcher", category: "DockManager")
     
     init() {
         loadConfig()
