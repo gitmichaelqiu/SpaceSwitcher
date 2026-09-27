@@ -24,7 +24,7 @@ class AppState: ObservableObject {
 // MARK: - App Delegate
 class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCenterDelegate {
     
-    let appState = AppState()
+    private lazy var appState = AppState()
     var statusBarManager: StatusBarManager?
 
     @objc func quitApp() {
@@ -54,7 +54,23 @@ class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCenterDele
     }
 
     func applicationDidFinishLaunching(_ notification: Notification) {
+        if SpaceSwitcherMigrationFinalizer.shared.startIfRequested() {
+            return
+        }
+
+        if SpaceSwitcherBridgeMigrationManager.shared.beginIfNeeded(completion: { [weak self] in
+            self?.startNormalApplication()
+        }) {
+            return
+        }
+
+        startNormalApplication()
+    }
+
+    private func startNormalApplication() {
         NSApp.setActivationPolicy(.accessory)
+        SpaceSwitcherIdentityMigration.prepareLegacyBridgeLaunch()
+        SpaceSwitcherIdentityMigration.prepareNormalLaunch()
         
         statusBarManager = StatusBarManager(
             appDelegate: self,
@@ -62,6 +78,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCenterDele
             ruleManager: appState.ruleManager,
             dockManager: appState.dockManager
         )
+
+        SpaceSwitcherIdentityMigration.completeSuccessfulLaunch()
         
         UNUserNotificationCenter.current().delegate = self
         

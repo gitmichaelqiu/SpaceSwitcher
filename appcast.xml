@@ -15,6 +15,17 @@
             <sparkle:releaseNotesLink>https://github.com/gitmichaelqiu/SpaceSwitcher/releases/tag/v1.1.0-bridge</sparkle:releaseNotesLink>
         </item>
         <item>
+            <title>1.1.0</title>
+            <pubDate>Sun, 27 Sep 2026 14:33:29 +0800</pubDate>
+            <sparkle:version>6</sparkle:version>
+            <sparkle:shortVersionString>1.1.0</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>13.0</sparkle:minimumSystemVersion>
+            <sparkle:channel>dev-mqiu</sparkle:channel>
+            <spaceswitcher:targetBundleIdentifier>dev.mqiu.SpaceSwitcher</spaceswitcher:targetBundleIdentifier>
+            <enclosure url="https://github.com/gitmichaelqiu/SpaceSwitcher/releases/download/v1.1.0/SpaceSwitcher.1.1.0.dmg" length="29334404" type="application/octet-stream" sparkle:edSignature="rDXnreNbERG2v4ddKUTAdDXALen4lomshjOZXGwq13r7TtQU0AsG4iG+d3NnrJPGNIGMUczmGgL8U/i1wtwGAw=="/>
+            <sparkle:releaseNotesLink>https://github.com/gitmichaelqiu/SpaceSwitcher/releases/tag/v1.1.0</sparkle:releaseNotesLink>
+        </item>
+        <item>
             <title>1.0.0</title>
             <pubDate>Sun, 10 May 2026 17:31:34 +0800</pubDate>
             <sparkle:version>5</sparkle:version>
