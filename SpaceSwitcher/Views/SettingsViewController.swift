@@ -52,7 +52,8 @@ class SettingsWindowController: NSObject, NSWindowDelegate {
         win.setFrameAutosaveName("Settings")
         win.isReleasedWhenClosed = false
         win.minSize = NSSize(width: defaultSettingsWindowWidth, height: defaultSettingsWindowHeight)
-        win.collectionBehavior = [.participatesInCycle]
+        // Keep the settings window resizable while preventing full-screen entry.
+        win.collectionBehavior = [.participatesInCycle, .fullScreenNone]
         win.level = .normal
         
         // 4. CONTENT: Use the custom HostingController

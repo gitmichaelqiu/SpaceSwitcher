@@ -84,6 +84,10 @@ class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCenterDele
 struct SpaceSwitcherApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
 
+    init() {
+        NSSplitViewItem.preventSettingsSidebarCollapse()
+    }
+
     var body: some Scene {
         Settings { EmptyView() }
         .commands {

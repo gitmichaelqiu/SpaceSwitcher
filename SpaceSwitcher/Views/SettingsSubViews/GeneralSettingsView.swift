@@ -46,8 +46,8 @@ struct GeneralSettingsView: View {
                         Divider()
                     }
                     
-                    SettingsRow("Check for Updates") {
-                        Button("Check Now") {
+                    SettingsRow("Check for updates") {
+                        Button("Check now") {
                             UpdateManager.shared.updaterController.checkForUpdates(nil)
                         }
                     }

@@ -30,7 +30,7 @@ struct RulesView: View {
                     Button {
                         presentNewRuleEditor()
                     } label: {
-                        Label("Add New Rule", systemImage: "plus")
+                        Label("Add new rule", systemImage: "plus")
                     }
                     .buttonStyle(.borderedProminent)
                     .frame(maxWidth: .infinity, alignment: .center)
@@ -72,7 +72,7 @@ struct RulesView: View {
             }
         }
         .confirmationDialog(
-            "Delete Rule?",
+            "Delete rule?",
             isPresented: Binding(
                 get: { rulePendingDeletion != nil },
                 set: { isPresented in
@@ -80,7 +80,7 @@ struct RulesView: View {
                 }
             )
         ) {
-            Button("Delete Rule", role: .destructive) {
+            Button("Delete rule", role: .destructive) {
                 if let rule = rulePendingDeletion {
                     withAnimation {
                         ruleManager.deleteRule(rule)
@@ -115,7 +115,10 @@ struct RulesView: View {
 
     private var perAppAutomationSection: some View {
         VStack(alignment: .leading, spacing: SettingsComponentMetrics.sectionSpacing) {
-            SettingsSectionTitle("Per-App Automation")
+            SettingsSectionTitle(
+                "Per-App Automation",
+                helperText: "Rules are evaluated from top to bottom. The first matching rule wins."
+            )
 
             if ruleManager.rules.isEmpty {
                 SettingsSection {
@@ -123,22 +126,54 @@ struct RulesView: View {
                         .frame(maxWidth: .infinity, minHeight: 280)
                 }
             } else {
-                ForEach(ruleManager.rules) { rule in
-                    SettingsSection {
-                        RuleRow(
-                            rule: rule,
-                            availableSpaces: spaceManager.availableSpaces,
-                            onEdit: { presentedRuleSheet = .edit(rule) },
-                            onDelete: { rulePendingDeletion = rule },
-                            onToggle: { updatedRule in
-                                ruleManager.updateRule(updatedRule)
-                            }
+                ReorderableSettingsList(
+                    items: reorderableRules,
+                    rowContent: { item, context in
+                        SettingsSection {
+                            RuleRow(
+                                rule: item.rule,
+                                availableSpaces: spaceManager.availableSpaces,
+                                onEdit: { presentedRuleSheet = .edit(item.rule) },
+                                onDelete: { rulePendingDeletion = item.rule },
+                                onToggle: { updatedRule in
+                                    ruleManager.updateRule(updatedRule)
+                                }
+                            )
+                        }
+                        .padding(
+                            .bottom,
+                            context.isLast ? 0 : SettingsComponentMetrics.sectionSpacing
                         )
+                    },
+                    dragPreview: { item in
+                        SettingsSection {
+                            RuleRow(
+                                rule: item.rule,
+                                availableSpaces: spaceManager.availableSpaces,
+                                onEdit: {},
+                                onDelete: {},
+                                onToggle: { _ in }
+                            )
+                        }
+                        .frame(minWidth: 420)
+                    },
+                    moveBefore: { sourceID, targetID in
+                        withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                            ruleManager.moveRule(sourceID: sourceID, before: targetID)
+                        }
+                    },
+                    moveToEnd: { sourceID in
+                        withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                            _ = ruleManager.moveRuleToEnd(sourceID: sourceID)
+                        }
                     }
-                    .transition(.opacity)
-                }
+                )
             }
         }
+    }
+
+    private var reorderableRules: [ReorderableRule] {
+        ruleManager.rules.map(ReorderableRule.init)
     }
     
     private var emptyState: some View {
@@ -149,7 +184,7 @@ struct RulesView: View {
                 } description: {
                     Text("Create a rule to control applications by desktop space.")
                 } actions: {
-                    Button("Create First Rule") {
+                    Button("Create first rule") {
                         presentNewRuleEditor()
                     }
                     .buttonStyle(.borderedProminent)
@@ -161,7 +196,7 @@ struct RulesView: View {
                         .foregroundStyle(.secondary)
                     Text("No automation rules yet.")
                         .foregroundStyle(.secondary)
-                    Button("Create First Rule") {
+                    Button("Create first rule") {
                         presentNewRuleEditor()
                     }
                     .buttonStyle(.borderedProminent)
@@ -181,13 +216,21 @@ struct RulesView: View {
     private var pendingDeletionApplicationName: String {
         guard let rule = rulePendingDeletion else { return "this application" }
         if rule.appliesToAllApps {
-            return NSLocalizedString("All Apps", comment: "")
+            return NSLocalizedString("All apps", comment: "")
         }
         guard !rule.appBundleID.isEmpty else { return rule.appName }
         return resolvedApplicationName(
             bundleIdentifier: rule.appBundleID,
             storedName: rule.appName
         )
+    }
+}
+
+private struct ReorderableRule: Identifiable {
+    let rule: AppRule
+
+    var id: String {
+        rule.id.uuidString
     }
 }
 
@@ -208,7 +251,7 @@ struct RuleRow: View {
 
         if group.usesSourceSpace {
             items.insert(
-                String(localized: "Source Space", comment: "Special rule condition matching a window's current desktop"),
+                String(localized: "Source space", comment: "Special rule condition matching a window's current desktop"),
                 at: 0
             )
         }
@@ -220,15 +263,21 @@ struct RuleRow: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             HStack(spacing: 12) {
+                Image(systemName: "line.3.horizontal")
+                    .font(.caption)
+                    .foregroundStyle(.tertiary)
+                    .frame(width: 16, height: 20)
+                    .accessibilityLabel("Drag to rearrange")
+
                 appIcon
                     .frame(width: 20, height: 20)
 
                 VStack(alignment: .leading, spacing: 2) {
                     Group {
                         if rule.appliesToAllApps {
-                            Text("All Apps")
+                            Text("All apps")
                         } else if rule.appBundleID.isEmpty {
-                            Text("Select Application")
+                            Text("Select application")
                         } else {
                             Text(resolvedApplicationName(
                                 bundleIdentifier: rule.appBundleID,
@@ -254,20 +303,20 @@ struct RuleRow: View {
                 .toggleStyle(.switch)
                 .controlSize(.small)
                 .help("Enable or disable this rule.")
-                .accessibilityLabel("Enable Rule")
+                .accessibilityLabel("Enable rule")
 
                 Button("Edit", systemImage: "pencil", action: onEdit)
                 .buttonStyle(.bordered)
                 .controlSize(.small)
-                .help("Edit Rule")
+                .help("Edit rule")
 
                 Button(role: .destructive, action: onDelete) {
                     SettingsDestructiveIconLabel(systemName: "trash")
                 }
                 .buttonStyle(.borderless)
                 .controlSize(.small)
-                .help("Delete Rule")
-                .accessibilityLabel("Delete Rule")
+                .help("Delete rule")
+                .accessibilityLabel("Delete rule")
             }
             .padding(.horizontal, SettingsComponentMetrics.rowHorizontalPadding)
             .padding(.vertical, SettingsComponentMetrics.rowVerticalPadding)

@@ -19,23 +19,23 @@
                BuildableName = "SpaceSwitcher.app"
                BlueprintName = "SpaceSwitcher"
                ReferencedContainer = "container:SpaceSwitcher.xcodeproj">
-         </BuildableReference>
-      </BuildActionEntry>
-      <BuildActionEntry
-         buildForTesting = "YES"
-         buildForRunning = "NO"
-         buildForProfiling = "NO"
-         buildForArchiving = "NO"
-         buildForAnalyzing = "YES">
-         <BuildableReference
-            BuildableIdentifier = "primary"
-            BlueprintIdentifier = "5A20900C2FAEFE8C0081A9A3"
-            BuildableName = "SpaceSwitcherTests.xctest"
-            BlueprintName = "SpaceSwitcherTests"
-            ReferencedContainer = "container:SpaceSwitcher.xcodeproj">
-         </BuildableReference>
-      </BuildActionEntry>
-   </BuildActionEntries>
+            </BuildableReference>
+         </BuildActionEntry>
+         <BuildActionEntry
+            buildForTesting = "YES"
+            buildForRunning = "NO"
+            buildForProfiling = "NO"
+            buildForArchiving = "NO"
+            buildForAnalyzing = "YES">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "5A20900C2FAEFE8C0081A9A3"
+               BuildableName = "SpaceSwitcherTests.xctest"
+               BlueprintName = "SpaceSwitcherTests"
+               ReferencedContainer = "container:SpaceSwitcher.xcodeproj">
+            </BuildableReference>
+         </BuildActionEntry>
+      </BuildActionEntries>
    </BuildAction>
    <TestAction
       buildConfiguration = "Debug"

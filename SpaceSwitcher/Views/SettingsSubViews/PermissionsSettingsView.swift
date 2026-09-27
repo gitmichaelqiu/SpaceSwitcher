@@ -13,25 +13,13 @@ struct PermissionsSettingsView: View {
             VStack(alignment: .leading, spacing: SettingsComponentMetrics.sectionSpacing) {
                 SettingsSection(
                     "Permissions",
-                    helperText: "Accessibility controls both window automation and input events."
+                    helperText: "Required for window automation and keyboard shortcuts."
                 ) {
                     SettingsRow("Accessibility") {
                         HStack(spacing: 8) {
-                            PermissionStatusIcon(isGranted: permissionManager.isAccessibilityGranted)
+                            PermissionStatusIcon(isGranted: permissionManager.hasAccessibilityPermission)
 
-                            Button(permissionManager.isAccessibilityGranted ? "Settings" : "Grant") {
-                                permissionManager.requestAccessibilityPermission()
-                            }
-                        }
-                    }
-
-                    Divider()
-
-                    SettingsRow("Input Events") {
-                        HStack(spacing: 8) {
-                            PermissionStatusIcon(isGranted: permissionManager.isEventSynthesisGranted)
-
-                            Button(permissionManager.isEventSynthesisGranted ? "Settings" : "Grant") {
+                            Button(permissionManager.hasAccessibilityPermission ? "Settings" : "Grant") {
                                 permissionManager.requestAccessibilityPermission()
                             }
                         }

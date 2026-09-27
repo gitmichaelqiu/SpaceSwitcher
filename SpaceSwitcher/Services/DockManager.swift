@@ -517,13 +517,15 @@ class DockManager: ObservableObject {
     
     // MARK: - Data Management & Spacers
     
-    func createNewDockSet(name: String) {
-        guard let tiles = currentDockTiles() else { return }
-        DispatchQueue.main.async {
-            let newSet = DockSet(id: UUID(), name: name, dateCreated: Date(), tiles: tiles)
-            self.config.dockSets.append(newSet)
-            if self.config.defaultDockSetID == nil { self.config.defaultDockSetID = newSet.id }
-        }
+    @MainActor
+    @discardableResult
+    func createNewDockSet(name: String) -> UUID? {
+        guard let tiles = currentDockTiles() else { return nil }
+
+        let newSet = DockSet(id: UUID(), name: name, dateCreated: Date(), tiles: tiles)
+        config.dockSets.append(newSet)
+        if config.defaultDockSetID == nil { config.defaultDockSetID = newSet.id }
+        return newSet.id
     }
 
     /// Replaces a saved dock set with the apps currently pinned in the system Dock.
@@ -584,7 +586,7 @@ class DockManager: ObservableObject {
 
     func createSpacerTile(isSmall: Bool) -> DockTile {
         let type = isSmall ? "small-spacer-tile" : "spacer-tile"
-        let label = isSmall ? "Small Spacer" : "Large Spacer"
+        let label = NSLocalizedString(isSmall ? "Small spacer" : "Large spacer", comment: "Dock spacer item name")
         
         let rawDict: [String: Any] = [
             "tile-data": [:],
@@ -607,9 +609,9 @@ class DockManager: ObservableObject {
             
             if let tileData = itemDict["tile-data"] as? [String: Any] {
                 if tileType == "spacer-tile" {
-                    label = "Large Spacer"
+                    label = NSLocalizedString("Large spacer", comment: "Dock spacer item name")
                 } else if tileType == "small-spacer-tile" {
-                    label = "Small Spacer"
+                    label = NSLocalizedString("Small spacer", comment: "Dock spacer item name")
                 } else {
                     label = tileData["file-label"] as? String ?? "Unknown"
                     bundleID = tileData["bundle-identifier"] as? String

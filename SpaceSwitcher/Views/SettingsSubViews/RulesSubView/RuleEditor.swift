@@ -11,6 +11,8 @@ struct RuleEditor: View {
     @State private var showingLegend = false
     @State private var showingApplicationPicker = false
     @State private var groupPendingDeletion: UUID?
+    @State private var presetPendingApplication: RulePreset?
+    @State private var showingPresetConfirmation = false
     
     init(rule: AppRule, availableSpaces: [SpaceInfo], onSave: @escaping (AppRule) -> Void, onCancel: @escaping () -> Void) {
         self.initialRule = rule
@@ -41,7 +43,7 @@ struct RuleEditor: View {
             loadRunningApps()
         }
         .confirmationDialog(
-            "Remove Workflow Group?",
+            "Remove workflow group?",
             isPresented: Binding(
                 get: { groupPendingDeletion != nil },
                 set: { isPresented in
@@ -49,7 +51,7 @@ struct RuleEditor: View {
                 }
             )
         ) {
-            Button("Remove Group", role: .destructive) {
+            Button("Remove group", role: .destructive) {
                 if let groupID = groupPendingDeletion {
                     removeGroup(id: groupID)
                 }
@@ -61,6 +63,26 @@ struct RuleEditor: View {
         } message: {
             Text("The spaces and actions in this workflow group will be removed.")
         }
+        .confirmationDialog(
+            "Apply preset?",
+            isPresented: $showingPresetConfirmation,
+            titleVisibility: .visible
+        ) {
+            Button("Apply preset") {
+                applyPendingPreset()
+            }
+            Button("Cancel", role: .cancel) {
+                presetPendingApplication = nil
+            }
+        } message: {
+            if let preset = presetPendingApplication {
+                let replacementWarning = NSLocalizedString(
+                    "Applying this preset will replace the workflow groups and fallback actions. The selected application will be preserved.",
+                    comment: "Rule preset replacement warning"
+                )
+                Text("\(preset.description)\n\n\(replacementWarning)")
+            }
+        }
     }
     
     // MARK: - Components
@@ -71,17 +93,31 @@ struct RuleEditor: View {
 
             Spacer()
 
+            Menu {
+                ForEach(RulePreset.allCases) { preset in
+                    Button {
+                        requestApplying(preset)
+                    } label: {
+                        Label(preset.title, systemImage: preset.icon)
+                    }
+                }
+            } label: {
+                Label("Presets", systemImage: "wand.and.stars")
+            }
+            .menuStyle(.borderlessButton)
+            .help("Presets")
+
             Button {
                 showingLegend.toggle()
             } label: {
                 Label(
-                    "Action Definitions",
+                    "Definitions",
                     systemImage: "info.circle"
                 )
             }
             .buttonStyle(.bordered)
             .controlSize(.small)
-            .help("Action Definitions")
+            .help("Definitions")
             .popover(isPresented: $showingLegend, arrowEdge: .top) {
                 actionDefinitionsPopover
             }
@@ -130,7 +166,7 @@ struct RuleEditor: View {
                                 .font(.body)
                                 .frame(width: 20, height: 20)
 
-                            Text("All Apps")
+                            Text("All apps")
                                 .lineLimit(1)
 
                             Spacer(minLength: 0)
@@ -210,12 +246,12 @@ struct RuleEditor: View {
         }
         .contentShape(Rectangle())
         .accessibilityElement(children: .combine)
-        .accessibilityLabel(workingRule.appliesToAllApps ? "All Apps" : (workingRule.appBundleID.isEmpty ? "Choose an application" : selectedApplicationName))
+        .accessibilityLabel(workingRule.appliesToAllApps ? "All apps" : (workingRule.appBundleID.isEmpty ? "Choose an application" : selectedApplicationName))
     }
 
     private var selectedApplicationName: String {
         if workingRule.appliesToAllApps {
-            return NSLocalizedString("All Apps", comment: "")
+            return NSLocalizedString("All apps", comment: "")
         }
         guard !workingRule.appBundleID.isEmpty else { return "Choose an application" }
 
@@ -263,8 +299,8 @@ struct RuleEditor: View {
                             }
                             .buttonStyle(.borderless)
                             .controlSize(.regular)
-                            .help("Remove Workflow Group")
-                            .accessibilityLabel("Remove Workflow Group")
+                            .help("Remove workflow group")
+                            .accessibilityLabel("Remove workflow group")
                         }) {
                         SpaceConditionRow(
                             group: $group,
@@ -288,7 +324,7 @@ struct RuleEditor: View {
                         workingRule.groups.append(RuleGroup(targetSpaceIDs: [], actions: []))
                     }
                 } label: {
-                    Label("Add Workflow Group", systemImage: "plus")
+                    Label("Add workflow group", systemImage: "plus")
                 }
                 .buttonStyle(.bordered)
                 .frame(maxWidth: .infinity, alignment: .center)
@@ -330,7 +366,7 @@ struct RuleEditor: View {
             
             Spacer()
             
-            Button("Save Rule") {
+            Button("Save rule") {
                 onSave(workingRule)
             }
             .buttonStyle(.borderedProminent)
@@ -348,7 +384,31 @@ struct RuleEditor: View {
     private func addActionToGroup(id: UUID, action: WindowAction) {
         guard let index = workingRule.groups.firstIndex(where: { $0.id == id }) else { return }
         withAnimation(.easeInOut(duration: 0.2)) {
-            workingRule.groups[index].actions.append(ActionItem(action))
+            insertAction(action, into: &workingRule.groups[index].actions)
+        }
+    }
+
+    private func requestApplying(_ preset: RulePreset) {
+        guard !workingRule.groups.isEmpty || !workingRule.elseActions.isEmpty else {
+            workingRule = preset.applying(to: workingRule)
+            return
+        }
+
+        presetPendingApplication = preset
+        showingPresetConfirmation = true
+    }
+
+    private func applyPendingPreset() {
+        guard let preset = presetPendingApplication else { return }
+        workingRule = preset.applying(to: workingRule)
+        presetPendingApplication = nil
+        showingPresetConfirmation = false
+    }
+
+    private func addConditionToGroup(id: UUID, condition: RuleCondition) {
+        guard let index = workingRule.groups.firstIndex(where: { $0.id == id }) else { return }
+        withAnimation(.easeInOut(duration: 0.2)) {
+            appendConditionBlock(condition, to: &workingRule.groups[index].actions)
         }
     }
     
@@ -372,18 +432,18 @@ struct RuleEditor: View {
             Label("Minimize", systemImage: "arrow.down.right.and.arrow.up.left")
         }
         Button { addAction(.bringToFront) } label: {
-            Label("Bring to Front", systemImage: "arrow.up.forward.app")
+            Label("Bring to front", systemImage: "arrow.up.forward.app")
         }
         Divider()
         Button {
             addAction(.hotkey(keyCode: -1, modifiers: 0, restoreWindow: false, waitFrontmost: true))
         } label: {
-            Label("App Shortcut...", systemImage: "app")
+            Label("App shortcut...", systemImage: "app")
         }
         Button {
             addAction(.globalHotkey(keyCode: -1, modifiers: 0))
         } label: {
-            Label("System Shortcut...", systemImage: "globe")
+            Label("System shortcut...", systemImage: "globe")
         }
     }
 
@@ -492,7 +552,7 @@ struct RuleEditor: View {
     private var actionDefinitionsPopover: some View {
         ScrollView(.vertical) {
             VStack(alignment: .leading, spacing: 16) {
-                Text("Action Definitions")
+                Text("Definitions")
                     .font(.headline)
 
                 legendItem(name: "Show", desc: "Forcefully unhide and unminimize the application, regardless of its previous state.")
@@ -571,7 +631,7 @@ struct SpaceConditionRow: View {
     private var selectedSpacesTitle: String {
         var titles: [String] = []
         if group.usesSourceSpace {
-            titles.append(String(localized: "Source Space", comment: "Special rule condition matching a window's current desktop"))
+            titles.append(String(localized: "Source space", comment: "Special rule condition matching a window's current desktop"))
         }
 
         titles.append(contentsOf: selectedSpaces.map(spaceDisplayName))
@@ -599,21 +659,63 @@ struct SpaceConditionRow: View {
                     if !availableSpaces.isEmpty {
                         Divider()
                     }
+                }
+                .buttonStyle(.borderless)
+                .frame(minWidth: 180, maxWidth: 280, alignment: .trailing)
+                .popover(
+                    isPresented: $isPickerPresented,
+                    attachmentAnchor: .point(UnitPoint(x: 1, y: 0.5)),
+                    arrowEdge: .bottom
+                ) {
+                    spacePickerPopover
+                }
+            }
+        }
+        .frame(height: SettingsComponentMetrics.listRowHeight)
+    }
 
-                    ForEach(availableSpaces) { space in
-                        Toggle(
-                            spaceDisplayName(space),
-                            isOn: Binding(
-                                get: { group.targetSpaceIDs.contains(space.id) },
-                                set: { isSelected in
-                                    if isSelected {
-                                        group.targetSpaceIDs.insert(space.id)
-                                    } else {
-                                        group.targetSpaceIDs.remove(space.id)
-                                    }
-                                }
-                            )
-                        )
+    private var spacePickerPopover: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            SpacePickerToggleRow(
+                title: String(localized: "Source space", comment: "Special rule condition matching a window's current desktop"),
+                isOn: Binding(
+                    get: { group.usesSourceSpace },
+                    set: { group.usesSourceSpace = $0 }
+                )
+            )
+
+            Divider()
+                .padding(.vertical, 4)
+
+            ScrollView(.vertical) {
+                VStack(alignment: .leading, spacing: 0) {
+                    ForEach(displayGroups) { displayGroup in
+                        VStack(alignment: .leading, spacing: 0) {
+                            if displayGroups.count > 1 {
+                                Text(verbatim: displayGroup.name)
+                                    .font(.caption.weight(.semibold))
+                                    .foregroundStyle(.secondary)
+                                    .lineLimit(1)
+                                    .padding(.horizontal, 8)
+                                    .padding(.vertical, 5)
+                            }
+
+                            ForEach(displayGroup.spaces) { space in
+                                SpacePickerToggleRow(
+                                    title: spaceDisplayName(space),
+                                    isOn: Binding(
+                                        get: { group.targetSpaceIDs.contains(space.id) },
+                                        set: { isSelected in
+                                            if isSelected {
+                                                group.targetSpaceIDs.insert(space.id)
+                                            } else {
+                                                group.targetSpaceIDs.remove(space.id)
+                                            }
+                                        }
+                                    )
+                                )
+                            }
+                        }
                     }
                 } label: {
                     Text(selectedSpacesTitle)
@@ -623,7 +725,41 @@ struct SpaceConditionRow: View {
                 .frame(minWidth: 180, maxWidth: 280, alignment: .trailing)
             }
         }
-        .frame(height: SettingsComponentMetrics.listRowHeight)
+        .padding(.vertical, 6)
+        .padding(.horizontal, 8)
+        .frame(width: 220)
+    }
+
+    private var displayGroups: [SpaceDisplayGroup] {
+        SpaceDisplayGroup.make(from: availableSpaces)
+    }
+}
+
+private struct SpacePickerToggleRow: View {
+    let title: String
+    @Binding var isOn: Bool
+    @State private var isHovered = false
+
+    var body: some View {
+        Toggle(isOn: $isOn) {
+            Text(verbatim: title)
+                .font(.body)
+                .lineLimit(1)
+        }
+            .toggleStyle(.checkbox)
+            .controlSize(.small)
+            .padding(.horizontal, 4)
+            .frame(maxWidth: .infinity, minHeight: 28, alignment: .leading)
+            .background(
+                RoundedRectangle(cornerRadius: 6, style: .continuous)
+                    .fill(
+                        isHovered
+                            ? Color(nsColor: .selectedContentBackgroundColor).opacity(0.22)
+                            : .clear
+                    )
+            )
+            .contentShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
+            .onHover { isHovered = $0 }
     }
 }
 
@@ -759,7 +895,7 @@ struct AddActionRow<Content: View>: View {
                 Menu {
                     menuContent
                 } label: {
-                    Label("Add Action", systemImage: "plus")
+                    Label("Add action", systemImage: "plus")
                 }
                 .menuStyle(.borderlessButton)
                 .fixedSize()
@@ -799,7 +935,7 @@ struct ActionRowContent: View {
                 switch item.value {
                 case .globalHotkey(let code, let mods):
                     HStack(spacing: 8) {
-                        Label("System Shortcut", systemImage: "globe")
+                        Label("System shortcut", systemImage: "globe")
                             .font(.subheadline)
 
                         ModifierMenu(modifiers: mods) { newModifiers in
@@ -813,7 +949,7 @@ struct ActionRowContent: View {
 
                 case .hotkey(let code, let mods, _, _):
                     HStack(spacing: 8) {
-                        Label("App Shortcut", systemImage: "app")
+                        Label("App shortcut", systemImage: "app")
                             .font(.subheadline)
                         
                         Button(action: startRecording) {
@@ -822,7 +958,7 @@ struct ActionRowContent: View {
                                     .foregroundStyle(.red)
                             } else {
                                 Label(
-                                    code == -1 ? "Record Shortcut" : ShortcutHelper.format(code: code, modifiers: mods),
+                                    code == -1 ? "Record shortcut" : ShortcutHelper.format(code: code, modifiers: mods),
                                     systemImage: "keyboard"
                                 )
                             }
@@ -897,6 +1033,22 @@ struct ActionRowContent: View {
         case .hotkey, .globalHotkey: return "keyboard"
         }
     }
+
+    private var conditionForPicker: RuleCondition {
+        if case .ifCondition(let condition) = item.value {
+            return condition
+        }
+        return .windowMinimized
+    }
+
+    private var deletionHelp: LocalizedStringKey {
+        switch item.value {
+        case .ifCondition(_), .endIf:
+            return "Remove condition block"
+        default:
+            return "Remove action"
+        }
+    }
     
     private func startRecording() {
         stopRecording()
@@ -950,7 +1102,7 @@ struct ModifierMenu: View {
             Label(summary, systemImage: "command")
         }
         .menuStyle(.borderlessButton)
-        .help("Choose Shortcut Modifiers")
+        .help("Choose shortcut modifiers")
     }
 
     private var summary: String {
@@ -962,7 +1114,7 @@ struct ModifierMenu: View {
             (.control, "⌃")
         ]
         let selected = symbols.compactMap { flags.contains($0.0) ? $0.1 : nil }
-        return selected.isEmpty ? "No Modifiers" : selected.joined()
+        return selected.isEmpty ? "No modifiers" : selected.joined()
     }
 
     private func binding(for flag: NSEvent.ModifierFlags) -> Binding<Bool> {
@@ -987,14 +1139,14 @@ struct HotkeyOptionsMenu: View {
 
     var body: some View {
         Menu {
-            Toggle("Wait for App to Be Frontmost", isOn: $waitFrontmost)
-            Toggle("Restore Previous App", isOn: $restoreWindow)
+            Toggle("Wait for app to be frontmost", isOn: $waitFrontmost)
+            Toggle("Restore previous app", isOn: $restoreWindow)
                 .disabled(waitFrontmost)
         } label: {
-            Label("Shortcut Options", systemImage: "gearshape")
+            Label("Shortcut options", systemImage: "gearshape")
         }
         .menuStyle(.borderlessButton)
-        .help("Shortcut Options")
+        .help("Shortcut options")
     }
 }
 
@@ -1008,13 +1160,13 @@ struct KeyCaptureButton: View {
             isListening = true
         } label: {
             Label(
-                isListening ? "Press a Key" : (keyCode == -1 ? "Record Key" : displayString),
+                isListening ? "Press a key" : (keyCode == -1 ? "Record key" : displayString),
                 systemImage: isListening ? "record.circle" : "keyboard"
             )
         }
         .buttonStyle(.bordered)
         .controlSize(.small)
-        .help("Record Shortcut")
+        .help("Record shortcut")
         .overlay(
             Group {
                 if isListening {

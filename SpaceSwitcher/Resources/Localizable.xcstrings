@@ -4,6 +4,17 @@
     "" : {
       "shouldTranslate" : false
     },
+    "%@\n\n%@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@\n\n%2$@"
+          }
+        }
+      },
+      "shouldTranslate" : false
+    },
     "%lld" : {
       "shouldTranslate" : false
     },
@@ -20,16 +31,6 @@
     },
     "↺" : {
       "shouldTranslate" : false
-    },
-    "A powerful utility for macOS that gives you per-space control over your applications and Dock. Part of the macOSers productivity bundle." : {
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "一款强大的 macOS 效率工具，可让您针对每个桌面空间独立控制应用程序和 Dock。macOSers 生产力套件的一部分。"
-          }
-        }
-      }
     },
     "About" : {
       "localizations" : {
@@ -51,6 +52,26 @@
         }
       }
     },
+    "Author's GitHub" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "作者的 GitHub"
+          }
+        }
+      }
+    },
+    "Author's website" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "作者的网站"
+          }
+        }
+      }
+    },
     "Accessibility" : {
       "localizations" : {
         "zh-Hans" : {
@@ -61,23 +82,12 @@
         }
       }
     },
-    "Accessibility controls both window automation and input events." : {
+    "Required for window automation and keyboard shortcuts." : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "辅助功能权限同时支持窗口自动化和输入事件。"
-          }
-        }
-      }
-    },
-    "Accessibility permission" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "辅助功能权限"
+            "value" : "窗口自动化和键盘快捷键所需的权限。"
           }
         }
       }
@@ -88,16 +98,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "致谢"
-          }
-        }
-      }
-    },
-    "Action Definitions" : {
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "操作定义"
           }
         }
       }
@@ -133,7 +133,7 @@
         }
       }
     },
-    "Add Action" : {
+    "Add action" : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -143,12 +143,12 @@
         }
       }
     },
-    "Add Application..." : {
+    "Add application" : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "添加应用…"
+            "value" : "添加App"
           }
         }
       }
@@ -163,7 +163,17 @@
         }
       }
     },
-    "Add First Item" : {
+    "Add Dock item" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "添加 Dock 项目"
+          }
+        }
+      }
+    },
+    "Add first item" : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -173,7 +183,7 @@
         }
       }
     },
-    "Add Large Spacer" : {
+    "Add large spacer" : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -183,7 +193,7 @@
         }
       }
     },
-    "Add New Rule" : {
+    "Add new rule" : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -193,7 +203,7 @@
         }
       }
     },
-    "Add Small Spacer" : {
+    "Add small spacer" : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -203,7 +213,7 @@
         }
       }
     },
-    "Add Workflow Group" : {
+    "Add workflow group" : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -213,7 +223,7 @@
         }
       }
     },
-    "App Shortcut" : {
+    "All apps" : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -223,7 +233,7 @@
         }
       }
     },
-    "App Shortcut..." : {
+    "App shortcut" : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -233,8 +243,7 @@
         }
       }
     },
-    "Application" : {
-      "extractionState" : "stale",
+    "App shortcut..." : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -244,7 +253,7 @@
         }
       }
     },
-    "Apply Now" : {
+    "Apply now" : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -254,13 +263,33 @@
         }
       }
     },
-    "Apply to Spaces" : {
-      "extractionState" : "stale",
+    "Apply preset" : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "应用到桌面"
+            "value" : "应用预设"
+          }
+        }
+      }
+    },
+    "Apply preset?" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "应用预设？"
+          }
+        }
+      }
+    },
+    "Applying this preset will replace the workflow groups and fallback actions. The selected application will be preserved." : {
+      "comment" : "Rule preset replacement warning",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "应用此预设将替换工作流组和后备操作。所选应用程序将保留。"
           }
         }
       }
@@ -305,7 +334,7 @@
         }
       }
     },
-    "Bring to Front" : {
+    "Bring to front" : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -325,7 +354,7 @@
         }
       }
     },
-    "Check for Updates" : {
+    "Check for updates" : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -335,7 +364,7 @@
         }
       }
     },
-    "Check Now" : {
+    "Check now" : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -375,7 +404,7 @@
         }
       }
     },
-    "Choose Shortcut Modifiers" : {
+    "Choose shortcut modifiers" : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -422,7 +451,10 @@
         }
       }
     },
-    "Create First Rule" : {
+    "Control (⌃)" : {
+      "shouldTranslate" : false
+    },
+    "Could not read current Dock" : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -442,8 +474,7 @@
         }
       }
     },
-    "Default Configuration Active" : {
-      "extractionState" : "stale",
+    "Create first rule" : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -453,7 +484,7 @@
         }
       }
     },
-    "Default Set" : {
+    "Create set" : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -463,8 +494,7 @@
         }
       }
     },
-    "Delete" : {
-      "extractionState" : "stale",
+    "Default set" : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -474,7 +504,27 @@
         }
       }
     },
-    "Delete Dock Set" : {
+    "Definitions" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "定义"
+          }
+        }
+      }
+    },
+    "Delete “%@”?" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "删除 \"%@\"?"
+          }
+        }
+      }
+    },
+    "Delete Dock set" : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -484,7 +534,7 @@
         }
       }
     },
-    "Delete Rule" : {
+    "Delete rule" : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -494,7 +544,7 @@
         }
       }
     },
-    "Delete Rule?" : {
+    "Delete rule?" : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -507,7 +557,7 @@
     "DesktopRenamer SpaceAPI" : {
       "shouldTranslate" : false
     },
-    "Dock Automation" : {
+    "Dock automation" : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -517,18 +567,7 @@
         }
       }
     },
-    "Dock Items" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Dock 项目"
-          }
-        }
-      }
-    },
-    "Dock Set" : {
+    "Dock set" : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -578,7 +617,7 @@
         }
       }
     },
-    "Edit Rule" : {
+    "Edit rule" : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -599,7 +638,28 @@
         }
       }
     },
-    "Enable or disable this rule." : {
+    "Enable rule" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "启用规则"
+          }
+        }
+      }
+    },
+    "End If" : {
+      "comment" : "End of a conditional rule action block",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "结束条件"
+          }
+        }
+      }
+    },
+    "End If must follow an If action." : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -722,8 +782,18 @@
         }
       }
     },
-    "Hide Definitions" : {
-      "extractionState" : "stale",
+    "Hide minimized windows outside source space" : {
+      "comment" : "Rule preset title",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "隐藏来源桌面之外的最小化窗口"
+          }
+        }
+      }
+    },
+    "Hide the application." : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -733,7 +803,18 @@
         }
       }
     },
-    "Hide the application." : {
+    "Hide windows outside source space" : {
+      "comment" : "Rule preset title",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "隐藏来源桌面之外的窗口"
+          }
+        }
+      }
+    },
+    "If" : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -754,16 +835,6 @@
         }
       }
     },
-    "Input Events" : {
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "输入事件"
-          }
-        }
-      }
-    },
     "Install DesktopRenamer" : {
       "localizations" : {
         "zh-Hans" : {
@@ -780,6 +851,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "智能反转。只有当 SpaceSwitcher 之前隐藏了该应用程序时，才会取消隐藏/取消最小化。"
+          }
+        }
+      }
+    },
+    "Large spacer" : {
+      "comment" : "Dock spacer item name",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "大间距"
           }
         }
       }
@@ -824,24 +906,12 @@
         }
       }
     },
-    "Make Default" : {
-      "extractionState" : "stale",
+    "Media Suite" : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "设为默认"
-          }
-        }
-      }
-    },
-    "Manage Dock Sets" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "管理 Dock 组"
+            "value" : "媒体套件"
           }
         }
       }
@@ -867,54 +937,23 @@
         }
       }
     },
+    "Minimize windows outside source space" : {
+      "comment" : "Rule preset title",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "最小化来源桌面之外的窗口"
+          }
+        }
+      }
+    },
     "More Apps" : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "更多应用"
-          }
-        }
-      }
-    },
-    "Move Down" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "下移"
-          }
-        }
-      }
-    },
-    "Move Up" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "上移"
-          }
-        }
-      }
-    },
-    "My GitHub" : {
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "我的 GitHub"
-          }
-        }
-      }
-    },
-    "My website" : {
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "我的网站"
           }
         }
       }
@@ -929,7 +968,7 @@
         }
       }
     },
-    "New Dock Set" : {
+    "New Dock set" : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -1078,13 +1117,12 @@
         }
       }
     },
-    "Press a Key" : {
-      "extractionState" : "stale",
+    "Presets" : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "按下按键"
+            "value" : "预设"
           }
         }
       }
@@ -1106,6 +1144,16 @@
         }
       }
     },
+    "Real-time video enhancing player." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "实时视频增强播放器。"
+          }
+        }
+      }
+    },
     "Record every shortcut before saving." : {
       "localizations" : {
         "zh-Hans" : {
@@ -1116,18 +1164,7 @@
         }
       }
     },
-    "Record Key" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "录制按键"
-          }
-        }
-      }
-    },
-    "Record Shortcut" : {
+    "Record shortcut" : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -1147,8 +1184,7 @@
         }
       }
     },
-    "Remove" : {
-      "extractionState" : "stale",
+    "Remove action" : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -1158,7 +1194,7 @@
         }
       }
     },
-    "Remove Action" : {
+    "Remove condition block" : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -1168,7 +1204,7 @@
         }
       }
     },
-    "Remove Dock Item" : {
+    "Remove Dock item" : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -1178,7 +1214,7 @@
         }
       }
     },
-    "Remove Group" : {
+    "Remove group" : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -1188,7 +1224,7 @@
         }
       }
     },
-    "Remove Workflow Group" : {
+    "Remove workflow group" : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -1198,7 +1234,7 @@
         }
       }
     },
-    "Remove Workflow Group?" : {
+    "Remove workflow group?" : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -1208,7 +1244,7 @@
         }
       }
     },
-    "Replace with Current Dock Items" : {
+    "Replace with current Dock items" : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -1291,7 +1327,7 @@
         }
       }
     },
-    "Restore Previous App" : {
+    "Restore previous app" : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -1301,18 +1337,40 @@
         }
       }
     },
-    "Rule Actions" : {
-      "extractionState" : "stale",
+    "Restore windows on their source space and hide them elsewhere only when minimized." : {
+      "comment" : "Rule preset description",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "规则操作"
+            "value" : "在窗口来源桌面恢复窗口，仅在其他桌面上将最小化的窗口隐藏。"
           }
         }
       }
     },
-    "Rule Automation" : {
+    "Restore windows on their source space and hide them elsewhere." : {
+      "comment" : "Rule preset description",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在窗口来源桌面恢复窗口，并在其他桌面上隐藏窗口。"
+          }
+        }
+      }
+    },
+    "Restore windows on their source space and minimize them elsewhere." : {
+      "comment" : "Rule preset description",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在窗口来源桌面恢复窗口，并在其他桌面上最小化窗口。"
+          }
+        }
+      }
+    },
+    "Rule automation" : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -1332,6 +1390,16 @@
         }
       }
     },
+    "Rules are evaluated from top to bottom. The first matching rule wins." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "规则按从上到下的顺序执行。第一个匹配的规则优先。"
+          }
+        }
+      }
+    },
     "Running Applications" : {
       "localizations" : {
         "zh-Hans" : {
@@ -1342,7 +1410,7 @@
         }
       }
     },
-    "Save Rule" : {
+    "Save rule" : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -1373,7 +1441,7 @@
         }
       }
     },
-    "Select a Dock Set to edit its configuration" : {
+    "Select a Dock set to edit its configuration" : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -1383,8 +1451,7 @@
         }
       }
     },
-    "Select Application" : {
-      "extractionState" : "stale",
+    "Select application" : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -1394,13 +1461,12 @@
         }
       }
     },
-    "Set Configuration" : {
-      "extractionState" : "stale",
+    "Set Aerial wallpapers in each space and in each theme." : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Dock 组设置"
+            "value" : "为每个桌面和每种主题设置 Aerial 壁纸。"
           }
         }
       }
@@ -1425,7 +1491,7 @@
     "Shift (⇧)" : {
       "shouldTranslate" : false
     },
-    "Shortcut Options" : {
+    "Shortcut options" : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -1448,6 +1514,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "显示"
+          }
+        }
+      }
+    },
+    "Small spacer" : {
+      "comment" : "Dock spacer item name",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "小间距"
+          }
+        }
+      }
+    },
+    "Source space" : {
+      "comment" : "Special rule condition matching a window's current desktop",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "来源桌面"
           }
         }
       }
@@ -1536,7 +1624,7 @@
     "Switcher" : {
       "shouldTranslate" : false
     },
-    "System Shortcut" : {
+    "System shortcut" : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -1546,7 +1634,7 @@
         }
       }
     },
-    "System Shortcut..." : {
+    "System shortcut..." : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -1627,7 +1715,7 @@
         }
       }
     },
-    "Any Source Space" : {
+    "Wait for app to be frontmost" : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -1678,8 +1766,8 @@
         }
       }
     },
-    "Unknown" : {
-      "extractionState" : "stale",
+    "Window is frontmost" : {
+      "comment" : "Condition matching the frontmost window",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -1689,8 +1777,8 @@
         }
       }
     },
-    "Updates" : {
-      "extractionState" : "stale",
+    "Window is fullscreen" : {
+      "comment" : "Condition matching fullscreen windows",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -1700,7 +1788,8 @@
         }
       }
     },
-    "v%@" : {
+    "Window is hidden" : {
+      "comment" : "Condition matching hidden windows",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1726,8 +1815,8 @@
         }
       }
     },
-    "When disabled, all automation rules will be ignored." : {
-      "extractionState" : "stale",
+    "Window is minimized" : {
+      "comment" : "Condition matching minimized windows",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -1743,6 +1832,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "工作流组 %lld"
+          }
+        }
+      }
+    },
+    "Workflow Suite" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "工作流套件"
           }
         }
       }

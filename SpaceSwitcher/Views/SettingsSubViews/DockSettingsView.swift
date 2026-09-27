@@ -1,4 +1,5 @@
 import SwiftUI
+import AppKit
 import UniformTypeIdentifiers
 
 // MARK: - Main Container
@@ -9,6 +10,7 @@ struct DockSettingsView: View {
     @State private var selectedSetID: UUID?
     @State private var showingCreateSheet = false
     @State private var newSetName = ""
+    @State private var dockSetPendingDeletion: DockSet?
     
     init(dockManager: DockManager, spaceManager: SpaceManager) {
         self.dockManager = dockManager
@@ -23,10 +25,10 @@ struct DockSettingsView: View {
                 dockManager: dockManager,
                 selectedSetID: $selectedSetID,
                 onCreate: prepareNewSet,
-                onDelete: deleteSet
+                onDelete: requestDeleteSet
             )
             .padding(.horizontal, 24)
-            .padding(.vertical, 10)
+            .frame(height: titleHeaderHeight, alignment: .center)
 
             Divider()
 
@@ -56,7 +58,7 @@ struct DockSettingsView: View {
                                 Divider()
 
                                 SettingsRow(
-                                    "Default Set",
+                                    "Default set",
                                     helperText: "The default set is used for any space that doesn't have a specific assignment."
                                 ) {
                                     Picker("", selection: Binding(
@@ -95,13 +97,38 @@ struct DockSettingsView: View {
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
-        .animation(.easeInOut(duration: 0.18), value: selectedSetID)
+        .animation(.easeInOut(duration: 0.22), value: selectedSetID)
         .sheet(isPresented: $showingCreateSheet) {
             CreateDockSheet(
                 newSetName: $newSetName,
                 onCancel: { showingCreateSheet = false },
                 onCreate: saveNewSet
             )
+        }
+        .confirmationDialog(
+            "Delete Dock set",
+            isPresented: Binding(
+                get: { dockSetPendingDeletion != nil },
+                set: { isPresented in
+                    if !isPresented { dockSetPendingDeletion = nil }
+                }
+            )
+        ) {
+            Button("Delete Dock set", role: .destructive) {
+                if let set = dockSetPendingDeletion {
+                    withAnimation(.easeInOut(duration: 0.22)) {
+                        deleteSet(set)
+                    }
+                }
+                dockSetPendingDeletion = nil
+            }
+            Button("Cancel", role: .cancel) {
+                dockSetPendingDeletion = nil
+            }
+        } message: {
+            if let set = dockSetPendingDeletion {
+                Text("Delete “\(set.name)”?")
+            }
         }
     }
 
@@ -110,27 +137,37 @@ struct DockSettingsView: View {
         showingCreateSheet = true
     }
     
+    private func requestDeleteSet(_ set: DockSet) {
+        dockSetPendingDeletion = set
+    }
+
     private func deleteSet(_ set: DockSet) {
-        withAnimation {
-            dockManager.config.dockSets.removeAll { $0.id == set.id }
-            let keys = dockManager.config.spaceAssignments.filter { $0.value == set.id }.map { $0.key }
-            keys.forEach { dockManager.config.spaceAssignments.removeValue(forKey: $0) }
-            
-            // Selection fix
-            if selectedSetID == set.id { selectedSetID = dockManager.config.dockSets.first?.id }
-            
-            // Default set fix: Always ensure one exists if sets are available
-            if dockManager.config.defaultDockSetID == set.id || dockManager.config.defaultDockSetID == nil {
-                dockManager.config.defaultDockSetID = dockManager.config.dockSets.first?.id
-            }
+        let deletedIndex = dockManager.config.dockSets.firstIndex { $0.id == set.id }
+        let wasSelected = selectedSetID == set.id
+
+        dockManager.config.dockSets.removeAll { $0.id == set.id }
+        let keys = dockManager.config.spaceAssignments.filter { $0.value == set.id }.map { $0.key }
+        keys.forEach { dockManager.config.spaceAssignments.removeValue(forKey: $0) }
+
+        if wasSelected {
+            let previousIndex = max((deletedIndex ?? 1) - 1, 0)
+            let remainingSets = dockManager.config.dockSets
+            selectedSetID = remainingSets.indices.contains(previousIndex)
+                ? remainingSets[previousIndex].id
+                : remainingSets.first?.id
+        }
+
+        // Default set fix: Always ensure one exists if sets are available
+        if dockManager.config.defaultDockSetID == set.id || dockManager.config.defaultDockSetID == nil {
+            dockManager.config.defaultDockSetID = dockManager.config.dockSets.first?.id
         }
     }
     
     private func saveNewSet() {
-        dockManager.createNewDockSet(name: newSetName)
-        showingCreateSheet = false
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-            selectedSetID = dockManager.config.dockSets.last?.id
+        withAnimation(.easeInOut(duration: 0.22)) {
+            guard let createdID = dockManager.createNewDockSet(name: newSetName) else { return }
+            showingCreateSheet = false
+            selectedSetID = createdID
         }
     }
 
@@ -143,55 +180,73 @@ private struct DockSetTabBar: View {
     let onCreate: () -> Void
     let onDelete: (DockSet) -> Void
 
-    @State private var availableWidth: CGFloat = 0
-    @State private var pickerWidth: CGFloat = 0
+    private let tabBarFadeWidth: CGFloat = 32
+
+    @State private var tabBarOverflows = false
 
     private var selectedSet: DockSet? {
         guard let selectedSetID else { return nil }
         return dockManager.config.dockSets.first { $0.id == selectedSetID }
     }
 
-    private var shouldScroll: Bool {
-        guard availableWidth > 0, pickerWidth > 0 else { return false }
-        return pickerWidth > max(availableWidth - 20, 0)
+    private var tabGroupID: String {
+        dockManager.config.dockSets.map { $0.id.uuidString }.joined(separator: ":")
     }
 
     var body: some View {
-        HStack(spacing: 8) {
-            Group {
-                if shouldScroll {
-                    ScrollView(.horizontal) {
-                        measuredPicker
-                            .fixedSize(horizontal: true, vertical: false)
-                            .padding(.horizontal, 10)
+        HStack(alignment: .center, spacing: 8) {
+            ZStack {
+                GeometryReader { proxy in
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        HStack(spacing: 0) {
+                            if tabBarOverflows {
+                                Color.clear.frame(width: tabBarFadeWidth)
+                            }
+
+                            nativePicker
+                                .id(tabGroupID)
+                                .transition(.opacity.combined(with: .scale(scale: 0.98)))
+                                .fixedSize(horizontal: true, vertical: false)
+                                .background {
+                                    GeometryReader { contentProxy in
+                                        Color.clear.preference(
+                                            key: DockSetPickerWidthKey.self,
+                                            value: contentProxy.size.width
+                                        )
+                                    }
+                                }
+
+                            if tabBarOverflows {
+                                Color.clear.frame(width: 6)
+                            }
+                        }
+                        .frame(
+                            minWidth: proxy.size.width,
+                            alignment: tabBarOverflows ? .leading : .center
+                        )
+                        .frame(height: SettingsComponentMetrics.listRowHeight, alignment: .center)
                     }
                     .scrollIndicators(.hidden)
-                    .frame(maxWidth: .infinity)
-                } else {
-                    HStack {
-                        Spacer(minLength: 0)
-                        measuredPicker
-                        Spacer(minLength: 0)
-                    }
-                    .padding(.horizontal, 10)
+                    .mask(tabBarMask)
                 }
             }
-            .frame(maxWidth: .infinity, alignment: .center)
+            .frame(height: SettingsComponentMetrics.listRowHeight)
+            .frame(maxWidth: .infinity)
             .background {
                 GeometryReader { proxy in
                     Color.clear.preference(
-                        key: DockSetTabAvailableWidthKey.self,
+                        key: DockSetViewportWidthKey.self,
                         value: proxy.size.width
                     )
                 }
             }
-            .onPreferenceChange(DockSetTabAvailableWidthKey.self) { width in
-                guard abs(availableWidth - width) > 0.5 else { return }
-                availableWidth = width
+            .onPreferenceChange(DockSetPickerWidthKey.self) { width in
+                tabBarContentWidth = width
+                tabBarOverflows = width > tabBarViewportWidth + 0.5
             }
-            .onPreferenceChange(DockSetTabPickerWidthKey.self) { width in
-                guard abs(pickerWidth - width) > 0.5 else { return }
-                pickerWidth = width
+            .onPreferenceChange(DockSetViewportWidthKey.self) { width in
+                tabBarViewportWidth = width
+                tabBarOverflows = tabBarContentWidth > width + 0.5
             }
 
             Button(action: onCreate) {
@@ -200,8 +255,8 @@ private struct DockSetTabBar: View {
                 .buttonStyle(.bordered)
                 .controlSize(.regular)
                 .settingsIconControlFrame()
-                .help("New Dock Set")
-                .accessibilityLabel("New Dock Set")
+                .help("New Dock set")
+                .accessibilityLabel("New Dock set")
 
             if let selectedSet, dockManager.config.dockSets.count > 1 {
                 Button(role: .destructive) {
@@ -212,36 +267,49 @@ private struct DockSetTabBar: View {
                 .buttonStyle(.bordered)
                 .controlSize(.regular)
                 .settingsIconControlFrame()
-                .help("Delete Dock Set")
-                .accessibilityLabel("Delete Dock Set")
+                .help("Delete Dock set")
+                .accessibilityLabel("Delete Dock set")
             }
         }
         .frame(maxWidth: .infinity)
+        .animation(.easeInOut(duration: 0.22), value: dockManager.config.dockSets)
     }
 
-    private var measuredPicker: some View {
-        picker
-            .background {
-                GeometryReader { proxy in
-                    Color.clear.preference(
-                        key: DockSetTabPickerWidthKey.self,
-                        value: proxy.size.width
-                    )
-                }
-            }
+    @State private var tabBarContentWidth: CGFloat = 0
+    @State private var tabBarViewportWidth: CGFloat = 0
+
+    private var tabBarMask: some View {
+        HStack(spacing: 0) {
+            LinearGradient(
+                colors: [.clear, .black],
+                startPoint: .leading,
+                endPoint: .trailing
+            )
+            .frame(width: tabBarFadeWidth)
+
+            Rectangle()
+                .fill(Color.black)
+
+            LinearGradient(
+                colors: [.black, .clear],
+                startPoint: .leading,
+                endPoint: .trailing
+            )
+            .frame(width: tabBarFadeWidth)
+        }
     }
 
     @ViewBuilder
-    private var picker: some View {
+    private var nativePicker: some View {
         if #available(macOS 27.0, *) {
-            Picker("Dock Set", selection: $selectedSetID) {
+            Picker("Dock set", selection: $selectedSetID) {
                 pickerOptions
             }
             .labelsHidden()
             .pickerStyle(.tabs)
             .controlSize(.large)
         } else {
-            Picker("Dock Set", selection: $selectedSetID) {
+            Picker("Dock set", selection: $selectedSetID) {
                 pickerOptions
             }
             .labelsHidden()
@@ -265,16 +333,16 @@ private struct DockSetTabBar: View {
     }
 }
 
-private struct DockSetTabPickerWidthKey: PreferenceKey {
-    static let defaultValue: CGFloat = 0
+private struct DockSetPickerWidthKey: PreferenceKey {
+    static var defaultValue: CGFloat = 0
 
     static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
-        value = max(value, nextValue())
+        value = nextValue()
     }
 }
 
-private struct DockSetTabAvailableWidthKey: PreferenceKey {
-    static let defaultValue: CGFloat = 0
+private struct DockSetViewportWidthKey: PreferenceKey {
+    static var defaultValue: CGFloat = 0
 
     static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
         value = nextValue()
@@ -311,9 +379,24 @@ struct DockSpaceAssignmentView: View {
                         .padding(.horizontal, 12)
                         .padding(.vertical, 14)
                 } else {
-                    LazyVGrid(columns: [GridItem(.adaptive(minimum: 110, maximum: 140))], spacing: 12) {
-                        ForEach(spaceManager.availableSpaces) { space in
-                            spaceCard(for: space, isDefault: isDefault)
+                    VStack(alignment: .leading, spacing: 14) {
+                        ForEach(displayGroups) { group in
+                            VStack(alignment: .leading, spacing: 8) {
+                                if displayGroups.count > 1 {
+                                    Text(group.name)
+                                        .font(.headline)
+                                        .padding(.leading, 4)
+                                }
+
+                                LazyVGrid(
+                                    columns: [GridItem(.adaptive(minimum: 110, maximum: 140))],
+                                    spacing: 12
+                                ) {
+                                    ForEach(group.spaces) { space in
+                                        spaceCard(for: space, isDefault: isDefault)
+                                    }
+                                }
+                            }
                         }
                     }
                     .padding(12)
@@ -342,6 +425,10 @@ struct DockSpaceAssignmentView: View {
                 }
             }
         )
+    }
+
+    private var displayGroups: [SpaceDisplayGroup] {
+        SpaceDisplayGroup.make(from: spaceManager.availableSpaces)
     }
 }
 
@@ -394,35 +481,58 @@ struct DockItemsListView: View {
         SettingsSection(
             "Dock Items",
             accessory: {
-                HStack(spacing: 8) {
+                HStack(spacing: 4) {
                     Button {
                         forceApply()
                     } label: {
-                        Text("Apply Now")
-                            .font(.system(size: 11, weight: .semibold))
+                        Text("Apply now")
                     }
                     .buttonStyle(.bordered)
                     .controlSize(.small)
-                    
+                    .frame(height: SettingsComponentMetrics.compactControlHeight)
+
                     Menu {
                         Button {
-                            replaceWithCurrentDock()
+                            addAppToSelectedSet()
                         } label: {
-                            Label("Replace with Current Dock Items", systemImage: "arrow.down.doc")
+                            Label("Add application", systemImage: "plus.app")
+                        }
+
+                        Button {
+                            addSpacerToSelectedSet(isSmall: false)
+                        } label: {
+                            Label("Add large spacer", systemImage: "square")
+                        }
+
+                        Button {
+                            addSpacerToSelectedSet(isSmall: true)
+                        } label: {
+                            Label("Add small spacer", systemImage: "square.dashed")
                         }
 
                         Divider()
 
-                        Button { addAppToSelectedSet() } label: { Label("Add Application...", systemImage: "plus.app") }
-                        Divider()
-                        Button { addSpacerToSelectedSet(isSmall: false) } label: { Label("Add Large Spacer", systemImage: "square") }
-                        Button { addSpacerToSelectedSet(isSmall: true) } label: { Label("Add Small Spacer", systemImage: "square.dashed") }
+                        Button {
+                            replaceWithCurrentDock()
+                        } label: {
+                            Label("Replace with current Dock items", systemImage: "arrow.down.doc")
+                        }
                     } label: {
                         SettingsIconControlLabel(systemName: "plus")
+                            .frame(
+                                width: SettingsComponentMetrics.compactControlHeight,
+                                height: SettingsComponentMetrics.compactControlHeight
+                            )
+                            .background {
+                                RoundedRectangle(cornerRadius: 7, style: .continuous)
+                                    .fill(Color(nsColor: .controlBackgroundColor))
+                            }
+                            .contentShape(RoundedRectangle(cornerRadius: 7, style: .continuous))
                     }
                     .menuStyle(.borderlessButton)
-                    .controlSize(.regular)
-                    .settingsIconControlFrame()
+                    .menuIndicator(.hidden)
+                    .help("Add Dock item")
+                    .accessibilityLabel("Add Dock item")
                 }
             }
         ) {
@@ -436,7 +546,7 @@ struct DockItemsListView: View {
                         .foregroundColor(.secondary)
                     
                     Button { addAppToSelectedSet() } label: {
-                        Text("Add First Item")
+                        Text("Add first item")
                             .font(.system(size: 11, weight: .semibold))
                     }
                     .buttonStyle(.bordered)
@@ -472,7 +582,7 @@ struct DockItemsListView: View {
                 .animation(.spring(response: 0.3, dampingFraction: 0.7), value: tiles)
             }
         }
-        .alert("Could Not Read Current Dock", isPresented: $showingCurrentDockReadError) {
+        .alert("Could not read current Dock", isPresented: $showingCurrentDockReadError) {
             Button("OK", role: .cancel) { }
         } message: {
             Text("SpaceSwitcher could not read the current Dock items.")
@@ -596,8 +706,8 @@ struct DockTileRow: View {
             }
             .buttonStyle(.borderless)
             .controlSize(.small)
-            .help("Remove Dock Item")
-            .accessibilityLabel("Remove Dock Item")
+            .help("Remove Dock item")
+            .accessibilityLabel("Remove Dock item")
         }
         .padding(.horizontal, SettingsComponentMetrics.listRowHorizontalPadding)
         .padding(.vertical, SettingsComponentMetrics.rowVerticalPadding)
@@ -644,7 +754,7 @@ struct CreateDockSheet: View {
     
     var body: some View {
         VStack(spacing: 20) {
-            Text("New Dock Set")
+            Text("New Dock set")
                 .font(.system(size: 18, weight: .bold))
             
             TextField("Name", text: $newSetName)
@@ -655,7 +765,7 @@ struct CreateDockSheet: View {
             HStack(spacing: 16) {
                 Button("Cancel", action: onCancel)
                     .controlSize(.large)
-                Button("Create Set", action: onCreate)
+                Button("Create set", action: onCreate)
                     .buttonStyle(.borderedProminent)
                     .controlSize(.large)
             }
@@ -671,7 +781,7 @@ struct EmptySelectionView: View {
             Image(systemName: "dock.rectangle.on.rectangle")
                 .font(.system(size: 64))
                 .foregroundColor(.secondary.opacity(0.1))
-            Text("Select a Dock Set to edit its configuration")
+            Text("Select a Dock set to edit its configuration")
                 .font(.system(size: 16, weight: .semibold))
                 .foregroundColor(.secondary)
         }

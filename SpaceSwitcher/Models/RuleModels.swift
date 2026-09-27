@@ -2,6 +2,50 @@ import Foundation
 import AppKit
 
 // MARK: - Actions
+enum RuleCondition: String, CaseIterable, Codable, Hashable, Identifiable {
+    case windowMinimized
+    case windowFrontmost
+    case windowHidden
+    case windowFullscreen
+
+    var id: String { rawValue }
+
+    var localizedString: String {
+        switch self {
+        case .windowMinimized:
+            return NSLocalizedString("Window is minimized", comment: "Condition matching minimized windows")
+        case .windowHidden:
+            return NSLocalizedString("Window is hidden", comment: "Condition matching hidden windows")
+        case .windowFrontmost:
+            return NSLocalizedString("Window is frontmost", comment: "Condition matching the frontmost window")
+        case .windowFullscreen:
+            return NSLocalizedString("Window is fullscreen", comment: "Condition matching fullscreen windows")
+        }
+    }
+
+    init(from decoder: Decoder) throws {
+        let value = try decoder.singleValueContainer().decode(String.self)
+
+        // The first conditional-action release exposed application-wide
+        // states. Migrate those values to the per-window equivalents used by
+        // the current evaluator instead of discarding saved conditions.
+        switch value {
+        case "applicationActive":
+            self = .windowFrontmost
+        case "applicationHidden":
+            self = .windowHidden
+        default:
+            guard let condition = Self(rawValue: value) else {
+                throw DecodingError.dataCorruptedError(
+                    in: try decoder.singleValueContainer(),
+                    debugDescription: "Unknown rule condition: \(value)"
+                )
+            }
+            self = condition
+        }
+    }
+}
+
 enum WindowAction: Identifiable, Codable, Equatable, Hashable {
     case show
     case restore
@@ -31,11 +75,18 @@ enum WindowAction: Identifiable, Codable, Equatable, Hashable {
         case .restore: return NSLocalizedString("Restore", comment: "")
         case .hide: return NSLocalizedString("Hide", comment: "")
         case .minimize: return NSLocalizedString("Minimize", comment: "")
-        case .bringToFront: return NSLocalizedString("Bring to Front", comment: "")
+        case .bringToFront: return NSLocalizedString("Bring to front", comment: "")
+        case .ifCondition(let condition):
+            return String(
+                format: NSLocalizedString("If %@", comment: "Conditional rule action"),
+                condition.localizedString
+            )
+        case .endIf:
+            return NSLocalizedString("End If", comment: "End of a conditional rule action block")
         case .hotkey(let code, let mods, _, _):
-            return NSLocalizedString("App Shortcut", comment: "") + ": " + ShortcutHelper.format(code: code, modifiers: mods)
+            return NSLocalizedString("App shortcut", comment: "") + ": " + ShortcutHelper.format(code: code, modifiers: mods)
         case .globalHotkey(let code, let mods):
-            return NSLocalizedString("System Shortcut", comment: "") + ": " + ShortcutHelper.format(code: code, modifiers: mods)
+            return NSLocalizedString("System shortcut", comment: "") + ": " + ShortcutHelper.format(code: code, modifiers: mods)
         }
     }
 
@@ -250,8 +301,119 @@ struct AppRule: Identifiable, Codable, Equatable {
     }
 }
 
+// MARK: - Rule Presets
+
+/// Built-in workflow templates. Presets intentionally are not Codable: they
+/// create ordinary AppRule data and do not add a persistence format.
+enum RulePreset: String, CaseIterable, Identifiable {
+    case hideMinimizedOutsideSource
+    case hideOutsideSource
+    case minimizeOutsideSource
+
+    var id: String { rawValue }
+
+    var icon: String {
+        switch self {
+        case .hideMinimizedOutsideSource, .hideOutsideSource:
+            return "eye.slash"
+        case .minimizeOutsideSource:
+            return "arrow.down.right.and.arrow.up.left"
+        }
+    }
+
+    var title: String {
+        switch self {
+        case .hideMinimizedOutsideSource:
+            return NSLocalizedString(
+                "Hide minimized windows outside source space",
+                comment: "Rule preset title"
+            )
+        case .hideOutsideSource:
+            return NSLocalizedString(
+                "Hide windows outside source space",
+                comment: "Rule preset title"
+            )
+        case .minimizeOutsideSource:
+            return NSLocalizedString(
+                "Minimize windows outside source space",
+                comment: "Rule preset title"
+            )
+        }
+    }
+
+    var description: String {
+        switch self {
+        case .hideMinimizedOutsideSource:
+            return NSLocalizedString(
+                "Restore windows on their source space and hide them elsewhere only when minimized.",
+                comment: "Rule preset description"
+            )
+        case .hideOutsideSource:
+            return NSLocalizedString(
+                "Restore windows on their source space and hide them elsewhere.",
+                comment: "Rule preset description"
+            )
+        case .minimizeOutsideSource:
+            return NSLocalizedString(
+                "Restore windows on their source space and minimize them elsewhere.",
+                comment: "Rule preset description"
+            )
+        }
+    }
+
+    /// Applies the preset's workflow while preserving rule identity, target
+    /// application, and enabled state from the draft being edited.
+    func applying(to rule: AppRule) -> AppRule {
+        var updatedRule = rule
+        updatedRule.groups = [
+            RuleGroup(
+                targetSpaceIDs: [],
+                actions: [ActionItem(.restore)],
+                usesSourceSpace: true
+            )
+        ]
+
+        switch self {
+        case .hideMinimizedOutsideSource:
+            updatedRule.elseActions = [
+                ActionItem(.ifCondition(.windowMinimized)),
+                ActionItem(.hide),
+                ActionItem(.endIf)
+            ]
+        case .hideOutsideSource:
+            updatedRule.elseActions = [ActionItem(.hide)]
+        case .minimizeOutsideSource:
+            updatedRule.elseActions = [ActionItem(.minimize)]
+        }
+
+        return updatedRule
+    }
+}
+
 struct SpaceInfo: Identifiable, Codable, Hashable {
     let id: String; let name: String; let number: Int
     static func == (lhs: SpaceInfo, rhs: SpaceInfo) -> Bool { lhs.id == rhs.id }
     func hash(into hasher: inout Hasher) { hasher.combine(id) }
+}
+
+struct SpaceDisplayGroup: Identifiable {
+    let id: String
+    let name: String
+    let spaces: [SpaceInfo]
+
+    static func make(from spaces: [SpaceInfo]) -> [SpaceDisplayGroup] {
+        Dictionary(grouping: spaces, by: \.displayID)
+            .map { displayID, displaySpaces in
+                SpaceDisplayGroup(
+                    id: displayID,
+                    name: displaySpaces.first?.displayName ?? displayID,
+                    spaces: displaySpaces.sorted { $0.number < $1.number }
+                )
+            }
+            .sorted { lhs, rhs in
+                if lhs.id.caseInsensitiveCompare("Main") == .orderedSame { return true }
+                if rhs.id.caseInsensitiveCompare("Main") == .orderedSame { return false }
+                return lhs.name.localizedStandardCompare(rhs.name) == .orderedAscending
+            }
+    }
 }
