@@ -19,16 +19,49 @@ extension NSApplication {
     }
 }
 
-class UpdateManager {
+class UpdateManager: NSObject, SPUUpdaterDelegate, SPUStandardUserDriverDelegate {
     static let shared = UpdateManager()
     
-    let updaterController: SPUStandardUpdaterController
+    private(set) var updaterController: SPUStandardUpdaterController!
     
-    private init() {
+    private override init() {
+        super.init()
         self.updaterController = SPUStandardUpdaterController(
             startingUpdater: true,
-            updaterDelegate: nil,
-            userDriverDelegate: nil
+            updaterDelegate: self,
+            userDriverDelegate: self
         )
+    }
+
+    func allowedChannels(for updater: SPUUpdater) -> Set<String> {
+        guard SpaceSwitcherBundleIdentity.isCurrentApplication else { return [] }
+        return [SpaceSwitcherBundleIdentity.currentUpdateChannel]
+    }
+
+    func bestValidUpdate(in appcast: SUAppcast, for updater: SPUUpdater) -> SUAppcastItem? {
+        guard let bundleIdentifier = Bundle.main.bundleIdentifier else {
+            return SUAppcastItem.empty()
+        }
+
+        let eligibleItems = appcast.items.filter { item in
+            item.propertiesDictionary[SpaceSwitcherBundleIdentity.appcastTargetBundleIdentifierKey]
+                as? String == bundleIdentifier
+        }
+        guard !eligibleItems.isEmpty else { return SUAppcastItem.empty() }
+
+        let comparator = SUStandardVersionComparator.default
+        return eligibleItems.max { left, right in
+            comparator.compareVersion(left.versionString, toVersion: right.versionString)
+                == .orderedAscending
+        }
+    }
+
+    var supportsGentleScheduledUpdateReminders: Bool { true }
+
+    func standardUserDriverShouldHandleShowingScheduledUpdate(
+        _ update: SUAppcastItem,
+        andInImmediateFocus immediateFocus: Bool
+    ) -> Bool {
+        true
     }
 }
