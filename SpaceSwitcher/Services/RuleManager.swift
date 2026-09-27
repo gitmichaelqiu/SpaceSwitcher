@@ -285,7 +285,7 @@ class RuleManager: ObservableObject {
 
     // Async function called by the master enforcement task.
     private func perform(
-        actions: [WindowAction],
+        actions: [ActionItem],
         on app: NSRunningApplication,
         allWindows: [RuleWindowTarget],
         targetWindows: [RuleWindowTarget],
@@ -294,16 +294,11 @@ class RuleManager: ObservableObject {
         let previousApp = NSWorkspace.shared.frontmostApplication
         debugLog("perform app=\(app.localizedName ?? "<unknown>") pid=\(app.processIdentifier) actions=\(actionDebugSummary(actions)) targetWindows=[\(targetWindows.map { String($0.id) }.joined(separator: ","))] allWindows=\(allWindows.count)")
 
-        for action in actions {
+        for item in actions {
             // Check cancellation before every action
             if Task.isCancelled { return }
             
-            switch action {
-            case .ifCondition(_), .endIf:
-                // Conditions are evaluated before execution and never reach
-                // this method as executable actions. Keep this defensive case
-                // for malformed data loaded from older versions.
-                continue
+            switch item.value {
             case .hide:
                 if targetWindows.isEmpty {
                     debugLog("hide app-level because target window list is empty")
