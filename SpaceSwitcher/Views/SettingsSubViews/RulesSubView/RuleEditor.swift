@@ -844,7 +844,25 @@ struct ActionListRows: View {
     @Binding var actions: [ActionItem]
 
     private var reorderableItems: [ReorderableActionItem] {
-        actions.map(ReorderableActionItem.init)
+        // A balanced If...End If region is moved as one model range, so it
+        // must also be one item in SwiftUI's reorder collection.
+        var items: [ReorderableActionItem] = []
+        var index = 0
+
+        while index < actions.endIndex {
+            let range = conditionBlockRange(containing: index)
+                .flatMap { $0.lowerBound == index ? $0 : nil }
+                ?? index...index
+            items.append(
+                ReorderableActionItem(
+                    actions: Array(actions[range]),
+                    startIndex: range.lowerBound
+                )
+            )
+            index = range.upperBound + 1
+        }
+
+        return items
     }
 
     var body: some View {
@@ -852,20 +870,26 @@ struct ActionListRows: View {
             items: reorderableItems,
             rowContent: { item, context in
                 VStack(spacing: 0) {
-                    ActionRowContent(
-                        index: context.index,
-                        item: actionBinding(for: item),
-                        onDelete: { removeAction(id: item.action.id) }
-                    )
-                    .padding(.horizontal, SettingsComponentMetrics.listRowHorizontalPadding)
+                    ForEach(Array(item.actions.enumerated()), id: \.element.id) { offset, action in
+                        ActionRowContent(
+                            index: item.startIndex + offset,
+                            item: actionBinding(for: action),
+                            onDelete: { removeAction(id: action.id) }
+                        )
+                        .padding(.horizontal, SettingsComponentMetrics.listRowHorizontalPadding)
 
-                    if !context.isLast {
-                        Divider().padding(.leading, SettingsComponentMetrics.listRowHorizontalPadding)
+                        if offset < item.actions.count - 1 || !context.isLast {
+                            Divider().padding(.leading, SettingsComponentMetrics.listRowHorizontalPadding)
+                        }
                     }
                 }
             },
             dragPreview: { item in
-                actionDragPreview(for: item.action)
+                VStack(spacing: 0) {
+                    ForEach(item.actions) { action in
+                        actionDragPreview(for: action)
+                    }
+                }
             },
             moveBefore: { sourceID, targetID in
                 moveAction(sourceID: sourceID, before: targetID)
@@ -876,13 +900,13 @@ struct ActionListRows: View {
         )
     }
 
-    private func actionBinding(for item: ReorderableActionItem) -> Binding<ActionItem> {
+    private func actionBinding(for item: ActionItem) -> Binding<ActionItem> {
         Binding(
             get: {
-                actions.first(where: { $0.id == item.action.id }) ?? item.action
+                actions.first(where: { $0.id == item.id }) ?? item
             },
             set: { updatedItem in
-                guard let index = actions.firstIndex(where: { $0.id == item.action.id }) else { return }
+                guard let index = actions.firstIndex(where: { $0.id == item.id }) else { return }
                 actions[index] = updatedItem
             }
         )
@@ -998,10 +1022,11 @@ struct ActionListRows: View {
 }
 
 private struct ReorderableActionItem: Identifiable {
-    let action: ActionItem
+    let actions: [ActionItem]
+    let startIndex: Int
 
     var id: String {
-        action.id.uuidString
+        actions[0].id.uuidString
     }
 }
 
