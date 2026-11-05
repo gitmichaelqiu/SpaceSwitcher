@@ -523,6 +523,16 @@
     "DesktopRenamer SpaceAPI" : {
       "shouldTranslate" : false
     },
+    "SpaceAPI access not approved" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "SpaceAPI 访问未获批准"
+          }
+        }
+      }
+    },
     "Dock automation" : {
       "localizations" : {
         "zh-Hans" : {

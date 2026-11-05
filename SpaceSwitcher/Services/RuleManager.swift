@@ -71,6 +71,40 @@ class RuleManager: ObservableObject {
                 self.applyRules(for: spaceID, settlingDelay: 150_000_000)
             }
             .store(in: &cancellables)
+
+        spaceManager?.$availableSpaces
+            .dropFirst()
+            .sink { [weak self] spaces in
+                self?.migrateManagedSpaceReferences(using: spaces)
+            }
+            .store(in: &cancellables)
+    }
+
+    private func migrateManagedSpaceReferences(using spaces: [SpaceInfo]) {
+        var managedToStableIDs: [String: String] = [:]
+        for space in spaces {
+            if let managedSpaceID = space.managedSpaceID, managedSpaceID != space.id {
+                managedToStableIDs[managedSpaceID] = space.id
+            }
+        }
+        guard !managedToStableIDs.isEmpty else { return }
+
+        var updatedRules = rules
+        var didUpdate = false
+        for ruleIndex in updatedRules.indices {
+            for groupIndex in updatedRules[ruleIndex].groups.indices {
+                let originalIDs = updatedRules[ruleIndex].groups[groupIndex].targetSpaceIDs
+                let stableIDs = Set(originalIDs.map { managedToStableIDs[$0] ?? $0 })
+                guard stableIDs != originalIDs else { continue }
+                updatedRules[ruleIndex].groups[groupIndex].targetSpaceIDs = stableIDs
+                didUpdate = true
+            }
+        }
+
+        if didUpdate {
+            debugLog("migrated saved rule targets to DesktopRenamer stable space IDs")
+            rules = updatedRules
+        }
     }
     
     func forceRefresh() {
@@ -209,7 +243,7 @@ class RuleManager: ObservableObject {
         let windows = allWindows.map { window in
             RuleWindowSnapshot(
                 id: window.id,
-                spaceIDs: window.spaceIDs,
+                spaceIDs: spaceManager?.ruleSpaceIDs(forManagedSpaceIDs: window.spaceIDs) ?? window.spaceIDs,
                 isMinimized: WindowSpaceService.isMinimized(window) ?? window.isMinimized,
                 isHidden: WindowSpaceService.isHidden(window) ?? window.isHidden,
                 isFullscreen: window.isFullscreen,
@@ -225,6 +259,11 @@ class RuleManager: ObservableObject {
             ),
             windows: allWindows
         )
+    }
+
+    private func ruleSpaceIDs(for windows: [RuleWindowTarget]) -> Set<String> {
+        let managedSpaceIDs = Set(windows.flatMap(\.spaceIDs))
+        return spaceManager?.ruleSpaceIDs(forManagedSpaceIDs: managedSpaceIDs) ?? managedSpaceIDs
     }
 
     private func windowDebugSummary(_ window: RuleWindowTarget, prefix: String = "window") -> String {
@@ -307,7 +346,7 @@ class RuleManager: ObservableObject {
             case .hide:
                 if targetWindows.isEmpty {
                     debugLog("hide app-level because target window list is empty")
-                    hideApp(app, sourceSpaceIDs: Set(allWindows.flatMap(\.spaceIDs)))
+                    hideApp(app, sourceSpaceIDs: ruleSpaceIDs(for: allWindows))
                     continue
                 }
 
@@ -320,7 +359,7 @@ class RuleManager: ObservableObject {
                 // changing the visible application state.
                 if targetWindows.count == allWindows.count {
                     debugLog("hide app-level because all windows match")
-                    hideApp(app, sourceSpaceIDs: Set(allWindows.flatMap(\.spaceIDs)))
+                    hideApp(app, sourceSpaceIDs: ruleSpaceIDs(for: allWindows))
                     continue
                 }
 

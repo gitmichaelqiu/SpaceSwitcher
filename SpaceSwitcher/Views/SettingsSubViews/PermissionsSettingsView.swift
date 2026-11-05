@@ -61,6 +61,15 @@ struct SpaceAPIStatusView: View {
                 Button("Open DesktopRenamer") {
                     spaceManager.openDesktopRenamer()
                 }
+            case .accessDenied:
+                PermissionStatusIcon(isGranted: false)
+                VStack(alignment: .trailing, spacing: 3) {
+                    Text("SpaceAPI access not approved")
+                        .font(.caption)
+                    Button("Open DesktopRenamer") {
+                        spaceManager.openDesktopRenamer()
+                    }
+                }
             case .unavailable:
                 PermissionStatusIcon(isGranted: false)
                 if spaceManager.desktopRenamerApplicationURL != nil {
