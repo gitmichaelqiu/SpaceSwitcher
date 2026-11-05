@@ -267,6 +267,8 @@ struct ReorderableSettingsList<Item: Identifiable, RowContent: View, DragPreview
     let dragPreview: (Item) -> DragPreview
     let moveBefore: (String, String) -> Bool
     let moveToEnd: (String) -> Void
+    let moveAtTarget: ((String, String, CGPoint) -> Bool)?
+    let usesNativeReordering: Bool
 
     @State private var targetedItemID: String?
 
@@ -275,18 +277,22 @@ struct ReorderableSettingsList<Item: Identifiable, RowContent: View, DragPreview
         @ViewBuilder rowContent: @escaping (Item, ReorderableSettingsRowContext) -> RowContent,
         @ViewBuilder dragPreview: @escaping (Item) -> DragPreview,
         moveBefore: @escaping (String, String) -> Bool,
-        moveToEnd: @escaping (String) -> Void
+        moveToEnd: @escaping (String) -> Void,
+        moveAtTarget: ((String, String, CGPoint) -> Bool)? = nil,
+        usesNativeReordering: Bool = true
     ) {
         self.items = items
         self.rowContent = rowContent
         self.dragPreview = dragPreview
         self.moveBefore = moveBefore
         self.moveToEnd = moveToEnd
+        self.moveAtTarget = moveAtTarget
+        self.usesNativeReordering = usesNativeReordering
     }
 
     @ViewBuilder
     var body: some View {
-        if #available(macOS 27.0, *) {
+        if #available(macOS 27.0, *), usesNativeReordering {
             VStack(spacing: 0) {
                 ForEach(Array(items.enumerated()), id: \.element.id) { index, item in
                     decoratedRow(
@@ -309,10 +315,13 @@ struct ReorderableSettingsList<Item: Identifiable, RowContent: View, DragPreview
                     dragPreview(item)
                         .background(SettingsSectionStyle.dragPreviewBackgroundColor)
                 }
-                .dropDestination(for: String.self) { sourceIDs, _ in
+                .dropDestination(for: String.self) { sourceIDs, location in
                     guard let sourceID = sourceIDs.first,
                           sourceID != item.id,
                           items.contains(where: { $0.id == sourceID }) else { return false }
+                    if let moveAtTarget {
+                        return moveAtTarget(sourceID, item.id, location)
+                    }
                     return moveBefore(sourceID, item.id)
                 } isTargeted: { isTargeted in
                     if isTargeted {

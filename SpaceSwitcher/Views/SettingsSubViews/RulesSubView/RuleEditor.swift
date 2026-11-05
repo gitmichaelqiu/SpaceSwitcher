@@ -844,60 +844,68 @@ struct ActionListRows: View {
     @Binding var actions: [ActionItem]
 
     private var reorderableItems: [ReorderableActionItem] {
-        // A balanced If...End If region is moved as one model range, so it
-        // must also be one item in SwiftUI's reorder collection.
-        var items: [ReorderableActionItem] = []
-        var index = 0
-
-        while index < actions.endIndex {
-            let range = conditionBlockRange(containing: index)
-                .flatMap { $0.lowerBound == index ? $0 : nil }
-                ?? index...index
-            items.append(
-                ReorderableActionItem(
-                    actions: Array(actions[range]),
-                    startIndex: range.lowerBound
-                )
-            )
-            index = range.upperBound + 1
-        }
-
-        return items
+        actions.map(ReorderableActionItem.init)
     }
 
     var body: some View {
-        ReorderableSettingsList(
-            items: reorderableItems,
-            rowContent: { item, context in
-                VStack(spacing: 0) {
-                    ForEach(Array(item.actions.enumerated()), id: \.element.id) { offset, action in
+        VStack(spacing: 0) {
+            ReorderableSettingsList(
+                items: reorderableItems,
+                rowContent: { item, context in
+                    VStack(spacing: 0) {
                         ActionRowContent(
-                            index: item.startIndex + offset,
-                            item: actionBinding(for: action),
-                            onDelete: { removeAction(id: action.id) }
+                            index: context.index,
+                            item: actionBinding(for: item.action),
+                            onDelete: { removeAction(id: item.action.id) }
                         )
                         .padding(.horizontal, SettingsComponentMetrics.listRowHorizontalPadding)
 
-                        if offset < item.actions.count - 1 || !context.isLast {
+                        if !context.isLast {
                             Divider().padding(.leading, SettingsComponentMetrics.listRowHorizontalPadding)
                         }
                     }
-                }
-            },
-            dragPreview: { item in
-                VStack(spacing: 0) {
-                    ForEach(item.actions) { action in
-                        actionDragPreview(for: action)
+                },
+                dragPreview: { item in
+                    if case .ifCondition = item.action.value,
+                       let index = actions.firstIndex(where: { $0.id == item.action.id }),
+                       let blockRange = conditionBlockRange(containing: index) {
+                        VStack(spacing: 0) {
+                            ForEach(Array(actions[blockRange])) { action in
+                                actionDragPreview(for: action)
+                            }
+                        }
+                    } else {
+                        actionDragPreview(for: item.action)
                     }
+                },
+                moveBefore: { sourceID, targetID in
+                    moveAction(sourceID: sourceID, before: targetID)
+                },
+                moveToEnd: { sourceID in
+                    moveActionToEnd(sourceID: sourceID)
+                },
+                moveAtTarget: { sourceID, targetID, location in
+                    moveAction(
+                        sourceID: sourceID,
+                        relativeTo: targetID,
+                        after: location.y >= SettingsComponentMetrics.listRowHeight / 2
+                    )
+                },
+                // The If opener moves a block while the other rows move alone.
+                usesNativeReordering: false
+            )
+
+            Color.clear
+                .frame(maxWidth: .infinity, minHeight: 18)
+                .contentShape(Rectangle())
+                .dropDestination(for: String.self) { sourceIDs, _ in
+                    guard let sourceID = sourceIDs.first,
+                          let sourceUUID = UUID(uuidString: sourceID),
+                          actions.contains(where: { $0.id == sourceUUID }) else { return false }
+                    moveActionToEnd(sourceID: sourceID)
+                    return true
                 }
-            },
-            moveBefore: { sourceID, targetID in
-                moveAction(sourceID: sourceID, before: targetID)
-            },
-            moveToEnd: { sourceID in
-                moveActionToEnd(sourceID: sourceID)
-            }
-        )
+        }
     }
 
     private func actionBinding(for item: ActionItem) -> Binding<ActionItem> {
@@ -924,22 +932,42 @@ struct ActionListRows: View {
     }
 
     private func moveAction(sourceID: String, before targetID: String) -> Bool {
+        moveAction(sourceID: sourceID, relativeTo: targetID, after: false)
+    }
+
+    private func moveAction(sourceID: String, relativeTo targetID: String, after: Bool) -> Bool {
         guard let sourceUUID = UUID(uuidString: sourceID),
               let targetUUID = UUID(uuidString: targetID),
               let sourceIndex = actions.firstIndex(where: { $0.id == sourceUUID }),
-              actions.contains(where: { $0.id == targetUUID }) else { return false }
+              let targetIndex = actions.firstIndex(where: { $0.id == targetUUID }) else { return false }
 
-        let sourceRange = conditionBlockRange(containing: sourceIndex)
-            ?? sourceIndex...sourceIndex
-        guard !sourceRange.contains(where: { actions[$0].id == targetUUID }) else {
+        guard sourceIndex != targetIndex else { return false }
+
+        let sourceRange = actionMoveRange(containing: sourceIndex)
+        guard !sourceRange.contains(targetIndex) else { return false }
+
+        let closingBlockRange: ClosedRange<Int>? = {
+            guard case .endIf = actions[sourceIndex].value else { return nil }
+            return conditionBlockRange(containing: sourceIndex)
+        }()
+
+        var reorderedActions = actions
+        let movedActions = Array(actions[sourceRange])
+        reorderedActions.removeSubrange(sourceRange)
+        guard let remainingTargetIndex = reorderedActions.firstIndex(where: { $0.id == targetUUID }) else {
             return false
+        }
+        let destinationIndex = remainingTargetIndex + (after ? 1 : 0)
+
+        if let closingBlockRange {
+            let openerIndex = closingBlockRange.lowerBound
+                - (sourceRange.lowerBound < closingBlockRange.lowerBound ? sourceRange.count : 0)
+            guard destinationIndex > openerIndex else { return false }
         }
 
         withAnimation(.easeInOut(duration: 0.2)) {
-            let movedActions = Array(actions[sourceRange])
-            actions.removeSubrange(sourceRange)
-            let destinationIndex = actions.firstIndex(where: { $0.id == targetUUID }) ?? actions.endIndex
-            actions.insert(contentsOf: movedActions, at: destinationIndex)
+            reorderedActions.insert(contentsOf: movedActions, at: destinationIndex)
+            actions = reorderedActions
         }
         return true
     }
@@ -948,8 +976,7 @@ struct ActionListRows: View {
         guard let sourceUUID = UUID(uuidString: sourceID),
               let sourceIndex = actions.firstIndex(where: { $0.id == sourceUUID }) else { return }
 
-        let sourceRange = conditionBlockRange(containing: sourceIndex)
-            ?? sourceIndex...sourceIndex
+        let sourceRange = actionMoveRange(containing: sourceIndex)
         guard sourceRange.upperBound < actions.endIndex else { return }
 
         withAnimation(.easeInOut(duration: 0.2)) {
@@ -957,6 +984,14 @@ struct ActionListRows: View {
             actions.removeSubrange(sourceRange)
             actions.append(contentsOf: movedActions)
         }
+    }
+
+    private func actionMoveRange(containing index: Int) -> ClosedRange<Int> {
+        if case .ifCondition = actions[index].value,
+           let blockRange = conditionBlockRange(containing: index) {
+            return blockRange
+        }
+        return index...index
     }
 
     private func conditionBlockRange(containing index: Int) -> ClosedRange<Int>? {
@@ -1022,11 +1057,10 @@ struct ActionListRows: View {
 }
 
 private struct ReorderableActionItem: Identifiable {
-    let actions: [ActionItem]
-    let startIndex: Int
+    let action: ActionItem
 
     var id: String {
-        actions[0].id.uuidString
+        action.id.uuidString
     }
 }
 
