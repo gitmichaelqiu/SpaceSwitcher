@@ -71,6 +71,46 @@ class DockManager: ObservableObject {
                 }
             }
             .store(in: &cancellables)
+
+        spaceManager?.$availableSpaces
+            .dropFirst()
+            .sink { [weak self] spaces in
+                self?.migrateManagedSpaceAssignments(using: spaces)
+            }
+            .store(in: &cancellables)
+    }
+
+    @MainActor
+    private func migrateManagedSpaceAssignments(using spaces: [SpaceInfo]) {
+        var managedToStableIDs: [String: String] = [:]
+        for space in spaces {
+            if let managedSpaceID = space.managedSpaceID, managedSpaceID != space.id {
+                managedToStableIDs[managedSpaceID] = space.id
+            }
+        }
+        guard !managedToStableIDs.isEmpty else { return }
+
+        var updatedAssignments = config.spaceAssignments
+        var didUpdate = false
+        for (managedSpaceID, dockSetID) in config.spaceAssignments {
+            guard let stableSpaceID = managedToStableIDs[managedSpaceID],
+                  stableSpaceID != managedSpaceID else {
+                continue
+            }
+
+            // Keep an already saved stable-ID assignment if both forms exist.
+            if updatedAssignments[stableSpaceID] == nil {
+                updatedAssignments[stableSpaceID] = dockSetID
+            }
+            updatedAssignments.removeValue(forKey: managedSpaceID)
+            didUpdate = true
+        }
+
+        guard didUpdate else { return }
+        var updatedConfig = config
+        updatedConfig.spaceAssignments = updatedAssignments
+        config = updatedConfig
+        logger.info("migrated saved dock assignments to DesktopRenamer stable space IDs")
     }
     
     // MARK: - Application Logic

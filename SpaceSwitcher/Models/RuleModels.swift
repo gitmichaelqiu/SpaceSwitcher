@@ -418,7 +418,9 @@ enum RulePreset: String, CaseIterable, Identifiable {
 }
 
 struct SpaceInfo: Identifiable, Codable, Hashable {
+    /// Permanent DesktopRenamer identity used for saved rule and dock references.
     let id: String
+    /// Current-session macOS identity, used only to map WindowServer data.
     let managedSpaceID: String?
     let name: String
     let number: Int
