@@ -755,6 +755,16 @@
         }
       }
     },
+    "Hide menu bar icon" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "隐藏菜单栏图标"
+          }
+        }
+      }
+    },
     "Hide minimized windows outside source space" : {
       "comment" : "Rule preset title",
       "localizations" : {

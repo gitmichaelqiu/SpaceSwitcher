@@ -3,6 +3,7 @@ import Sparkle
 
 struct GeneralSettingsView: View {
     @State private var launchAtLogin: Bool = LaunchManager.isEnabled
+    @StateObject private var menuBarIconSettings = MenuBarIconSettings.shared
     @State private var autoCheckUpdate: Bool = UpdateManager.shared.updaterController.updater.automaticallyChecksForUpdates
     @State private var autoDownloadUpdate: Bool = UpdateManager.shared.updaterController.updater.automaticallyDownloadsUpdates
 
@@ -11,6 +12,14 @@ struct GeneralSettingsView: View {
             VStack(alignment: .leading, spacing: SettingsComponentMetrics.sectionSpacing) {
                 // 1. General
                 SettingsSection("General") {
+                    SettingsRow("Hide menu bar icon") {
+                        Toggle("", isOn: $menuBarIconSettings.isHidden)
+                            .labelsHidden()
+                            .toggleStyle(.switch)
+                    }
+
+                    Divider()
+
                     SettingsRow("Launch at login") {
                         Toggle("", isOn: $launchAtLogin)
                             .labelsHidden()

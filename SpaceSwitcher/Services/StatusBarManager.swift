@@ -2,9 +2,29 @@ import Foundation
 import AppKit
 import Combine // Import Combine
 
+@MainActor
+final class MenuBarIconSettings: ObservableObject {
+    static let hideMenuBarIconKey = "hideMenuBarIcon"
+    static let shared = MenuBarIconSettings()
+
+    @Published var isHidden: Bool {
+        didSet {
+            defaults.set(isHidden, forKey: Self.hideMenuBarIconKey)
+        }
+    }
+
+    private let defaults: UserDefaults
+
+    init(defaults: UserDefaults = .standard) {
+        self.defaults = defaults
+        self.isHidden = defaults.bool(forKey: Self.hideMenuBarIconKey)
+    }
+}
+
 class StatusBarManager: NSObject {
     private var statusBarItem: NSStatusItem!
     private weak var appDelegate: AppDelegate?
+    private let menuBarIconSettings = MenuBarIconSettings.shared
     
     // SpaceSwitcher specific dependencies
     private var spaceManager: SpaceManager?
@@ -28,6 +48,7 @@ class StatusBarManager: NSObject {
 
     private func setupStatusBar() {
         statusBarItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
+        statusBarItem.isVisible = !menuBarIconSettings.isHidden
 
         if let button = statusBarItem.button {
             button.image = NSImage(named: "StatusIcon")
@@ -38,6 +59,14 @@ class StatusBarManager: NSObject {
     }
     
     private func setupCombineObservation() {
+        menuBarIconSettings.$isHidden
+            .dropFirst()
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] isHidden in
+                self?.statusBarItem.isVisible = !isHidden
+            }
+            .store(in: &cancellables)
+
         // Monitor connection status
         spaceManager?.$availableSpaces
             .receive(on: DispatchQueue.main)
