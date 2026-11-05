@@ -365,7 +365,7 @@
 				AUTOMATION_APPLE_EVENTS = NO;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 6;
+				CURRENT_PROJECT_VERSION = 9;
 				DEVELOPMENT_TEAM = W94S87F4LJ;
 				ENABLE_APP_SANDBOX = NO;
 				ENABLE_HARDENED_RUNTIME = NO;
@@ -384,8 +384,7 @@
 				INFOPLIST_KEY_LSUIElement = YES;
 				INFOPLIST_KEY_NSAppleEventsUsageDescription = Need;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
-				INFOPLIST_KEY_SUFeedURL = "https://raw.githubusercontent.com/gitmichaelqiu/SpaceSwitcher/dev/appcast.xml";
-				INFOPLIST_KEY_SUPublicEDKey = "e9YKamydRddgnYK6Kq41W0vPbwI4F9XJAhks/9rzT0w=";
+				INFOPLIST_KEY_SUFeedURL = "https://raw.githubusercontent.com/gitmichaelqiu/SpaceSwitcher/main/appcast.xml";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
@@ -418,7 +417,7 @@
 				AUTOMATION_APPLE_EVENTS = NO;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 6;
+				CURRENT_PROJECT_VERSION = 9;
 				DEVELOPMENT_TEAM = W94S87F4LJ;
 				ENABLE_APP_SANDBOX = NO;
 				ENABLE_HARDENED_RUNTIME = NO;
@@ -437,8 +436,7 @@
 				INFOPLIST_KEY_LSUIElement = YES;
 				INFOPLIST_KEY_NSAppleEventsUsageDescription = Need;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
-				INFOPLIST_KEY_SUFeedURL = "https://raw.githubusercontent.com/gitmichaelqiu/SpaceSwitcher/dev/appcast.xml";
-				INFOPLIST_KEY_SUPublicEDKey = "e9YKamydRddgnYK6Kq41W0vPbwI4F9XJAhks/9rzT0w=";
+				INFOPLIST_KEY_SUFeedURL = "https://raw.githubusercontent.com/gitmichaelqiu/SpaceSwitcher/main/appcast.xml";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",

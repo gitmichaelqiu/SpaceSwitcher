@@ -3,6 +3,8 @@
 <plist version="1.0">
 <dict>
 	<key>SUFeedURL</key>
-	<string>https://raw.githubusercontent.com/gitmichaelqiu/SpaceSwitcher/dev/appcast.xml</string>
+	<string>https://raw.githubusercontent.com/gitmichaelqiu/SpaceSwitcher/main/appcast.xml</string>
+	<key>SUPublicEDKey</key>
+	<string>e9YKamydRddgnYK6Kq41W0vPbwI4F9XJAhks/9rzT0w=</string>
 </dict>
 </plist>

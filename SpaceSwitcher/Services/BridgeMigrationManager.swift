@@ -1,6 +1,7 @@
 import AppKit
 import CryptoKit
 import Foundation
+import OSLog
 import ServiceManagement
 
 private func runMigrationTool(_ path: String, arguments: [String]) -> Bool {
@@ -19,6 +20,10 @@ private func runMigrationTool(_ path: String, arguments: [String]) -> Bool {
 
 final class SpaceSwitcherBridgeMigrationManager {
     static let shared = SpaceSwitcherBridgeMigrationManager()
+    private static let logger = Logger(
+        subsystem: SpaceSwitcherBundleIdentity.currentBundleIdentifier,
+        category: "IdentityMigration"
+    )
 
     private var hasPresentedPrompt = false
     private var completion: (() -> Void)?
@@ -26,8 +31,12 @@ final class SpaceSwitcherBridgeMigrationManager {
     private var installerMonitor: Timer?
     private var installerLaunchDeadline: Date?
     private var installDeadline: Date?
-    private var installerWasObserved = false
+    private var installerExitWaitLogged = false
+    private var installerLaunchGate = MigrationInstallerLaunchGate()
     private var stagedLaunchStarted = false
+    private var stagedApplicationMonitor: Timer?
+    private var stagedLaunchDeadline: Date?
+    private var stagedApplicationWasObserved = false
     private var manifest: SpaceSwitcherMigrationManifest?
 
     private init() {}
@@ -72,9 +81,7 @@ final class SpaceSwitcherBridgeMigrationManager {
               manifest.targetBundleIdentifier == SpaceSwitcherBundleIdentity.currentBundleIdentifier,
               manifest.stagingApplicationPath == SpaceSwitcherMigrationConfiguration.stagingApplicationURL.path,
               manifest.expectedVersion == expectedVersion,
-              let stagedBundle = Bundle(url: SpaceSwitcherMigrationConfiguration.stagingApplicationURL),
-              stagedBundle.bundleIdentifier == SpaceSwitcherBundleIdentity.currentBundleIdentifier,
-              stagedBundle.object(forInfoDictionaryKey: "CFBundleVersion") as? String == expectedVersion else {
+              stagedApplicationMatches(expectedVersion: expectedVersion) else {
             return false
         }
 
@@ -171,7 +178,8 @@ final class SpaceSwitcherBridgeMigrationManager {
             return
         }
 
-        installerWasObserved = false
+        installerLaunchGate = MigrationInstallerLaunchGate()
+        installerExitWaitLogged = false
         installerLaunchDeadline = Date().addingTimeInterval(20)
         installDeadline = Date().addingTimeInterval(10 * 60)
         installerMonitor?.invalidate()
@@ -189,36 +197,83 @@ final class SpaceSwitcherBridgeMigrationManager {
             return
         }
 
-        let stagingURL = SpaceSwitcherMigrationConfiguration.stagingApplicationURL
-        if let stagedBundle = Bundle(url: stagingURL),
-           stagedBundle.bundleIdentifier == SpaceSwitcherBundleIdentity.currentBundleIdentifier,
-           stagedBundle.object(forInfoDictionaryKey: "CFBundleVersion") as? String
-            == SpaceSwitcherMigrationConfiguration.packageVersion {
-            launchStagedApplication()
-            return
-        }
-
         let installerRunning = NSWorkspace.shared.runningApplications.contains {
             $0.bundleIdentifier == "com.apple.installer" && !$0.isTerminated
         }
-        if installerRunning {
-            installerWasObserved = true
-        } else if installerWasObserved {
+        let installerWasPreviouslyObserved = installerLaunchGate.installerWasObserved
+        let stagedApplicationIsValid = isExpectedStagedApplicationInstalled
+        let decision = installerLaunchGate.decision(
+            installerIsRunning: installerRunning,
+            stagedApplicationIsValid: stagedApplicationIsValid
+        )
+
+        switch decision {
+        case .launchStagedApplication:
+            Self.logger.info("Installer exited and the expected staged app is present; beginning handoff.")
+            launchStagedApplication()
+        case .waitingForInstaller where installerRunning:
+            if !installerWasPreviouslyObserved {
+                Self.logger.info("Observed Installer running; waiting for installation to finish.")
+            } else if installerExitWaitLogged {
+                installerExitWaitLogged = false
+            }
+        case .waitingForStagedApplication:
+            if !installerExitWaitLogged {
+                Self.logger.info("Installer exited; waiting for the staged app to finish appearing at the configured path.")
+                installerExitWaitLogged = true
+            }
+        case .stagingFailed:
             stopMonitoringInstaller()
+            let stagedPath = SpaceSwitcherMigrationConfiguration.stagingApplicationURL.path
+            let stagedMetadata = stagedApplicationMetadata
+            let stagedBundleIdentifier = stagedMetadata.bundleIdentifier ?? "<unavailable>"
+            let stagedBuild = stagedMetadata.build ?? "<unavailable>"
+            Self.logger.error("Staged app did not become valid after Installer exit (path=\(stagedPath, privacy: .public), exists=\(FileManager.default.fileExists(atPath: stagedPath)), bundleID=\(stagedBundleIdentifier, privacy: .public), build=\(stagedBuild, privacy: .public), expectedBuild=\(SpaceSwitcherMigrationConfiguration.packageVersion ?? "<missing>", privacy: .public)).")
             showFailure(SpaceSwitcherMigrationError.installerClosed)
-        } else if let installerLaunchDeadline, Date() > installerLaunchDeadline {
+        case .waitingForInstaller:
+            break
+        }
+
+        if !installerRunning,
+           !installerLaunchGate.installerWasObserved,
+           let installerLaunchDeadline,
+           Date() > installerLaunchDeadline {
             stopMonitoringInstaller()
+            Self.logger.error("Installer did not appear after opening the migration package.")
             showFailure(SpaceSwitcherMigrationError.stagingApplicationMissing)
         }
+    }
+
+    private var isExpectedStagedApplicationInstalled: Bool {
+        guard let expectedVersion = SpaceSwitcherMigrationConfiguration.packageVersion else { return false }
+        return stagedApplicationMatches(expectedVersion: expectedVersion)
+    }
+
+    private var stagedApplicationMetadata: (bundleIdentifier: String?, build: String?) {
+        let infoPlistURL = SpaceSwitcherMigrationConfiguration.stagingApplicationURL
+            .appendingPathComponent("Contents/Info.plist")
+        guard let data = try? Data(contentsOf: infoPlistURL),
+              let propertyList = try? PropertyListSerialization.propertyList(from: data, format: nil),
+              let infoDictionary = propertyList as? [String: Any] else {
+            return (nil, nil)
+        }
+        return (
+            infoDictionary["CFBundleIdentifier"] as? String,
+            infoDictionary["CFBundleVersion"] as? String
+        )
+    }
+
+    private func stagedApplicationMatches(expectedVersion: String) -> Bool {
+        let metadata = stagedApplicationMetadata
+        return metadata.bundleIdentifier == SpaceSwitcherBundleIdentity.currentBundleIdentifier
+            && metadata.build == expectedVersion
     }
 
     private func launchStagedApplication() {
         guard !stagedLaunchStarted,
               let manifest,
-              let stagedBundle = Bundle(url: SpaceSwitcherMigrationConfiguration.stagingApplicationURL),
-              stagedBundle.bundleIdentifier == SpaceSwitcherBundleIdentity.currentBundleIdentifier,
-              stagedBundle.object(forInfoDictionaryKey: "CFBundleVersion") as? String
-                == SpaceSwitcherMigrationConfiguration.packageVersion else {
+              let expectedVersion = SpaceSwitcherMigrationConfiguration.packageVersion,
+              stagedApplicationMatches(expectedVersion: expectedVersion) else {
             if manifest == nil { showFailure(SpaceSwitcherMigrationError.manifestInvalid) }
             return
         }
@@ -237,6 +292,7 @@ final class SpaceSwitcherBridgeMigrationManager {
         configuration.activates = true
         configuration.createsNewApplicationInstance = true
         configuration.arguments = ["--spaceswitcher-migration"]
+        Self.logger.info("Requesting launch of the staged migration app.")
         NSWorkspace.shared.openApplication(
             at: SpaceSwitcherMigrationConfiguration.stagingApplicationURL,
             configuration: configuration
@@ -245,10 +301,66 @@ final class SpaceSwitcherBridgeMigrationManager {
                 guard let self else { return }
                 if let error {
                     self.stagedLaunchStarted = false
+                    Self.logger.error("Staged app launch request failed: \(error.localizedDescription, privacy: .private)")
                     self.showFailure(error)
                 } else {
-                    NSApp.terminate(nil)
+                    // The staged app terminates this bridge only after it has validated the
+                    // manifest and is ready to replace the legacy app. Do not treat an
+                    // accepted Launch Services request as proof that the migration started.
+                    Self.logger.info("Launch Services accepted the staged app request; awaiting process startup.")
+                    self.monitorStagedApplicationLaunch()
                 }
+            }
+        }
+    }
+
+    private func monitorStagedApplicationLaunch() {
+        stagedApplicationWasObserved = false
+        stagedLaunchDeadline = Date().addingTimeInterval(20)
+        stagedApplicationMonitor?.invalidate()
+        stagedApplicationMonitor = Timer.scheduledTimer(withTimeInterval: 0.5, repeats: true) { [weak self] _ in
+            self?.checkStagedApplicationLaunch()
+        }
+    }
+
+    private func checkStagedApplicationLaunch() {
+        let stagingURL = SpaceSwitcherMigrationConfiguration.stagingApplicationURL.standardizedFileURL
+        let isRunning = NSWorkspace.shared.runningApplications.contains { application in
+            application.bundleIdentifier == SpaceSwitcherBundleIdentity.currentBundleIdentifier
+                && application.bundleURL?.standardizedFileURL == stagingURL
+                && !application.isTerminated
+        }
+
+        if isRunning {
+            if !stagedApplicationWasObserved {
+                Self.logger.info("Observed the staged migration app running.")
+                stagedApplicationWasObserved = true
+            }
+            return
+        }
+
+        if stagedApplicationWasObserved {
+            stopMonitoringStagedApplication()
+            if !FileManager.default.fileExists(atPath: SpaceSwitcherMigrationStorage.manifestURL.path) {
+                // The finalizer removes the manifest when it rolls back and presents its own
+                // failure alert. Resume the untouched legacy app after that alert is dismissed.
+                Self.logger.error("Staged app exited after clearing the handoff manifest; resuming the legacy app.")
+                continueNormalApplication()
+            } else {
+                Self.logger.error("Staged app exited before claiming the handoff.")
+                showFailure(SpaceSwitcherMigrationError.applicationLaunchFailed)
+            }
+            return
+        }
+
+        if let stagedLaunchDeadline, Date() > stagedLaunchDeadline {
+            stopMonitoringStagedApplication()
+            if !FileManager.default.fileExists(atPath: SpaceSwitcherMigrationStorage.manifestURL.path) {
+                Self.logger.error("Staged app exited before monitoring observed it and cleared the manifest; resuming the legacy app.")
+                continueNormalApplication()
+            } else {
+                Self.logger.error("Staged app process did not appear after the launch request.")
+                showFailure(SpaceSwitcherMigrationError.applicationLaunchFailed)
             }
         }
     }
@@ -265,6 +377,7 @@ final class SpaceSwitcherBridgeMigrationManager {
     private func showFailure(_ error: Error) {
         downloadTask = nil
         stopMonitoringInstaller()
+        stopMonitoringStagedApplication()
         let alert = NSAlert()
         alert.alertStyle = .warning
         alert.messageText = "SpaceSwitcher migration was not completed"
@@ -284,11 +397,20 @@ final class SpaceSwitcherBridgeMigrationManager {
         installerMonitor = nil
         installerLaunchDeadline = nil
         installDeadline = nil
-        installerWasObserved = false
+        installerLaunchGate = MigrationInstallerLaunchGate()
+        installerExitWaitLogged = false
+    }
+
+    private func stopMonitoringStagedApplication() {
+        stagedApplicationMonitor?.invalidate()
+        stagedApplicationMonitor = nil
+        stagedLaunchDeadline = nil
+        stagedApplicationWasObserved = false
     }
 
     private func continueNormalApplication() {
         stopMonitoringInstaller()
+        stopMonitoringStagedApplication()
         let completion = self.completion
         self.completion = nil
         completion?()
