@@ -313,6 +313,26 @@
         }
       }
     },
+    "Automation rules executed" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已执行自动化规则"
+          }
+        }
+      }
+    },
+    "Automation rule failed" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "自动化规则执行失败"
+          }
+        }
+      }
+    },
     "Bring to front" : {
       "localizations" : {
         "zh-Hans" : {
@@ -529,6 +549,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "SpaceAPI 访问未获批准"
+          }
+        }
+      }
+    },
+    "Dismiss" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "关闭"
           }
         }
       }

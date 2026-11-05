@@ -213,6 +213,17 @@ class RuleManager: ObservableObject {
                     }
                 }
             }
+
+            guard !Task.isCancelled,
+                  executionBatches.contains(where: { !$0.plans.isEmpty }) else { return }
+
+            await MainActor.run {
+                HUDWindowController.shared.show(
+                    message: String(localized: "Automation rules executed"),
+                    style: .info,
+                    systemImage: "bolt.fill"
+                )
+            }
         }
     }
 
