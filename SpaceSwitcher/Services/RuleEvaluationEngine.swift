@@ -77,6 +77,92 @@ enum RuleActionStateChange {
     }
 }
 
+enum RuleHUDOutcome: CaseIterable, Hashable {
+    case hidden
+    case restored
+    case shown
+    case minimized
+    case broughtToFront
+    case shortcutTriggered
+
+    var singularWindowDescription: String? {
+        switch self {
+        case .hidden: return NSLocalizedString("window hidden", comment: "HUD outcome")
+        case .restored: return NSLocalizedString("window restored", comment: "HUD outcome")
+        case .shown: return NSLocalizedString("window shown", comment: "HUD outcome")
+        case .minimized: return NSLocalizedString("window minimized", comment: "HUD outcome")
+        case .broughtToFront: return NSLocalizedString("window brought to front", comment: "HUD outcome")
+        case .shortcutTriggered: return nil
+        }
+    }
+
+    var pluralWindowFormat: String? {
+        switch self {
+        case .hidden: return NSLocalizedString("%d windows hidden", comment: "HUD outcome")
+        case .restored: return NSLocalizedString("%d windows restored", comment: "HUD outcome")
+        case .shown: return NSLocalizedString("%d windows shown", comment: "HUD outcome")
+        case .minimized: return NSLocalizedString("%d windows minimized", comment: "HUD outcome")
+        case .broughtToFront: return NSLocalizedString("%d windows brought to front", comment: "HUD outcome")
+        case .shortcutTriggered: return nil
+        }
+    }
+
+    var applicationDescription: String {
+        switch self {
+        case .hidden: return NSLocalizedString("app hidden", comment: "HUD outcome")
+        case .restored: return NSLocalizedString("app restored", comment: "HUD outcome")
+        case .shown: return NSLocalizedString("app shown", comment: "HUD outcome")
+        case .minimized: return NSLocalizedString("app minimized", comment: "HUD outcome")
+        case .broughtToFront: return NSLocalizedString("app brought to front", comment: "HUD outcome")
+        case .shortcutTriggered: return NSLocalizedString("shortcut triggered", comment: "HUD outcome")
+        }
+    }
+}
+
+struct RuleHUDChangeSummary {
+    private(set) var changedWindowIDs: [RuleHUDOutcome: Set<Int>] = [:]
+    private(set) var applicationOutcomes = Set<RuleHUDOutcome>()
+
+    var hasChanges: Bool {
+        !applicationOutcomes.isEmpty || changedWindowIDs.values.contains { !$0.isEmpty }
+    }
+
+    func windowCount(for outcome: RuleHUDOutcome) -> Int {
+        changedWindowIDs[outcome]?.count ?? 0
+    }
+
+    mutating func record(_ outcome: RuleHUDOutcome, windowIDs: [Int]) {
+        guard !windowIDs.isEmpty else {
+            applicationOutcomes.insert(outcome)
+            return
+        }
+        changedWindowIDs[outcome, default: []].formUnion(windowIDs)
+    }
+
+    mutating func merge(_ other: RuleHUDChangeSummary) {
+        for (outcome, windowIDs) in other.changedWindowIDs {
+            changedWindowIDs[outcome, default: []].formUnion(windowIDs)
+        }
+        applicationOutcomes.formUnion(other.applicationOutcomes)
+    }
+
+    var localizedOutcomeDescription: String? {
+        var fragments: [String] = []
+        for outcome in RuleHUDOutcome.allCases {
+            let count = windowCount(for: outcome)
+            if count == 1, let description = outcome.singularWindowDescription {
+                fragments.append(description)
+            } else if count > 1, let format = outcome.pluralWindowFormat {
+                fragments.append(String(format: format, count))
+            }
+            if applicationOutcomes.contains(outcome) {
+                fragments.append(outcome.applicationDescription)
+            }
+        }
+        return fragments.isEmpty ? nil : fragments.joined(separator: ", ")
+    }
+}
+
 enum RuleOrdering {
     static func moving(
         _ rules: [AppRule],

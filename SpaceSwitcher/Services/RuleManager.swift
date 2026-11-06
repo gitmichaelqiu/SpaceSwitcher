@@ -191,6 +191,7 @@ class RuleManager: ObservableObject {
 
             var changedRuleIDs = Set<UUID>()
             var changedApplicationPIDs = Set<Int32>()
+            var changeSummariesByRule: [UUID: RuleHUDChangeSummary] = [:]
 
             for batch in executionBatches {
                 if Task.isCancelled { break }
@@ -203,17 +204,20 @@ class RuleManager: ObservableObject {
                         return false
                     }
 
-                    let didChangeState = await self.perform(
+                    let changeSummary = await self.perform(
                         actions: plan.actions,
                         on: batch.application,
                         allWindows: batch.snapshot.windows,
                         targetWindows: plan.windows,
                         performGlobalHotkeys: hasGlobalHotkey && !didPerformGlobalHotkey
                     )
+                    let didChangeState = changeSummary.hasChanges
                     self.debugLog("  rule=\(plan.ruleID.uuidString.prefix(8)) confirmedStateChange=\(didChangeState)")
                     if didChangeState {
                         changedRuleIDs.insert(plan.ruleID)
                         changedApplicationPIDs.insert(batch.application.processIdentifier)
+                        changeSummariesByRule[plan.ruleID, default: RuleHUDChangeSummary()]
+                            .merge(changeSummary)
                     }
 
                     if hasGlobalHotkey {
@@ -234,27 +238,31 @@ class RuleManager: ObservableObject {
                 let executedRules = orderedRules.filter { changedRuleIDs.contains($0.id) }
                 guard !executedRules.isEmpty else { return }
 
-                let ruleNames = executedRules.map { rule in
-                    if rule.appliesToAllApps {
-                        return NSLocalizedString("All apps", comment: "Rule target")
-                    }
-
-                    return resolvedApplicationName(
-                        bundleIdentifier: rule.appBundleID,
-                        storedName: rule.appName
-                    )
-                }
                 let message: String
-                if ruleNames.count == 1, let ruleName = ruleNames.first {
+                if changedRuleIDs.count == 1,
+                   changedApplicationPIDs.count == 1,
+                   let rule = executedRules.first,
+                   let outcomeDescription = changeSummariesByRule[rule.id]?.localizedOutcomeDescription {
+                    let ruleName = rule.appliesToAllApps
+                        ? NSLocalizedString("All apps", comment: "Rule target")
+                        : resolvedApplicationName(
+                            bundleIdentifier: rule.appBundleID,
+                            storedName: rule.appName
+                        )
                     message = String(
-                        format: NSLocalizedString("Rule executed: %@", comment: "HUD toast"),
-                        ruleName
+                        format: NSLocalizedString("%@ rule: %@", comment: "HUD toast"),
+                        ruleName,
+                        outcomeDescription
                     )
                 } else {
-                    message = String(
-                        format: NSLocalizedString("Rules executed: %@", comment: "HUD toast"),
-                        ruleNames.joined(separator: ", ")
-                    )
+                    if changedApplicationPIDs.count == 1 {
+                        message = NSLocalizedString("Rules updated for one app", comment: "HUD toast")
+                    } else {
+                        message = String(
+                            format: NSLocalizedString("Rules updated for %d apps", comment: "HUD toast"),
+                            changedApplicationPIDs.count
+                        )
+                    }
                 }
 
                 var applicationsByPID: [Int32: NSRunningApplication] = [:]
@@ -402,14 +410,14 @@ class RuleManager: ObservableObject {
         allWindows: [RuleWindowTarget],
         targetWindows: [RuleWindowTarget],
         performGlobalHotkeys: Bool
-    ) async -> Bool {
-        var didChangeState = false
+    ) async -> RuleHUDChangeSummary {
+        var changeSummary = RuleHUDChangeSummary()
         let previousApp = NSWorkspace.shared.frontmostApplication
         debugLog("perform app=\(app.localizedName ?? "<unknown>") pid=\(app.processIdentifier) actions=\(actionDebugSummary(actions)) targetWindows=[\(targetWindows.map { String($0.id) }.joined(separator: ","))] allWindows=\(allWindows.count)")
 
         for action in actions {
             // Check cancellation before every action
-            if Task.isCancelled { return didChangeState }
+            if Task.isCancelled { return changeSummary }
             
             switch action {
             case .ifCondition(_), .endIf:
@@ -420,10 +428,13 @@ class RuleManager: ObservableObject {
             case .hide:
                 if targetWindows.isEmpty {
                     debugLog("hide app-level because target window list is empty")
-                    didChangeState = await hideApp(
+                    let didHideApp = await hideApp(
                         app,
                         sourceSpaceIDs: ruleSpaceIDs(for: allWindows)
-                    ) || didChangeState
+                    )
+                    if didHideApp {
+                        changeSummary.record(.hidden, windowIDs: allWindows.map(\.id))
+                    }
                     continue
                 }
 
@@ -443,7 +454,9 @@ class RuleManager: ObservableObject {
                         app,
                         sourceSpaceIDs: ruleSpaceIDs(for: allWindows)
                     )
-                    didChangeState = (!allTargetWindowsHidden && didHideApp) || didChangeState
+                    if !allTargetWindowsHidden && didHideApp {
+                        changeSummary.record(.hidden, windowIDs: targetWindows.map(\.id))
+                    }
                     continue
                 }
 
@@ -453,23 +466,27 @@ class RuleManager: ObservableObject {
                     let wasManagedHide = managedHides[window.id] != nil
                     if await setHiddenWithRetry(window, isHidden: true) {
                         managedHides[window.id] = window
-                        didHideWindow = RuleActionStateChange.isConfirmedAfterUpdate(
+                        let didHide = RuleActionStateChange.isConfirmedAfterUpdate(
                             from: wasHidden,
                             to: true,
                             updateSucceeded: true,
                             observedAfter: isWindowHidden(window),
                             wasPreviouslyManaged: wasManagedHide
-                        ) || didHideWindow
+                        )
+                        if didHide {
+                            changeSummary.record(.hidden, windowIDs: [window.id])
+                        }
+                        didHideWindow = didHide || didHideWindow
                     }
                 }
-                didChangeState = didHideWindow || didChangeState
-
                 // AX exposes app hiding on every supported macOS release, but
                 // some applications do not expose a settable window-hidden
                 // attribute. Preserve the old behavior only when the plan
                 // covers the complete application.
                 if !didHideWindow && targetWindows.count == allWindows.count {
-                    didChangeState = await hideApp(app) || didChangeState
+                    if await hideApp(app) {
+                        changeSummary.record(.hidden, windowIDs: targetWindows.map(\.id))
+                    }
                 }
                 
             case .show:
@@ -482,7 +499,9 @@ class RuleManager: ObservableObject {
                     // managed-hide bookkeeping (which Restore uses instead).
                     if unhideAppWithoutActivation(app) {
                         managedAppHides.removeValue(forKey: app.processIdentifier)
-                        didChangeState = wasHidden || didChangeState
+                        if wasHidden {
+                            changeSummary.record(.shown, windowIDs: allWindows.map(\.id))
+                        }
                     }
                 }
 
@@ -491,31 +510,41 @@ class RuleManager: ObservableObject {
                     let wasManagedHide = managedHides[window.id] != nil
                     if await setHiddenWithRetry(window, isHidden: false) {
                         managedHides.removeValue(forKey: window.id)
-                        didChangeState = RuleActionStateChange.isConfirmed(
+                        let didShow = RuleActionStateChange.isConfirmed(
                             from: wasHidden,
                             to: false,
                             updateSucceeded: true
-                        ) || (wasManagedHide && wasHidden == nil) || didChangeState
+                        ) || (wasManagedHide && wasHidden == nil)
+                        if didShow {
+                            changeSummary.record(.shown, windowIDs: [window.id])
+                        }
                     }
 
                     let wasMinimized = isWindowMinimized(window)
                     let wasManagedMinimize = managedMinimizes.contains(window.id)
                     if WindowSpaceService.setMinimized(window, isMinimized: false) {
                         managedMinimizes.remove(window.id)
-                        didChangeState = RuleActionStateChange.isConfirmed(
+                        let didShow = RuleActionStateChange.isConfirmed(
                             from: wasMinimized,
                             to: false,
                             updateSucceeded: true
-                        ) || (wasManagedMinimize && wasMinimized == nil) || didChangeState
+                        ) || (wasManagedMinimize && wasMinimized == nil)
+                        if didShow {
+                            changeSummary.record(.shown, windowIDs: [window.id])
+                        }
                     }
                 }
 
                 if canApplyAppVisibility && managedAppMinimizes.contains(app.processIdentifier) {
-                    didChangeState = unminimizeAppWindows(app) || didChangeState
+                    if unminimizeAppWindows(app) {
+                        changeSummary.record(.shown, windowIDs: allWindows.map(\.id))
+                    }
                     managedAppMinimizes.remove(app.processIdentifier)
                 }
                 if canApplyAppVisibility && targetWindows.isEmpty {
-                    didChangeState = unminimizeAppWindows(app) || didChangeState
+                    if unminimizeAppWindows(app) {
+                        changeSummary.record(.shown, windowIDs: allWindows.map(\.id))
+                    }
                 }
                 if wasHidden { try? await Task.sleep(nanoseconds: 200_000_000) }
                 
@@ -526,7 +555,9 @@ class RuleManager: ObservableObject {
                     let wasHidden = app.isHidden
                     if unhideAppWithoutActivation(app) {
                         managedAppHides.removeValue(forKey: app.processIdentifier)
-                        didChangeState = wasHidden || didChangeState
+                        if wasHidden {
+                            changeSummary.record(.restored, windowIDs: allWindows.map(\.id))
+                        }
                         debugLog("restore: application unhide succeeded; appHiddenAfter=\(app.isHidden)")
                     } else {
                         debugLog("restore: application unhide failed; appHiddenAfter=\(app.isHidden)")
@@ -534,7 +565,9 @@ class RuleManager: ObservableObject {
                 }
 
                 if canApplyAppVisibility && managedAppMinimizes.contains(app.processIdentifier) {
-                    didChangeState = unminimizeAppWindows(app) || didChangeState
+                    if unminimizeAppWindows(app) {
+                        changeSummary.record(.restored, windowIDs: allWindows.map(\.id))
+                    }
                     managedAppMinimizes.remove(app.processIdentifier)
                 }
 
@@ -553,11 +586,14 @@ class RuleManager: ObservableObject {
                         managedHides.removeValue(forKey: window.id)
                         restoredHiddenWindow = true
                         if wasHidden != false {
-                            didChangeState = RuleActionStateChange.isConfirmed(
+                            let didRestore = RuleActionStateChange.isConfirmed(
                                 from: wasHidden,
                                 to: false,
                                 updateSucceeded: true
-                            ) || (wasHidden == nil) || didChangeState
+                            ) || (wasHidden == nil)
+                            if didRestore {
+                                changeSummary.record(.restored, windowIDs: [window.id])
+                            }
                         }
                     }
                     let wasManagedMinimized = managedMinimizes.contains(window.id)
@@ -565,11 +601,14 @@ class RuleManager: ObservableObject {
                     if wasManagedMinimized {
                         if WindowSpaceService.setMinimized(window, isMinimized: false) {
                             managedMinimizes.remove(window.id)
-                            didChangeState = RuleActionStateChange.isConfirmed(
+                            let didRestore = RuleActionStateChange.isConfirmed(
                                 from: wasMinimized,
                                 to: false,
                                 updateSucceeded: true
-                            ) || (wasMinimized == nil) || didChangeState
+                            ) || (wasMinimized == nil)
+                            if didRestore {
+                                changeSummary.record(.restored, windowIDs: [window.id])
+                            }
                             debugLog("restore window id=\(window.id): unminimized managed window")
                         }
                     }
@@ -578,13 +617,12 @@ class RuleManager: ObservableObject {
                 
             case .minimize:
                 if targetWindows.isEmpty {
-                    if !isAppEffectivelyHidden(app) {
-                        if minimizeAppWindows(app) {
+                    let appWasEffectivelyHidden = isAppEffectivelyHidden(app)
+                    if minimizeAppWindows(app) {
+                        if !appWasEffectivelyHidden {
                             managedAppMinimizes.insert(app.processIdentifier)
-                            didChangeState = true
                         }
-                    } else {
-                        didChangeState = minimizeAppWindows(app) || didChangeState
+                        changeSummary.record(.minimized, windowIDs: allWindows.map(\.id))
                     }
                     continue
                 }
@@ -595,20 +633,25 @@ class RuleManager: ObservableObject {
                     if wasMinimized != true,
                        WindowSpaceService.setMinimized(window, isMinimized: true) {
                         managedMinimizes.insert(window.id)
-                        didChangeState = RuleActionStateChange.isConfirmedAfterUpdate(
+                        let didMinimize = RuleActionStateChange.isConfirmedAfterUpdate(
                             from: wasMinimized,
                             to: true,
                             updateSucceeded: true,
                             observedAfter: isWindowMinimized(window),
                             wasPreviouslyManaged: wasManagedMinimize
-                        ) || didChangeState
+                        )
+                        if didMinimize {
+                            changeSummary.record(.minimized, windowIDs: [window.id])
+                        }
                     }
                 }
                 
             case .bringToFront:
                 let wasActive = app.isActive
                 if app.activate(options: .activateIgnoringOtherApps) {
-                    didChangeState = !wasActive || didChangeState
+                    if !wasActive {
+                        changeSummary.record(.broughtToFront, windowIDs: targetWindows.map(\.id))
+                    }
                 }
                 if targetWindows.isEmpty {
                     continue
@@ -616,18 +659,20 @@ class RuleManager: ObservableObject {
                 for window in targetWindows {
                     let wasFrontmost = window.isFrontmost
                     if WindowSpaceService.raise(window) {
-                        didChangeState = !wasFrontmost || didChangeState
+                        if !wasFrontmost {
+                            changeSummary.record(.broughtToFront, windowIDs: [window.id])
+                        }
                     }
                 }
                 
             case .globalHotkey(let k, let m):
                 if performGlobalHotkeys,
                    simulateHotkey(keyCode: k, modifiers: m) {
-                    didChangeState = true
+                    changeSummary.record(.shortcutTriggered, windowIDs: [])
                 }
                 
             case .hotkey(let k, let m, let restoreWindow, let waitFrontmost):
-                didChangeState = await performHotkey(
+                let didTriggerHotkey = await performHotkey(
                     keyCode: k,
                     modifiers: m,
                     restoreWindow: restoreWindow,
@@ -635,11 +680,14 @@ class RuleManager: ObservableObject {
                     on: app,
                     targetWindow: targetWindows.first,
                     previousApp: previousApp
-                ) || didChangeState
+                )
+                if didTriggerHotkey {
+                    changeSummary.record(.shortcutTriggered, windowIDs: [])
+                }
             }
         }
 
-        return didChangeState
+        return changeSummary
     }
 
     private func hideApp(_ app: NSRunningApplication, sourceSpaceIDs: Set<String> = []) async -> Bool {

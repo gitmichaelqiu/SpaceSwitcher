@@ -1337,6 +1337,215 @@
         }
       }
     },
+    "%@ rule: %@" : {
+      "comment" : "HUD toast with the rule target and confirmed changes",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ 规则：%@"
+          }
+        }
+      }
+    },
+    "%d windows brought to front" : {
+      "comment" : "HUD outcome for multiple windows brought to the front",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%d 个窗口已置于前台"
+          }
+        }
+      }
+    },
+    "%d windows hidden" : {
+      "comment" : "HUD outcome for multiple hidden windows",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%d 个窗口已隐藏"
+          }
+        }
+      }
+    },
+    "%d windows minimized" : {
+      "comment" : "HUD outcome for multiple minimized windows",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%d 个窗口已最小化"
+          }
+        }
+      }
+    },
+    "%d windows restored" : {
+      "comment" : "HUD outcome for multiple restored windows",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%d 个窗口已恢复"
+          }
+        }
+      }
+    },
+    "%d windows shown" : {
+      "comment" : "HUD outcome for multiple shown windows",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%d 个窗口已显示"
+          }
+        }
+      }
+    },
+    "Rules updated for %d apps" : {
+      "comment" : "HUD fallback when multiple rules or applications change",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已更新 %d 个应用的规则"
+          }
+        }
+      }
+    },
+    "Rules updated for one app" : {
+      "comment" : "HUD fallback when multiple rules affect one application",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已更新一个应用的规则"
+          }
+        }
+      }
+    },
+    "app brought to front" : {
+      "comment" : "HUD outcome when an application without enumerated windows is brought to the front",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "应用已置于前台"
+          }
+        }
+      }
+    },
+    "app hidden" : {
+      "comment" : "HUD outcome when an application without enumerated windows is hidden",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "应用已隐藏"
+          }
+        }
+      }
+    },
+    "app minimized" : {
+      "comment" : "HUD outcome when an application without enumerated windows is minimized",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "应用已最小化"
+          }
+        }
+      }
+    },
+    "app restored" : {
+      "comment" : "HUD outcome when an application without enumerated windows is restored",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "应用已恢复"
+          }
+        }
+      }
+    },
+    "app shown" : {
+      "comment" : "HUD outcome when an application without enumerated windows is shown",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "应用已显示"
+          }
+        }
+      }
+    },
+    "shortcut triggered" : {
+      "comment" : "HUD outcome when a rule triggers a keyboard shortcut",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已触发快捷键"
+          }
+        }
+      }
+    },
+    "window brought to front" : {
+      "comment" : "HUD outcome for one window brought to the front",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "窗口已置于前台"
+          }
+        }
+      }
+    },
+    "window hidden" : {
+      "comment" : "HUD outcome for one hidden window",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "窗口已隐藏"
+          }
+        }
+      }
+    },
+    "window minimized" : {
+      "comment" : "HUD outcome for one minimized window",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "窗口已最小化"
+          }
+        }
+      }
+    },
+    "window restored" : {
+      "comment" : "HUD outcome for one restored window",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "窗口已恢复"
+          }
+        }
+      }
+    },
+    "window shown" : {
+      "comment" : "HUD outcome for one shown window",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "窗口已显示"
+          }
+        }
+      }
+    },
     "Rules" : {
       "localizations" : {
         "zh-Hans" : {

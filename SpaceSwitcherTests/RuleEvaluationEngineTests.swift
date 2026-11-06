@@ -47,6 +47,26 @@ final class RuleEvaluationEngineTests: XCTestCase {
         )
     }
 
+    func testRuleHUDChangeSummaryMergesOutcomesAndDeduplicatesWindows() {
+        var firstPlan = RuleHUDChangeSummary()
+        firstPlan.record(.hidden, windowIDs: [101, 102])
+        firstPlan.record(.hidden, windowIDs: [102])
+        firstPlan.record(.minimized, windowIDs: [102])
+
+        var secondPlan = RuleHUDChangeSummary()
+        secondPlan.record(.restored, windowIDs: [103])
+        firstPlan.merge(secondPlan)
+
+        XCTAssertTrue(firstPlan.hasChanges)
+        XCTAssertEqual(firstPlan.windowCount(for: .hidden), 2)
+        XCTAssertEqual(firstPlan.windowCount(for: .minimized), 1)
+        XCTAssertEqual(firstPlan.windowCount(for: .restored), 1)
+
+        var appLevelChange = RuleHUDChangeSummary()
+        appLevelChange.record(.shortcutTriggered, windowIDs: [])
+        XCTAssertTrue(appLevelChange.hasChanges)
+    }
+
     func testSpecificRuleBeforeAllAppsWinsForItsMatchingWindow() {
         let specificRule = makeRule(
             id: uuid(1),
