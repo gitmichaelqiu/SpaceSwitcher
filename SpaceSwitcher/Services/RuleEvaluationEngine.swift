@@ -8,6 +8,7 @@ import Foundation
 struct RuleWindowSnapshot: Identifiable, Hashable {
     let id: Int
     let spaceIDs: Set<String>
+    let primarySpaceID: String?
     let isMinimized: Bool?
     let isHidden: Bool?
     let isFullscreen: Bool?
@@ -234,7 +235,8 @@ enum RuleEvaluationEngine {
 
         guard group.usesSourceSpace else { return false }
         if let window {
-            return window.spaceIDs.contains(currentSpaceID)
+            return window.primarySpaceID.map { $0 == currentSpaceID }
+                ?? window.spaceIDs.contains(currentSpaceID)
         }
         return managedSourceSpaceIDs.contains(currentSpaceID)
     }

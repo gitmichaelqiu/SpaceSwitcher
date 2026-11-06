@@ -302,9 +302,19 @@ class RuleManager: ObservableObject {
         allWindows.sort { $0.id < $1.id }
 
         let windows = allWindows.map { window in
-            RuleWindowSnapshot(
+            let mappedSourceSpaceID: String?
+            if let managedSpaceID = window.primarySpaceID {
+                mappedSourceSpaceID = self.spaceManager?
+                    .ruleSpaceIDs(forManagedSpaceIDs: [managedSpaceID])
+                    .first ?? managedSpaceID
+            } else {
+                mappedSourceSpaceID = nil
+            }
+
+            return RuleWindowSnapshot(
                 id: window.id,
                 spaceIDs: spaceManager?.ruleSpaceIDs(forManagedSpaceIDs: window.spaceIDs) ?? window.spaceIDs,
+                primarySpaceID: mappedSourceSpaceID,
                 isMinimized: WindowSpaceService.isMinimized(window) ?? window.isMinimized,
                 isHidden: WindowSpaceService.isHidden(window) ?? window.isHidden,
                 isFullscreen: window.isFullscreen,
@@ -323,14 +333,16 @@ class RuleManager: ObservableObject {
     }
 
     private func ruleSpaceIDs(for windows: [RuleWindowTarget]) -> Set<String> {
-        let managedSpaceIDs = Set(windows.flatMap(\.spaceIDs))
+        let managedSpaceIDs = Set(windows.flatMap { window in
+            window.primarySpaceID.map { [$0] } ?? Array(window.spaceIDs)
+        })
         return spaceManager?.ruleSpaceIDs(forManagedSpaceIDs: managedSpaceIDs) ?? managedSpaceIDs
     }
 
     private func windowDebugSummary(_ window: RuleWindowTarget, prefix: String = "window") -> String {
         let liveMinimized = WindowSpaceService.isMinimized(window)
         let liveHidden = WindowSpaceService.isHidden(window)
-        return "\(prefix) id=\(window.id) spaces=[\(window.spaceIDs.sorted().joined(separator: ","))] minimized(snapshot=\(boolDebug(window.isMinimized)),live=\(boolDebug(liveMinimized))) hidden(snapshot=\(boolDebug(window.isHidden)),live=\(boolDebug(liveHidden))) frontmost=\(window.isFrontmost)"
+        return "\(prefix) id=\(window.id) spaces=[\(window.spaceIDs.sorted().joined(separator: ","))] primarySpace=\(window.primarySpaceID ?? "unknown") minimized(snapshot=\(boolDebug(window.isMinimized)),live=\(boolDebug(liveMinimized))) hidden(snapshot=\(boolDebug(window.isHidden)),live=\(boolDebug(liveHidden))) frontmost=\(window.isFrontmost)"
     }
 
     private func boolDebug(_ value: Bool?) -> String {

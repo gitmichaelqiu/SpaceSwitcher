@@ -150,6 +150,50 @@ final class RuleEvaluationEngineTests: XCTestCase {
         XCTAssertEqual(plans[0].windowIDs, [101])
     }
 
+    func testSourceSpaceUsesPrimaryAssignmentForWindowInMultipleSpaces() {
+        let rule = makeRule(
+            id: uuid(1),
+            appBundleID: "com.example.music",
+            groups: [
+                RuleGroup(
+                    targetSpaceIDs: [],
+                    actions: [ActionItem(.restore)],
+                    usesSourceSpace: true
+                )
+            ],
+            elseActions: [
+                ActionItem(.ifCondition(.windowMinimized)),
+                ActionItem(.hide),
+                ActionItem(.endIf)
+            ]
+        )
+        let application = makeApplication(
+            bundleIdentifier: "com.example.music",
+            windows: [
+                makeWindow(
+                    id: 101,
+                    spaces: ["source", "destination"],
+                    primarySpace: "source",
+                    minimized: true
+                )
+            ]
+        )
+
+        let destinationPlan = RuleEvaluationEngine.plans(
+            for: application,
+            rules: [rule],
+            currentSpaceID: "destination"
+        ).first
+        let sourcePlan = RuleEvaluationEngine.plans(
+            for: application,
+            rules: [rule],
+            currentSpaceID: "source"
+        ).first
+
+        XCTAssertEqual(destinationPlan?.actions, [.hide])
+        XCTAssertEqual(sourcePlan?.actions, [.restore])
+    }
+
     func testGroupMismatchFallsThroughToLaterRule() {
         let specificRule = makeRule(
             id: uuid(1),
@@ -392,6 +436,7 @@ final class RuleEvaluationEngineTests: XCTestCase {
     private func makeWindow(
         id: Int,
         spaces: Set<String> = ["source"],
+        primarySpace: String? = nil,
         minimized: Bool? = false,
         hidden: Bool? = false,
         fullscreen: Bool? = false,
@@ -400,6 +445,7 @@ final class RuleEvaluationEngineTests: XCTestCase {
         RuleWindowSnapshot(
             id: id,
             spaceIDs: spaces,
+            primarySpaceID: primarySpace ?? (spaces.count == 1 ? spaces.first : nil),
             isMinimized: minimized,
             isHidden: hidden,
             isFullscreen: fullscreen,
