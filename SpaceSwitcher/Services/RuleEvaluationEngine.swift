@@ -252,7 +252,10 @@ enum RuleEvaluationEngine {
             let rawActions = selectedActions(
                 for: rule,
                 currentSpaceID: currentSpaceID,
-                window: window,
+                // The window's live membership can change after the app was
+                // hidden. Use the recorded source space to select the group,
+                // then evaluate its conditions against the actual window.
+                window: nil,
                 managedSourceSpaceIDs: application.managedAppHideSourceSpaceIDs
             )
 

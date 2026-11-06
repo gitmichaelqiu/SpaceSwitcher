@@ -194,6 +194,41 @@ final class RuleEvaluationEngineTests: XCTestCase {
         XCTAssertEqual(sourcePlan?.actions, [.restore])
     }
 
+    func testManagedSourceSpaceOverridesWindowServerMembershipWhenRestoring() {
+        let rule = makeRule(
+            id: uuid(1),
+            appBundleID: "com.example.music",
+            groups: [
+                RuleGroup(
+                    targetSpaceIDs: [],
+                    actions: [ActionItem(.restore)],
+                    usesSourceSpace: true
+                )
+            ],
+            elseActions: [ActionItem(.hide)]
+        )
+        let application = makeApplication(
+            bundleIdentifier: "com.example.music",
+            windows: [
+                makeWindow(
+                    id: 101,
+                    spaces: ["source", "destination"],
+                    primarySpace: "destination"
+                )
+            ],
+            managedAppHideSourceSpaceIDs: ["source"]
+        )
+
+        let plan = RuleEvaluationEngine.plans(
+            for: application,
+            rules: [rule],
+            currentSpaceID: "source"
+        ).first
+
+        XCTAssertEqual(plan?.actions, [.restore])
+        XCTAssertEqual(plan?.windowIDs, [101])
+    }
+
     func testGroupMismatchFallsThroughToLaterRule() {
         let specificRule = makeRule(
             id: uuid(1),

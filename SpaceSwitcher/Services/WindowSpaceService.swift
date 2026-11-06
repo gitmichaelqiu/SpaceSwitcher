@@ -25,8 +25,8 @@ struct RuleWindowTarget {
     let applicationPID: Int32
     let accessibilityElement: AXUIElement
     let spaceIDs: Set<String>
-    /// The window's primary assigned desktop. A window can belong to several
-    /// spaces, but only this first WindowServer membership is its source.
+    /// WindowServer's first reported membership. This is a live fallback for
+    /// source matching; RuleManager's remembered hide source takes precedence.
     let primarySpaceID: String?
     let isMinimized: Bool?
     let isHidden: Bool?
