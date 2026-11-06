@@ -39,6 +39,19 @@ struct RuleExecutionPlan: Equatable {
     let windowIDs: [Int]
 }
 
+enum RuleActionStateChange {
+    /// A successful accessibility write can be a no-op, so unknown prior state
+    /// is not enough evidence to report a user-visible change.
+    static func isConfirmed(
+        from currentValue: Bool?,
+        to targetValue: Bool,
+        updateSucceeded: Bool
+    ) -> Bool {
+        guard updateSucceeded, let currentValue else { return false }
+        return currentValue != targetValue
+    }
+}
+
 enum RuleOrdering {
     static func moving(
         _ rules: [AppRule],

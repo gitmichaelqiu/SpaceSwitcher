@@ -2,6 +2,21 @@ import XCTest
 @testable import SpaceSwitcher
 
 final class RuleEvaluationEngineTests: XCTestCase {
+    func testRuleActionStateChangeRequiresAConfirmedTransition() {
+        XCTAssertFalse(
+            RuleActionStateChange.isConfirmed(from: true, to: true, updateSucceeded: true)
+        )
+        XCTAssertFalse(
+            RuleActionStateChange.isConfirmed(from: false, to: true, updateSucceeded: false)
+        )
+        XCTAssertFalse(
+            RuleActionStateChange.isConfirmed(from: nil, to: true, updateSucceeded: true)
+        )
+        XCTAssertTrue(
+            RuleActionStateChange.isConfirmed(from: false, to: true, updateSucceeded: true)
+        )
+    }
+
     func testSpecificRuleBeforeAllAppsWinsForItsMatchingWindow() {
         let specificRule = makeRule(
             id: uuid(1),
