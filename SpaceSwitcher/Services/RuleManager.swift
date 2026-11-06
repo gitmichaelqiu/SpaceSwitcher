@@ -217,11 +217,53 @@ class RuleManager: ObservableObject {
             guard !Task.isCancelled,
                   executionBatches.contains(where: { !$0.plans.isEmpty }) else { return }
 
+            let executedRuleIDs = Set(executionBatches.flatMap { batch in
+                batch.plans.map(\.ruleID)
+            })
+
             await MainActor.run {
+                guard HUDToastSettings.shared.isEnabled else { return }
+
+                let executedRules = orderedRules.filter { executedRuleIDs.contains($0.id) }
+                guard !executedRules.isEmpty else { return }
+
+                let ruleNames = executedRules.map { rule in
+                    if rule.appliesToAllApps {
+                        return NSLocalizedString("All apps", comment: "Rule target")
+                    }
+
+                    return resolvedApplicationName(
+                        bundleIdentifier: rule.appBundleID,
+                        storedName: rule.appName
+                    )
+                }
+                let message: String
+                if ruleNames.count == 1, let ruleName = ruleNames.first {
+                    message = String(
+                        format: NSLocalizedString("Rule executed: %@", comment: "HUD toast"),
+                        ruleName
+                    )
+                } else {
+                    message = String(
+                        format: NSLocalizedString("Rules executed: %@", comment: "HUD toast"),
+                        ruleNames.joined(separator: ", ")
+                    )
+                }
+
+                var applicationsByPID: [Int32: NSRunningApplication] = [:]
+                for batch in executionBatches where !batch.plans.isEmpty {
+                    applicationsByPID[batch.application.processIdentifier] = batch.application
+                }
+                let singleApplication = applicationsByPID.count == 1
+                    ? applicationsByPID.values.first
+                    : nil
+                let appIcon = singleApplication?.icon
+
                 HUDWindowController.shared.show(
-                    message: String(localized: "Automation rules executed"),
+                    message: message,
                     style: .info,
-                    systemImage: "bolt.fill"
+                    appIcon: appIcon,
+                    systemImage: appIcon == nil ? "bolt.fill" : nil
                 )
             }
         }

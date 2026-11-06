@@ -1327,6 +1327,16 @@
         }
       }
     },
+    "Rule executed: %@" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已执行规则：%@"
+          }
+        }
+      }
+    },
     "Rules" : {
       "localizations" : {
         "zh-Hans" : {
@@ -1343,6 +1353,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "规则按从上到下的顺序执行。第一个匹配的规则优先。"
+          }
+        }
+      }
+    },
+    "Rules executed: %@" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已执行规则：%@"
           }
         }
       }
@@ -1450,6 +1470,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "显示"
+          }
+        }
+      }
+    },
+    "Show HUD toasts" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "显示 HUD 提示"
           }
         }
       }
