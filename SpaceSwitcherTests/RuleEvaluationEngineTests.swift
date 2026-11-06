@@ -17,6 +17,36 @@ final class RuleEvaluationEngineTests: XCTestCase {
         )
     }
 
+    func testRuleActionStateChangeCanUsePostWriteValueWhenPreviousStateWasUnknown() {
+        XCTAssertTrue(
+            RuleActionStateChange.isConfirmedAfterUpdate(
+                from: nil,
+                to: true,
+                updateSucceeded: true,
+                observedAfter: true,
+                wasPreviouslyManaged: false
+            )
+        )
+        XCTAssertFalse(
+            RuleActionStateChange.isConfirmedAfterUpdate(
+                from: nil,
+                to: true,
+                updateSucceeded: true,
+                observedAfter: true,
+                wasPreviouslyManaged: true
+            )
+        )
+        XCTAssertFalse(
+            RuleActionStateChange.isConfirmedAfterUpdate(
+                from: nil,
+                to: true,
+                updateSucceeded: true,
+                observedAfter: nil,
+                wasPreviouslyManaged: false
+            )
+        )
+    }
+
     func testSpecificRuleBeforeAllAppsWinsForItsMatchingWindow() {
         let specificRule = makeRule(
             id: uuid(1),

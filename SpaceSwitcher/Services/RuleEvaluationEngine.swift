@@ -50,6 +50,30 @@ enum RuleActionStateChange {
         guard updateSucceeded, let currentValue else { return false }
         return currentValue != targetValue
     }
+
+    /// Uses the post-write value when Accessibility could not report the
+    /// previous state. A successful write is only treated as a change the
+    /// first time this manager has attempted to manage the target, preventing
+    /// repeated refreshes from producing duplicate HUD toasts.
+    static func isConfirmedAfterUpdate(
+        from currentValue: Bool?,
+        to targetValue: Bool,
+        updateSucceeded: Bool,
+        observedAfter: Bool?,
+        wasPreviouslyManaged: Bool
+    ) -> Bool {
+        if let currentValue {
+            return isConfirmed(
+                from: currentValue,
+                to: targetValue,
+                updateSucceeded: updateSucceeded
+            )
+        }
+
+        return updateSucceeded
+            && !wasPreviouslyManaged
+            && observedAfter == targetValue
+    }
 }
 
 enum RuleOrdering {

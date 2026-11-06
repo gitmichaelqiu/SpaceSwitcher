@@ -193,10 +193,10 @@ class RuleManager: ObservableObject {
             var changedApplicationPIDs = Set<Int32>()
 
             for batch in executionBatches {
-                if Task.isCancelled { return }
+                if Task.isCancelled { break }
                 var didPerformGlobalHotkey = false
                 for plan in batch.plans {
-                    if Task.isCancelled { return }
+                    if Task.isCancelled { break }
 
                     let hasGlobalHotkey = plan.actions.contains {
                         if case .globalHotkey = $0 { return true }
@@ -210,6 +210,7 @@ class RuleManager: ObservableObject {
                         targetWindows: plan.windows,
                         performGlobalHotkeys: hasGlobalHotkey && !didPerformGlobalHotkey
                     )
+                    self.debugLog("  rule=\(plan.ruleID.uuidString.prefix(8)) confirmedStateChange=\(didChangeState)")
                     if didChangeState {
                         changedRuleIDs.insert(plan.ruleID)
                         changedApplicationPIDs.insert(batch.application.processIdentifier)
@@ -221,10 +222,14 @@ class RuleManager: ObservableObject {
                 }
             }
 
-            guard !Task.isCancelled, !changedRuleIDs.isEmpty else { return }
+            self.debugLog("rule action summary: changedRules=\(changedRuleIDs.count) changedApps=\(changedApplicationPIDs.count) cancelled=\(Task.isCancelled)")
+            guard !changedRuleIDs.isEmpty else { return }
 
             await MainActor.run {
-                guard HUDToastSettings.shared.isEnabled else { return }
+                guard HUDToastSettings.shared.isEnabled else {
+                    self.debugLog("HUD toast skipped: setting is disabled")
+                    return
+                }
 
                 let executedRules = orderedRules.filter { changedRuleIDs.contains($0.id) }
                 guard !executedRules.isEmpty else { return }
@@ -262,6 +267,7 @@ class RuleManager: ObservableObject {
                     : nil
                 let appIcon = singleApplication?.icon ?? NSApp.applicationIconImage
 
+                self.debugLog("HUD toast shown for rules=\(changedRuleIDs.count) apps=\(changedApplicationPIDs.count)")
                 HUDWindowController.shared.show(
                     message: message,
                     style: .info,
@@ -402,7 +408,7 @@ class RuleManager: ObservableObject {
             case .hide:
                 if targetWindows.isEmpty {
                     debugLog("hide app-level because target window list is empty")
-                    didChangeState = hideApp(
+                    didChangeState = await hideApp(
                         app,
                         sourceSpaceIDs: ruleSpaceIDs(for: allWindows)
                     ) || didChangeState
@@ -421,7 +427,7 @@ class RuleManager: ObservableObject {
                         isWindowHidden($0) == true
                     }
                     debugLog("hide app-level because all windows match")
-                    let didHideApp = hideApp(
+                    let didHideApp = await hideApp(
                         app,
                         sourceSpaceIDs: ruleSpaceIDs(for: allWindows)
                     )
@@ -432,12 +438,15 @@ class RuleManager: ObservableObject {
                 var didHideWindow = false
                 for window in targetWindows {
                     let wasHidden = isWindowHidden(window)
+                    let wasManagedHide = managedHides[window.id] != nil
                     if await setHiddenWithRetry(window, isHidden: true) {
                         managedHides[window.id] = window
-                        didHideWindow = RuleActionStateChange.isConfirmed(
+                        didHideWindow = RuleActionStateChange.isConfirmedAfterUpdate(
                             from: wasHidden,
                             to: true,
-                            updateSucceeded: true
+                            updateSucceeded: true,
+                            observedAfter: isWindowHidden(window),
+                            wasPreviouslyManaged: wasManagedHide
                         ) || didHideWindow
                     }
                 }
@@ -448,7 +457,7 @@ class RuleManager: ObservableObject {
                 // attribute. Preserve the old behavior only when the plan
                 // covers the complete application.
                 if !didHideWindow && targetWindows.count == allWindows.count {
-                    didChangeState = hideApp(app) || didChangeState
+                    didChangeState = await hideApp(app) || didChangeState
                 }
                 
             case .show:
@@ -570,13 +579,16 @@ class RuleManager: ObservableObject {
 
                 for window in targetWindows {
                     let wasMinimized = isWindowMinimized(window)
+                    let wasManagedMinimize = managedMinimizes.contains(window.id)
                     if wasMinimized != true,
                        WindowSpaceService.setMinimized(window, isMinimized: true) {
                         managedMinimizes.insert(window.id)
-                        didChangeState = RuleActionStateChange.isConfirmed(
+                        didChangeState = RuleActionStateChange.isConfirmedAfterUpdate(
                             from: wasMinimized,
                             to: true,
-                            updateSucceeded: true
+                            updateSucceeded: true,
+                            observedAfter: isWindowMinimized(window),
+                            wasPreviouslyManaged: wasManagedMinimize
                         ) || didChangeState
                     }
                 }
@@ -618,15 +630,29 @@ class RuleManager: ObservableObject {
         return didChangeState
     }
 
-    private func hideApp(_ app: NSRunningApplication, sourceSpaceIDs: Set<String> = []) -> Bool {
+    private func hideApp(_ app: NSRunningApplication, sourceSpaceIDs: Set<String> = []) async -> Bool {
         let wasHidden = app.isHidden
         debugLog("hide app request: app=\(app.localizedName ?? "<unknown>") pid=\(app.processIdentifier) hiddenBefore=\(wasHidden) sourceSpaces=[\(sourceSpaceIDs.sorted().joined(separator: ","))]")
         if !wasHidden {
             managedAppHides[app.processIdentifier] = sourceSpaceIDs
         }
         let didHide = app.hide()
-        debugLog("hide app request completed: hiddenAfter=\(app.isHidden) managedSources=\(managedAppHides[app.processIdentifier]?.sorted().joined(separator: ",") ?? "none")")
-        return !wasHidden && didHide
+        if !wasHidden {
+            // The hide request can reach the target before Launch Services
+            // reflects the new state through NSRunningApplication.isHidden.
+            // Poll briefly so a real app hide is not discarded as unchanged.
+            for attempt in 0..<4 {
+                if app.isHidden {
+                    debugLog("hide app request completed: requested=\(didHide) hiddenAfter=true managedSources=\(managedAppHides[app.processIdentifier]?.sorted().joined(separator: ",") ?? "none")")
+                    return true
+                }
+                if attempt < 3 {
+                    try? await Task.sleep(nanoseconds: 50_000_000)
+                }
+            }
+        }
+        debugLog("hide app request completed: requested=\(didHide) hiddenAfter=\(app.isHidden) managedSources=\(managedAppHides[app.processIdentifier]?.sorted().joined(separator: ",") ?? "none")")
+        return false
     }
 
     private func setHiddenWithRetry(
