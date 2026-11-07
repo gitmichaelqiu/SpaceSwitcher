@@ -495,11 +495,16 @@ class RuleManager: ObservableObject {
                     let wasManagedHide = managedHides[window.id] != nil
                     if await setHiddenWithRetry(window, isHidden: true) {
                         managedHides[window.id] = window
+                        let observedAfter = await waitForWindowState(
+                            window,
+                            targetValue: true,
+                            readState: WindowSpaceService.isHidden
+                        )
                         let didHide = RuleActionStateChange.isConfirmedAfterUpdate(
                             from: wasHidden,
                             to: true,
                             updateSucceeded: true,
-                            observedAfter: isWindowHidden(window),
+                            observedAfter: observedAfter,
                             wasPreviouslyManaged: wasManagedHide
                         )
                         if didHide {
@@ -539,11 +544,17 @@ class RuleManager: ObservableObject {
                     let wasManagedHide = managedHides[window.id] != nil
                     if await setHiddenWithRetry(window, isHidden: false) {
                         managedHides.removeValue(forKey: window.id)
+                        let observedAfter = await waitForWindowState(
+                            window,
+                            targetValue: false,
+                            readState: WindowSpaceService.isHidden
+                        )
                         let didShow = RuleActionStateChange.isConfirmed(
                             from: wasHidden,
                             to: false,
-                            updateSucceeded: true
-                        ) || (wasManagedHide && wasHidden == nil)
+                            updateSucceeded: true,
+                            observedAfter: observedAfter
+                        ) || (wasManagedHide && wasHidden == nil && observedAfter == false)
                         if didShow {
                             changeSummary.record(.shown, windowIDs: [window.id])
                         }
@@ -553,11 +564,17 @@ class RuleManager: ObservableObject {
                     let wasManagedMinimize = managedMinimizes.contains(window.id)
                     if WindowSpaceService.setMinimized(window, isMinimized: false) {
                         managedMinimizes.remove(window.id)
+                        let observedAfter = await waitForWindowState(
+                            window,
+                            targetValue: false,
+                            readState: WindowSpaceService.isMinimized
+                        )
                         let didShow = RuleActionStateChange.isConfirmed(
                             from: wasMinimized,
                             to: false,
-                            updateSucceeded: true
-                        ) || (wasManagedMinimize && wasMinimized == nil)
+                            updateSucceeded: true,
+                            observedAfter: observedAfter
+                        ) || (wasManagedMinimize && wasMinimized == nil && observedAfter == false)
                         if didShow {
                             changeSummary.record(.shown, windowIDs: [window.id])
                         }
@@ -614,15 +631,19 @@ class RuleManager: ObservableObject {
                     if didUnhide {
                         managedHides.removeValue(forKey: window.id)
                         restoredHiddenWindow = true
-                        if wasHidden != false {
-                            let didRestore = RuleActionStateChange.isConfirmed(
-                                from: wasHidden,
-                                to: false,
-                                updateSucceeded: true
-                            ) || (wasHidden == nil)
-                            if didRestore {
-                                changeSummary.record(.restored, windowIDs: [window.id])
-                            }
+                        let observedAfter = await waitForWindowState(
+                            window,
+                            targetValue: false,
+                            readState: WindowSpaceService.isHidden
+                        )
+                        let didRestore = RuleActionStateChange.isConfirmed(
+                            from: wasHidden,
+                            to: false,
+                            updateSucceeded: true,
+                            observedAfter: observedAfter
+                        ) || (wasHidden == nil && observedAfter == false)
+                        if didRestore {
+                            changeSummary.record(.restored, windowIDs: [window.id])
                         }
                     }
                     let wasManagedMinimized = managedMinimizes.contains(window.id)
@@ -630,11 +651,17 @@ class RuleManager: ObservableObject {
                     if wasManagedMinimized {
                         if WindowSpaceService.setMinimized(window, isMinimized: false) {
                             managedMinimizes.remove(window.id)
+                            let observedAfter = await waitForWindowState(
+                                window,
+                                targetValue: false,
+                                readState: WindowSpaceService.isMinimized
+                            )
                             let didRestore = RuleActionStateChange.isConfirmed(
                                 from: wasMinimized,
                                 to: false,
-                                updateSucceeded: true
-                            ) || (wasMinimized == nil)
+                                updateSucceeded: true,
+                                observedAfter: observedAfter
+                            ) || (wasMinimized == nil && observedAfter == false)
                             if didRestore {
                                 changeSummary.record(.restored, windowIDs: [window.id])
                             }
@@ -662,11 +689,16 @@ class RuleManager: ObservableObject {
                     if wasMinimized != true,
                        WindowSpaceService.setMinimized(window, isMinimized: true) {
                         managedMinimizes.insert(window.id)
+                        let observedAfter = await waitForWindowState(
+                            window,
+                            targetValue: true,
+                            readState: WindowSpaceService.isMinimized
+                        )
                         let didMinimize = RuleActionStateChange.isConfirmedAfterUpdate(
                             from: wasMinimized,
                             to: true,
                             updateSucceeded: true,
-                            observedAfter: isWindowMinimized(window),
+                            observedAfter: observedAfter,
                             wasPreviouslyManaged: wasManagedMinimize
                         )
                         if didMinimize {
@@ -771,6 +803,27 @@ class RuleManager: ObservableObject {
         WindowSpaceService.isMinimized(target)
     }
 
+    private func waitForWindowState(
+        _ window: RuleWindowTarget,
+        targetValue: Bool,
+        readState: (RuleWindowTarget) -> Bool?
+    ) async -> Bool? {
+        for attempt in 0..<3 {
+            if Task.isCancelled {
+                return readState(window)
+            }
+
+            let observedState = readState(window)
+            if observedState == targetValue || attempt == 2 {
+                return observedState
+            }
+
+            try? await Task.sleep(nanoseconds: 40_000_000)
+        }
+
+        return readState(window)
+    }
+
     private func performHotkey(
         keyCode: Int,
         modifiers: UInt,
@@ -780,39 +833,31 @@ class RuleManager: ObservableObject {
         targetWindow: RuleWindowTarget?,
         previousApp: NSRunningApplication?
     ) async -> Bool {
-        var didChangeState = false
         if waitFrontmost {
             var retries = 0
             while !app.isActive && retries < 100 {
-                if Task.isCancelled { return didChangeState }
+                if Task.isCancelled { return false }
                 try? await Task.sleep(nanoseconds: 50_000_000)
                 retries += 1
             }
 
-            if !app.isActive { return didChangeState }
+            if !app.isActive { return false }
             if let targetWindow {
-                let wasFrontmost = targetWindow.isFrontmost
-                if WindowSpaceService.raise(targetWindow) {
-                    didChangeState = !wasFrontmost || didChangeState
-                }
+                _ = WindowSpaceService.raise(targetWindow)
             }
             try? await Task.sleep(nanoseconds: 200_000_000)
         } else {
             var attempts = 0
             while !app.isActive && attempts < 5 {
-                if Task.isCancelled { return didChangeState }
-                if app.activate(options: .activateIgnoringOtherApps) {
-                    didChangeState = true
-                }
+                if Task.isCancelled { return false }
+                _ = app.activate(options: .activateIgnoringOtherApps)
                 if let targetWindow {
-                    let wasFrontmost = targetWindow.isFrontmost
-                    if WindowSpaceService.raise(targetWindow) {
-                        didChangeState = !wasFrontmost || didChangeState
-                    }
+                    _ = WindowSpaceService.raise(targetWindow)
                 }
 
                 var check = 0
                 while !app.isActive && check < 5 {
+                    if Task.isCancelled { return false }
                     try? await Task.sleep(nanoseconds: 50_000_000)
                     check += 1
                 }
@@ -824,8 +869,8 @@ class RuleManager: ObservableObject {
             }
         }
 
-        if Task.isCancelled { return didChangeState }
-        didChangeState = simulateHotkey(keyCode: keyCode, modifiers: modifiers) || didChangeState
+        if Task.isCancelled { return false }
+        let didPostHotkey = simulateHotkey(keyCode: keyCode, modifiers: modifiers)
 
         if !waitFrontmost,
            restoreWindow,
@@ -833,11 +878,11 @@ class RuleManager: ObservableObject {
            previousApp.processIdentifier != app.processIdentifier {
             try? await Task.sleep(nanoseconds: 100_000_000)
             if !Task.isCancelled {
-                didChangeState = previousApp.activate(options: .activateIgnoringOtherApps) || didChangeState
+                _ = previousApp.activate(options: .activateIgnoringOtherApps)
             }
         }
 
-        return didChangeState
+        return didPostHotkey
     }
     
     private func simulateHotkey(keyCode: Int, modifiers: UInt) -> Bool {
@@ -850,7 +895,7 @@ class RuleManager: ObservableObject {
         
         usleep(10000)
         
-        guard let keyUp = CGEvent(keyboardEventSource: nil, virtualKey: CGKeyCode(keyCode), keyDown: false) else { return true }
+        guard let keyUp = CGEvent(keyboardEventSource: nil, virtualKey: CGKeyCode(keyCode), keyDown: false) else { return false }
         keyUp.flags = flags
         keyUp.post(tap: .cghidEventTap)
         return true

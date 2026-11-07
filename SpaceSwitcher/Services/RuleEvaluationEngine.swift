@@ -41,8 +41,7 @@ struct RuleExecutionPlan: Equatable {
 }
 
 enum RuleActionStateChange {
-    /// A successful accessibility write can be a no-op, so unknown prior state
-    /// is not enough evidence to report a user-visible change.
+    /// Checks whether a known prior state differs from the requested state.
     static func isConfirmed(
         from currentValue: Bool?,
         to targetValue: Bool,
@@ -50,6 +49,22 @@ enum RuleActionStateChange {
     ) -> Bool {
         guard updateSucceeded, let currentValue else { return false }
         return currentValue != targetValue
+    }
+
+    /// A successful accessibility write can be a no-op. Confirm the live
+    /// value reached the requested state before reporting a user-visible change.
+    static func isConfirmed(
+        from currentValue: Bool?,
+        to targetValue: Bool,
+        updateSucceeded: Bool,
+        observedAfter: Bool?
+    ) -> Bool {
+        guard observedAfter == targetValue else { return false }
+        return isConfirmed(
+            from: currentValue,
+            to: targetValue,
+            updateSucceeded: updateSucceeded
+        )
     }
 
     /// Uses the post-write value when Accessibility could not report the
@@ -63,17 +78,17 @@ enum RuleActionStateChange {
         observedAfter: Bool?,
         wasPreviouslyManaged: Bool
     ) -> Bool {
+        guard updateSucceeded, observedAfter == targetValue else { return false }
+
         if let currentValue {
             return isConfirmed(
                 from: currentValue,
                 to: targetValue,
-                updateSucceeded: updateSucceeded
+                updateSucceeded: true
             )
         }
 
-        return updateSucceeded
-            && !wasPreviouslyManaged
-            && observedAfter == targetValue
+        return !wasPreviouslyManaged
     }
 }
 
