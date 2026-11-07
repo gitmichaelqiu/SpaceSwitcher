@@ -3,6 +3,50 @@ import Combine
 import AppKit
 import os.log
 
+private actor DockOperationGate {
+    private var isLocked = false
+    private var waiters: [UUID: CheckedContinuation<Bool, Never>] = [:]
+    private var waiterOrder: [UUID] = []
+
+    func acquire() async -> Bool {
+        guard isLocked else {
+            isLocked = true
+            return true
+        }
+
+        let waiterID = UUID()
+        return await withTaskCancellationHandler {
+            await withCheckedContinuation { continuation in
+                guard !Task.isCancelled else {
+                    continuation.resume(returning: false)
+                    return
+                }
+
+                waiters[waiterID] = continuation
+                waiterOrder.append(waiterID)
+            }
+        } onCancel: {
+            Task { await self.cancelWaiter(waiterID) }
+        }
+    }
+
+    func release() {
+        while !waiterOrder.isEmpty {
+            let waiterID = waiterOrder.removeFirst()
+            guard let continuation = waiters.removeValue(forKey: waiterID) else { continue }
+            continuation.resume(returning: true)
+            return
+        }
+
+        isLocked = false
+    }
+
+    private func cancelWaiter(_ waiterID: UUID) {
+        guard let continuation = waiters.removeValue(forKey: waiterID) else { return }
+        continuation.resume(returning: false)
+    }
+}
+
 class DockManager: ObservableObject {
     @MainActor @Published var config: DockConfig = DockConfig() {
         didSet {
@@ -16,8 +60,9 @@ class DockManager: ObservableObject {
     @MainActor @Published var activeDockSetID: UUID?
     private var lastAppliedDockSetID: UUID?
     
-    // Serializes Dock restart to prevent concurrent killall + verify cycles
-    private let switchLock = NSLock()
+    // Serializes Dock preference and restart operations without blocking a thread
+    // while an operation awaits process or Dock state changes.
+    private let switchGate = DockOperationGate()
 
     // Tracks the current switching task
     private var dockTask: Task<Void, Never>?
@@ -27,7 +72,7 @@ class DockManager: ObservableObject {
     private let configKey = "SpaceSwitcherDockConfig"
     
     // Logger for debugging
-    private let logger = Logger(subsystem: "dev.mqiu.SpaceSwitcher", category: "DockManager")
+    nonisolated private let logger = Logger(subsystem: "dev.mqiu.SpaceSwitcher", category: "DockManager")
     
     init() {
         loadConfig()
@@ -216,6 +261,21 @@ class DockManager: ObservableObject {
     /// Phase 1: Write tiles to plist + cfprefsd, then kill cfprefsd to force
     /// a fresh read from disk. Fast (~1s), non-disruptive (Dock stays alive).
     private func phase1WriteToDisk(_ set: DockSet) async -> Bool {
+        guard await switchGate.acquire() else { return false }
+        guard !Task.isCancelled else {
+            await switchGate.release()
+            return false
+        }
+
+        let result = await performPhase1WriteToDisk(set)
+        await switchGate.release()
+        return result
+    }
+
+    @concurrent
+    private func performPhase1WriteToDisk(_ set: DockSet) async -> Bool {
+        guard !Task.isCancelled else { return false }
+
         let appID = "com.apple.dock" as CFString
         let key = "persistent-apps" as CFString
         let newAppData = DockManager.buildRawDockData(from: set.tiles)
@@ -275,8 +335,19 @@ class DockManager: ObservableObject {
     /// write (because the dying Dock flushes its stale state to cfprefsd during
     /// shutdown, overwriting our Phase 1 data). Then wait for Dock restart and verify.
     private func phase2RestartDockAndVerify(_ set: DockSet) async -> Bool {
-        switchLock.lock()
-        defer { switchLock.unlock() }
+        guard await switchGate.acquire() else { return false }
+        guard !Task.isCancelled else {
+            await switchGate.release()
+            return false
+        }
+
+        let result = await performPhase2RestartDockAndVerify(set)
+        await switchGate.release()
+        return result
+    }
+
+    @concurrent
+    private func performPhase2RestartDockAndVerify(_ set: DockSet) async -> Bool {
 
         if Task.isCancelled { return false }
 
@@ -290,9 +361,7 @@ class DockManager: ObservableObject {
 
             // 1. Kill Dock — its shutdown will flush stale state to cfprefsd,
             //    overwriting our Phase 1 data. We'll re-write after it's dead.
-            let oldDockPIDs = Set(NSRunningApplication
-                .runningApplications(withBundleIdentifier: "com.apple.dock")
-                .map { $0.processIdentifier })
+            let oldDockPIDs = await DockManager.dockProcessIDs()
 
             logger.info("Phase 2 attempt \(attempt): killing Dock (PIDs: \(oldDockPIDs))")
 
@@ -317,9 +386,7 @@ class DockManager: ObservableObject {
 
             // 2. Wait for old Dock PIDs to fully disappear (shutdown complete)
             for _ in 0..<10 {
-                let currentPIDs = Set(NSRunningApplication
-                    .runningApplications(withBundleIdentifier: "com.apple.dock")
-                    .map { $0.processIdentifier })
+                let currentPIDs = await DockManager.dockProcessIDs()
                 if oldDockPIDs.isDisjoint(with: currentPIDs) { break }
                 try? await Task.sleep(nanoseconds: 200_000_000)
                 if Task.isCancelled { return false }
@@ -376,8 +443,8 @@ class DockManager: ObservableObject {
             // 4. Wait for new Dock
             var newPIDs: Set<pid_t> = []
             for _ in 0..<20 {
-                let current = NSRunningApplication.runningApplications(withBundleIdentifier: "com.apple.dock")
-                let fresh = Set(current.map { $0.processIdentifier }).subtracting(oldDockPIDs)
+                let currentPIDs = await DockManager.dockProcessIDs()
+                let fresh = currentPIDs.subtracting(oldDockPIDs)
                 if !fresh.isEmpty { newPIDs = fresh; break }
                 try? await Task.sleep(nanoseconds: 200_000_000)
                 if Task.isCancelled { return false }
@@ -512,6 +579,13 @@ class DockManager: ObservableObject {
             return nil
         }
         return apps
+    }
+
+    @MainActor
+    private static func dockProcessIDs() -> Set<pid_t> {
+        Set(NSRunningApplication
+            .runningApplications(withBundleIdentifier: "com.apple.dock")
+            .map { $0.processIdentifier })
     }
 
     /// Reads persistent-apps directly from the Dock plist file, bypassing cfprefsd.
