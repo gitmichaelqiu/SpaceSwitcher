@@ -313,7 +313,9 @@ class DockManager: ObservableObject {
     /// Phase 1: Write tiles to plist + cfprefsd, then kill cfprefsd to force
     /// a fresh read from disk. Fast (~1s), non-disruptive (Dock stays alive).
     private func phase1WriteToDisk(_ set: DockSet) async -> Bool {
+        logger.info("Phase 1: waiting for Dock operation gate")
         guard await switchGate.acquire() else { return false }
+        logger.info("Phase 1: acquired Dock operation gate")
         guard !Task.isCancelled else {
             await switchGate.release()
             return false
@@ -328,6 +330,7 @@ class DockManager: ObservableObject {
     private func performPhase1WriteToDisk(_ set: DockSet) async -> Bool {
         guard !Task.isCancelled else { return false }
 
+        logger.info("Phase 1: writing \(set.tiles.count) Dock tiles")
         let appID = "com.apple.dock" as CFString
         let key = "persistent-apps" as CFString
         let newAppData = DockManager.buildRawDockData(from: set.tiles)
@@ -347,7 +350,9 @@ class DockManager: ObservableObject {
 
         // Kill cfprefsd to force restart from fresh plist.
         // This prevents cfprefsd from serving stale cached data.
+        logger.info("Phase 1: checking cfprefsd processes")
         let oldSet = DockManager.pidsByName("cfprefsd")
+        logger.info("Phase 1: found \(oldSet.count) cfprefsd processes")
         if !oldSet.isEmpty {
             logger.info("Phase 1: killing cfprefsd (PIDs: \(oldSet))")
 
@@ -462,7 +467,9 @@ class DockManager: ObservableObject {
                                    kCFPreferencesCurrentUser, kCFPreferencesAnyHost)
             CFPreferencesAppSynchronize(appID)
 
+            logger.info("Phase 2 attempt \(attempt): checking cfprefsd processes")
             let oldCfpPIDs = DockManager.pidsByName("cfprefsd")
+            logger.info("Phase 2 attempt \(attempt): found \(oldCfpPIDs.count) cfprefsd processes")
             if !oldCfpPIDs.isEmpty {
                 logger.info("Phase 2 attempt \(attempt): re-killing cfprefsd (PIDs: \(oldCfpPIDs))")
 
@@ -603,12 +610,14 @@ class DockManager: ObservableObject {
 
         do {
             try task.run()
-            task.waitUntilExit()
         } catch {
             return []
         }
 
+        // Drain stdout while ps runs. Waiting for exit first can deadlock when
+        // the process list exceeds the pipe buffer capacity.
         let data = pipe.fileHandleForReading.readDataToEndOfFile()
+        task.waitUntilExit()
         guard let output = String(data: data, encoding: .utf8) else { return [] }
 
         var pids = Set<pid_t>()
