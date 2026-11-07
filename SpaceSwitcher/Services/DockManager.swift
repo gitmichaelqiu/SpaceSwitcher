@@ -2,6 +2,7 @@ import Foundation
 import Combine
 import AppKit
 import os.log
+import Darwin
 
 private actor DockOperationGate {
     private var isLocked = false
@@ -164,26 +165,23 @@ class DockManager: ObservableObject {
     
     // MARK: - Application Logic
 
-    /// Triggers a dock switch for a specific space.
-    ///
-    /// Two-phase approach to handle rapid space switching:
-    ///   Phase 1 (immediate): Write tiles to plist + cfprefsd + kill cfprefsd.
-    ///     This is fast (~1s) and ensures the plist is always up to date.
-    ///   Phase 2 (debounced): Kill Dock, wait for restart, verify.
-    ///     This is slow (~6s) and only runs after the user pauses switching.
-    /// - Parameters:
-    ///   - spaceID: The UUID string of the target space.
-    ///   - force: If true, bypasses debounce and optimization checks (used for "Apply" button).
+    /// Applies the Dock set for a space after space changes have settled.
     @MainActor
-    func applyDockForSpace(_ spaceID: String, force: Bool = false) {
+    func applyDockForSpace(_ spaceID: String) {
         dockTask?.cancel()
         dockSwitchGeneration &+= 1
         let requestGeneration = dockSwitchGeneration
 
-        dockTask = Task.detached(priority: .userInitiated) { [weak self] in
+        dockTask = Task.detached(priority: .utility) { [weak self] in
             guard let self = self else { return }
 
-            // Get the target and last verified Dock contents from MainActor.
+            // Wait for the final space in a rapid sequence before touching
+            // Dock preferences or restarting any system processes.
+            try? await Task.sleep(nanoseconds: 1_500_000_000)
+            if Task.isCancelled { return }
+            guard await self.isCurrentDockSwitch(requestGeneration) else { return }
+
+            // Resolve after the debounce so recent assignment edits are used.
             let (targetSet, previouslyAppliedTiles): (DockSet?, [DockTile]?) = await MainActor.run {
                 guard self.dockSwitchGeneration == requestGeneration else { return (nil, nil) }
                 let setID = self.config.spaceAssignments[spaceID] ?? self.config.defaultDockSetID
@@ -196,68 +194,39 @@ class DockManager: ObservableObject {
             }
             let setName = set.name
 
-            // Persistent preferences may already contain a previous request's
-            // Phase 1 write while the visible Dock still needs to restart.
-            if !force {
-                if let currentRaw = DockManager.getSystemDockPersistentApps() {
-                    let currentTiles = DockManager.parseRawDockData(currentRaw)
-                    let skipDecision: Bool? = await MainActor.run {
-                        guard self.dockSwitchGeneration == requestGeneration else { return nil }
-                        guard currentTiles == set.tiles, previouslyAppliedTiles == set.tiles else {
-                            return false
-                        }
-                        if self.activeDockSetID != set.id { self.activeDockSetID = set.id }
-                        return true
+            if let currentRaw = DockManager.getSystemDockPersistentApps() {
+                let currentTiles = DockManager.parseRawDockData(currentRaw)
+                let skipDecision: Bool? = await MainActor.run {
+                    guard self.dockSwitchGeneration == requestGeneration else { return nil }
+                    guard currentTiles == set.tiles, previouslyAppliedTiles == set.tiles else {
+                        return false
                     }
-                    guard let shouldSkip = skipDecision else { return }
-                    if shouldSkip {
-                        logger.info("Skipping switch to '\(setName)': Dock preferences match the last verified set")
-                        return
-                    }
-                    if currentTiles == set.tiles {
-                        logger.info("Dock preferences match '\(setName)', but no matching set was verified as applied; continuing with Dock restart")
-                    }
+                    if self.activeDockSetID != set.id { self.activeDockSetID = set.id }
+                    return true
+                }
+                guard let shouldSkip = skipDecision else { return }
+                if shouldSkip {
+                    logger.info("Skipping switch to '\(setName)': Dock preferences match the last verified set")
+                    return
+                }
+                if currentTiles == set.tiles {
+                    logger.info("Dock preferences match '\(setName)', but no matching set was verified as applied; continuing with Dock restart")
                 }
             }
 
-            // Phase 1: Write plist immediately (fast, no debounce).
-            // Even if cancelled during Phase 2, the plist stays correct.
-            let canStartPhase1 = await MainActor.run {
+            let canStartSwitch = await MainActor.run {
                 guard self.dockSwitchGeneration == requestGeneration else { return false }
-                // Once preferences are about to change, the last verified Dock
-                // state can no longer justify skipping a subsequent restart.
                 self.lastAppliedDockTiles = nil
                 return true
             }
-            guard canStartPhase1 else { return }
+            guard canStartSwitch else { return }
 
-            let phase1OK = await self.phase1WriteToDisk(set)
-            if Task.isCancelled { return }
-            guard await self.isCurrentDockSwitch(requestGeneration) else { return }
-
-            // Debounce before Phase 2 — rapid space switching only
-            // re-runs Phase 1. The Dock is only killed when the user
-            // pauses long enough.
-            if !phase1OK {
-                // Phase 2 won't succeed if Phase 1 failed
-                logger.error("Phase 1 write failed for '\(setName)'")
-                return
-            }
-
-            if !force {
-                try? await Task.sleep(nanoseconds: 1_500_000_000) // 1.5s
-            }
-            if Task.isCancelled { return }
-            guard await self.isCurrentDockSwitch(requestGeneration) else { return }
-
-            // Phase 2: Restart Dock and verify
-            logger.info(">>> \(force ? "FORCED" : "STARTING") SWITCH: '\(setName)' for Space \(spaceID)")
-            let success = await self.phase2RestartDockAndVerify(set)
+            logger.info(">>> STARTING SWITCH: '\(setName)' for Space \(spaceID)")
+            let success = await self.applyDockSetVerified(set, priority: .utility)
 
             let isCurrentRequest = await MainActor.run {
                 guard self.dockSwitchGeneration == requestGeneration else { return false }
                 if success {
-                    self.lastAppliedDockTiles = set.tiles
                     self.activeDockSetID = set.id
                 }
                 return true
@@ -282,7 +251,7 @@ class DockManager: ObservableObject {
         dockTask = Task {
             guard self.dockSwitchGeneration == requestGeneration else { return }
             let activity = ProcessInfo.processInfo.beginActivity(
-                options: [.userInitiated, .latencyCritical],
+                options: [.userInitiated],
                 reason: "ManualDockSwitch-\(id)"
             )
             defer { ProcessInfo.processInfo.endActivity(activity) }
@@ -291,11 +260,10 @@ class DockManager: ObservableObject {
 
             logger.info(">>> MANUAL SWITCH: '\(set.name)'")
             self.lastAppliedDockTiles = nil
-            let success = await applyDockSetVerified(set)
+            let success = await applyDockSetVerified(set, priority: .userInitiated)
             guard !Task.isCancelled, self.dockSwitchGeneration == requestGeneration else { return }
 
             if success {
-                self.lastAppliedDockTiles = set.tiles
                 self.activeDockSetID = set.id
                 logger.info("<<< SUCCESS: Manually switched to '\(set.name)'")
             } else {
@@ -308,22 +276,35 @@ class DockManager: ObservableObject {
         await MainActor.run { self.dockSwitchGeneration == generation }
     }
 
-    // MARK: - Two-Phase Dock Switch
+    // MARK: - Dock Switch Transaction
 
-    /// Phase 1: Write tiles to plist + cfprefsd, then kill cfprefsd to force
-    /// a fresh read from disk. Fast (~1s), non-disruptive (Dock stays alive).
-    private func phase1WriteToDisk(_ set: DockSet) async -> Bool {
-        logger.info("Phase 1: waiting for Dock operation gate")
+    /// Holds one gate across preference writes, Dock restart, and verification.
+    /// Once Dock is asked to quit, the restart runs independently of caller
+    /// cancellation so a newer request cannot leave Dock halfway through launch.
+    private func applyDockSetVerified(_ set: DockSet, priority: TaskPriority) async -> Bool {
+        logger.info("Dock switch '\(set.name)': waiting for operation gate")
         guard await switchGate.acquire() else { return false }
-        logger.info("Phase 1: acquired Dock operation gate")
+        logger.info("Dock switch '\(set.name)': acquired operation gate")
         guard !Task.isCancelled else {
             await switchGate.release()
             return false
         }
 
-        let result = await performPhase1WriteToDisk(set)
+        let phase1Succeeded = await performPhase1WriteToDisk(set)
+        guard phase1Succeeded, !Task.isCancelled else {
+            await switchGate.release()
+            return false
+        }
+
+        let restartTask = Task.detached(priority: priority) { [self] in
+            await performPhase2RestartDockAndVerify(set)
+        }
+        let success = await restartTask.value
+        if success {
+            lastAppliedDockTiles = set.tiles
+        }
         await switchGate.release()
-        return result
+        return success
     }
 
     @concurrent
@@ -343,64 +324,17 @@ class DockManager: ObservableObject {
             return false
         }
 
-        // Write to cfprefsd so the cache matches
+        // Update cfprefsd without restarting it. Phase 2 rewrites these
+        // preferences after the old Dock has finished its shutdown flush.
         CFPreferencesSetValue(key, newAppData as CFPropertyList, appID,
                                kCFPreferencesCurrentUser, kCFPreferencesAnyHost)
-        CFPreferencesAppSynchronize(appID)
-
-        // Kill cfprefsd to force restart from fresh plist.
-        // This prevents cfprefsd from serving stale cached data.
-        logger.info("Phase 1: checking cfprefsd processes")
-        let oldSet = DockManager.pidsByName("cfprefsd")
-        logger.info("Phase 1: found \(oldSet.count) cfprefsd processes")
-        if !oldSet.isEmpty {
-            logger.info("Phase 1: killing cfprefsd (PIDs: \(oldSet))")
-
-            let killTask = Process()
-            killTask.executableURL = URL(fileURLWithPath: "/usr/bin/killall")
-            killTask.arguments = ["-u", NSUserName(), "cfprefsd"]
-
-            await withTaskCancellationHandler {
-                try? killTask.run()
-                killTask.waitUntilExit()
-            } onCancel: {
-                killTask.terminate()
-            }
-
-            // Wait for old PIDs to disappear
-            for _ in 0..<10 {
-                if Task.isCancelled { return false }
-                let current = DockManager.pidsByName("cfprefsd")
-                if oldSet.isDisjoint(with: current) { break }
-                try? await Task.sleep(nanoseconds: 200_000_000)
-            }
-
-            // Wait for new cfprefsd to restart
-            for _ in 0..<10 {
-                if Task.isCancelled { return false }
-                let current = DockManager.pidsByName("cfprefsd")
-                if !current.isEmpty && oldSet.isDisjoint(with: current) { break }
-                try? await Task.sleep(nanoseconds: 200_000_000)
-            }
-            logger.info("Phase 1: cfprefsd restarted")
-        }
-
-        return true
-    }
-
-    /// Phase 2: Kill Dock, wait for death, then RE-APPLY the plist + cfprefsd
-    /// write (because the dying Dock flushes its stale state to cfprefsd during
-    /// shutdown, overwriting our Phase 1 data). Then wait for Dock restart and verify.
-    private func phase2RestartDockAndVerify(_ set: DockSet) async -> Bool {
-        guard await switchGate.acquire() else { return false }
-        guard !Task.isCancelled else {
-            await switchGate.release()
+        guard CFPreferencesAppSynchronize(appID) else {
+            logger.error("Phase 1: CFPreferencesAppSynchronize failed")
             return false
         }
 
-        let result = await performPhase2RestartDockAndVerify(set)
-        await switchGate.release()
-        return result
+        logger.info("Phase 1: wrote \(set.tiles.count) Dock tiles")
+        return true
     }
 
     @concurrent
@@ -465,7 +399,11 @@ class DockManager: ObservableObject {
 
             CFPreferencesSetValue(key, newAppData as CFPropertyList, appID,
                                    kCFPreferencesCurrentUser, kCFPreferencesAnyHost)
-            CFPreferencesAppSynchronize(appID)
+            guard CFPreferencesAppSynchronize(appID) else {
+                logger.error("Phase 2 attempt \(attempt): CFPreferencesAppSynchronize failed")
+                try? await Task.sleep(nanoseconds: 500_000_000)
+                continue
+            }
 
             logger.info("Phase 2 attempt \(attempt): checking cfprefsd processes")
             let oldCfpPIDs = DockManager.pidsByName("cfprefsd")
@@ -598,11 +536,11 @@ class DockManager: ObservableObject {
     
     // MARK: - Core System Logic (Verified Write + Force Kill)
 
-    /// Returns PIDs of processes matching the given name (not bundle ID).
+    /// Returns PIDs of processes whose exact process name matches.
     nonisolated static private func pidsByName(_ name: String) -> Set<pid_t> {
         let task = Process()
-        task.executableURL = URL(fileURLWithPath: "/bin/ps")
-        task.arguments = ["-eo", "pid,comm"]
+        task.executableURL = URL(fileURLWithPath: "/usr/bin/pgrep")
+        task.arguments = ["-u", String(getuid()), "-x", name]
 
         let pipe = Pipe()
         task.standardOutput = pipe
@@ -614,22 +552,14 @@ class DockManager: ObservableObject {
             return []
         }
 
-        // Drain stdout while ps runs. Waiting for exit first can deadlock when
-        // the process list exceeds the pipe buffer capacity.
+        // Drain stdout while pgrep runs so its pipe cannot fill before exit.
         let data = pipe.fileHandleForReading.readDataToEndOfFile()
         task.waitUntilExit()
         guard let output = String(data: data, encoding: .utf8) else { return [] }
 
-        var pids = Set<pid_t>()
-        for line in output.components(separatedBy: "\n") {
-            let parts = line.components(separatedBy: CharacterSet.whitespaces).filter { !$0.isEmpty }
-            guard parts.count >= 2 else { continue }
-            let comm = parts.dropFirst().joined(separator: " ")
-            if comm.contains(name), let pid = pid_t(parts[0]) {
-                pids.insert(pid)
-            }
-        }
-        return pids
+        return Set(output
+            .split(whereSeparator: \.isNewline)
+            .compactMap { pid_t(String($0).trimmingCharacters(in: .whitespaces)) })
     }
 
     nonisolated static private func getSystemDockPersistentApps() -> [Any]? {
@@ -680,14 +610,6 @@ class DockManager: ObservableObject {
 
         let newData = try PropertyListSerialization.data(fromPropertyList: plist, format: .binary, options: 0)
         try newData.write(to: URL(fileURLWithPath: path), options: .atomic)
-    }
-    
-    /// Full synchronous dock set application (used by manual "Apply" button).
-    /// Combines Phase 1 (write plist + cfprefsd) and Phase 2 (restart Dock + verify).
-    private func applyDockSetVerified(_ set: DockSet) async -> Bool {
-        guard await phase1WriteToDisk(set) else { return false }
-        if Task.isCancelled { return false }
-        return await phase2RestartDockAndVerify(set)
     }
     
     // MARK: - Data Management & Spacers
