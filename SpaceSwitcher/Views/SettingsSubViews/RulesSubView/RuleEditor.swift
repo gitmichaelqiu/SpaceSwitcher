@@ -116,6 +116,7 @@ struct RuleEditor: View {
                 )
             }
             .buttonStyle(.bordered)
+            .labelStyle(.iconOnly)
             .controlSize(.small)
             .help("Definitions")
             .popover(isPresented: $showingLegend, arrowEdge: .top) {
