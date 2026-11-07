@@ -140,6 +140,27 @@ class StatusBarManager: NSObject {
             }
         }
 
+        #if DEBUG
+        let debugItem = NSMenuItem(
+            title: NSLocalizedString("Debug", comment: "Debug-only menu"),
+            action: nil,
+            keyEquivalent: ""
+        )
+        let debugMenu = NSMenu()
+        let showHUDItem = NSMenuItem(
+            title: NSLocalizedString(
+                "Show HUD with multiple actions",
+                comment: "Debug-only HUD preview"
+            ),
+            action: #selector(showHUDWithMultipleActions),
+            keyEquivalent: ""
+        )
+        showHUDItem.target = self
+        debugMenu.addItem(showHUDItem)
+        debugItem.submenu = debugMenu
+        menu.addItem(debugItem)
+        #endif
+
         menu.addItem(NSMenuItem.separator())
 
         let settingsItem = NSMenuItem(title: NSLocalizedString("Settings", comment: ""),
@@ -178,6 +199,48 @@ class StatusBarManager: NSObject {
         // Manually apply the selected dock set
         dm.applyDockSetByID(setID)
     }
+
+    #if DEBUG
+    @objc private func showHUDWithMultipleActions() {
+        let hiddenSummary = String(
+            format: NSLocalizedString("%d hidden", comment: "HUD count of apps hidden"),
+            2
+        )
+        let restoredSummary = String(
+            format: NSLocalizedString("%d restored", comment: "HUD count of apps restored"),
+            1
+        )
+        let detailFormat = NSLocalizedString(
+            "%@: %@",
+            comment: "HUD detail with application and confirmed outcome"
+        )
+        let detailLines = [
+            String(
+                format: detailFormat,
+                "Music",
+                NSLocalizedString("window hidden", comment: "HUD outcome")
+            ),
+            String(
+                format: detailFormat,
+                "Mail",
+                NSLocalizedString("2 windows hidden", comment: "HUD outcome")
+            ),
+            String(
+                format: detailFormat,
+                "Calendar",
+                NSLocalizedString("window restored", comment: "HUD outcome")
+            )
+        ]
+
+        HUDWindowController.shared.show(
+            message: [hiddenSummary, restoredSummary].joined(separator: ", "),
+            style: .info,
+            appIcon: NSApp.applicationIconImage,
+            autoHide: false,
+            detailLines: detailLines
+        )
+    }
+    #endif
     
     deinit {
         cancellables.forEach { $0.cancel() }

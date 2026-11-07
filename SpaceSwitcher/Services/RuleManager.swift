@@ -244,6 +244,31 @@ class RuleManager: ObservableObject {
                     applicationsByPID[batch.application.processIdentifier] = batch.application
                 }
 
+                let changedApplications = applicationsByPID.values.sorted {
+                    let firstName = $0.localizedName ?? ""
+                    let secondName = $1.localizedName ?? ""
+                    return firstName.localizedStandardCompare(secondName) == .orderedAscending
+                }
+                let detailLines = changedApplications.flatMap { application -> [String] in
+                    guard let summary = changeSummariesByApplication[application.processIdentifier] else {
+                        return []
+                    }
+                    let applicationName = resolvedApplicationName(
+                        bundleIdentifier: application.bundleIdentifier ?? "",
+                        storedName: application.localizedName ?? "Application"
+                    )
+                    return summary.localizedOutcomeDetails.map { outcome in
+                        String(
+                            format: NSLocalizedString(
+                                "%@: %@",
+                                comment: "HUD detail with application and confirmed outcome"
+                            ),
+                            applicationName,
+                            outcome
+                        )
+                    }
+                }
+
                 let message: String
                 if changedApplicationPIDs.count == 1,
                    let processID = changedApplicationPIDs.first,
@@ -271,7 +296,7 @@ class RuleManager: ObservableObject {
                 }
 
                 let singleApplication = changedApplicationPIDs.count == 1
-                    ? changedApplicationPIDs.first.flatMap { applicationsByPID[$0] }
+                    ? changedApplications.first
                     : nil
                 let appIcon = singleApplication?.icon ?? NSApp.applicationIconImage
 
@@ -279,7 +304,8 @@ class RuleManager: ObservableObject {
                 HUDWindowController.shared.show(
                     message: message,
                     style: .info,
-                    appIcon: appIcon
+                    appIcon: appIcon,
+                    detailLines: detailLines
                 )
             }
         }

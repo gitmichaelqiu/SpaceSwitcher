@@ -1590,6 +1590,50 @@
         }
       }
     },
+    "Actions" : {
+      "comment" : "HUD details popover title",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "操作"
+          }
+        }
+      }
+    },
+    "Debug" : {
+      "comment" : "Debug-only menu",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "调试"
+          }
+        }
+      }
+    },
+    "Show action details" : {
+      "comment" : "HUD details button",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "显示操作详情"
+          }
+        }
+      }
+    },
+    "Show HUD with multiple actions" : {
+      "comment" : "Debug-only HUD preview",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "显示包含多个操作的 HUD"
+          }
+        }
+      }
+    },
     "Rules" : {
       "localizations" : {
         "zh-Hans" : {

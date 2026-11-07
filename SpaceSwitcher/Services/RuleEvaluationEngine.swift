@@ -163,7 +163,7 @@ struct RuleHUDChangeSummary {
         applicationOutcomes.formUnion(other.applicationOutcomes)
     }
 
-    var localizedOutcomeDescription: String? {
+    var localizedOutcomeDetails: [String] {
         var fragments: [String] = []
         for outcome in RuleHUDOutcome.allCases {
             let count = windowCount(for: outcome)
@@ -176,6 +176,11 @@ struct RuleHUDChangeSummary {
                 fragments.append(outcome.applicationDescription)
             }
         }
+        return fragments
+    }
+
+    var localizedOutcomeDescription: String? {
+        let fragments = localizedOutcomeDetails
         return fragments.isEmpty ? nil : fragments.joined(separator: ", ")
     }
 

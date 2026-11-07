@@ -85,6 +85,22 @@ final class RuleEvaluationEngineTests: XCTestCase {
         )
     }
 
+    func testRuleHUDChangeSummaryExposesEachOutcomeForPopoverDetails() {
+        var summary = RuleHUDChangeSummary()
+        summary.record(.hidden, windowIDs: [101])
+        summary.record(.restored, windowIDs: [102, 103])
+
+        guard let hiddenDescription = RuleHUDOutcome.hidden.singularWindowDescription,
+              let restoredFormat = RuleHUDOutcome.restored.pluralWindowFormat else {
+            return XCTFail("Expected localized descriptions for window outcomes")
+        }
+
+        XCTAssertEqual(
+            summary.localizedOutcomeDetails,
+            [hiddenDescription, String(format: restoredFormat, 2)]
+        )
+    }
+
     func testSpecificRuleBeforeAllAppsWinsForItsMatchingWindow() {
         let specificRule = makeRule(
             id: uuid(1),

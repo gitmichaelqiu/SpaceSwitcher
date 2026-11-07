@@ -9,13 +9,17 @@ struct HUDView: View {
     let iconColor: Color
     let buttonTitle: String?
     let buttonAction: (() -> Void)?
+    let detailLines: [String]
+    let presentationID: UUID
     let onDismiss: () -> Void
     let onHoverChanged: (Bool) -> Void
+    let onDetailsVisibilityChanged: (Bool) -> Void
     let forceHover: Bool
     let statusTint: HUDStatusTint?
 
     @Environment(\.colorScheme) private var colorScheme
     @State private var isHovered = false
+    @State private var isShowingDetails = false
 
     private var foregroundColor: Color {
         colorScheme == .light ? .black : .white
@@ -89,10 +93,53 @@ struct HUDView: View {
                 }
                 .buttonStyle(HUDActionButtonStyle(foregroundColor: foregroundColor))
             }
+
+            if detailLines.count > 1 {
+                Button {
+                    isShowingDetails = true
+                } label: {
+                    Image(systemName: "info.circle")
+                        .font(.system(size: 14, weight: .medium))
+                        .foregroundStyle(foregroundColor)
+                        .frame(width: 24, height: 24)
+                        .background(foregroundColor.opacity(isHovered ? 0.20 : 0.12), in: Circle())
+                }
+                .buttonStyle(.plain)
+                .help(String(localized: "Show action details"))
+                .accessibilityLabel(String(localized: "Show action details"))
+                .popover(isPresented: $isShowingDetails, arrowEdge: .top) {
+                    VStack(alignment: .leading, spacing: 10) {
+                        Text(String(localized: "Actions"))
+                            .font(.headline)
+
+                        ScrollView {
+                            VStack(alignment: .leading, spacing: 8) {
+                                ForEach(detailLines.indices, id: \.self) { index in
+                                    Text(detailLines[index])
+                                        .font(.system(size: 12))
+                                        .fixedSize(horizontal: false, vertical: true)
+                                        .frame(maxWidth: .infinity, alignment: .leading)
+                                }
+                            }
+                        }
+                        .frame(height: min(max(CGFloat(detailLines.count) * 30, 60), 270))
+                    }
+                    .padding(14)
+                    .frame(width: 300, alignment: .leading)
+                }
+                .onChange(of: isShowingDetails) { isPresented in
+                    onDetailsVisibilityChanged(isPresented)
+                }
+            }
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 12)
         .contentShape(Capsule())
+        .onChange(of: presentationID) { _ in
+            if isShowingDetails {
+                isShowingDetails = false
+            }
+        }
         .onHover { hovering in
             isHovered = hovering
             onHoverChanged(hovering)
@@ -172,6 +219,7 @@ class HUDWindowController: NSWindowController {
     private var legacyTintOverlayView: NSView?
     private var hideDuration: TimeInterval?
     private var isHoveringHUD = false
+    private var isShowingDetails = false
     private var presentationID = UUID()
     private var hideAnimationID: UUID?
     #if DEBUG
@@ -213,7 +261,8 @@ class HUDWindowController: NSWindowController {
         buttonTitle: String? = nil,
         buttonAction: (() -> Void)? = nil,
         autoHide: Bool = true,
-        statusTint: HUDStatusTint? = nil
+        statusTint: HUDStatusTint? = nil,
+        detailLines: [String] = []
     ) {
         present(
             message: message,
@@ -223,7 +272,8 @@ class HUDWindowController: NSWindowController {
             buttonTitle: buttonTitle,
             buttonAction: buttonAction,
             autoHide: autoHide,
-            statusTint: statusTint
+            statusTint: statusTint,
+            detailLines: detailLines
         )
     }
 
@@ -249,7 +299,8 @@ class HUDWindowController: NSWindowController {
         systemImage: String? = nil,
         buttonTitle: String? = nil,
         buttonAction: (() -> Void)? = nil,
-        statusTint: HUDStatusTint? = nil
+        statusTint: HUDStatusTint? = nil,
+        detailLines: [String] = []
     ) {
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) { [weak self] in
             self?.show(
@@ -259,7 +310,8 @@ class HUDWindowController: NSWindowController {
                 systemImage: systemImage,
                 buttonTitle: buttonTitle,
                 buttonAction: buttonAction,
-                statusTint: statusTint
+                statusTint: statusTint,
+                detailLines: detailLines
             )
         }
     }
@@ -272,7 +324,8 @@ class HUDWindowController: NSWindowController {
         buttonTitle: String? = nil,
         buttonAction: (() -> Void)? = nil,
         autoHide: Bool = true,
-        statusTint: HUDStatusTint? = nil
+        statusTint: HUDStatusTint? = nil,
+        detailLines: [String] = []
     ) {
         present(
             message: message,
@@ -282,7 +335,8 @@ class HUDWindowController: NSWindowController {
             buttonTitle: buttonTitle,
             buttonAction: buttonAction,
             autoHide: autoHide,
-            statusTint: statusTint
+            statusTint: statusTint,
+            detailLines: detailLines
         )
     }
 
@@ -294,7 +348,8 @@ class HUDWindowController: NSWindowController {
         buttonTitle: String?,
         buttonAction: (() -> Void)?,
         autoHide: Bool,
-        statusTint: HUDStatusTint?
+        statusTint: HUDStatusTint?,
+        detailLines: [String]
     ) {
         guard let panel = window as? HUDNSPanel else { return }
 
@@ -305,9 +360,10 @@ class HUDWindowController: NSWindowController {
         hideTimer = nil
         hideDuration = nil
         isHoveringHUD = false
+        isShowingDetails = false
 
-        panel.isInteractive = (buttonTitle != nil)
-        panel.becomesKeyOnlyIfNeeded = (buttonTitle != nil)
+        panel.isInteractive = buttonTitle != nil || detailLines.count > 1
+        panel.becomesKeyOnlyIfNeeded = panel.isInteractive
 
         let hudView = HUDView(
             message: message,
@@ -319,8 +375,13 @@ class HUDWindowController: NSWindowController {
                 buttonAction?()
                 self.hideWithAnimation()
             },
+            detailLines: detailLines,
+            presentationID: presentationID,
             onDismiss: { [weak self] in self?.hideWithAnimation() },
             onHoverChanged: { [weak self] hovering in self?.handleHoverChange(hovering) },
+            onDetailsVisibilityChanged: { [weak self] showing in
+                self?.handleDetailsVisibilityChange(showing)
+            },
             forceHover: {
                 #if DEBUG
                 self.forceHoverPreview
@@ -421,7 +482,7 @@ class HUDWindowController: NSWindowController {
         animateAlpha(1.0, on: panel, duration: 0.08)
 
         if autoHide {
-            let duration = (buttonTitle != nil) ? 5.0 : 1.8
+            let duration = (buttonTitle != nil || detailLines.count > 1) ? 5.0 : 1.8
             hideDuration = duration
             scheduleHide(after: duration)
         }
@@ -431,7 +492,19 @@ class HUDWindowController: NSWindowController {
         isHoveringHUD = hovering
         guard let hideDuration else { return }
 
-        if hovering {
+        if hovering || isShowingDetails {
+            hideTimer?.invalidate()
+            hideTimer = nil
+        } else {
+            scheduleHide(after: hideDuration)
+        }
+    }
+
+    private func handleDetailsVisibilityChange(_ showing: Bool) {
+        isShowingDetails = showing
+        guard let hideDuration else { return }
+
+        if showing || isHoveringHUD {
             hideTimer?.invalidate()
             hideTimer = nil
         } else {
@@ -446,7 +519,7 @@ class HUDWindowController: NSWindowController {
 
     private func scheduleHide(after duration: TimeInterval) {
         hideTimer?.invalidate()
-        guard !isHoveringHUD else { return }
+        guard !isHoveringHUD, !isShowingDetails else { return }
         hideTimer = Timer.scheduledTimer(withTimeInterval: duration, repeats: false) { [weak self] _ in
             self?.hideWithAnimation()
         }
