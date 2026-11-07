@@ -15,6 +15,138 @@
       },
       "shouldTranslate" : false
     },
+    "%@: %@" : {
+      "comment" : "HUD detail with application and confirmed outcome\nHUD toast with application and confirmed outcomes",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@：%@"
+          }
+        }
+      }
+    },
+    "%d brought to front" : {
+      "comment" : "HUD count of apps brought to the front",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已将 %d 个应用置于前台"
+          }
+        }
+      }
+    },
+    "%d hidden" : {
+      "comment" : "HUD count of apps hidden",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已隐藏 %d 个应用"
+          }
+        }
+      }
+    },
+    "%d minimized" : {
+      "comment" : "HUD count of apps minimized",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已最小化 %d 个应用"
+          }
+        }
+      }
+    },
+    "%d restored" : {
+      "comment" : "HUD count of apps restored",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已恢复 %d 个应用"
+          }
+        }
+      }
+    },
+    "%d shortcuts triggered" : {
+      "comment" : "HUD count of apps with triggered shortcuts",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已为 %d 个应用触发快捷键"
+          }
+        }
+      }
+    },
+    "%d shown" : {
+      "comment" : "HUD count of apps shown",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已显示 %d 个应用"
+          }
+        }
+      }
+    },
+    "%d windows brought to front" : {
+      "comment" : "HUD outcome",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%d 个窗口已置于前台"
+          }
+        }
+      }
+    },
+    "%d windows hidden" : {
+      "comment" : "HUD outcome",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%d 个窗口已隐藏"
+          }
+        }
+      }
+    },
+    "%d windows minimized" : {
+      "comment" : "HUD outcome",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%d 个窗口已最小化"
+          }
+        }
+      }
+    },
+    "%d windows restored" : {
+      "comment" : "HUD outcome",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%d 个窗口已恢复"
+          }
+        }
+      }
+    },
+    "%d windows shown" : {
+      "comment" : "HUD outcome",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%d 个窗口已显示"
+          }
+        }
+      }
+    },
     "%lld" : {
       "shouldTranslate" : false
     },
@@ -52,26 +184,6 @@
         }
       }
     },
-    "Author's GitHub" : {
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "作者的 GitHub"
-          }
-        }
-      }
-    },
-    "Author's website" : {
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "作者的网站"
-          }
-        }
-      }
-    },
     "Accessibility" : {
       "localizations" : {
         "zh-Hans" : {
@@ -82,22 +194,23 @@
         }
       }
     },
-    "Required for window automation and keyboard shortcuts." : {
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "窗口自动化和键盘快捷键所需的权限。"
-          }
-        }
-      }
-    },
     "Acknowledgements" : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "致谢"
+          }
+        }
+      }
+    },
+    "Actions" : {
+      "comment" : "HUD details popover title",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "操作"
           }
         }
       }
@@ -203,11 +316,56 @@
       }
     },
     "All apps" : {
+      "comment" : "Rule target",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "所有应用"
+          }
+        }
+      }
+    },
+    "app brought to front" : {
+      "comment" : "HUD outcome",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "应用已置于前台"
+          }
+        }
+      }
+    },
+    "app hidden" : {
+      "comment" : "HUD outcome",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "应用已隐藏"
+          }
+        }
+      }
+    },
+    "app minimized" : {
+      "comment" : "HUD outcome",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "应用已最小化"
+          }
+        }
+      }
+    },
+    "app restored" : {
+      "comment" : "HUD outcome",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "应用已恢复"
           }
         }
       }
@@ -228,6 +386,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "应用快捷键…"
+          }
+        }
+      }
+    },
+    "app shown" : {
+      "comment" : "HUD outcome",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "应用已显示"
           }
         }
       }
@@ -273,6 +442,26 @@
         }
       }
     },
+    "Author's GitHub" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "作者的 GitHub"
+          }
+        }
+      }
+    },
+    "Author's website" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "作者的网站"
+          }
+        }
+      }
+    },
     "Automatically check for updates" : {
       "localizations" : {
         "zh-Hans" : {
@@ -309,26 +498,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "自动切换桌面"
-          }
-        }
-      }
-    },
-    "Automation rules executed" : {
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "已执行自动化规则"
-          }
-        }
-      }
-    },
-    "Automation rule failed" : {
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "自动化规则执行失败"
           }
         }
       }
@@ -542,16 +711,6 @@
     },
     "DesktopRenamer SpaceAPI" : {
       "shouldTranslate" : false
-    },
-    "SpaceAPI access not approved" : {
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "SpaceAPI 访问未获批准"
-          }
-        }
-      }
     },
     "Dismiss" : {
       "localizations" : {
@@ -1244,6 +1403,16 @@
         }
       }
     },
+    "Required for window automation and keyboard shortcuts." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "窗口自动化和键盘快捷键所需的权限。"
+          }
+        }
+      }
+    },
     "Requires %@." : {
       "localizations" : {
         "zh-Hans" : {
@@ -1327,313 +1496,6 @@
         }
       }
     },
-    "Rule executed: %@" : {
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "已执行规则：%@"
-          }
-        }
-      }
-    },
-    "%d windows brought to front" : {
-      "comment" : "HUD outcome for multiple windows brought to the front",
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%d 个窗口已置于前台"
-          }
-        }
-      }
-    },
-    "%d windows hidden" : {
-      "comment" : "HUD outcome for multiple hidden windows",
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%d 个窗口已隐藏"
-          }
-        }
-      }
-    },
-    "%d windows minimized" : {
-      "comment" : "HUD outcome for multiple minimized windows",
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%d 个窗口已最小化"
-          }
-        }
-      }
-    },
-    "%d windows restored" : {
-      "comment" : "HUD outcome for multiple restored windows",
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%d 个窗口已恢复"
-          }
-        }
-      }
-    },
-    "%d windows shown" : {
-      "comment" : "HUD outcome for multiple shown windows",
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%d 个窗口已显示"
-          }
-        }
-      }
-    },
-    "app brought to front" : {
-      "comment" : "HUD outcome when an application without enumerated windows is brought to the front",
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "应用已置于前台"
-          }
-        }
-      }
-    },
-    "app hidden" : {
-      "comment" : "HUD outcome when an application without enumerated windows is hidden",
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "应用已隐藏"
-          }
-        }
-      }
-    },
-    "app minimized" : {
-      "comment" : "HUD outcome when an application without enumerated windows is minimized",
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "应用已最小化"
-          }
-        }
-      }
-    },
-    "app restored" : {
-      "comment" : "HUD outcome when an application without enumerated windows is restored",
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "应用已恢复"
-          }
-        }
-      }
-    },
-    "app shown" : {
-      "comment" : "HUD outcome when an application without enumerated windows is shown",
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "应用已显示"
-          }
-        }
-      }
-    },
-    "shortcut triggered" : {
-      "comment" : "HUD outcome when a rule triggers a keyboard shortcut",
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "已触发快捷键"
-          }
-        }
-      }
-    },
-    "window brought to front" : {
-      "comment" : "HUD outcome for one window brought to the front",
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "窗口已置于前台"
-          }
-        }
-      }
-    },
-    "window hidden" : {
-      "comment" : "HUD outcome for one hidden window",
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "窗口已隐藏"
-          }
-        }
-      }
-    },
-    "window minimized" : {
-      "comment" : "HUD outcome for one minimized window",
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "窗口已最小化"
-          }
-        }
-      }
-    },
-    "window restored" : {
-      "comment" : "HUD outcome for one restored window",
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "窗口已恢复"
-          }
-        }
-      }
-    },
-    "window shown" : {
-      "comment" : "HUD outcome for one shown window",
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "窗口已显示"
-          }
-        }
-      }
-    },
-    "%@: %@" : {
-      "comment" : "HUD toast with application and confirmed outcomes",
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%@：%@"
-          }
-        }
-      }
-    },
-    "%d hidden" : {
-      "comment" : "HUD count of apps hidden",
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "已隐藏 %d 个应用"
-          }
-        }
-      }
-    },
-    "%d restored" : {
-      "comment" : "HUD count of apps restored",
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "已恢复 %d 个应用"
-          }
-        }
-      }
-    },
-    "%d shown" : {
-      "comment" : "HUD count of apps shown",
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "已显示 %d 个应用"
-          }
-        }
-      }
-    },
-    "%d minimized" : {
-      "comment" : "HUD count of apps minimized",
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "已最小化 %d 个应用"
-          }
-        }
-      }
-    },
-    "%d brought to front" : {
-      "comment" : "HUD count of apps brought to the front",
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "已将 %d 个应用置于前台"
-          }
-        }
-      }
-    },
-    "%d shortcuts triggered" : {
-      "comment" : "HUD count of apps with triggered shortcuts",
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "已为 %d 个应用触发快捷键"
-          }
-        }
-      }
-    },
-    "Actions" : {
-      "comment" : "HUD details popover title",
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "操作"
-          }
-        }
-      }
-    },
-    "Debug" : {
-      "comment" : "Debug-only menu",
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "调试"
-          }
-        }
-      }
-    },
-    "Show action details" : {
-      "comment" : "HUD details button",
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "显示操作详情"
-          }
-        }
-      }
-    },
-    "Show HUD with multiple actions" : {
-      "comment" : "Debug-only HUD preview",
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "显示包含多个操作的 HUD"
-          }
-        }
-      }
-    },
     "Rules" : {
       "localizations" : {
         "zh-Hans" : {
@@ -1650,16 +1512,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "规则按从上到下的顺序执行。第一个匹配的规则优先。"
-          }
-        }
-      }
-    },
-    "Rules executed: %@" : {
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "已执行规则：%@"
           }
         }
       }
@@ -1754,6 +1606,17 @@
         }
       }
     },
+    "shortcut triggered" : {
+      "comment" : "HUD outcome",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已触发快捷键"
+          }
+        }
+      }
+    },
     "Show" : {
       "comment" : "Action: Show Window",
       "localizations" : {
@@ -1767,6 +1630,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "显示"
+          }
+        }
+      }
+    },
+    "Show action details" : {
+      "comment" : "HUD details button",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "显示操作详情"
           }
         }
       }
@@ -1823,6 +1697,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "桌面分配会被保存，但只有启用“自动切换 Dock”后才会应用。"
+          }
+        }
+      }
+    },
+    "SpaceAPI access not approved" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "SpaceAPI 访问未获批准"
           }
         }
       }
@@ -1993,6 +1877,28 @@
         }
       }
     },
+    "window brought to front" : {
+      "comment" : "HUD outcome",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "窗口已置于前台"
+          }
+        }
+      }
+    },
+    "window hidden" : {
+      "comment" : "HUD outcome",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "窗口已隐藏"
+          }
+        }
+      }
+    },
     "Window is frontmost" : {
       "comment" : "Condition matching the frontmost window",
       "localizations" : {
@@ -2033,6 +1939,39 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "窗口已最小化"
+          }
+        }
+      }
+    },
+    "window minimized" : {
+      "comment" : "HUD outcome",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "窗口已最小化"
+          }
+        }
+      }
+    },
+    "window restored" : {
+      "comment" : "HUD outcome",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "窗口已恢复"
+          }
+        }
+      }
+    },
+    "window shown" : {
+      "comment" : "HUD outcome",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "窗口已显示"
           }
         }
       }
