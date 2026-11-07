@@ -52,13 +52,14 @@ class DockManager: ObservableObject {
         didSet {
             saveConfig()
             if config.defaultDockSetID != oldValue.defaultDockSetID {
-                lastAppliedDockSetID = nil
+                lastAppliedDockTiles = nil
             }
         }
     }
     
     @MainActor @Published var activeDockSetID: UUID?
-    private var lastAppliedDockSetID: UUID?
+    private var lastAppliedDockTiles: [DockTile]?
+    private var dockSwitchGeneration: UInt64 = 0
     
     // Serializes Dock preference and restart operations without blocking a thread
     // while an operation awaits process or Dock state changes.
@@ -81,26 +82,29 @@ class DockManager: ObservableObject {
     
     /// Scans the system Dock and updates activeDockSetID if a match is found.
     func detectActiveDockSet() {
+        let detectionGeneration = dockSwitchGeneration
         Task {
             // Move heavy disk I/O and parsing to a background thread
-            let (matchFound, matchedID): (Bool, UUID?) = await Task.detached(priority: .background) {
-                guard let rawApps = DockManager.getSystemDockPersistentApps() else { return (false, nil) }
+            let (matchedID, detectedTiles): (UUID?, [DockTile]?) = await Task.detached(priority: .background) {
+                guard let rawApps = DockManager.getSystemDockPersistentApps() else { return (nil, nil) }
                 let currentTiles = DockManager.parseRawDockData(rawApps)
                 
                 // We need to access config from MainActor for the comparison
-                return await MainActor.run {
+                let matchedID: UUID? = await MainActor.run {
                     if let match = self.config.dockSets.first(where: { $0.tiles == currentTiles }) {
-                        return (true, match.id)
+                        return match.id
                     }
-                    return (false, nil)
+                    return nil
                 }
+                return (matchedID, matchedID == nil ? nil : currentTiles)
             }.value
             
             // Update Published properties on MainActor
-            if matchFound, let id = matchedID {
+            if let id = matchedID, let detectedTiles {
                 await MainActor.run {
+                    guard self.dockSwitchGeneration == detectionGeneration else { return }
                     self.activeDockSetID = id
-                    self.lastAppliedDockSetID = id
+                    self.lastAppliedDockTiles = detectedTiles
                 }
             }
         }
@@ -173,32 +177,63 @@ class DockManager: ObservableObject {
     @MainActor
     func applyDockForSpace(_ spaceID: String, force: Bool = false) {
         dockTask?.cancel()
+        dockSwitchGeneration &+= 1
+        let requestGeneration = dockSwitchGeneration
 
         dockTask = Task.detached(priority: .userInitiated) { [weak self] in
             guard let self = self else { return }
 
-            // Get target set from MainActor
-            let targetSet: DockSet? = await MainActor.run {
+            // Get the target and last verified Dock contents from MainActor.
+            let (targetSet, previouslyAppliedTiles): (DockSet?, [DockTile]?) = await MainActor.run {
+                guard self.dockSwitchGeneration == requestGeneration else { return (nil, nil) }
                 let setID = self.config.spaceAssignments[spaceID] ?? self.config.defaultDockSetID
-                return self.config.dockSets.first(where: { $0.id == setID })
+                let targetSet = self.config.dockSets.first(where: { $0.id == setID })
+                return (targetSet, self.lastAppliedDockTiles)
             }
-            guard let set = targetSet else { return }
+            guard let set = targetSet else {
+                logger.warning("No Dock set configured for space \(spaceID); automatic switch skipped")
+                return
+            }
             let setName = set.name
 
-            // Skip if already matching
+            // Persistent preferences may already contain a previous request's
+            // Phase 1 write while the visible Dock still needs to restart.
             if !force {
                 if let currentRaw = DockManager.getSystemDockPersistentApps() {
-                    if DockManager.parseRawDockData(currentRaw) == set.tiles {
-                        await MainActor.run { if self.activeDockSetID != set.id { self.activeDockSetID = set.id } }
+                    let currentTiles = DockManager.parseRawDockData(currentRaw)
+                    let skipDecision: Bool? = await MainActor.run {
+                        guard self.dockSwitchGeneration == requestGeneration else { return nil }
+                        guard currentTiles == set.tiles, previouslyAppliedTiles == set.tiles else {
+                            return false
+                        }
+                        if self.activeDockSetID != set.id { self.activeDockSetID = set.id }
+                        return true
+                    }
+                    guard let shouldSkip = skipDecision else { return }
+                    if shouldSkip {
+                        logger.info("Skipping switch to '\(setName)': Dock preferences match the last verified set")
                         return
+                    }
+                    if currentTiles == set.tiles {
+                        logger.info("Dock preferences match '\(setName)', but no matching set was verified as applied; continuing with Dock restart")
                     }
                 }
             }
 
             // Phase 1: Write plist immediately (fast, no debounce).
             // Even if cancelled during Phase 2, the plist stays correct.
+            let canStartPhase1 = await MainActor.run {
+                guard self.dockSwitchGeneration == requestGeneration else { return false }
+                // Once preferences are about to change, the last verified Dock
+                // state can no longer justify skipping a subsequent restart.
+                self.lastAppliedDockTiles = nil
+                return true
+            }
+            guard canStartPhase1 else { return }
+
             let phase1OK = await self.phase1WriteToDisk(set)
             if Task.isCancelled { return }
+            guard await self.isCurrentDockSwitch(requestGeneration) else { return }
 
             // Debounce before Phase 2 — rapid space switching only
             // re-runs Phase 1. The Dock is only killed when the user
@@ -213,16 +248,23 @@ class DockManager: ObservableObject {
                 try? await Task.sleep(nanoseconds: 1_500_000_000) // 1.5s
             }
             if Task.isCancelled { return }
+            guard await self.isCurrentDockSwitch(requestGeneration) else { return }
 
             // Phase 2: Restart Dock and verify
             logger.info(">>> \(force ? "FORCED" : "STARTING") SWITCH: '\(setName)' for Space \(spaceID)")
             let success = await self.phase2RestartDockAndVerify(set)
 
-            if success {
-                await MainActor.run {
-                    self.lastAppliedDockSetID = set.id
+            let isCurrentRequest = await MainActor.run {
+                guard self.dockSwitchGeneration == requestGeneration else { return false }
+                if success {
+                    self.lastAppliedDockTiles = set.tiles
                     self.activeDockSetID = set.id
                 }
+                return true
+            }
+            guard isCurrentRequest else { return }
+
+            if success {
                 logger.info("<<< SUCCESS: Switched to '\(setName)'")
             } else {
                 logger.error("<<< FAILURE: Could not verify dock write for '\(setName)'")
@@ -232,9 +274,13 @@ class DockManager: ObservableObject {
 
     /// Manually applies a specific dock set by its ID.
     /// Uses the full synchronous flow (no debounce).
+    @MainActor
     func applyDockSetByID(_ id: UUID) {
         dockTask?.cancel()
+        dockSwitchGeneration &+= 1
+        let requestGeneration = dockSwitchGeneration
         dockTask = Task {
+            guard self.dockSwitchGeneration == requestGeneration else { return }
             let activity = ProcessInfo.processInfo.beginActivity(
                 options: [.userInitiated, .latencyCritical],
                 reason: "ManualDockSwitch-\(id)"
@@ -244,16 +290,20 @@ class DockManager: ObservableObject {
             guard let set = config.dockSets.first(where: { $0.id == id }) else { return }
 
             logger.info(">>> MANUAL SWITCH: '\(set.name)'")
+            self.lastAppliedDockTiles = nil
             let success = await applyDockSetVerified(set)
+            guard !Task.isCancelled, self.dockSwitchGeneration == requestGeneration else { return }
 
             if success {
-                await MainActor.run {
-                    self.lastAppliedDockSetID = set.id
-                    self.activeDockSetID = set.id
-                }
+                self.lastAppliedDockTiles = set.tiles
+                self.activeDockSetID = set.id
                 logger.info("<<< SUCCESS: Manually switched to '\(set.name)'")
             }
         }
+    }
+
+    private func isCurrentDockSwitch(_ generation: UInt64) async -> Bool {
+        await MainActor.run { self.dockSwitchGeneration == generation }
     }
 
     // MARK: - Two-Phase Dock Switch
@@ -654,7 +704,7 @@ class DockManager: ObservableObject {
 
         config.dockSets[index].tiles = tiles
         activeDockSetID = setID
-        lastAppliedDockSetID = setID
+        lastAppliedDockTiles = tiles
         return true
     }
 
