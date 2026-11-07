@@ -249,7 +249,7 @@ class RuleManager: ObservableObject {
                     let secondName = $1.localizedName ?? ""
                     return firstName.localizedStandardCompare(secondName) == .orderedAscending
                 }
-                let detailLines = changedApplications.flatMap { application -> [String] in
+                let actionDetails = changedApplications.flatMap { application -> [HUDActionDetail] in
                     guard let summary = changeSummariesByApplication[application.processIdentifier] else {
                         return []
                     }
@@ -258,13 +258,16 @@ class RuleManager: ObservableObject {
                         storedName: application.localizedName ?? "Application"
                     )
                     return summary.localizedOutcomeDetails.map { outcome in
-                        String(
-                            format: NSLocalizedString(
-                                "%@: %@",
-                                comment: "HUD detail with application and confirmed outcome"
+                        HUDActionDetail(
+                            text: String(
+                                format: NSLocalizedString(
+                                    "%@: %@",
+                                    comment: "HUD detail with application and confirmed outcome"
+                                ),
+                                applicationName,
+                                outcome
                             ),
-                            applicationName,
-                            outcome
+                            appIcon: application.icon
                         )
                     }
                 }
@@ -305,7 +308,7 @@ class RuleManager: ObservableObject {
                     message: message,
                     style: .info,
                     appIcon: appIcon,
-                    detailLines: detailLines
+                    actionDetails: actionDetails
                 )
             }
         }

@@ -214,31 +214,46 @@ class StatusBarManager: NSObject {
             "%@: %@",
             comment: "HUD detail with application and confirmed outcome"
         )
-        let detailLines = [
-            String(
-                format: detailFormat,
-                "Music",
-                NSLocalizedString("window hidden", comment: "HUD outcome")
+        let sampleActions = [
+            (
+                appName: "Music",
+                bundleIdentifier: "com.apple.Music",
+                outcome: NSLocalizedString("window hidden", comment: "HUD outcome")
             ),
-            String(
-                format: detailFormat,
-                "Mail",
-                NSLocalizedString("2 windows hidden", comment: "HUD outcome")
+            (
+                appName: "Mail",
+                bundleIdentifier: "com.apple.mail",
+                outcome: NSLocalizedString("2 windows hidden", comment: "HUD outcome")
             ),
-            String(
-                format: detailFormat,
-                "Calendar",
-                NSLocalizedString("window restored", comment: "HUD outcome")
+            (
+                appName: "Calendar",
+                bundleIdentifier: "com.apple.iCal",
+                outcome: NSLocalizedString("window restored", comment: "HUD outcome")
             )
         ]
+        let actionDetails = sampleActions.map { action in
+            HUDActionDetail(
+                text: String(format: detailFormat, action.appName, action.outcome),
+                appIcon: installedApplicationIcon(bundleIdentifier: action.bundleIdentifier)
+            )
+        }
 
         HUDWindowController.shared.show(
             message: [hiddenSummary, restoredSummary].joined(separator: ", "),
             style: .info,
             appIcon: NSApp.applicationIconImage,
             autoHide: false,
-            detailLines: detailLines
+            actionDetails: actionDetails
         )
+    }
+
+    private func installedApplicationIcon(bundleIdentifier: String) -> NSImage? {
+        guard let applicationURL = NSWorkspace.shared.urlForApplication(
+            withBundleIdentifier: bundleIdentifier
+        ) else {
+            return nil
+        }
+        return NSWorkspace.shared.icon(forFile: applicationURL.path)
     }
     #endif
     

@@ -2,6 +2,18 @@ import Foundation
 import AppKit
 import SwiftUI
 
+struct HUDActionDetail: Identifiable {
+    let id: UUID
+    let text: String
+    let appIcon: NSImage?
+
+    init(text: String, appIcon: NSImage?) {
+        self.id = UUID()
+        self.text = text
+        self.appIcon = appIcon
+    }
+}
+
 struct HUDView: View {
     let message: String
     let appIcon: NSImage?
@@ -9,7 +21,7 @@ struct HUDView: View {
     let iconColor: Color
     let buttonTitle: String?
     let buttonAction: (() -> Void)?
-    let detailLines: [String]
+    let actionDetails: [HUDActionDetail]
     let presentationID: UUID
     let onDismiss: () -> Void
     let onHoverChanged: (Bool) -> Void
@@ -94,15 +106,15 @@ struct HUDView: View {
                 .buttonStyle(HUDActionButtonStyle(foregroundColor: foregroundColor))
             }
 
-            if detailLines.count > 1 {
+            if actionDetails.count > 1 {
                 Button {
                     isShowingDetails = true
                 } label: {
                     Image(systemName: "info.circle")
-                        .font(.system(size: 14, weight: .medium))
+                        .font(.system(size: 13, weight: .medium))
                         .foregroundStyle(foregroundColor)
-                        .frame(width: 24, height: 24)
-                        .background(foregroundColor.opacity(isHovered ? 0.20 : 0.12), in: Circle())
+                        .frame(width: 28, height: 28)
+                        .background(foregroundColor.opacity(0.14), in: Circle())
                 }
                 .buttonStyle(.plain)
                 .help(String(localized: "Show action details"))
@@ -114,15 +126,20 @@ struct HUDView: View {
 
                         ScrollView {
                             VStack(alignment: .leading, spacing: 8) {
-                                ForEach(detailLines.indices, id: \.self) { index in
-                                    Text(detailLines[index])
-                                        .font(.system(size: 12))
-                                        .fixedSize(horizontal: false, vertical: true)
-                                        .frame(maxWidth: .infinity, alignment: .leading)
+                                ForEach(actionDetails) { detail in
+                                    HStack(spacing: 10) {
+                                        actionDetailIcon(detail.appIcon)
+
+                                        Text(detail.text)
+                                            .font(.system(size: 12))
+                                            .fixedSize(horizontal: false, vertical: true)
+                                            .frame(maxWidth: .infinity, alignment: .leading)
+                                    }
+                                    .frame(maxWidth: .infinity, alignment: .leading)
                                 }
                             }
                         }
-                        .frame(height: min(max(CGFloat(detailLines.count) * 30, 60), 270))
+                        .frame(height: min(max(CGFloat(actionDetails.count) * 34, 60), 272))
                     }
                     .padding(14)
                     .frame(width: 300, alignment: .leading)
@@ -143,6 +160,22 @@ struct HUDView: View {
         .onHover { hovering in
             isHovered = hovering
             onHoverChanged(hovering)
+        }
+    }
+
+    @ViewBuilder
+    private func actionDetailIcon(_ appIcon: NSImage?) -> some View {
+        if let appIcon {
+            Image(nsImage: appIcon)
+                .resizable()
+                .aspectRatio(contentMode: .fit)
+                .frame(width: 24, height: 24)
+                .clipShape(RoundedRectangle(cornerRadius: 5, style: .continuous))
+        } else {
+            Image(systemName: "app.fill")
+                .font(.system(size: 18))
+                .foregroundStyle(.secondary)
+                .frame(width: 24, height: 24)
         }
     }
 }
@@ -262,7 +295,7 @@ class HUDWindowController: NSWindowController {
         buttonAction: (() -> Void)? = nil,
         autoHide: Bool = true,
         statusTint: HUDStatusTint? = nil,
-        detailLines: [String] = []
+        actionDetails: [HUDActionDetail] = []
     ) {
         present(
             message: message,
@@ -273,7 +306,7 @@ class HUDWindowController: NSWindowController {
             buttonAction: buttonAction,
             autoHide: autoHide,
             statusTint: statusTint,
-            detailLines: detailLines
+            actionDetails: actionDetails
         )
     }
 
@@ -300,7 +333,7 @@ class HUDWindowController: NSWindowController {
         buttonTitle: String? = nil,
         buttonAction: (() -> Void)? = nil,
         statusTint: HUDStatusTint? = nil,
-        detailLines: [String] = []
+        actionDetails: [HUDActionDetail] = []
     ) {
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) { [weak self] in
             self?.show(
@@ -311,7 +344,7 @@ class HUDWindowController: NSWindowController {
                 buttonTitle: buttonTitle,
                 buttonAction: buttonAction,
                 statusTint: statusTint,
-                detailLines: detailLines
+                actionDetails: actionDetails
             )
         }
     }
@@ -325,7 +358,7 @@ class HUDWindowController: NSWindowController {
         buttonAction: (() -> Void)? = nil,
         autoHide: Bool = true,
         statusTint: HUDStatusTint? = nil,
-        detailLines: [String] = []
+        actionDetails: [HUDActionDetail] = []
     ) {
         present(
             message: message,
@@ -336,7 +369,7 @@ class HUDWindowController: NSWindowController {
             buttonAction: buttonAction,
             autoHide: autoHide,
             statusTint: statusTint,
-            detailLines: detailLines
+            actionDetails: actionDetails
         )
     }
 
@@ -349,7 +382,7 @@ class HUDWindowController: NSWindowController {
         buttonAction: (() -> Void)?,
         autoHide: Bool,
         statusTint: HUDStatusTint?,
-        detailLines: [String]
+        actionDetails: [HUDActionDetail]
     ) {
         guard let panel = window as? HUDNSPanel else { return }
 
@@ -362,7 +395,7 @@ class HUDWindowController: NSWindowController {
         isHoveringHUD = false
         isShowingDetails = false
 
-        panel.isInteractive = buttonTitle != nil || detailLines.count > 1
+        panel.isInteractive = buttonTitle != nil || actionDetails.count > 1
         panel.becomesKeyOnlyIfNeeded = panel.isInteractive
 
         let hudView = HUDView(
@@ -375,7 +408,7 @@ class HUDWindowController: NSWindowController {
                 buttonAction?()
                 self.hideWithAnimation()
             },
-            detailLines: detailLines,
+            actionDetails: actionDetails,
             presentationID: presentationID,
             onDismiss: { [weak self] in self?.hideWithAnimation() },
             onHoverChanged: { [weak self] hovering in self?.handleHoverChange(hovering) },
@@ -482,7 +515,7 @@ class HUDWindowController: NSWindowController {
         animateAlpha(1.0, on: panel, duration: 0.08)
 
         if autoHide {
-            let duration = (buttonTitle != nil || detailLines.count > 1) ? 5.0 : 1.8
+            let duration = (buttonTitle != nil || actionDetails.count > 1) ? 5.0 : 1.8
             hideDuration = duration
             scheduleHide(after: duration)
         }
