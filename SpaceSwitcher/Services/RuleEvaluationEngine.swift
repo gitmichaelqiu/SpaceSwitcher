@@ -8,6 +8,7 @@ import Foundation
 struct RuleWindowSnapshot: Identifiable, Hashable {
     let id: Int
     let spaceIDs: Set<String>
+    let primarySpaceID: String?
     let isMinimized: Bool?
     let isHidden: Bool?
     let isFullscreen: Bool?
@@ -37,6 +38,189 @@ struct RuleExecutionPlan: Equatable {
     /// accessibility windows were available. Otherwise the IDs identify the
     /// exact windows claimed by this plan.
     let windowIDs: [Int]
+}
+
+enum RuleActionStateChange {
+    /// Checks whether a known prior state differs from the requested state.
+    static func isConfirmed(
+        from currentValue: Bool?,
+        to targetValue: Bool,
+        updateSucceeded: Bool
+    ) -> Bool {
+        guard updateSucceeded, let currentValue else { return false }
+        return currentValue != targetValue
+    }
+
+    /// A successful accessibility write can be a no-op. Confirm the live
+    /// value reached the requested state before reporting a user-visible change.
+    static func isConfirmed(
+        from currentValue: Bool?,
+        to targetValue: Bool,
+        updateSucceeded: Bool,
+        observedAfter: Bool?
+    ) -> Bool {
+        guard observedAfter == targetValue else { return false }
+        return isConfirmed(
+            from: currentValue,
+            to: targetValue,
+            updateSucceeded: updateSucceeded
+        )
+    }
+
+    /// Uses the post-write value when Accessibility could not report the
+    /// previous state. A successful write is only treated as a change the
+    /// first time this manager has attempted to manage the target, preventing
+    /// repeated refreshes from producing duplicate HUD toasts.
+    static func isConfirmedAfterUpdate(
+        from currentValue: Bool?,
+        to targetValue: Bool,
+        updateSucceeded: Bool,
+        observedAfter: Bool?,
+        wasPreviouslyManaged: Bool
+    ) -> Bool {
+        guard updateSucceeded, observedAfter == targetValue else { return false }
+
+        if let currentValue {
+            return isConfirmed(
+                from: currentValue,
+                to: targetValue,
+                updateSucceeded: true
+            )
+        }
+
+        return !wasPreviouslyManaged
+    }
+}
+
+enum RuleHUDOutcome: CaseIterable, Hashable {
+    case hidden
+    case restored
+    case shown
+    case minimized
+    case broughtToFront
+    case shortcutTriggered
+
+    var singularWindowDescription: String? {
+        switch self {
+        case .hidden: return NSLocalizedString("window hidden", comment: "HUD outcome")
+        case .restored: return NSLocalizedString("window restored", comment: "HUD outcome")
+        case .shown: return NSLocalizedString("window shown", comment: "HUD outcome")
+        case .minimized: return NSLocalizedString("window minimized", comment: "HUD outcome")
+        case .broughtToFront: return NSLocalizedString("window brought to front", comment: "HUD outcome")
+        case .shortcutTriggered: return nil
+        }
+    }
+
+    var pluralWindowFormat: String? {
+        switch self {
+        case .hidden: return NSLocalizedString("%d windows hidden", comment: "HUD outcome")
+        case .restored: return NSLocalizedString("%d windows restored", comment: "HUD outcome")
+        case .shown: return NSLocalizedString("%d windows shown", comment: "HUD outcome")
+        case .minimized: return NSLocalizedString("%d windows minimized", comment: "HUD outcome")
+        case .broughtToFront: return NSLocalizedString("%d windows brought to front", comment: "HUD outcome")
+        case .shortcutTriggered: return nil
+        }
+    }
+
+    var applicationDescription: String {
+        switch self {
+        case .hidden: return NSLocalizedString("app hidden", comment: "HUD outcome")
+        case .restored: return NSLocalizedString("app restored", comment: "HUD outcome")
+        case .shown: return NSLocalizedString("app shown", comment: "HUD outcome")
+        case .minimized: return NSLocalizedString("app minimized", comment: "HUD outcome")
+        case .broughtToFront: return NSLocalizedString("app brought to front", comment: "HUD outcome")
+        case .shortcutTriggered: return NSLocalizedString("shortcut triggered", comment: "HUD outcome")
+        }
+    }
+
+    var compactApplicationFormat: String {
+        switch self {
+        case .hidden: return NSLocalizedString("%d hidden", comment: "HUD count of apps hidden")
+        case .restored: return NSLocalizedString("%d restored", comment: "HUD count of apps restored")
+        case .shown: return NSLocalizedString("%d shown", comment: "HUD count of apps shown")
+        case .minimized: return NSLocalizedString("%d minimized", comment: "HUD count of apps minimized")
+        case .broughtToFront:
+            return NSLocalizedString("%d brought to front", comment: "HUD count of apps brought to the front")
+        case .shortcutTriggered:
+            return NSLocalizedString("%d shortcuts triggered", comment: "HUD count of apps with triggered shortcuts")
+        }
+    }
+}
+
+struct RuleHUDChangeSummary {
+    private(set) var changedWindowIDs: [RuleHUDOutcome: Set<Int>] = [:]
+    private(set) var applicationOutcomes = Set<RuleHUDOutcome>()
+
+    var hasChanges: Bool {
+        !applicationOutcomes.isEmpty || changedWindowIDs.values.contains { !$0.isEmpty }
+    }
+
+    func windowCount(for outcome: RuleHUDOutcome) -> Int {
+        changedWindowIDs[outcome]?.count ?? 0
+    }
+
+    func includes(_ outcome: RuleHUDOutcome) -> Bool {
+        windowCount(for: outcome) > 0 || applicationOutcomes.contains(outcome)
+    }
+
+    mutating func record(_ outcome: RuleHUDOutcome, windowIDs: [Int]) {
+        guard !windowIDs.isEmpty else {
+            applicationOutcomes.insert(outcome)
+            return
+        }
+        changedWindowIDs[outcome, default: []].formUnion(windowIDs)
+    }
+
+    mutating func merge(_ other: RuleHUDChangeSummary) {
+        for (outcome, windowIDs) in other.changedWindowIDs {
+            changedWindowIDs[outcome, default: []].formUnion(windowIDs)
+        }
+        applicationOutcomes.formUnion(other.applicationOutcomes)
+    }
+
+    var localizedOutcomeDetails: [String] {
+        var fragments: [String] = []
+        for outcome in RuleHUDOutcome.allCases {
+            let count = windowCount(for: outcome)
+            if count == 1, let description = outcome.singularWindowDescription {
+                fragments.append(description)
+            } else if count > 1, let format = outcome.pluralWindowFormat {
+                fragments.append(String(format: format, count))
+            }
+            if applicationOutcomes.contains(outcome) {
+                fragments.append(outcome.applicationDescription)
+            }
+        }
+        return fragments
+    }
+
+    var localizedOutcomeDescription: String? {
+        let fragments = localizedOutcomeDetails
+        return fragments.isEmpty ? nil : fragments.joined(separator: ", ")
+    }
+
+    static func localizedApplicationOutcomeDescription(
+        for summaries: [RuleHUDChangeSummary]
+    ) -> String? {
+        let outcomeCounts = applicationOutcomeCounts(for: summaries)
+        let fragments = RuleHUDOutcome.allCases.compactMap { outcome -> String? in
+            guard let count = outcomeCounts[outcome], count > 0 else { return nil }
+            return String(format: outcome.compactApplicationFormat, count)
+        }
+        return fragments.isEmpty ? nil : fragments.joined(separator: ", ")
+    }
+
+    static func applicationOutcomeCounts(
+        for summaries: [RuleHUDChangeSummary]
+    ) -> [RuleHUDOutcome: Int] {
+        var counts: [RuleHUDOutcome: Int] = [:]
+        for summary in summaries {
+            for outcome in RuleHUDOutcome.allCases where summary.includes(outcome) {
+                counts[outcome, default: 0] += 1
+            }
+        }
+        return counts
+    }
 }
 
 enum RuleOrdering {
@@ -197,7 +381,8 @@ enum RuleEvaluationEngine {
 
         guard group.usesSourceSpace else { return false }
         if let window {
-            return window.spaceIDs.contains(currentSpaceID)
+            return window.primarySpaceID.map { $0 == currentSpaceID }
+                ?? window.spaceIDs.contains(currentSpaceID)
         }
         return managedSourceSpaceIDs.contains(currentSpaceID)
     }
@@ -213,7 +398,10 @@ enum RuleEvaluationEngine {
             let rawActions = selectedActions(
                 for: rule,
                 currentSpaceID: currentSpaceID,
-                window: window,
+                // The window's live membership can change after the app was
+                // hidden. Use the recorded source space to select the group,
+                // then evaluate its conditions against the actual window.
+                window: nil,
                 managedSourceSpaceIDs: application.managedAppHideSourceSpaceIDs
             )
 

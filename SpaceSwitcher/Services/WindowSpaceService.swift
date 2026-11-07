@@ -25,6 +25,9 @@ struct RuleWindowTarget {
     let applicationPID: Int32
     let accessibilityElement: AXUIElement
     let spaceIDs: Set<String>
+    /// WindowServer's first reported membership. This is a live fallback for
+    /// source matching; RuleManager's remembered hide source takes precedence.
+    let primarySpaceID: String?
     let isMinimized: Bool?
     let isHidden: Bool?
     let isFullscreen: Bool?
@@ -53,11 +56,13 @@ enum WindowSpaceService {
                 return nil
             }
 
+            let managedSpaceIDs = orderedCurrentSpaceIDs(for: Int(windowID))
             return RuleWindowTarget(
                 id: Int(windowID),
                 applicationPID: application.processIdentifier,
                 accessibilityElement: window,
-                spaceIDs: currentSpaceIDs(for: Int(windowID)),
+                spaceIDs: Set(managedSpaceIDs),
+                primarySpaceID: managedSpaceIDs.first,
                 isMinimized: minimizedState(for: window),
                 isHidden: hiddenState(for: window),
                 isFullscreen: fullscreenState(for: window),
@@ -66,7 +71,7 @@ enum WindowSpaceService {
         }
     }
 
-    static func currentSpaceIDs(for windowID: Int) -> Set<String> {
+    private static func orderedCurrentSpaceIDs(for windowID: Int) -> [String] {
         guard windowID > 0 else { return [] }
 
         let windowArray = [NSNumber(value: windowID)] as CFArray
@@ -79,7 +84,7 @@ enum WindowSpaceService {
             return []
         }
 
-        return Set(spaceIDs.map { String($0.intValue) })
+        return spaceIDs.map { String($0.intValue) }
     }
 
     private static func minimizedState(for window: AXUIElement) -> Bool? {

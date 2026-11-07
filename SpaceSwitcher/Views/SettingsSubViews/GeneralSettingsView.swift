@@ -4,6 +4,7 @@ import Sparkle
 struct GeneralSettingsView: View {
     @State private var launchAtLogin: Bool = LaunchManager.isEnabled
     @StateObject private var menuBarIconSettings = MenuBarIconSettings.shared
+    @StateObject private var hudToastSettings = HUDToastSettings.shared
     @State private var autoCheckUpdate: Bool = UpdateManager.shared.updaterController.updater.automaticallyChecksForUpdates
     @State private var autoDownloadUpdate: Bool = UpdateManager.shared.updaterController.updater.automaticallyDownloadsUpdates
 
@@ -14,6 +15,14 @@ struct GeneralSettingsView: View {
                 SettingsSection("General") {
                     SettingsRow("Hide menu bar icon") {
                         Toggle("", isOn: $menuBarIconSettings.isHidden)
+                            .labelsHidden()
+                            .toggleStyle(.switch)
+                    }
+
+                    Divider()
+
+                    SettingsRow("Show HUD toasts") {
+                        Toggle("", isOn: $hudToastSettings.isEnabled)
                             .labelsHidden()
                             .toggleStyle(.switch)
                     }

@@ -140,6 +140,27 @@ class StatusBarManager: NSObject {
             }
         }
 
+        #if DEBUG
+        let debugItem = NSMenuItem(
+            title: NSLocalizedString("Debug", comment: "Debug-only menu"),
+            action: nil,
+            keyEquivalent: ""
+        )
+        let debugMenu = NSMenu()
+        let showHUDItem = NSMenuItem(
+            title: NSLocalizedString(
+                "Show HUD with multiple actions",
+                comment: "Debug-only HUD preview"
+            ),
+            action: #selector(showHUDWithMultipleActions),
+            keyEquivalent: ""
+        )
+        showHUDItem.target = self
+        debugMenu.addItem(showHUDItem)
+        debugItem.submenu = debugMenu
+        menu.addItem(debugItem)
+        #endif
+
         menu.addItem(NSMenuItem.separator())
 
         let settingsItem = NSMenuItem(title: NSLocalizedString("Settings", comment: ""),
@@ -178,6 +199,63 @@ class StatusBarManager: NSObject {
         // Manually apply the selected dock set
         dm.applyDockSetByID(setID)
     }
+
+    #if DEBUG
+    @objc private func showHUDWithMultipleActions() {
+        let hiddenSummary = String(
+            format: NSLocalizedString("%d hidden", comment: "HUD count of apps hidden"),
+            2
+        )
+        let restoredSummary = String(
+            format: NSLocalizedString("%d restored", comment: "HUD count of apps restored"),
+            1
+        )
+        let detailFormat = NSLocalizedString(
+            "%@: %@",
+            comment: "HUD detail with application and confirmed outcome"
+        )
+        let sampleActions = [
+            (
+                appName: "Music",
+                bundleIdentifier: "com.apple.Music",
+                outcome: NSLocalizedString("window hidden", comment: "HUD outcome")
+            ),
+            (
+                appName: "Mail",
+                bundleIdentifier: "com.apple.mail",
+                outcome: NSLocalizedString("2 windows hidden", comment: "HUD outcome")
+            ),
+            (
+                appName: "Calendar",
+                bundleIdentifier: "com.apple.iCal",
+                outcome: NSLocalizedString("window restored", comment: "HUD outcome")
+            )
+        ]
+        let actionDetails = sampleActions.map { action in
+            HUDActionDetail(
+                text: String(format: detailFormat, action.appName, action.outcome),
+                appIcon: installedApplicationIcon(bundleIdentifier: action.bundleIdentifier)
+            )
+        }
+
+        HUDWindowController.shared.show(
+            message: [hiddenSummary, restoredSummary].joined(separator: ", "),
+            style: .info,
+            appIcon: NSApp.applicationIconImage,
+            autoHide: false,
+            actionDetails: actionDetails
+        )
+    }
+
+    private func installedApplicationIcon(bundleIdentifier: String) -> NSImage? {
+        guard let applicationURL = NSWorkspace.shared.urlForApplication(
+            withBundleIdentifier: bundleIdentifier
+        ) else {
+            return nil
+        }
+        return NSWorkspace.shared.icon(forFile: applicationURL.path)
+    }
+    #endif
     
     deinit {
         cancellables.forEach { $0.cancel() }
