@@ -298,6 +298,8 @@ class DockManager: ObservableObject {
                 self.lastAppliedDockTiles = set.tiles
                 self.activeDockSetID = set.id
                 logger.info("<<< SUCCESS: Manually switched to '\(set.name)'")
+            } else {
+                logger.error("<<< FAILURE: Could not manually apply Dock set '\(set.name)'")
             }
         }
     }

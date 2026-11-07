@@ -82,7 +82,6 @@ struct DockSettingsView: View {
 
                             DockItemsListView(
                                 dockManager: dockManager,
-                                spaceManager: spaceManager,
                                 selectedSetID: selectedID,
                                 tiles: $dockManager.config.dockSets[index].tiles
                             )
@@ -471,7 +470,6 @@ private struct DockSpaceCard: View {
 // MARK: - Component 3: Dock Items List
 struct DockItemsListView: View {
     @ObservedObject var dockManager: DockManager
-    @ObservedObject var spaceManager: SpaceManager
     let selectedSetID: UUID
     @Binding var tiles: [DockTile]
 
@@ -483,7 +481,7 @@ struct DockItemsListView: View {
             accessory: {
                 HStack(spacing: 4) {
                     Button {
-                        forceApply()
+                        applySelectedSet()
                     } label: {
                         Text("Apply now")
                     }
@@ -604,9 +602,8 @@ struct DockItemsListView: View {
         }
     }
     
-    private func forceApply() {
-        guard let currentSpace = spaceManager.currentSpaceID else { return }
-        dockManager.applyDockForSpace(currentSpace, force: true)
+    private func applySelectedSet() {
+        dockManager.applyDockSetByID(selectedSetID)
     }
 
     private func removeTile(id: UUID) {
