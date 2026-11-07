@@ -67,6 +67,24 @@ final class RuleEvaluationEngineTests: XCTestCase {
         XCTAssertTrue(appLevelChange.hasChanges)
     }
 
+    func testRuleHUDApplicationOutcomeCountsCountAppsRatherThanWindows() {
+        var firstApplication = RuleHUDChangeSummary()
+        firstApplication.record(.hidden, windowIDs: [101, 102])
+
+        var secondApplication = RuleHUDChangeSummary()
+        secondApplication.record(.hidden, windowIDs: [201])
+
+        var thirdApplication = RuleHUDChangeSummary()
+        thirdApplication.record(.restored, windowIDs: [301])
+
+        XCTAssertEqual(
+            RuleHUDChangeSummary.applicationOutcomeCounts(
+                for: [firstApplication, secondApplication, thirdApplication]
+            ),
+            [.hidden: 2, .restored: 1]
+        )
+    }
+
     func testSpecificRuleBeforeAllAppsWinsForItsMatchingWindow() {
         let specificRule = makeRule(
             id: uuid(1),

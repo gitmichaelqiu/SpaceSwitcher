@@ -191,7 +191,7 @@ class RuleManager: ObservableObject {
 
             var changedRuleIDs = Set<UUID>()
             var changedApplicationPIDs = Set<Int32>()
-            var changeSummariesByRule: [UUID: RuleHUDChangeSummary] = [:]
+            var changeSummariesByApplication: [Int32: RuleHUDChangeSummary] = [:]
 
             for batch in executionBatches {
                 if Task.isCancelled { break }
@@ -216,7 +216,10 @@ class RuleManager: ObservableObject {
                     if didChangeState {
                         changedRuleIDs.insert(plan.ruleID)
                         changedApplicationPIDs.insert(batch.application.processIdentifier)
-                        changeSummariesByRule[plan.ruleID, default: RuleHUDChangeSummary()]
+                        changeSummariesByApplication[
+                            batch.application.processIdentifier,
+                            default: RuleHUDChangeSummary()
+                        ]
                             .merge(changeSummary)
                     }
 
@@ -235,43 +238,40 @@ class RuleManager: ObservableObject {
                     return
                 }
 
-                let executedRules = orderedRules.filter { changedRuleIDs.contains($0.id) }
-                guard !executedRules.isEmpty else { return }
-
-                let message: String
-                if changedRuleIDs.count == 1,
-                   changedApplicationPIDs.count == 1,
-                   let rule = executedRules.first,
-                   let outcomeDescription = changeSummariesByRule[rule.id]?.localizedOutcomeDescription {
-                    let ruleName = rule.appliesToAllApps
-                        ? NSLocalizedString("All apps", comment: "Rule target")
-                        : resolvedApplicationName(
-                            bundleIdentifier: rule.appBundleID,
-                            storedName: rule.appName
-                        )
-                    message = String(
-                        format: NSLocalizedString("%@ rule: %@", comment: "HUD toast"),
-                        ruleName,
-                        outcomeDescription
-                    )
-                } else {
-                    if changedApplicationPIDs.count == 1 {
-                        message = NSLocalizedString("Rules updated for one app", comment: "HUD toast")
-                    } else {
-                        message = String(
-                            format: NSLocalizedString("Rules updated for %d apps", comment: "HUD toast"),
-                            changedApplicationPIDs.count
-                        )
-                    }
-                }
-
                 var applicationsByPID: [Int32: NSRunningApplication] = [:]
                 for batch in executionBatches where
                     changedApplicationPIDs.contains(batch.application.processIdentifier) {
                     applicationsByPID[batch.application.processIdentifier] = batch.application
                 }
-                let singleApplication = applicationsByPID.count == 1
-                    ? applicationsByPID.values.first
+
+                let message: String
+                if changedApplicationPIDs.count == 1,
+                   let processID = changedApplicationPIDs.first,
+                   let application = applicationsByPID[processID],
+                   let outcomeDescription = changeSummariesByApplication[processID]?.localizedOutcomeDescription {
+                    let applicationName = resolvedApplicationName(
+                        bundleIdentifier: application.bundleIdentifier ?? "",
+                        storedName: application.localizedName ?? "Application"
+                    )
+                    message = String(
+                        format: NSLocalizedString(
+                            "%@: %@",
+                            comment: "HUD toast with application and confirmed outcomes"
+                        ),
+                        applicationName,
+                        outcomeDescription
+                    )
+                } else if let outcomeDescription = RuleHUDChangeSummary.localizedApplicationOutcomeDescription(
+                    for: changedApplicationPIDs.compactMap { changeSummariesByApplication[$0] }
+                ) {
+                    message = outcomeDescription
+                } else {
+                    self.debugLog("HUD toast skipped: no localized outcome summary")
+                    return
+                }
+
+                let singleApplication = changedApplicationPIDs.count == 1
+                    ? changedApplicationPIDs.first.flatMap { applicationsByPID[$0] }
                     : nil
                 let appIcon = singleApplication?.icon ?? NSApp.applicationIconImage
 

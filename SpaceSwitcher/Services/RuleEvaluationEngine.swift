@@ -117,6 +117,19 @@ enum RuleHUDOutcome: CaseIterable, Hashable {
         case .shortcutTriggered: return NSLocalizedString("shortcut triggered", comment: "HUD outcome")
         }
     }
+
+    var compactApplicationFormat: String {
+        switch self {
+        case .hidden: return NSLocalizedString("%d hidden", comment: "HUD count of apps hidden")
+        case .restored: return NSLocalizedString("%d restored", comment: "HUD count of apps restored")
+        case .shown: return NSLocalizedString("%d shown", comment: "HUD count of apps shown")
+        case .minimized: return NSLocalizedString("%d minimized", comment: "HUD count of apps minimized")
+        case .broughtToFront:
+            return NSLocalizedString("%d brought to front", comment: "HUD count of apps brought to the front")
+        case .shortcutTriggered:
+            return NSLocalizedString("%d shortcuts triggered", comment: "HUD count of apps with triggered shortcuts")
+        }
+    }
 }
 
 struct RuleHUDChangeSummary {
@@ -129,6 +142,10 @@ struct RuleHUDChangeSummary {
 
     func windowCount(for outcome: RuleHUDOutcome) -> Int {
         changedWindowIDs[outcome]?.count ?? 0
+    }
+
+    func includes(_ outcome: RuleHUDOutcome) -> Bool {
+        windowCount(for: outcome) > 0 || applicationOutcomes.contains(outcome)
     }
 
     mutating func record(_ outcome: RuleHUDOutcome, windowIDs: [Int]) {
@@ -160,6 +177,29 @@ struct RuleHUDChangeSummary {
             }
         }
         return fragments.isEmpty ? nil : fragments.joined(separator: ", ")
+    }
+
+    static func localizedApplicationOutcomeDescription(
+        for summaries: [RuleHUDChangeSummary]
+    ) -> String? {
+        let outcomeCounts = applicationOutcomeCounts(for: summaries)
+        let fragments = RuleHUDOutcome.allCases.compactMap { outcome -> String? in
+            guard let count = outcomeCounts[outcome], count > 0 else { return nil }
+            return String(format: outcome.compactApplicationFormat, count)
+        }
+        return fragments.isEmpty ? nil : fragments.joined(separator: ", ")
+    }
+
+    static func applicationOutcomeCounts(
+        for summaries: [RuleHUDChangeSummary]
+    ) -> [RuleHUDOutcome: Int] {
+        var counts: [RuleHUDOutcome: Int] = [:]
+        for summary in summaries {
+            for outcome in RuleHUDOutcome.allCases where summary.includes(outcome) {
+                counts[outcome, default: 0] += 1
+            }
+        }
+        return counts
     }
 }
 

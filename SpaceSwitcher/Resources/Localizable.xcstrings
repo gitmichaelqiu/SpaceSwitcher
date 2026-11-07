@@ -1337,17 +1337,6 @@
         }
       }
     },
-    "%@ rule: %@" : {
-      "comment" : "HUD toast with the rule target and confirmed changes",
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%@ 规则：%@"
-          }
-        }
-      }
-    },
     "%d windows brought to front" : {
       "comment" : "HUD outcome for multiple windows brought to the front",
       "localizations" : {
@@ -1399,28 +1388,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%d 个窗口已显示"
-          }
-        }
-      }
-    },
-    "Rules updated for %d apps" : {
-      "comment" : "HUD fallback when multiple rules or applications change",
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "已更新 %d 个应用的规则"
-          }
-        }
-      }
-    },
-    "Rules updated for one app" : {
-      "comment" : "HUD fallback when multiple rules affect one application",
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "已更新一个应用的规则"
           }
         }
       }
@@ -1542,6 +1509,83 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "窗口已显示"
+          }
+        }
+      }
+    },
+    "%@: %@" : {
+      "comment" : "HUD toast with application and confirmed outcomes",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@：%@"
+          }
+        }
+      }
+    },
+    "%d hidden" : {
+      "comment" : "HUD count of apps hidden",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已隐藏 %d 个应用"
+          }
+        }
+      }
+    },
+    "%d restored" : {
+      "comment" : "HUD count of apps restored",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已恢复 %d 个应用"
+          }
+        }
+      }
+    },
+    "%d shown" : {
+      "comment" : "HUD count of apps shown",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已显示 %d 个应用"
+          }
+        }
+      }
+    },
+    "%d minimized" : {
+      "comment" : "HUD count of apps minimized",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已最小化 %d 个应用"
+          }
+        }
+      }
+    },
+    "%d brought to front" : {
+      "comment" : "HUD count of apps brought to the front",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已将 %d 个应用置于前台"
+          }
+        }
+      }
+    },
+    "%d shortcuts triggered" : {
+      "comment" : "HUD count of apps with triggered shortcuts",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已为 %d 个应用触发快捷键"
           }
         }
       }
