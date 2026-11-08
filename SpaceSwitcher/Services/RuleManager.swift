@@ -753,27 +753,38 @@ class RuleManager: ObservableObject {
     }
 
     private func hideApp(_ app: NSRunningApplication, sourceSpaceIDs: Set<String> = []) async -> Bool {
+        // NSRunningApplication state can remain cached until the next main
+        // run-loop turn. Refresh it before deciding that a hide is redundant.
+        try? await Task.sleep(nanoseconds: 10_000_000)
+        guard !Task.isCancelled else { return false }
+
         let wasHidden = app.isHidden
         debugLog("hide app request: app=\(app.localizedName ?? "<unknown>") pid=\(app.processIdentifier) hiddenBefore=\(wasHidden) sourceSpaces=[\(sourceSpaceIDs.sorted().joined(separator: ","))]")
-        if !wasHidden {
-            managedAppHides[app.processIdentifier] = sourceSpaceIDs
-        }
-        let didHide = app.hide()
-        if !wasHidden {
-            // The hide request can reach the target before Launch Services
-            // reflects the new state through NSRunningApplication.isHidden.
-            // Poll briefly so a real app hide is not discarded as unchanged.
-            for attempt in 0..<4 {
-                if app.isHidden {
-                    debugLog("hide app request completed: requested=\(didHide) hiddenAfter=true managedSources=\(managedAppHides[app.processIdentifier]?.sorted().joined(separator: ",") ?? "none")")
-                    return true
+        var didHide = app.hide()
+        var observedUnhiddenAfterRequest = false
+
+        // A minimized window can race with Launch Services while the app's
+        // hidden state is changing. Verify the result, and retry if the app
+        // still reports visible after giving the first request time to settle.
+        for attempt in 0..<4 {
+            if attempt == 0 {
+                try? await Task.sleep(nanoseconds: 10_000_000)
+            }
+            if app.isHidden {
+                let didChangeState = !wasHidden || observedUnhiddenAfterRequest
+                if didChangeState {
+                    managedAppHides[app.processIdentifier] = sourceSpaceIDs
                 }
-                if attempt < 3 {
-                    try? await Task.sleep(nanoseconds: 50_000_000)
-                }
+                debugLog("hide app request completed: requested=\(didHide) hiddenBefore=\(wasHidden) hiddenAfter=true changed=\(didChangeState) managedSources=\(managedAppHides[app.processIdentifier]?.sorted().joined(separator: ",") ?? "none")")
+                return didChangeState
+            }
+            observedUnhiddenAfterRequest = true
+            if attempt < 3 {
+                try? await Task.sleep(nanoseconds: 50_000_000)
+                didHide = app.hide() || didHide
             }
         }
-        debugLog("hide app request completed: requested=\(didHide) hiddenAfter=\(app.isHidden) managedSources=\(managedAppHides[app.processIdentifier]?.sorted().joined(separator: ",") ?? "none")")
+        debugLog("hide app request completed: requested=\(didHide) hiddenBefore=\(wasHidden) hiddenAfter=\(app.isHidden) changed=false managedSources=\(managedAppHides[app.processIdentifier]?.sorted().joined(separator: ",") ?? "none")")
         return false
     }
 
