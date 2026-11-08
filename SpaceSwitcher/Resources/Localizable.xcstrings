@@ -732,12 +732,44 @@
         }
       }
     },
+    "Dock switch failed: %@" : {
+      "comment" : "HUD failure toast showing the requested Dock set",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dock 切换失败：%@"
+          }
+        }
+      }
+    },
+    "Dock switch HUD toasts" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dock 切换 HUD 提示"
+          }
+        }
+      }
+    },
     "Dock set" : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Dock 组"
+          }
+        }
+      }
+    },
+    "Dock: %@" : {
+      "comment" : "HUD toast showing the applied Dock set",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dock：%@"
           }
         }
       }
@@ -1492,6 +1524,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "规则自动化"
+          }
+        }
+      }
+    },
+    "Rule HUD toasts" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "规则 HUD 提示"
           }
         }
       }

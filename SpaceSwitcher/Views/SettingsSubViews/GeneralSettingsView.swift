@@ -22,9 +22,37 @@ struct GeneralSettingsView: View {
                     Divider()
 
                     SettingsRow("Show HUD toasts") {
-                        Toggle("", isOn: $hudToastSettings.isEnabled)
+                        Toggle("", isOn: Binding(
+                            get: { hudToastSettings.isEnabled },
+                            set: { isEnabled in
+                                withAnimation(.easeInOut(duration: 0.24)) {
+                                    hudToastSettings.isEnabled = isEnabled
+                                }
+                            }
+                        ))
                             .labelsHidden()
                             .toggleStyle(.switch)
+                    }
+
+                    if hudToastSettings.isEnabled {
+                        VStack(spacing: 0) {
+                            Divider()
+
+                            SettingsRow("Rule HUD toasts") {
+                                Toggle("", isOn: $hudToastSettings.isRuleHUDEnabled)
+                                    .labelsHidden()
+                                    .toggleStyle(.switch)
+                            }
+
+                            Divider()
+
+                            SettingsRow("Dock switch HUD toasts") {
+                                Toggle("", isOn: $hudToastSettings.isDockHUDEnabled)
+                                    .labelsHidden()
+                                    .toggleStyle(.switch)
+                            }
+                        }
+                        .transition(.opacity)
                     }
 
                     Divider()
