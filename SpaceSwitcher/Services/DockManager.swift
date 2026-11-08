@@ -353,6 +353,9 @@ class DockManager: ObservableObject {
         } else if windowStateSnapshot.failedApplicationQueries > 0 {
             logger.warning("Could not capture window state from \(windowStateSnapshot.failedApplicationQueries) apps")
         }
+        if windowStateSnapshot.accessibilityBudgetExhausted {
+            logger.warning("Stopped Dock-restart window state capture because the Accessibility scan budget was reached or could not be enforced")
+        }
 
         for attempt in 1...3 {
             if Task.isCancelled { return false }
@@ -533,6 +536,9 @@ class DockManager: ObservableObject {
         logger.info("Phase 2 attempt \(attempt): \(checkpoint) visibility restore re-minimized \(result.windowsReminimized) windows, re-hid \(result.windowsRehidden) windows, and re-hid \(result.applicationsRehidden) apps")
         if result.failedRestorations > 0 {
             logger.warning("Phase 2 attempt \(attempt): \(result.failedRestorations) window visibility restorations failed")
+        }
+        if result.accessibilityBudgetExhausted {
+            logger.warning("Phase 2 attempt \(attempt): stopped \(checkpoint) window visibility restoration because the Accessibility scan budget was reached or could not be enforced")
         }
     }
     
