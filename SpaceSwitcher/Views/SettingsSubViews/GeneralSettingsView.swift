@@ -28,21 +28,24 @@ struct GeneralSettingsView: View {
                     }
 
                     if hudToastSettings.isEnabled {
-                        Divider()
+                        VStack(spacing: 0) {
+                            Divider()
 
-                        SettingsRow("Rule HUD toasts") {
-                            Toggle("", isOn: $hudToastSettings.isRuleHUDEnabled)
-                                .labelsHidden()
-                                .toggleStyle(.switch)
+                            SettingsRow("Rule HUD toasts") {
+                                Toggle("", isOn: $hudToastSettings.isRuleHUDEnabled)
+                                    .labelsHidden()
+                                    .toggleStyle(.switch)
+                            }
+
+                            Divider()
+
+                            SettingsRow("Dock switch HUD toasts") {
+                                Toggle("", isOn: $hudToastSettings.isDockHUDEnabled)
+                                    .labelsHidden()
+                                    .toggleStyle(.switch)
+                            }
                         }
-
-                        Divider()
-
-                        SettingsRow("Dock switch HUD toasts") {
-                            Toggle("", isOn: $hudToastSettings.isDockHUDEnabled)
-                                .labelsHidden()
-                                .toggleStyle(.switch)
-                        }
+                        .transition(.opacity.combined(with: .move(edge: .top)))
                     }
 
                     Divider()
@@ -56,6 +59,7 @@ struct GeneralSettingsView: View {
                             }
                     }
                 }
+                .animation(.easeInOut(duration: 0.2), value: hudToastSettings.isEnabled)
                 
                 // 2. Updates - Standardized per macOSers bundle
                 SettingsSection("Updates") {

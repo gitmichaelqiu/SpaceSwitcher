@@ -245,7 +245,6 @@ enum HUDStatusTint: Equatable {
 
 class HUDWindowController: NSWindowController {
     static let shared = HUDWindowController()
-    private let toastTransitionOffset: CGFloat = 8
 
     private var hideTimer: Timer?
     private var hostingView: NSHostingView<HUDView>?
@@ -386,7 +385,6 @@ class HUDWindowController: NSWindowController {
         actionDetails: [HUDActionDetail]
     ) {
         guard let panel = window as? HUDNSPanel else { return }
-        let shouldAnimateEntrance = !panel.isVisible
 
         presentationID = UUID()
         hideAnimationID = nil
@@ -512,30 +510,9 @@ class HUDWindowController: NSWindowController {
         applyLegacyTint(statusTint)
 
         positionPanel(panel)
-        let targetOrigin = panel.frame.origin
-        if shouldAnimateEntrance {
-            panel.setFrameOrigin(
-                NSPoint(x: targetOrigin.x, y: targetOrigin.y - toastTransitionOffset)
-            )
-            panel.alphaValue = 0
-        }
 
         panel.orderFrontRegardless()
-        if shouldAnimateEntrance {
-            NSAnimationContext.runAnimationGroup { context in
-                context.duration = 0.24
-                context.allowsImplicitAnimation = true
-                panel.animator().alphaValue = 1
-                panel.animator().setFrameOrigin(targetOrigin)
-            }
-        } else {
-            NSAnimationContext.runAnimationGroup { context in
-                context.duration = 0.12
-                context.allowsImplicitAnimation = true
-                panel.animator().alphaValue = 1
-                panel.animator().setFrameOrigin(targetOrigin)
-            }
-        }
+        animateAlpha(1.0, on: panel, duration: 0.08)
 
         if autoHide {
             let duration = (buttonTitle != nil || actionDetails.count > 1) ? 5.0 : 1.8
@@ -608,17 +585,22 @@ class HUDWindowController: NSWindowController {
         hideAnimationID = currentHideAnimationID
 
         NSAnimationContext.runAnimationGroup { ctx in
-            ctx.duration = 0.24
+            ctx.duration = 0.32
             ctx.allowsImplicitAnimation = true
             panel.animator().alphaValue = 0.0
-            panel.animator().setFrameOrigin(
-                NSPoint(x: panel.frame.origin.x, y: panel.frame.origin.y - toastTransitionOffset)
-            )
         } completionHandler: {
             guard self.presentationID == currentPresentationID,
                   self.hideAnimationID == currentHideAnimationID else { return }
             self.hideAnimationID = nil
             panel.orderOut(nil)
+        }
+    }
+
+    private func animateAlpha(_ alpha: CGFloat, on panel: NSWindow, duration: TimeInterval) {
+        NSAnimationContext.runAnimationGroup { context in
+            context.duration = duration
+            context.allowsImplicitAnimation = true
+            panel.animator().alphaValue = alpha
         }
     }
 
