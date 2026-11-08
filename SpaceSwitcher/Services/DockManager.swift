@@ -229,6 +229,7 @@ class DockManager: ObservableObject {
                 if success {
                     self.activeDockSetID = set.id
                 }
+                self.showDockSwitchHUD(for: set, succeeded: success)
                 return true
             }
             guard isCurrentRequest else { return }
@@ -265,11 +266,40 @@ class DockManager: ObservableObject {
 
             if success {
                 self.activeDockSetID = set.id
+                showDockSwitchHUD(for: set, succeeded: true)
                 logger.info("<<< SUCCESS: Manually switched to '\(set.name)'")
             } else {
+                showDockSwitchHUD(for: set, succeeded: false)
                 logger.error("<<< FAILURE: Could not manually apply Dock set '\(set.name)'")
             }
         }
+    }
+
+    @MainActor
+    private func showDockSwitchHUD(for set: DockSet, succeeded: Bool) {
+        guard HUDToastSettings.shared.isEnabled else { return }
+
+        let message: String
+        if succeeded {
+            message = String(
+                format: NSLocalizedString("Dock: %@", comment: "HUD toast showing the applied Dock set"),
+                set.name
+            )
+        } else {
+            message = String(
+                format: NSLocalizedString(
+                    "Dock switch failed: %@",
+                    comment: "HUD failure toast showing the requested Dock set"
+                ),
+                set.name
+            )
+        }
+        HUDWindowController.shared.show(
+            message: message,
+            style: succeeded ? .info : .failure,
+            appIcon: NSApp.applicationIconImage,
+            statusTint: succeeded ? nil : .failure
+        )
     }
 
     private func isCurrentDockSwitch(_ generation: UInt64) async -> Bool {
