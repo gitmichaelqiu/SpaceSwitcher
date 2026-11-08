@@ -35,7 +35,6 @@ struct GeneralSettingsView: View {
                                 .labelsHidden()
                                 .toggleStyle(.switch)
                         }
-                        .padding(.leading, 16)
 
                         Divider()
 
@@ -44,7 +43,6 @@ struct GeneralSettingsView: View {
                                 .labelsHidden()
                                 .toggleStyle(.switch)
                         }
-                        .padding(.leading, 16)
                     }
 
                     Divider()
