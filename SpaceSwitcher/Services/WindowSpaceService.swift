@@ -34,6 +34,43 @@ struct RuleWindowTarget {
     let isFrontmost: Bool
 }
 
+nonisolated struct DockRestartWindowStateSnapshot {
+    struct Application {
+        struct Window {
+            let wasHidden: Bool
+            let wasMinimized: Bool
+            let accessibilityElement: AXUIElement
+        }
+
+        let processIdentifier: pid_t
+        let wasHidden: Bool
+        let windows: [Window]
+    }
+
+    let accessibilityAvailable: Bool
+    let applications: [Application]
+    let failedApplicationQueries: Int
+
+    nonisolated var minimizedWindowCount: Int {
+        applications.reduce(0) { count, application in
+            count + application.windows.filter(\.wasMinimized).count
+        }
+    }
+
+    nonisolated var hiddenWindowCount: Int {
+        applications.reduce(0) { count, application in
+            count + application.windows.filter(\.wasHidden).count
+        }
+    }
+}
+
+nonisolated struct DockRestartWindowStateRestoreResult {
+    var applicationsRehidden = 0
+    var windowsRehidden = 0
+    var windowsReminimized = 0
+    var failedRestorations = 0
+}
+
 enum WindowSpaceService {
     static func windows(for application: NSRunningApplication) -> [RuleWindowTarget] {
         guard isAccessibilityTrusted else { return [] }
@@ -71,6 +108,141 @@ enum WindowSpaceService {
         }
     }
 
+    /// Captures only hidden apps, hidden windows, and minimized windows so a
+    /// Dock restart can restore visibility states that macOS may otherwise clear.
+    nonisolated static func captureDockRestartWindowState() -> DockRestartWindowStateSnapshot {
+        let accessibilityAvailable = isAccessibilityTrusted
+        let ownPID = ProcessInfo.processInfo.processIdentifier
+        var failedApplicationQueries = 0
+        let applications = NSWorkspace.shared.runningApplications.compactMap { application
+            -> DockRestartWindowStateSnapshot.Application? in
+            guard application.processIdentifier != ownPID,
+                  application.bundleIdentifier != "com.apple.dock",
+                  application.activationPolicy != .prohibited else {
+                return nil
+            }
+
+            let wasHidden = application.isHidden
+            let windows: [DockRestartWindowStateSnapshot.Application.Window]
+            if accessibilityAvailable {
+                if let capturedStates = windowStates(
+                    for: application.processIdentifier,
+                    captureHiddenWindows: !wasHidden
+                ) {
+                    windows = capturedStates
+                } else {
+                    failedApplicationQueries += 1
+                    windows = []
+                }
+            } else {
+                windows = []
+            }
+            guard wasHidden || !windows.isEmpty else { return nil }
+
+            return DockRestartWindowStateSnapshot.Application(
+                processIdentifier: application.processIdentifier,
+                wasHidden: wasHidden,
+                windows: windows
+            )
+        }
+
+        return DockRestartWindowStateSnapshot(
+            accessibilityAvailable: accessibilityAvailable,
+            applications: applications,
+            failedApplicationQueries: failedApplicationQueries
+        )
+    }
+
+    /// Reapplies previously minimized windows before hiding their apps again.
+    /// This intentionally does not unhide apps or windows that were visible in
+    /// the snapshot, so it cannot bring another app to the foreground.
+    nonisolated static func restoreDockRestartWindowState(
+        _ snapshot: DockRestartWindowStateSnapshot
+    ) -> DockRestartWindowStateRestoreResult {
+        var result = DockRestartWindowStateRestoreResult()
+        let canRestoreWindowStates = snapshot.accessibilityAvailable && isAccessibilityTrusted
+
+        for applicationState in snapshot.applications {
+            guard let application = NSRunningApplication(
+                processIdentifier: applicationState.processIdentifier
+            ) else {
+                continue
+            }
+
+            if canRestoreWindowStates {
+                for windowState in applicationState.windows {
+                    let window = windowState.accessibilityElement
+                    _ = AXUIElementSetMessagingTimeout(window, 0.25)
+
+                    if windowState.wasMinimized, minimizedState(for: window) != true {
+                        let error = AXUIElementSetAttributeValue(
+                            window,
+                            kAXMinimizedAttribute as CFString,
+                            kCFBooleanTrue
+                        )
+                        if error == .success {
+                            result.windowsReminimized += 1
+                        } else {
+                            result.failedRestorations += 1
+                        }
+                    }
+
+                    if windowState.wasHidden, hiddenState(for: window) != true {
+                        let error = AXUIElementSetAttributeValue(
+                            window,
+                            kAXHiddenAttribute as CFString,
+                            kCFBooleanTrue
+                        )
+                        if error == .success {
+                            result.windowsRehidden += 1
+                        } else {
+                            result.failedRestorations += 1
+                        }
+                    }
+                }
+            }
+
+            if applicationState.wasHidden, !application.isHidden {
+                if application.hide() {
+                    result.applicationsRehidden += 1
+                } else {
+                    result.failedRestorations += 1
+                }
+            }
+        }
+
+        return result
+    }
+
+    nonisolated private static func windowStates(
+        for processIdentifier: pid_t,
+        captureHiddenWindows: Bool
+    ) -> [DockRestartWindowStateSnapshot.Application.Window]? {
+        let applicationElement = AXUIElementCreateApplication(processIdentifier)
+        _ = AXUIElementSetMessagingTimeout(applicationElement, 0.25)
+        var windowsReference: CFTypeRef?
+        guard AXUIElementCopyAttributeValue(
+            applicationElement,
+            kAXWindowsAttribute as CFString,
+            &windowsReference
+        ) == .success,
+        let windows = windowsReference as? [AXUIElement] else {
+            return nil
+        }
+
+        return windows.compactMap { window in
+            _ = AXUIElementSetMessagingTimeout(window, 0.25)
+            let wasMinimized = minimizedState(for: window) == true
+            let wasHidden = captureHiddenWindows && hiddenState(for: window) == true
+            guard wasMinimized || wasHidden else { return nil }
+            return DockRestartWindowStateSnapshot.Application.Window(
+                wasHidden: wasHidden,
+                wasMinimized: wasMinimized,
+                accessibilityElement: window
+            )
+        }
+    }
+
     private static func orderedCurrentSpaceIDs(for windowID: Int) -> [String] {
         guard windowID > 0 else { return [] }
 
@@ -87,7 +259,7 @@ enum WindowSpaceService {
         return spaceIDs.map { String($0.intValue) }
     }
 
-    private static func minimizedState(for window: AXUIElement) -> Bool? {
+    nonisolated private static func minimizedState(for window: AXUIElement) -> Bool? {
         var value: CFTypeRef?
         guard AXUIElementCopyAttributeValue(
             window,
@@ -106,7 +278,7 @@ enum WindowSpaceService {
         return nil
     }
 
-    private static func hiddenState(for window: AXUIElement) -> Bool? {
+    nonisolated private static func hiddenState(for window: AXUIElement) -> Bool? {
         var value: CFTypeRef?
         guard AXUIElementCopyAttributeValue(
             window,
@@ -203,7 +375,7 @@ enum WindowSpaceService {
         AXUIElementPerformAction(target.accessibilityElement, kAXRaiseAction as CFString) == .success
     }
 
-    private static var isAccessibilityTrusted: Bool {
+    nonisolated private static var isAccessibilityTrusted: Bool {
         AXIsProcessTrustedWithOptions(nil)
     }
 }

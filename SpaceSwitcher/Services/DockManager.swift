@@ -346,6 +346,13 @@ class DockManager: ObservableObject {
         let key = "persistent-apps" as CFString
         let newAppData = DockManager.buildRawDockData(from: set.tiles)
         let expectedLabels = set.tiles.map { $0.label }
+        let windowStateSnapshot = WindowSpaceService.captureDockRestartWindowState()
+        logger.info("Captured Dock-restart visibility state for \(windowStateSnapshot.applications.count) apps, \(windowStateSnapshot.hiddenWindowCount) hidden windows, and \(windowStateSnapshot.minimizedWindowCount) minimized windows")
+        if !windowStateSnapshot.accessibilityAvailable {
+            logger.warning("Accessibility is unavailable; per-window hidden and minimized states cannot be captured")
+        } else if windowStateSnapshot.failedApplicationQueries > 0 {
+            logger.warning("Could not capture window state from \(windowStateSnapshot.failedApplicationQueries) apps")
+        }
 
         for attempt in 1...3 {
             if Task.isCancelled { return false }
@@ -429,6 +436,11 @@ class DockManager: ObservableObject {
 
             // 5. Let Dock initialize
             try? await Task.sleep(nanoseconds: 2_000_000_000)
+            restoreWindowStateAfterDockRestart(
+                windowStateSnapshot,
+                attempt: attempt,
+                checkpoint: "initial"
+            )
 
             // 6. Verify both plist and cfprefsd
             for readAttempt in 1...4 {
@@ -467,6 +479,11 @@ class DockManager: ObservableObject {
                     // Second verification after delay
                     try? await Task.sleep(nanoseconds: 2_000_000_000)
                     if Task.isCancelled { return false }
+                    restoreWindowStateAfterDockRestart(
+                        windowStateSnapshot,
+                        attempt: attempt,
+                        checkpoint: "final"
+                    )
 
                     let plistMatch2: Bool = {
                         if let apps = DockManager.readPersistentAppsFromDisk() {
@@ -505,6 +522,18 @@ class DockManager: ObservableObject {
         }
 
         return false
+    }
+
+    nonisolated private func restoreWindowStateAfterDockRestart(
+        _ snapshot: DockRestartWindowStateSnapshot,
+        attempt: Int,
+        checkpoint: String
+    ) {
+        let result = WindowSpaceService.restoreDockRestartWindowState(snapshot)
+        logger.info("Phase 2 attempt \(attempt): \(checkpoint) visibility restore re-minimized \(result.windowsReminimized) windows, re-hid \(result.windowsRehidden) windows, and re-hid \(result.applicationsRehidden) apps")
+        if result.failedRestorations > 0 {
+            logger.warning("Phase 2 attempt \(attempt): \(result.failedRestorations) window visibility restorations failed")
+        }
     }
     
     // MARK: - Core System Logic
