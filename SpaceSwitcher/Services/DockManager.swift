@@ -277,7 +277,8 @@ class DockManager: ObservableObject {
 
     @MainActor
     private func showDockSwitchHUD(for set: DockSet, succeeded: Bool) {
-        guard HUDToastSettings.shared.isEnabled else { return }
+        let hudSettings = HUDToastSettings.shared
+        guard hudSettings.isEnabled, hudSettings.isDockHUDEnabled else { return }
 
         let message: String
         if succeeded {

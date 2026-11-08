@@ -233,7 +233,8 @@ class RuleManager: ObservableObject {
             guard !changedRuleIDs.isEmpty else { return }
 
             await MainActor.run {
-                guard HUDToastSettings.shared.isEnabled else {
+                let hudSettings = HUDToastSettings.shared
+                guard hudSettings.isEnabled, hudSettings.isRuleHUDEnabled else {
                     self.debugLog("HUD toast skipped: setting is disabled")
                     return
                 }

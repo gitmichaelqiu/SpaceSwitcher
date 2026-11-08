@@ -27,6 +27,26 @@ struct GeneralSettingsView: View {
                             .toggleStyle(.switch)
                     }
 
+                    if hudToastSettings.isEnabled {
+                        Divider()
+
+                        SettingsRow("Rule HUD toasts") {
+                            Toggle("", isOn: $hudToastSettings.isRuleHUDEnabled)
+                                .labelsHidden()
+                                .toggleStyle(.switch)
+                        }
+                        .padding(.leading, 16)
+
+                        Divider()
+
+                        SettingsRow("Dock switch HUD toasts") {
+                            Toggle("", isOn: $hudToastSettings.isDockHUDEnabled)
+                                .labelsHidden()
+                                .toggleStyle(.switch)
+                        }
+                        .padding(.leading, 16)
+                    }
+
                     Divider()
 
                     SettingsRow("Launch at login") {
