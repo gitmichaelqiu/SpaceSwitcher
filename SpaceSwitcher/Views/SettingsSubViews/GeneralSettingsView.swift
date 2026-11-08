@@ -22,7 +22,14 @@ struct GeneralSettingsView: View {
                     Divider()
 
                     SettingsRow("Show HUD toasts") {
-                        Toggle("", isOn: $hudToastSettings.isEnabled)
+                        Toggle("", isOn: Binding(
+                            get: { hudToastSettings.isEnabled },
+                            set: { isEnabled in
+                                withAnimation(.easeInOut(duration: 0.24)) {
+                                    hudToastSettings.isEnabled = isEnabled
+                                }
+                            }
+                        ))
                             .labelsHidden()
                             .toggleStyle(.switch)
                     }
@@ -45,7 +52,7 @@ struct GeneralSettingsView: View {
                                     .toggleStyle(.switch)
                             }
                         }
-                        .transition(.opacity.combined(with: .move(edge: .top)))
+                        .transition(.opacity)
                     }
 
                     Divider()
@@ -59,7 +66,6 @@ struct GeneralSettingsView: View {
                             }
                     }
                 }
-                .animation(.easeInOut(duration: 0.2), value: hudToastSettings.isEnabled)
                 
                 // 2. Updates - Standardized per macOSers bundle
                 SettingsSection("Updates") {
