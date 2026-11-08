@@ -387,8 +387,8 @@ class DockManager: ObservableObject {
             try? await Task.sleep(nanoseconds: 500_000_000)
             if Task.isCancelled { return false }
 
-            // 3. Re-write plist + cfprefsd, then kill cfprefsd.
-            //    This overwrites the stale data the dying Dock just flushed.
+            // 3. Re-write the plist and synchronize cfprefsd after the old
+            //    Dock's shutdown flush, so the new Dock reads the requested set.
             do {
                 try DockManager.writePersistentAppsToDisk(newAppData)
             } catch {
@@ -405,37 +405,10 @@ class DockManager: ObservableObject {
                 continue
             }
 
-            logger.info("Phase 2 attempt \(attempt): checking cfprefsd processes")
-            let oldCfpPIDs = DockManager.pidsByName("cfprefsd")
-            logger.info("Phase 2 attempt \(attempt): found \(oldCfpPIDs.count) cfprefsd processes")
-            if !oldCfpPIDs.isEmpty {
-                logger.info("Phase 2 attempt \(attempt): re-killing cfprefsd (PIDs: \(oldCfpPIDs))")
-
-                let killCfp = Process()
-                killCfp.executableURL = URL(fileURLWithPath: "/usr/bin/killall")
-                killCfp.arguments = ["-u", NSUserName(), "cfprefsd"]
-
-                await withTaskCancellationHandler {
-                    try? killCfp.run()
-                    killCfp.waitUntilExit()
-                } onCancel: {
-                    killCfp.terminate()
-                }
-
-                for _ in 0..<10 {
-                    if Task.isCancelled { return false }
-                    let current = DockManager.pidsByName("cfprefsd")
-                    if oldCfpPIDs.isDisjoint(with: current) { break }
-                    try? await Task.sleep(nanoseconds: 200_000_000)
-                }
-                for _ in 0..<10 {
-                    if Task.isCancelled { return false }
-                    let current = DockManager.pidsByName("cfprefsd")
-                    if !current.isEmpty && oldCfpPIDs.isDisjoint(with: current) { break }
-                    try? await Task.sleep(nanoseconds: 200_000_000)
-                }
-                logger.info("Phase 2 attempt \(attempt): cfprefsd restarted")
-            }
+            logger.info("Phase 2 attempt \(attempt): preferences synchronized; awaiting Dock startup")
+            // Do not terminate cfprefsd: every app using preferences can stall
+            // while this per-user service exits and relaunches. Synchronizing
+            // the Dock domain above is sufficient to publish the new value.
 
             // 4. Wait for new Dock
             var newPIDs: Set<pid_t> = []
@@ -534,33 +507,7 @@ class DockManager: ObservableObject {
         return false
     }
     
-    // MARK: - Core System Logic (Verified Write + Force Kill)
-
-    /// Returns PIDs of processes whose exact process name matches.
-    nonisolated static private func pidsByName(_ name: String) -> Set<pid_t> {
-        let task = Process()
-        task.executableURL = URL(fileURLWithPath: "/usr/bin/pgrep")
-        task.arguments = ["-u", String(getuid()), "-x", name]
-
-        let pipe = Pipe()
-        task.standardOutput = pipe
-        task.standardError = FileHandle.nullDevice
-
-        do {
-            try task.run()
-        } catch {
-            return []
-        }
-
-        // Drain stdout while pgrep runs so its pipe cannot fill before exit.
-        let data = pipe.fileHandleForReading.readDataToEndOfFile()
-        task.waitUntilExit()
-        guard let output = String(data: data, encoding: .utf8) else { return [] }
-
-        return Set(output
-            .split(whereSeparator: \.isNewline)
-            .compactMap { pid_t(String($0).trimmingCharacters(in: .whitespaces)) })
-    }
+    // MARK: - Core System Logic
 
     nonisolated static private func getSystemDockPersistentApps() -> [Any]? {
         let appID = "com.apple.dock" as CFString
