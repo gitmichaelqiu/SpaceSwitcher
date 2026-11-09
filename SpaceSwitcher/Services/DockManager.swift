@@ -489,6 +489,11 @@ class DockManager: ObservableObject {
 
             // 5. Let Dock initialize
             try? await Task.sleep(nanoseconds: 2_000_000_000)
+            await cleanupRecentAppsAlreadyRepresented(
+                persistentApps: newAppData,
+                attempt: attempt,
+                checkpoint: "initial"
+            )
             restoreWindowStateAfterDockRestart(
                 windowStateSnapshot,
                 attempt: attempt,
@@ -532,6 +537,11 @@ class DockManager: ObservableObject {
                     // Second verification after delay
                     try? await Task.sleep(nanoseconds: 2_000_000_000)
                     if Task.isCancelled { return false }
+                    await cleanupRecentAppsAlreadyRepresented(
+                        persistentApps: newAppData,
+                        attempt: attempt,
+                        checkpoint: "final"
+                    )
                     restoreWindowStateAfterDockRestart(
                         windowStateSnapshot,
                         attempt: attempt,
@@ -575,6 +585,47 @@ class DockManager: ObservableObject {
         }
 
         return false
+    }
+
+    @concurrent
+    private func cleanupRecentAppsAlreadyRepresented(
+        persistentApps: [Any],
+        attempt: Int,
+        checkpoint: String
+    ) async {
+        let runningBundleIdentifiers = await DockManager.runningDockAppBundleIdentifiers()
+        guard let update = DockManager.removeRepresentedAppsFromRecentApps(
+            persistentApps: persistentApps,
+            runningBundleIdentifiers: runningBundleIdentifiers
+        ) else {
+            return
+        }
+
+        let appID = "com.apple.dock" as CFString
+        let recentAppsKey = "recent-apps" as CFString
+        do {
+            try DockManager.writePersistentAppsToDisk(
+                persistentApps,
+                recentApps: update.apps
+            )
+        } catch {
+            logger.warning("Phase 2 attempt \(attempt): \(checkpoint) recent-app cleanup could not update the Dock plist: \(error.localizedDescription)")
+            return
+        }
+
+        CFPreferencesSetValue(
+            recentAppsKey,
+            update.apps as CFPropertyList,
+            appID,
+            kCFPreferencesCurrentUser,
+            kCFPreferencesAnyHost
+        )
+        guard CFPreferencesAppSynchronize(appID) else {
+            logger.warning("Phase 2 attempt \(attempt): \(checkpoint) recent-app cleanup could not synchronize cfprefsd")
+            return
+        }
+
+        logger.info("Phase 2 attempt \(attempt): \(checkpoint) cleanup removed \(update.removedCount) recent Dock app tiles already represented in the Dock")
     }
 
     nonisolated private func restoreWindowStateAfterDockRestart(
@@ -677,11 +728,13 @@ class DockManager: ObservableObject {
         }
 
         let appID = "com.apple.dock" as CFString
+        let recentAppsKey = "recent-apps" as CFString
         let showRecentsInPlist = plist["show-recents"] as? Bool == true
         let showRecentsInPreferences =
             (CFPreferencesCopyAppValue("show-recents" as CFString, appID) as? Bool) == true
+        let recentAppsInPreferences = CFPreferencesCopyAppValue(recentAppsKey, appID) as? [Any]
         guard showRecentsInPlist || showRecentsInPreferences,
-              let recentApps = plist["recent-apps"] as? [Any] else {
+              let recentApps = recentAppsInPreferences ?? (plist["recent-apps"] as? [Any]) else {
             return nil
         }
 
