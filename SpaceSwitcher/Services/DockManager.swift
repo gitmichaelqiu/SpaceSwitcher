@@ -792,6 +792,21 @@ class DockManager: ObservableObject {
         return newSet.id
     }
 
+    /// Moves a saved Dock set to a new position without changing its assignments.
+    @MainActor
+    func moveDockSet(_ id: UUID, to destinationIndex: Int) {
+        guard let sourceIndex = config.dockSets.firstIndex(where: { $0.id == id }),
+              config.dockSets.indices.contains(destinationIndex),
+              sourceIndex != destinationIndex else {
+            return
+        }
+
+        var reorderedSets = config.dockSets
+        let movedSet = reorderedSets.remove(at: sourceIndex)
+        reorderedSets.insert(movedSet, at: destinationIndex)
+        config.dockSets = reorderedSets
+    }
+
     /// Replaces a saved dock set with the apps currently pinned in the system Dock.
     /// The current Dock remains unchanged; this only updates the selected configuration.
     @MainActor

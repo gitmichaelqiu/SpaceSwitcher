@@ -1162,6 +1162,26 @@
         }
       }
     },
+    "Move selected Dock set earlier" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "将选中的 Dock 组前移"
+          }
+        }
+      }
+    },
+    "Move selected Dock set later" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "将选中的 Dock 组后移"
+          }
+        }
+      }
+    },
     "Name" : {
       "localizations" : {
         "zh-Hans" : {
