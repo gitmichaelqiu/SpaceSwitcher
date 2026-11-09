@@ -431,8 +431,10 @@ class DockManager: ObservableObject {
             // 3. Re-write the plist and synchronize cfprefsd after the old
             //    Dock's shutdown flush, so the new Dock reads the requested set.
             let recentAppsKey = "recent-apps" as CFString
-            let recentAppsUpdate = DockManager.removePinnedAppsFromRecentApps(
-                persistentApps: newAppData
+            let runningBundleIdentifiers = await DockManager.runningDockAppBundleIdentifiers()
+            let recentAppsUpdate = DockManager.removeRepresentedAppsFromRecentApps(
+                persistentApps: newAppData,
+                runningBundleIdentifiers: runningBundleIdentifiers
             )
             do {
                 try DockManager.writePersistentAppsToDisk(
@@ -455,7 +457,7 @@ class DockManager: ObservableObject {
                     kCFPreferencesCurrentUser,
                     kCFPreferencesAnyHost
                 )
-                logger.info("Removed \(recentAppsUpdate.removedCount) recent Dock app tiles that are pinned in the selected set")
+                logger.info("Removed \(recentAppsUpdate.removedCount) recent Dock app tiles already represented in the Dock")
             }
             guard CFPreferencesAppSynchronize(appID) else {
                 logger.error("Phase 2 attempt \(attempt): CFPreferencesAppSynchronize failed")
@@ -609,6 +611,20 @@ class DockManager: ObservableObject {
             .map { $0.processIdentifier })
     }
 
+    @MainActor
+    private static func runningDockAppBundleIdentifiers() -> Set<String> {
+        let ownPID = ProcessInfo.processInfo.processIdentifier
+        return Set(NSWorkspace.shared.runningApplications.compactMap { application in
+            guard application.processIdentifier != ownPID,
+                  application.activationPolicy == .regular,
+                  application.bundleIdentifier != "com.apple.dock",
+                  let bundleIdentifier = application.bundleIdentifier else {
+                return nil
+            }
+            return bundleIdentifier.lowercased()
+        })
+    }
+
     /// Reads persistent-apps directly from the Dock plist file, bypassing cfprefsd.
     /// Used for verification after Dock restart when cfprefsd XPC connections
     /// may be broken (producing "Connection interrupted" errors).
@@ -647,11 +663,12 @@ class DockManager: ObservableObject {
         try newData.write(to: URL(fileURLWithPath: path), options: .atomic)
     }
 
-    /// Removes recently used app tiles that are already pinned in the new set.
-    /// macOS documents that the suggested/recent section should omit pinned apps,
-    /// but a Dock restart can leave stale duplicates in recent-apps.
-    nonisolated static private func removePinnedAppsFromRecentApps(
-        persistentApps: [Any]
+    /// Removes recent app tiles already represented by pinned or running apps.
+    /// macOS should omit pinned apps; running apps also have live Dock tiles.
+    /// A Dock restart can leave stale duplicates in recent-apps.
+    nonisolated static private func removeRepresentedAppsFromRecentApps(
+        persistentApps: [Any],
+        runningBundleIdentifiers: Set<String>
     ) -> (apps: [Any], removedCount: Int)? {
         let path = NSHomeDirectory() + "/Library/Preferences/com.apple.dock.plist"
         guard let data = try? Data(contentsOf: URL(fileURLWithPath: path)),
@@ -668,8 +685,11 @@ class DockManager: ObservableObject {
             return nil
         }
 
-        let pinnedIdentities = Set(
+        var pinnedIdentities = Set(
             persistentApps.flatMap { dockApplicationIdentityKeys(in: $0) }
+        )
+        pinnedIdentities.formUnion(
+            runningBundleIdentifiers.map { "bundle:\($0)" }
         )
         guard !pinnedIdentities.isEmpty else { return nil }
 
