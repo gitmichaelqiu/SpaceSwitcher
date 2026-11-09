@@ -430,8 +430,15 @@ class DockManager: ObservableObject {
 
             // 3. Re-write the plist and synchronize cfprefsd after the old
             //    Dock's shutdown flush, so the new Dock reads the requested set.
+            let recentAppsKey = "recent-apps" as CFString
+            let recentAppsUpdate = DockManager.removePinnedAppsFromRecentApps(
+                persistentApps: newAppData
+            )
             do {
-                try DockManager.writePersistentAppsToDisk(newAppData)
+                try DockManager.writePersistentAppsToDisk(
+                    newAppData,
+                    recentApps: recentAppsUpdate?.apps
+                )
             } catch {
                 logger.error("Phase 2 attempt \(attempt): plist re-write failed: \(error.localizedDescription)")
                 try? await Task.sleep(nanoseconds: 500_000_000)
@@ -440,6 +447,16 @@ class DockManager: ObservableObject {
 
             CFPreferencesSetValue(key, newAppData as CFPropertyList, appID,
                                    kCFPreferencesCurrentUser, kCFPreferencesAnyHost)
+            if let recentAppsUpdate {
+                CFPreferencesSetValue(
+                    recentAppsKey,
+                    recentAppsUpdate.apps as CFPropertyList,
+                    appID,
+                    kCFPreferencesCurrentUser,
+                    kCFPreferencesAnyHost
+                )
+                logger.info("Removed \(recentAppsUpdate.removedCount) recent Dock app tiles that are pinned in the selected set")
+            }
             guard CFPreferencesAppSynchronize(appID) else {
                 logger.error("Phase 2 attempt \(attempt): CFPreferencesAppSynchronize failed")
                 try? await Task.sleep(nanoseconds: 500_000_000)
@@ -604,11 +621,13 @@ class DockManager: ObservableObject {
         return apps
     }
 
-    /// Writes persistent-apps directly to the Dock plist file, bypassing cfprefsd.
-    /// Ensures the new tile data is physically on disk before the Dock is killed,
-    /// eliminating race conditions with cfprefsd async sync and the "Connection interrupted"
-    /// errors that occur when the Dock is restarted while cfprefsd XPC is broken.
-    nonisolated static private func writePersistentAppsToDisk(_ apps: [Any]) throws {
+    /// Writes Dock app preferences directly to disk, bypassing cfprefsd.
+    /// Ensures the selected tiles and optional recent-app cleanup are on disk
+    /// before the Dock restarts.
+    nonisolated static private func writePersistentAppsToDisk(
+        _ apps: [Any],
+        recentApps: [Any]? = nil
+    ) throws {
         let path = NSHomeDirectory() + "/Library/Preferences/com.apple.dock.plist"
 
         // Preserve existing Dock settings (orientation, magnify, etc.) by
@@ -620,9 +639,71 @@ class DockManager: ObservableObject {
         }
 
         plist["persistent-apps"] = apps
+        if let recentApps {
+            plist["recent-apps"] = recentApps
+        }
 
         let newData = try PropertyListSerialization.data(fromPropertyList: plist, format: .binary, options: 0)
         try newData.write(to: URL(fileURLWithPath: path), options: .atomic)
+    }
+
+    /// Removes recently used app tiles that are already pinned in the new set.
+    /// macOS documents that the suggested/recent section should omit pinned apps,
+    /// but a Dock restart can leave stale duplicates in recent-apps.
+    nonisolated static private func removePinnedAppsFromRecentApps(
+        persistentApps: [Any]
+    ) -> (apps: [Any], removedCount: Int)? {
+        let path = NSHomeDirectory() + "/Library/Preferences/com.apple.dock.plist"
+        guard let data = try? Data(contentsOf: URL(fileURLWithPath: path)),
+              let plist = try? PropertyListSerialization.propertyList(from: data, options: [], format: nil) as? [String: Any] else {
+            return nil
+        }
+
+        let appID = "com.apple.dock" as CFString
+        let showRecentsInPlist = plist["show-recents"] as? Bool == true
+        let showRecentsInPreferences =
+            (CFPreferencesCopyAppValue("show-recents" as CFString, appID) as? Bool) == true
+        guard showRecentsInPlist || showRecentsInPreferences,
+              let recentApps = plist["recent-apps"] as? [Any] else {
+            return nil
+        }
+
+        let pinnedIdentities = Set(
+            persistentApps.flatMap { dockApplicationIdentityKeys(in: $0) }
+        )
+        guard !pinnedIdentities.isEmpty else { return nil }
+
+        var removedCount = 0
+        let filteredRecentApps = recentApps.filter { app in
+            let identities = dockApplicationIdentityKeys(in: app)
+            guard !identities.isDisjoint(with: pinnedIdentities) else { return true }
+            removedCount += 1
+            return false
+        }
+        guard removedCount > 0 else { return nil }
+        return (filteredRecentApps, removedCount)
+    }
+
+    nonisolated static private func dockApplicationIdentityKeys(in rawTile: Any) -> Set<String> {
+        guard let item = rawTile as? [String: Any],
+              let tileData = item["tile-data"] as? [String: Any] else {
+            return []
+        }
+
+        var identities = Set<String>()
+        if let bundleIdentifier = tileData["bundle-identifier"] as? String,
+           !bundleIdentifier.isEmpty {
+            identities.insert("bundle:\(bundleIdentifier.lowercased())")
+        }
+
+        if let fileData = tileData["file-data"] as? [String: Any],
+           let urlString = fileData["_CFURLString"] as? String,
+           let url = URL(string: urlString),
+           url.isFileURL {
+            identities.insert("path:\(url.standardizedFileURL.path)")
+        }
+
+        return identities
     }
     
     // MARK: - Data Management & Spacers
