@@ -1810,6 +1810,17 @@
         }
       }
     },
+    "Switch dock" : {
+      "comment" : "Menu section for selecting a Dock set",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "切换 Dock"
+          }
+        }
+      }
+    },
     "Switcher" : {
       "shouldTranslate" : false
     },

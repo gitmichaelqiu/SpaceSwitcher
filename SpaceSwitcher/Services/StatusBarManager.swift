@@ -123,9 +123,17 @@ class StatusBarManager: NSObject {
         docksItem.image = NSImage(systemSymbolName: "dock.arrow.up.rectangle", accessibilityDescription: nil)
         menu.addItem(docksItem)
 
-        // 2.1 Manual Dock Switching (if automation is disabled)
-        if let dm = dockManager, !dm.config.isAutomationEnabled {
+        // Manual selection is a temporary override while automation remains enabled.
+        if let dm = dockManager, !dm.config.dockSets.isEmpty {
             menu.addItem(NSMenuItem.separator())
+
+            let switchDockHeader = NSMenuItem(
+                title: NSLocalizedString("Switch dock", comment: "Menu section for selecting a Dock set"),
+                action: nil,
+                keyEquivalent: ""
+            )
+            switchDockHeader.isEnabled = false
+            menu.addItem(switchDockHeader)
             
             for set in dm.config.dockSets {
                 let setItem = NSMenuItem(title: set.name,
