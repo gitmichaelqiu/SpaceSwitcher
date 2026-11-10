@@ -40,13 +40,13 @@ struct DockTile: Identifiable, Codable, Hashable, Sendable {
         self.rawDataBlob = rawDataBlob
     }
     
-    static func == (lhs: DockTile, rhs: DockTile) -> Bool {
+    nonisolated static func == (lhs: DockTile, rhs: DockTile) -> Bool {
         lhs.label == rhs.label && 
         lhs.bundleIdentifier == rhs.bundleIdentifier && 
         lhs.fileURL == rhs.fileURL
     }
     
-    func hash(into hasher: inout Hasher) {
+    nonisolated func hash(into hasher: inout Hasher) {
         hasher.combine(label)
         hasher.combine(bundleIdentifier)
         hasher.combine(fileURL)
@@ -60,7 +60,7 @@ struct DockSet: Identifiable, Codable, Equatable, Sendable {
     var dateCreated: Date
     var tiles: [DockTile]
     
-    static func == (lhs: DockSet, rhs: DockSet) -> Bool {
+    nonisolated static func == (lhs: DockSet, rhs: DockSet) -> Bool {
         lhs.id == rhs.id && lhs.name == rhs.name && lhs.tiles == rhs.tiles
     }
 }

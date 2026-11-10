@@ -418,7 +418,10 @@ enum RulePreset: String, CaseIterable, Identifiable {
 }
 
 struct SpaceInfo: Identifiable, Codable, Hashable {
+    /// Permanent DesktopRenamer identity used for saved rule and dock references.
     let id: String
+    /// Current-session macOS identity, used only to map WindowServer data.
+    let managedSpaceID: String?
     let name: String
     let number: Int
     let displayID: String
@@ -426,12 +429,14 @@ struct SpaceInfo: Identifiable, Codable, Hashable {
 
     init(
         id: String,
+        managedSpaceID: String? = nil,
         name: String,
         number: Int,
         displayID: String = "Main",
         displayName: String = "Main Display"
     ) {
         self.id = id
+        self.managedSpaceID = managedSpaceID
         self.name = name
         self.number = number
         self.displayID = displayID
@@ -441,6 +446,7 @@ struct SpaceInfo: Identifiable, Codable, Hashable {
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         id = try container.decode(String.self, forKey: .id)
+        managedSpaceID = try container.decodeIfPresent(String.self, forKey: .managedSpaceID)
         name = try container.decode(String.self, forKey: .name)
         number = try container.decode(Int.self, forKey: .number)
         displayID = try container.decodeIfPresent(String.self, forKey: .displayID) ?? "Main"
@@ -448,7 +454,7 @@ struct SpaceInfo: Identifiable, Codable, Hashable {
     }
 
     private enum CodingKeys: String, CodingKey {
-        case id, name, number, displayID, displayName
+        case id, managedSpaceID, name, number, displayID, displayName
     }
 
     static func == (lhs: SpaceInfo, rhs: SpaceInfo) -> Bool { lhs.id == rhs.id }

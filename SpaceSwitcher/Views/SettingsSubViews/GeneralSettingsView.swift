@@ -3,6 +3,8 @@ import Sparkle
 
 struct GeneralSettingsView: View {
     @State private var launchAtLogin: Bool = LaunchManager.isEnabled
+    @StateObject private var menuBarIconSettings = MenuBarIconSettings.shared
+    @StateObject private var hudToastSettings = HUDToastSettings.shared
     @State private var autoCheckUpdate: Bool = UpdateManager.shared.updaterController.updater.automaticallyChecksForUpdates
     @State private var autoDownloadUpdate: Bool = UpdateManager.shared.updaterController.updater.automaticallyDownloadsUpdates
 
@@ -20,8 +22,56 @@ struct GeneralSettingsView: View {
                             }
                     }
                 }
+
+                // 2. Menu Bar
+                SettingsSection("Menu Bar") {
+                    SettingsRow("Show menu bar icon") {
+                        Toggle("", isOn: Binding(
+                            get: { !menuBarIconSettings.isHidden },
+                            set: { menuBarIconSettings.isHidden = !$0 }
+                        ))
+                        .labelsHidden()
+                        .toggleStyle(.switch)
+                    }
+
+                    Divider()
+
+                    SettingsRow("Show HUD toasts") {
+                        Toggle("", isOn: Binding(
+                            get: { hudToastSettings.isEnabled },
+                            set: { isEnabled in
+                                withAnimation(.easeInOut(duration: 0.24)) {
+                                    hudToastSettings.isEnabled = isEnabled
+                                }
+                            }
+                        ))
+                            .labelsHidden()
+                            .toggleStyle(.switch)
+                    }
+
+                    if hudToastSettings.isEnabled {
+                        VStack(spacing: 0) {
+                            Divider()
+
+                            SettingsRow("Rule HUD toasts") {
+                                Toggle("", isOn: $hudToastSettings.isRuleHUDEnabled)
+                                    .labelsHidden()
+                                    .toggleStyle(.switch)
+                            }
+
+                            Divider()
+
+                            SettingsRow("Dock switch HUD toasts") {
+                                Toggle("", isOn: $hudToastSettings.isDockHUDEnabled)
+                                    .labelsHidden()
+                                    .toggleStyle(.switch)
+                            }
+                        }
+                        .transition(.opacity)
+                    }
+                }
                 
-                // 2. Updates - Standardized per macOSers bundle
+                // 3. Updates - Standardized per macOSers bundle
                 SettingsSection("Updates") {
                     SettingsRow("Automatically check for updates") {
                         Toggle("", isOn: $autoCheckUpdate)

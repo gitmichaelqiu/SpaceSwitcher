@@ -17,6 +17,7 @@ class AppState: ObservableObject {
         self.ruleManager.spaceManager = self.spaceManager
         self.dockManager = DockManager()
         self.dockManager.spaceManager = self.spaceManager
+        self.dockManager.ruleManager = self.ruleManager
         print("APP: Services Linked and Running.")
     }
 }

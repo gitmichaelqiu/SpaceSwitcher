@@ -1,16 +1,107 @@
 import Foundation
 import Combine
 import AppKit
+import Network
+import Darwin
 
 enum SpaceAPIAvailability: Equatable {
     case available
     case disabled
+    case accessDenied
     case unavailable
+}
+
+private struct SpaceAPIContractVersion: Comparable {
+    let major: Int
+    let minor: Int
+    let patch: Int
+
+    init?(_ string: String) {
+        let normalized = string.trimmingCharacters(in: .whitespacesAndNewlines)
+        let version = normalized.first == "v" || normalized.first == "V"
+            ? String(normalized.dropFirst())
+            : normalized
+        let components = version.split(separator: ".")
+        guard components.count == 3,
+              let major = Int(components[0]),
+              let minor = Int(components[1]),
+              let patch = Int(components[2]) else {
+            return nil
+        }
+        self.major = major
+        self.minor = minor
+        self.patch = patch
+    }
+
+    static func < (lhs: Self, rhs: Self) -> Bool {
+        if lhs.major != rhs.major { return lhs.major < rhs.major }
+        if lhs.minor != rhs.minor { return lhs.minor < rhs.minor }
+        return lhs.patch < rhs.patch
+    }
+
+    static let structuredAPI = Self("1.0.0")!
+    static let stableSpaceIDs = Self("1.2.0")!
+    static let unixSocketTransport = Self("1.3.0")!
+}
+
+private struct PendingSpaceAPIRequest {
+    let method: String
+    let usesSocket: Bool
 }
 
 enum RuleSpaceTransitionDetector {
     static func didVisibleSpacesChange(from previous: Set<String>, to current: Set<String>) -> Bool {
         previous != current
+    }
+}
+
+enum MainDisplaySpaceResolver {
+    static func resolve(
+        spaces: [SpaceInfo],
+        visibleSpaceIDs: Set<String>?,
+        activeSpaceID: String?,
+        mainDisplayID: String?,
+        connectedDisplayCount: Int
+    ) -> String? {
+        if let visibleSpaceIDs,
+           let visibleMainSpace = spaces.first(where: {
+               visibleSpaceIDs.contains($0.id)
+                   && isMainDisplay(
+                       $0.displayID,
+                       mainDisplayID: mainDisplayID,
+                       connectedDisplayCount: connectedDisplayCount
+                   )
+           }) {
+            return visibleMainSpace.id
+        }
+
+        guard let activeSpaceID else { return nil }
+        if let activeSpace = spaces.first(where: { $0.id == activeSpaceID }),
+           isMainDisplay(
+               activeSpace.displayID,
+               mainDisplayID: mainDisplayID,
+               connectedDisplayCount: connectedDisplayCount
+           ) {
+            return activeSpace.id
+        }
+
+        // Older SpaceAPI snapshots may omit display metadata. Falling back to
+        // the active Space is safe only when there is a single connected display.
+        return connectedDisplayCount == 1 ? activeSpaceID : nil
+    }
+
+    private static func isMainDisplay(
+        _ displayID: String,
+        mainDisplayID: String?,
+        connectedDisplayCount: Int
+    ) -> Bool {
+        if let mainDisplayID,
+           displayID.caseInsensitiveCompare(mainDisplayID) == .orderedSame {
+            return true
+        }
+
+        return connectedDisplayCount == 1
+            && displayID.caseInsensitiveCompare("Main") == .orderedSame
     }
 }
 
@@ -23,23 +114,18 @@ final class SpaceManager: ObservableObject {
     ]
     static let desktopRenamerDownloadURL = URL(string: "https://github.com/gitmichaelqiu/DesktopRenamer/releases/latest")!
 
-    private let apiPrefix = "com.michaelqiu.DesktopRenamer"
+    private static let apiPrefixes = [
+        "dev.mqiu.DesktopRenamer",
+        "com.michaelqiu.DesktopRenamer"
+    ]
     private let jsonRPCVersion = "2.0"
     private let payloadKey = "payload"
-
-    // Structured SpaceAPI channels.
-    private lazy var rpcRequest = Notification.Name("\(apiPrefix).RPCRequest")
-    private lazy var rpcResponse = Notification.Name("\(apiPrefix).RPCResponse")
-    private lazy var rpcEvent = Notification.Name("\(apiPrefix).RPCEvent")
-
-    // Legacy channels remain supported for older DesktopRenamer releases.
-    private lazy var legacyAPIState = Notification.Name("\(apiPrefix).ReturnAPIState")
-    private lazy var legacyGetActiveSpace = Notification.Name("\(apiPrefix).GetActiveSpace")
-    private lazy var legacyGetSpaceList = Notification.Name("\(apiPrefix).GetSpaceList")
-    private lazy var legacyReturnActiveSpace = Notification.Name("\(apiPrefix).ReturnActiveSpace")
-    private lazy var legacyReturnSpaceList = Notification.Name("\(apiPrefix).ReturnSpaceList")
+    private let maximumPayloadBytes = 1_048_576
+    private let networkQueue = DispatchQueue.main
 
     @Published var currentSpaceID: String?
+    /// The currently visible Space on the primary display, independent of which display has focus.
+    @Published private(set) var mainDisplaySpaceID: String?
     /// The active-display space captured at the last actual visible-space transition.
     /// Unlike `currentSpaceID`, this does not change when focus moves between displays.
     @Published private(set) var ruleEvaluationSpaceID: String?
@@ -54,9 +140,22 @@ final class SpaceManager: ObservableObject {
     private var structuredProbeInFlight = false
     private var snapshotRequestInFlight = false
     private var structuredProbeGeneration = 0
-    private var pendingRequests: [String: String] = [:]
+    private var pendingRequests: [String: PendingSpaceAPIRequest] = [:]
     private var lastSnapshotRevision: UInt64?
     private var currentVisibleSpaceIDs = Set<String>()
+    private var usingLegacyNotificationTransport = false
+    private var legacyNotificationPrefix = "dev.mqiu.DesktopRenamer"
+    private var legacyContractVersion: SpaceAPIContractVersion?
+    private var legacyVersionProbeInFlight = false
+    private var legacyVersionProbeGeneration = 0
+    private var legacyVersionProbeLastAttempt: Date?
+    private var contractVersion: SpaceAPIContractVersion?
+    private var structuredIdentifiersAreStable = false
+    private var managedSpaceIDToStableSpaceID: [String: String] = [:]
+    private var socketEndpointPath: String?
+    private var socketConnection: NWConnection?
+    private var socketReceiveBuffer = Data()
+    private var socketReconnectWorkItem: DispatchWorkItem?
 
     init() {
         startListening()
@@ -66,50 +165,61 @@ final class SpaceManager: ObservableObject {
         let center = DistributedNotificationCenter.default()
         notificationObservers.forEach(center.removeObserver)
         localNotificationObservers.forEach(NotificationCenter.default.removeObserver)
+        socketConnection?.cancel()
     }
 
     private func startListening() {
         let center = DistributedNotificationCenter.default()
 
-        notificationObservers.append(center.addObserver(
-            forName: rpcResponse,
-            object: nil,
-            queue: .main
-        ) { [weak self] notification in
-            self?.handleRPCResponse(notification)
-        })
+        for prefix in Self.apiPrefixes {
+            notificationObservers.append(center.addObserver(
+                forName: notificationName("RPCResponse", prefix: prefix),
+                object: nil,
+                queue: .main
+            ) { [weak self] notification in
+                self?.handleRPCResponse(notification)
+            })
 
-        notificationObservers.append(center.addObserver(
-            forName: rpcEvent,
-            object: nil,
-            queue: .main
-        ) { [weak self] notification in
-            self?.handleRPCEvent(notification)
-        })
+            notificationObservers.append(center.addObserver(
+                forName: notificationName("RPCEvent", prefix: prefix),
+                object: nil,
+                queue: .main
+            ) { [weak self] notification in
+                self?.handleRPCEvent(notification)
+            })
 
-        notificationObservers.append(center.addObserver(
-            forName: legacyAPIState,
-            object: nil,
-            queue: .main
-        ) { [weak self] notification in
-            self?.handleLegacyAPIState(notification)
-        })
+            notificationObservers.append(center.addObserver(
+                forName: notificationName("ReturnAPIState", prefix: prefix),
+                object: nil,
+                queue: .main
+            ) { [weak self] notification in
+                self?.handleLegacyAPIState(notification)
+            })
 
-        notificationObservers.append(center.addObserver(
-            forName: legacyReturnActiveSpace,
-            object: nil,
-            queue: .main
-        ) { [weak self] notification in
-            self?.handleLegacyActiveSpace(notification)
-        })
+            notificationObservers.append(center.addObserver(
+                forName: notificationName("ReturnActiveSpace", prefix: prefix),
+                object: nil,
+                queue: .main
+            ) { [weak self] notification in
+                self?.handleLegacyActiveSpace(notification)
+            })
 
-        notificationObservers.append(center.addObserver(
-            forName: legacyReturnSpaceList,
-            object: nil,
-            queue: .main
-        ) { [weak self] notification in
-            self?.handleLegacySpaceList(notification)
-        })
+            notificationObservers.append(center.addObserver(
+                forName: notificationName("ReturnSpaceList", prefix: prefix),
+                object: nil,
+                queue: .main
+            ) { [weak self] notification in
+                self?.handleLegacySpaceList(notification)
+            })
+
+            notificationObservers.append(center.addObserver(
+                forName: notificationName("ReturnAPIVersion", prefix: prefix),
+                object: nil,
+                queue: .main
+            ) { [weak self] notification in
+                self?.handleLegacyAPIVersion(notification, prefix: prefix)
+            })
+        }
 
         let localCenter = NotificationCenter.default
         localNotificationObservers.append(localCenter.addObserver(
@@ -127,17 +237,39 @@ final class SpaceManager: ObservableObject {
             self?.refreshSpaceList()
         })
 
-        // Prefer the structured contract and fall back to legacy notifications
-        // if DesktopRenamer is an older release.
-        requestStructuredAPIInfo()
+        connectSocket()
     }
 
     func refreshSpaceList() {
-        if structuredAPIAvailable {
-            requestStructuredSnapshot()
-        } else {
-            requestStructuredAPIInfo()
+        if apiAvailability == .accessDenied {
+            reconnectSocket()
+            return
         }
+
+        if socketConnection?.state == .ready {
+            if structuredAPIAvailable {
+                requestStructuredSnapshot()
+            } else {
+                requestStructuredAPIInfo()
+            }
+            return
+        }
+
+        connectSocket()
+        guard usingLegacyNotificationTransport else { return }
+        if legacyContractVersion.map({ $0 >= .structuredAPI }) == true {
+            if structuredAPIAvailable {
+                requestStructuredSnapshot()
+            } else {
+                requestStructuredAPIInfo()
+            }
+        } else {
+            refreshLegacySpaceList()
+        }
+    }
+
+    private func notificationName(_ suffix: String, prefix: String) -> Notification.Name {
+        Notification.Name("\(prefix).\(suffix)")
     }
 
     var desktopRenamerApplicationURL: URL? {
@@ -149,6 +281,7 @@ final class SpaceManager: ObservableObject {
     func openDesktopRenamer() {
         guard let applicationURL = desktopRenamerApplicationURL else { return }
         NSWorkspace.shared.open(applicationURL)
+        guard apiAvailability != .accessDenied else { return }
 
         // DesktopRenamer starts its API listener after launch. Retry while it
         // finishes initializing so the status does not remain unavailable.
@@ -163,49 +296,279 @@ final class SpaceManager: ObservableObject {
         NSWorkspace.shared.open(Self.desktopRenamerDownloadURL)
     }
 
+    private var defaultSocketEndpointPath: String {
+        "/tmp/dev.mqiu.DesktopRenamer-\(getuid()).sock"
+    }
+
+    private func connectSocket() {
+        guard socketConnection == nil else { return }
+
+        socketReconnectWorkItem?.cancel()
+        socketReconnectWorkItem = nil
+        socketReceiveBuffer.removeAll(keepingCapacity: true)
+
+        let endpointPath = socketEndpointPath ?? defaultSocketEndpointPath
+        let connection = NWConnection(to: .unix(path: endpointPath), using: .tcp)
+        socketConnection = connection
+        connection.stateUpdateHandler = { [weak self, weak connection] state in
+            guard let self, let connection, self.socketConnection === connection else { return }
+            switch state {
+            case .ready:
+                self.handleSocketReady(connection)
+            case .failed(let error):
+                self.handleSocketFailure(connection, error: error)
+            case .cancelled:
+                self.handleSocketFailure(connection, error: nil)
+            case .waiting(let error):
+                print("SpaceSwitcher: Waiting for DesktopRenamer SpaceAPI socket: \(error)")
+            default:
+                break
+            }
+        }
+        connection.start(queue: networkQueue)
+    }
+
+    private func reconnectSocket() {
+        socketReconnectWorkItem?.cancel()
+        socketReconnectWorkItem = nil
+        let previousConnection = socketConnection
+        socketConnection = nil
+        previousConnection?.stateUpdateHandler = nil
+        previousConnection?.cancel()
+        socketReceiveBuffer.removeAll(keepingCapacity: true)
+        structuredAPIAvailable = false
+        structuredProbeInFlight = false
+        snapshotRequestInFlight = false
+        pendingRequests.removeAll()
+        lastSnapshotRevision = nil
+        connectSocket()
+    }
+
+    private func handleSocketReady(_ connection: NWConnection) {
+        guard socketConnection === connection else { return }
+
+        legacyVersionProbeInFlight = false
+        legacyVersionProbeGeneration += 1
+
+        if usingLegacyNotificationTransport {
+            usingLegacyNotificationTransport = false
+            legacyContractVersion = nil
+            setDisconnected()
+        }
+
+        structuredProbeInFlight = false
+        snapshotRequestInFlight = false
+        pendingRequests.removeAll()
+        lastSnapshotRevision = nil
+        receiveSocketData(from: connection)
+        requestStructuredAPIInfo()
+    }
+
+    private func handleSocketFailure(_ connection: NWConnection, error: NWError?) {
+        guard socketConnection === connection else { return }
+
+        socketConnection = nil
+        connection.stateUpdateHandler = nil
+        connection.cancel()
+        socketReceiveBuffer.removeAll(keepingCapacity: true)
+        structuredProbeInFlight = false
+        snapshotRequestInFlight = false
+        pendingRequests.removeAll()
+        lastSnapshotRevision = nil
+
+        if !usingLegacyNotificationTransport,
+           apiAvailability != .disabled,
+           apiAvailability != .accessDenied {
+            setDisconnected()
+        }
+        if !usingLegacyNotificationTransport {
+            probeForLegacyContractVersion()
+        }
+        if let error {
+            print("SpaceSwitcher: DesktopRenamer SpaceAPI socket disconnected: \(error)")
+        }
+        scheduleSocketReconnect()
+    }
+
+    private func scheduleSocketReconnect() {
+        guard apiAvailability != .accessDenied,
+              !usingLegacyNotificationTransport else { return }
+        socketReconnectWorkItem?.cancel()
+        let workItem = DispatchWorkItem { [weak self] in
+            self?.connectSocket()
+        }
+        socketReconnectWorkItem = workItem
+        DispatchQueue.main.asyncAfter(deadline: .now() + 5, execute: workItem)
+    }
+
+    private func receiveSocketData(from connection: NWConnection) {
+        connection.receive(
+            minimumIncompleteLength: 1,
+            maximumLength: maximumPayloadBytes + 4
+        ) { [weak self, weak connection] data, _, isComplete, error in
+            guard let self, let connection, self.socketConnection === connection else { return }
+
+            if let data, !data.isEmpty {
+                self.socketReceiveBuffer.append(data)
+                guard self.consumeSocketFrames(from: connection) else { return }
+            }
+
+            if let error {
+                self.handleSocketFailure(connection, error: error)
+            } else if isComplete {
+                self.handleSocketFailure(connection, error: nil)
+            } else {
+                self.receiveSocketData(from: connection)
+            }
+        }
+    }
+
+    @discardableResult
+    private func consumeSocketFrames(from connection: NWConnection) -> Bool {
+        while socketReceiveBuffer.count >= 4 {
+            let header = socketReceiveBuffer.prefix(4)
+            let payloadLength = header.reduce(UInt32(0)) { ($0 << 8) | UInt32($1) }
+            guard payloadLength > 0, payloadLength <= UInt32(maximumPayloadBytes) else {
+                print("SpaceSwitcher: DesktopRenamer sent an invalid SpaceAPI frame length")
+                handleSocketFailure(connection, error: nil)
+                return false
+            }
+
+            let frameLength = 4 + Int(payloadLength)
+            guard socketReceiveBuffer.count >= frameLength else { return true }
+
+            let payloadData = socketReceiveBuffer.subdata(in: 4..<frameLength)
+            socketReceiveBuffer.removeSubrange(0..<frameLength)
+            guard let payload = String(data: payloadData, encoding: .utf8) else {
+                print("SpaceSwitcher: DesktopRenamer sent a non-UTF-8 SpaceAPI message")
+                handleSocketFailure(connection, error: nil)
+                return false
+            }
+            handleRPCMessage(payload: payload)
+        }
+
+        return true
+    }
+
+    private func probeForLegacyContractVersion() {
+        guard !legacyVersionProbeInFlight,
+              Date().timeIntervalSince(legacyVersionProbeLastAttempt ?? .distantPast) >= 2 else {
+            return
+        }
+
+        // DNC is only a compatibility path. Confirm that the peer predates
+        // socket support before enabling it; socket errors and denials do not
+        // fall back to unauthenticated requests.
+        legacyVersionProbeInFlight = true
+        legacyVersionProbeLastAttempt = Date()
+        legacyVersionProbeGeneration += 1
+        let generation = legacyVersionProbeGeneration
+        let center = DistributedNotificationCenter.default()
+        for prefix in Self.apiPrefixes {
+            center.postNotificationName(
+                notificationName("GetAPIVersion", prefix: prefix),
+                object: nil,
+                userInfo: nil,
+                deliverImmediately: true
+            )
+        }
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1) { [weak self] in
+            guard let self, self.legacyVersionProbeGeneration == generation else { return }
+            self.legacyVersionProbeInFlight = false
+        }
+    }
+
+    private func handleLegacyAPIVersion(_ notification: Notification, prefix: String) {
+        guard legacyVersionProbeInFlight,
+              let versionString = notification.userInfo?["apiVersion"] as? String,
+              let version = SpaceAPIContractVersion(versionString) else {
+            return
+        }
+
+        legacyVersionProbeInFlight = false
+        legacyVersionProbeGeneration += 1
+        guard version < .unixSocketTransport else { return }
+
+        socketReconnectWorkItem?.cancel()
+        socketReconnectWorkItem = nil
+        usingLegacyNotificationTransport = true
+        legacyNotificationPrefix = prefix
+        legacyContractVersion = version
+        contractVersion = version
+        structuredIdentifiersAreStable = false
+        managedSpaceIDToStableSpaceID.removeAll()
+        if version >= .structuredAPI {
+            requestStructuredAPIInfo()
+        } else {
+            refreshLegacySpaceList()
+        }
+    }
+
     private func requestStructuredAPIInfo() {
         guard !structuredAPIAvailable, !structuredProbeInFlight else { return }
+
+        guard socketConnection?.state == .ready || usingLegacyNotificationTransport else {
+            connectSocket()
+            return
+        }
 
         structuredProbeInFlight = true
         structuredProbeGeneration += 1
         let generation = structuredProbeGeneration
         let requestID = UUID().uuidString
-        pendingRequests[requestID] = "getAPIInfo"
+        let usesSocket = !usingLegacyNotificationTransport
+        pendingRequests[requestID] = PendingSpaceAPIRequest(method: "getAPIInfo", usesSocket: usesSocket)
 
         postStructuredRequest(id: requestID, method: "getAPIInfo")
 
-        // Older DesktopRenamer versions do not know the RPC channel and will
-        // never respond, so do not block the legacy path indefinitely.
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.75) { [weak self] in
+        // A new socket request can wait for the user's SpaceAPI approval.
+        // The compatibility notification path is best-effort and has no ID.
+        let timeout: TimeInterval = usesSocket ? 125 : 0.75
+        DispatchQueue.main.asyncAfter(deadline: .now() + timeout) { [weak self] in
             guard let self,
                   self.structuredProbeGeneration == generation,
                   self.structuredProbeInFlight else { return }
 
             self.pendingRequests.removeValue(forKey: requestID)
             self.structuredProbeInFlight = false
-            self.refreshLegacySpaceList()
+            if usesSocket {
+                self.reconnectSocket()
+            } else {
+                self.refreshLegacySpaceList()
+            }
         }
     }
 
     private func requestStructuredSnapshot() {
-        guard !snapshotRequestInFlight else { return }
+        guard structuredAPIAvailable,
+              !snapshotRequestInFlight,
+              socketConnection?.state == .ready || usingLegacyNotificationTransport else {
+            return
+        }
 
         snapshotRequestInFlight = true
         let requestID = UUID().uuidString
-        pendingRequests[requestID] = "getSpaceSnapshot"
+        let usesSocket = !usingLegacyNotificationTransport
+        pendingRequests[requestID] = PendingSpaceAPIRequest(method: "getSpaceSnapshot", usesSocket: usesSocket)
         postStructuredRequest(id: requestID, method: "getSpaceSnapshot")
 
-        // Distributed notifications are best-effort. A timeout prevents a
-        // stopped or suspended DesktopRenamer from leaving stale state alive.
+        // Socket responses are expected quickly; DNC responses are best-effort.
         DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) { [weak self] in
             guard let self,
-                  self.pendingRequests.removeValue(forKey: requestID) == "getSpaceSnapshot" else {
+                  self.pendingRequests.removeValue(forKey: requestID)?.method == "getSpaceSnapshot" else {
                 return
             }
 
             self.snapshotRequestInFlight = false
-            self.setDisconnected()
-            self.refreshLegacySpaceList()
+            if usesSocket {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
+                    self?.requestStructuredSnapshot()
+                }
+            } else {
+                self.setDisconnected()
+                self.refreshLegacySpaceList()
+            }
         }
     }
 
@@ -219,11 +582,42 @@ final class SpaceManager: ObservableObject {
         guard let data = try? JSONSerialization.data(withJSONObject: request),
               let payload = String(data: data, encoding: .utf8) else {
             print("SpaceSwitcher: Could not encode DesktopRenamer API request: \(method)")
+            pendingRequests.removeValue(forKey: id)
+            if method == "getAPIInfo" { structuredProbeInFlight = false }
+            if method == "getSpaceSnapshot" { snapshotRequestInFlight = false }
             return
         }
 
+        if pendingRequests[id]?.usesSocket == true,
+           let socketConnection,
+           socketConnection.state == .ready {
+            guard data.count <= maximumPayloadBytes else {
+                pendingRequests.removeValue(forKey: id)
+                return
+            }
+
+            var frame = Data()
+            var payloadLength = UInt32(data.count).bigEndian
+            withUnsafeBytes(of: &payloadLength) { frame.append(contentsOf: $0) }
+            frame.append(data)
+            socketConnection.send(content: frame, completion: .contentProcessed { [weak self, weak socketConnection] error in
+                guard let self, let socketConnection,
+                      self.socketConnection === socketConnection,
+                      let error else { return }
+                self.handleSocketFailure(socketConnection, error: error)
+            })
+            return
+        }
+
+        guard usingLegacyNotificationTransport else {
+            pendingRequests.removeValue(forKey: id)
+            if method == "getAPIInfo" { structuredProbeInFlight = false }
+            if method == "getSpaceSnapshot" { snapshotRequestInFlight = false }
+            scheduleSocketReconnect()
+            return
+        }
         DistributedNotificationCenter.default().postNotificationName(
-            rpcRequest,
+            notificationName("RPCRequest", prefix: legacyNotificationPrefix),
             object: nil,
             userInfo: [payloadKey: payload],
             deliverImmediately: true
@@ -231,31 +625,65 @@ final class SpaceManager: ObservableObject {
     }
 
     private func handleRPCResponse(_ notification: Notification) {
-        guard let payload = notification.userInfo?[payloadKey] as? String,
-              let data = payload.data(using: .utf8),
-              let response = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-              response["jsonrpc"] as? String == jsonRPCVersion,
-              let requestID = response["id"] as? String,
-              let requestType = pendingRequests.removeValue(forKey: requestID) else {
+        guard let payload = notification.userInfo?[payloadKey] as? String else { return }
+        handleRPCResponse(payload: payload)
+    }
+
+    private func handleRPCMessage(payload: String) {
+        guard let data = payload.data(using: .utf8),
+              let message = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+              message["jsonrpc"] as? String == jsonRPCVersion else {
             return
         }
 
+        if message["id"] != nil {
+            handleRPCResponse(payload: payload)
+        } else if message["method"] as? String == "stateChanged" {
+            handleRPCEvent(payload: payload)
+        }
+    }
+
+    private func handleRPCResponse(payload: String) {
+        guard let data = payload.data(using: .utf8),
+              let response = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+              response["jsonrpc"] as? String == jsonRPCVersion,
+              let requestID = response["id"] as? String,
+              let pendingRequest = pendingRequests.removeValue(forKey: requestID) else {
+            return
+        }
+        let requestType = pendingRequest.method
+
         if requestType == "getSpaceSnapshot" {
             snapshotRequestInFlight = false
+        }
+        if requestType == "getAPIInfo" {
+            structuredProbeInFlight = false
         }
 
         if let error = response["error"] as? [String: Any] {
             let code = (error["code"] as? NSNumber)?.intValue
             if code == -32001 {
                 setDisconnected(as: .disabled)
+            } else if code == -32003 && pendingRequest.usesSocket {
+                print("SpaceSwitcher: This app is not approved for DesktopRenamer SpaceAPI")
+                setDisconnected(as: .accessDenied)
             } else if code == -32002 {
-                setDisconnected()
+                setDisconnected(as: .unavailable)
+                if pendingRequest.usesSocket {
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 1) { [weak self] in
+                        self?.requestStructuredAPIInfo()
+                    }
+                } else {
+                    refreshLegacySpaceList()
+                }
             } else if requestType == "getAPIInfo" {
-                structuredProbeInFlight = false
                 structuredAPIAvailable = false
-                refreshLegacySpaceList()
+                if pendingRequest.usesSocket {
+                    setDisconnected()
+                } else {
+                    refreshLegacySpaceList()
+                }
             } else {
-                structuredProbeInFlight = false
                 isAPIEnabled = false
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
                     guard let self, self.structuredAPIAvailable else { return }
@@ -271,16 +699,25 @@ final class SpaceManager: ObservableObject {
         case "getAPIInfo":
             let supportsSnapshots = (result["supportedMethods"] as? [String])?.contains("getSpaceSnapshot") == true
             let supportsJSONRPC = result["jsonRPCVersion"] as? String == jsonRPCVersion
-            let contractVersion = result["contractVersion"] as? String
+            let contractVersionString = result["contractVersion"] as? String
             guard supportsSnapshots && supportsJSONRPC,
-                  let contractVersion,
+                  let contractVersionString,
+                  let contractVersion = SpaceAPIContractVersion(contractVersionString),
                   isSupportedContractVersion(contractVersion) else {
-                structuredProbeInFlight = false
-                refreshLegacySpaceList()
+                if pendingRequest.usesSocket {
+                    setDisconnected()
+                } else {
+                    structuredAPIAvailable = false
+                    refreshLegacySpaceList()
+                }
                 return
             }
 
-            structuredProbeInFlight = false
+            self.contractVersion = contractVersion
+            structuredIdentifiersAreStable = contractVersion >= .stableSpaceIDs
+            if let endpoint = result["socketEndpoint"] as? String, endpoint.hasPrefix("/") {
+                socketEndpointPath = endpoint
+            }
             structuredAPIAvailable = true
             apiAvailability = .available
             isAPIEnabled = true
@@ -294,23 +731,20 @@ final class SpaceManager: ObservableObject {
         }
     }
 
-    private func isSupportedContractVersion(_ version: String) -> Bool {
-        let components = version.split(separator: ".")
-        guard components.count == 3,
-              let major = Int(components[0]),
-              let minor = Int(components[1]),
-              let patch = Int(components[2]) else {
-            return false
-        }
-
+    private func isSupportedContractVersion(_ version: SpaceAPIContractVersion) -> Bool {
         // Major versions can change the contract incompatibly. This client
         // supports the 1.x contract and must not opt into a future 2.x shape.
-        return major == 1 && minor >= 0 && patch >= 0
+        return version.major == 1
     }
 
     private func handleRPCEvent(_ notification: Notification) {
-        guard let payload = notification.userInfo?[payloadKey] as? String,
-              let data = payload.data(using: .utf8),
+        guard usingLegacyNotificationTransport,
+              let payload = notification.userInfo?[payloadKey] as? String else { return }
+        handleRPCEvent(payload: payload)
+    }
+
+    private func handleRPCEvent(payload: String) {
+        guard let data = payload.data(using: .utf8),
               let event = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
               event["jsonrpc"] as? String == jsonRPCVersion,
               event["method"] as? String == "stateChanged",
@@ -328,10 +762,21 @@ final class SpaceManager: ObservableObject {
     private func applyStructuredSnapshot(_ snapshot: [String: Any], isEvent: Bool) {
         guard let rawSpaces = snapshot["spaces"] as? [[String: Any]] else { return }
 
+        if let apiVersion = snapshot["apiVersion"] as? String,
+           let version = SpaceAPIContractVersion(apiVersion) {
+            contractVersion = version
+            structuredIdentifiersAreStable = version >= .stableSpaceIDs
+        }
+
         let revision = (snapshot["revision"] as? NSNumber)?.uint64Value
-        if isEvent, let revision, let lastRevision = lastSnapshotRevision {
-            if revision <= lastRevision { return }
-            if revision != lastRevision + 1 {
+        if let revision, let lastRevision = lastSnapshotRevision {
+            if isEvent {
+                if revision <= lastRevision { return }
+                if revision != lastRevision + 1 {
+                    requestStructuredSnapshot()
+                    return
+                }
+            } else if revision < lastRevision {
                 requestStructuredSnapshot()
                 return
             }
@@ -348,12 +793,21 @@ final class SpaceManager: ObservableObject {
                 ?? self.displayName(for: displayID)
             return SpaceInfo(
                 id: id,
+                managedSpaceID: rawSpace["managedSpaceID"] as? String,
                 name: name,
                 number: number,
                 displayID: displayID,
                 displayName: displayName
             )
         }.sorted { $0.number < $1.number }
+
+        var nextManagedSpaceIDMap: [String: String] = [:]
+        for space in spaces {
+            if let managedSpaceID = space.managedSpaceID {
+                nextManagedSpaceIDMap[managedSpaceID] = space.id
+            }
+        }
+        managedSpaceIDToStableSpaceID = nextManagedSpaceIDMap
 
         let currentSpaceIDs = snapshot["currentSpaceIDs"] as? [String] ?? []
         let snapshotCurrentSpaceID = snapshot["currentSpaceID"] as? String
@@ -366,12 +820,20 @@ final class SpaceManager: ObservableObject {
             from: currentVisibleSpaceIDs,
             to: nextVisibleSpaceIDs
         )
+        let nextMainDisplaySpaceID = MainDisplaySpaceResolver.resolve(
+            spaces: spaces,
+            visibleSpaceIDs: nextVisibleSpaceIDs,
+            activeSpaceID: nextCurrentSpaceID,
+            mainDisplayID: mainDisplayIdentifier(),
+            connectedDisplayCount: NSScreen.screens.count
+        )
 
         currentSpaceID = nextCurrentSpaceID
         currentSpaceName = snapshot["currentSpaceName"] as? String ?? "Unknown"
         availableSpaces = spaces
         isAPIEnabled = true
         apiAvailability = .available
+        mainDisplaySpaceID = nextMainDisplaySpaceID
 
         if visibleSpacesChanged {
             currentVisibleSpaceIDs = nextVisibleSpaceIDs
@@ -387,10 +849,15 @@ final class SpaceManager: ObservableObject {
         guard let isEnabled = notification.userInfo?["isEnabled"] as? Bool else { return }
 
         if isEnabled {
-            if !structuredAPIAvailable {
-                requestStructuredAPIInfo()
+            if usingLegacyNotificationTransport {
+                if legacyContractVersion.map({ $0 >= .structuredAPI }) == true {
+                    if !structuredAPIAvailable { requestStructuredAPIInfo() }
+                    else { requestStructuredSnapshot() }
+                } else {
+                    refreshLegacySpaceList()
+                }
             } else {
-                requestStructuredSnapshot()
+                refreshSpaceList()
             }
         } else {
             setDisconnected(as: .disabled)
@@ -398,17 +865,17 @@ final class SpaceManager: ObservableObject {
     }
 
     private func refreshLegacySpaceList() {
-        guard !structuredAPIAvailable else { return }
+        guard usingLegacyNotificationTransport, !structuredAPIAvailable else { return }
 
         let center = DistributedNotificationCenter.default()
         center.postNotificationName(
-            legacyGetSpaceList,
+            notificationName("GetSpaceList", prefix: legacyNotificationPrefix),
             object: nil,
             userInfo: nil,
             deliverImmediately: true
         )
         center.postNotificationName(
-            legacyGetActiveSpace,
+            notificationName("GetActiveSpace", prefix: legacyNotificationPrefix),
             object: nil,
             userInfo: nil,
             deliverImmediately: true
@@ -416,18 +883,31 @@ final class SpaceManager: ObservableObject {
     }
 
     private func handleLegacyActiveSpace(_ notification: Notification) {
-        guard !structuredAPIAvailable,
+        guard usingLegacyNotificationTransport,
+              !structuredAPIAvailable,
               let info = notification.userInfo else { return }
 
-        currentSpaceID = info["spaceUUID"] as? String
+        let activeSpaceID = info["spaceUUID"] as? String
+        currentSpaceID = activeSpaceID
         ruleEvaluationSpaceID = currentSpaceID
         currentSpaceName = info["spaceName"] as? String ?? "Unknown"
         isAPIEnabled = true
         apiAvailability = .available
+
+        if let mainSpaceID = MainDisplaySpaceResolver.resolve(
+            spaces: availableSpaces,
+            visibleSpaceIDs: nil,
+            activeSpaceID: activeSpaceID,
+            mainDisplayID: mainDisplayIdentifier(),
+            connectedDisplayCount: NSScreen.screens.count
+        ) {
+            mainDisplaySpaceID = mainSpaceID
+        }
     }
 
     private func handleLegacySpaceList(_ notification: Notification) {
-        guard !structuredAPIAvailable,
+        guard usingLegacyNotificationTransport,
+              !structuredAPIAvailable,
               let info = notification.userInfo,
               let rawSpaces = info["spaces"] as? [[String: Any]] else { return }
 
@@ -440,14 +920,30 @@ final class SpaceManager: ObservableObject {
             let displayID = rawSpace["displayID"] as? String ?? "Main"
             return SpaceInfo(
                 id: id,
+                managedSpaceID: id,
                 name: name,
                 number: number,
                 displayID: displayID,
                 displayName: displayName(for: displayID)
             )
         }.sorted { $0.number < $1.number }
+
+        if let mainSpaceID = MainDisplaySpaceResolver.resolve(
+            spaces: availableSpaces,
+            visibleSpaceIDs: nil,
+            activeSpaceID: currentSpaceID,
+            mainDisplayID: mainDisplayIdentifier(),
+            connectedDisplayCount: NSScreen.screens.count
+        ) {
+            mainDisplaySpaceID = mainSpaceID
+        }
         isAPIEnabled = true
         apiAvailability = .available
+    }
+
+    func ruleSpaceIDs(forManagedSpaceIDs managedSpaceIDs: Set<String>) -> Set<String> {
+        guard structuredIdentifiersAreStable else { return managedSpaceIDs }
+        return Set(managedSpaceIDs.compactMap { managedSpaceIDToStableSpaceID[$0] })
     }
 
     private func displayName(for displayID: String) -> String {
@@ -470,17 +966,38 @@ final class SpaceManager: ObservableObject {
         return displayID
     }
 
+    private func mainDisplayIdentifier() -> String? {
+        let screens = NSScreen.screens
+        let mainScreen = screens.first(where: {
+            $0.frame.origin.x == 0 && $0.frame.origin.y == 0
+        }) ?? screens.first
+
+        guard let screenNumber = mainScreen?.deviceDescription[
+            NSDeviceDescriptionKey("NSScreenNumber")
+        ] as? NSNumber,
+        let uuid = CGDisplayCreateUUIDFromDisplayID(screenNumber.uint32Value)?.takeRetainedValue(),
+        let uuidString = CFUUIDCreateString(nil, uuid) as String? else {
+            return nil
+        }
+
+        return uuidString.uppercased()
+    }
+
     private func setDisconnected(as availability: SpaceAPIAvailability = .unavailable) {
         structuredAPIAvailable = false
         structuredProbeInFlight = false
         snapshotRequestInFlight = false
         pendingRequests.removeAll()
         lastSnapshotRevision = nil
+        contractVersion = nil
+        structuredIdentifiersAreStable = false
+        managedSpaceIDToStableSpaceID.removeAll()
         apiAvailability = availability
         isAPIEnabled = false
         availableSpaces.removeAll()
         currentSpaceName = "Disconnected"
         currentSpaceID = nil
+        mainDisplaySpaceID = nil
         ruleEvaluationSpaceID = nil
         currentVisibleSpaceIDs.removeAll()
     }

@@ -2,6 +2,105 @@ import XCTest
 @testable import SpaceSwitcher
 
 final class RuleEvaluationEngineTests: XCTestCase {
+    func testRuleActionStateChangeRequiresAConfirmedTransition() {
+        XCTAssertFalse(
+            RuleActionStateChange.isConfirmed(from: true, to: true, updateSucceeded: true)
+        )
+        XCTAssertFalse(
+            RuleActionStateChange.isConfirmed(from: false, to: true, updateSucceeded: false)
+        )
+        XCTAssertFalse(
+            RuleActionStateChange.isConfirmed(from: nil, to: true, updateSucceeded: true)
+        )
+        XCTAssertTrue(
+            RuleActionStateChange.isConfirmed(from: false, to: true, updateSucceeded: true)
+        )
+    }
+
+    func testRuleActionStateChangeCanUsePostWriteValueWhenPreviousStateWasUnknown() {
+        XCTAssertTrue(
+            RuleActionStateChange.isConfirmedAfterUpdate(
+                from: nil,
+                to: true,
+                updateSucceeded: true,
+                observedAfter: true,
+                wasPreviouslyManaged: false
+            )
+        )
+        XCTAssertFalse(
+            RuleActionStateChange.isConfirmedAfterUpdate(
+                from: nil,
+                to: true,
+                updateSucceeded: true,
+                observedAfter: true,
+                wasPreviouslyManaged: true
+            )
+        )
+        XCTAssertFalse(
+            RuleActionStateChange.isConfirmedAfterUpdate(
+                from: nil,
+                to: true,
+                updateSucceeded: true,
+                observedAfter: nil,
+                wasPreviouslyManaged: false
+            )
+        )
+    }
+
+    func testRuleHUDChangeSummaryMergesOutcomesAndDeduplicatesWindows() {
+        var firstPlan = RuleHUDChangeSummary()
+        firstPlan.record(.hidden, windowIDs: [101, 102])
+        firstPlan.record(.hidden, windowIDs: [102])
+        firstPlan.record(.minimized, windowIDs: [102])
+
+        var secondPlan = RuleHUDChangeSummary()
+        secondPlan.record(.restored, windowIDs: [103])
+        firstPlan.merge(secondPlan)
+
+        XCTAssertTrue(firstPlan.hasChanges)
+        XCTAssertEqual(firstPlan.windowCount(for: .hidden), 2)
+        XCTAssertEqual(firstPlan.windowCount(for: .minimized), 1)
+        XCTAssertEqual(firstPlan.windowCount(for: .restored), 1)
+
+        var appLevelChange = RuleHUDChangeSummary()
+        appLevelChange.record(.shortcutTriggered, windowIDs: [])
+        XCTAssertTrue(appLevelChange.hasChanges)
+    }
+
+    func testRuleHUDApplicationOutcomeCountsCountAppsRatherThanWindows() {
+        var firstApplication = RuleHUDChangeSummary()
+        firstApplication.record(.hidden, windowIDs: [101, 102])
+
+        var secondApplication = RuleHUDChangeSummary()
+        secondApplication.record(.hidden, windowIDs: [201])
+
+        var thirdApplication = RuleHUDChangeSummary()
+        thirdApplication.record(.restored, windowIDs: [301])
+
+        XCTAssertEqual(
+            RuleHUDChangeSummary.applicationOutcomeCounts(
+                for: [firstApplication, secondApplication, thirdApplication]
+            ),
+            [.hidden: 2, .restored: 1]
+        )
+    }
+
+    func testRuleHUDChangeSummaryExposesEachOutcomeForPopoverDetails() {
+        var summary = RuleHUDChangeSummary()
+        summary.record(.hidden, windowIDs: [101])
+        summary.record(.restored, windowIDs: [102, 103])
+
+        guard let hiddenDescription = RuleHUDOutcome.hidden.singularWindowDescription,
+              let restoredFormat = RuleHUDOutcome.restored.pluralWindowFormat else {
+            return XCTFail("Expected localized descriptions for window outcomes")
+        }
+
+        XCTAssertEqual(
+            summary.localizedOutcomeDetails,
+            [hiddenDescription, String(format: restoredFormat, 2)]
+        )
+    }
+
     func testSpecificRuleBeforeAllAppsWinsForItsMatchingWindow() {
         let specificRule = makeRule(
             id: uuid(1),
@@ -103,6 +202,85 @@ final class RuleEvaluationEngineTests: XCTestCase {
         XCTAssertEqual(plans[0].ruleID, fallbackRule.id)
         XCTAssertEqual(plans[0].actions, [.show])
         XCTAssertEqual(plans[0].windowIDs, [101])
+    }
+
+    func testSourceSpaceUsesPrimaryAssignmentForWindowInMultipleSpaces() {
+        let rule = makeRule(
+            id: uuid(1),
+            appBundleID: "com.example.music",
+            groups: [
+                RuleGroup(
+                    targetSpaceIDs: [],
+                    actions: [ActionItem(.restore)],
+                    usesSourceSpace: true
+                )
+            ],
+            elseActions: [
+                ActionItem(.ifCondition(.windowMinimized)),
+                ActionItem(.hide),
+                ActionItem(.endIf)
+            ]
+        )
+        let application = makeApplication(
+            bundleIdentifier: "com.example.music",
+            windows: [
+                makeWindow(
+                    id: 101,
+                    spaces: ["source", "destination"],
+                    primarySpace: "source",
+                    minimized: true
+                )
+            ]
+        )
+
+        let destinationPlan = RuleEvaluationEngine.plans(
+            for: application,
+            rules: [rule],
+            currentSpaceID: "destination"
+        ).first
+        let sourcePlan = RuleEvaluationEngine.plans(
+            for: application,
+            rules: [rule],
+            currentSpaceID: "source"
+        ).first
+
+        XCTAssertEqual(destinationPlan?.actions, [.hide])
+        XCTAssertEqual(sourcePlan?.actions, [.restore])
+    }
+
+    func testManagedSourceSpaceOverridesWindowServerMembershipWhenRestoring() {
+        let rule = makeRule(
+            id: uuid(1),
+            appBundleID: "com.example.music",
+            groups: [
+                RuleGroup(
+                    targetSpaceIDs: [],
+                    actions: [ActionItem(.restore)],
+                    usesSourceSpace: true
+                )
+            ],
+            elseActions: [ActionItem(.hide)]
+        )
+        let application = makeApplication(
+            bundleIdentifier: "com.example.music",
+            windows: [
+                makeWindow(
+                    id: 101,
+                    spaces: ["source", "destination"],
+                    primarySpace: "destination"
+                )
+            ],
+            managedAppHideSourceSpaceIDs: ["source"]
+        )
+
+        let plan = RuleEvaluationEngine.plans(
+            for: application,
+            rules: [rule],
+            currentSpaceID: "source"
+        ).first
+
+        XCTAssertEqual(plan?.actions, [.restore])
+        XCTAssertEqual(plan?.windowIDs, [101])
     }
 
     func testGroupMismatchFallsThroughToLaterRule() {
@@ -347,6 +525,7 @@ final class RuleEvaluationEngineTests: XCTestCase {
     private func makeWindow(
         id: Int,
         spaces: Set<String> = ["source"],
+        primarySpace: String? = nil,
         minimized: Bool? = false,
         hidden: Bool? = false,
         fullscreen: Bool? = false,
@@ -355,6 +534,7 @@ final class RuleEvaluationEngineTests: XCTestCase {
         RuleWindowSnapshot(
             id: id,
             spaceIDs: spaces,
+            primarySpaceID: primarySpace ?? (spaces.count == 1 ? spaces.first : nil),
             isMinimized: minimized,
             isHidden: hidden,
             isFullscreen: fullscreen,

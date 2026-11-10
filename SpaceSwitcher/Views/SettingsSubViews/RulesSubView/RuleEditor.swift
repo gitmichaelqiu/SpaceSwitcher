@@ -116,6 +116,7 @@ struct RuleEditor: View {
                 )
             }
             .buttonStyle(.bordered)
+            .labelStyle(.iconOnly)
             .controlSize(.small)
             .help("Definitions")
             .popover(isPresented: $showingLegend, arrowEdge: .top) {
@@ -854,7 +855,7 @@ struct ActionListRows: View {
                 VStack(spacing: 0) {
                     ActionRowContent(
                         index: context.index,
-                        item: actionBinding(for: item),
+                        item: actionBinding(for: item.action),
                         onDelete: { removeAction(id: item.action.id) }
                     )
                     .padding(.horizontal, SettingsComponentMetrics.listRowHorizontalPadding)
@@ -865,7 +866,17 @@ struct ActionListRows: View {
                 }
             },
             dragPreview: { item in
-                actionDragPreview(for: item.action)
+                if case .ifCondition(_) = item.action.value,
+                   let index = actions.firstIndex(where: { $0.id == item.action.id }),
+                   let blockRange = conditionBlockRange(containing: index) {
+                    VStack(spacing: 0) {
+                        ForEach(Array(actions[blockRange])) { action in
+                            actionDragPreview(for: action)
+                        }
+                    }
+                } else {
+                    actionDragPreview(for: item.action)
+                }
             },
             moveBefore: { sourceID, targetID in
                 moveAction(sourceID: sourceID, before: targetID)
@@ -876,13 +887,13 @@ struct ActionListRows: View {
         )
     }
 
-    private func actionBinding(for item: ReorderableActionItem) -> Binding<ActionItem> {
+    private func actionBinding(for item: ActionItem) -> Binding<ActionItem> {
         Binding(
             get: {
-                actions.first(where: { $0.id == item.action.id }) ?? item.action
+                actions.first(where: { $0.id == item.id }) ?? item
             },
             set: { updatedItem in
-                guard let index = actions.firstIndex(where: { $0.id == item.action.id }) else { return }
+                guard let index = actions.firstIndex(where: { $0.id == item.id }) else { return }
                 actions[index] = updatedItem
             }
         )
@@ -903,11 +914,16 @@ struct ActionListRows: View {
         guard let sourceUUID = UUID(uuidString: sourceID),
               let targetUUID = UUID(uuidString: targetID),
               let sourceIndex = actions.firstIndex(where: { $0.id == sourceUUID }),
-              actions.contains(where: { $0.id == targetUUID }) else { return false }
+              let targetIndex = actions.firstIndex(where: { $0.id == targetUUID }) else { return false }
 
-        let sourceRange = conditionBlockRange(containing: sourceIndex)
-            ?? sourceIndex...sourceIndex
-        guard !sourceRange.contains(where: { actions[$0].id == targetUUID }) else {
+        guard sourceIndex != targetIndex else { return false }
+
+        let sourceRange = actionMoveRange(containing: sourceIndex)
+        guard !sourceRange.contains(targetIndex) else { return false }
+
+        if case .endIf = actions[sourceIndex].value,
+           let blockRange = conditionBlockRange(containing: sourceIndex),
+           targetIndex <= blockRange.lowerBound {
             return false
         }
 
@@ -924,8 +940,7 @@ struct ActionListRows: View {
         guard let sourceUUID = UUID(uuidString: sourceID),
               let sourceIndex = actions.firstIndex(where: { $0.id == sourceUUID }) else { return }
 
-        let sourceRange = conditionBlockRange(containing: sourceIndex)
-            ?? sourceIndex...sourceIndex
+        let sourceRange = actionMoveRange(containing: sourceIndex)
         guard sourceRange.upperBound < actions.endIndex else { return }
 
         withAnimation(.easeInOut(duration: 0.2)) {
@@ -933,6 +948,15 @@ struct ActionListRows: View {
             actions.removeSubrange(sourceRange)
             actions.append(contentsOf: movedActions)
         }
+    }
+
+    private func actionMoveRange(containing index: Int) -> ClosedRange<Int> {
+        // Dragging the opener carries its block; all other action rows move alone.
+        if case .ifCondition(_) = actions[index].value,
+           let blockRange = conditionBlockRange(containing: index) {
+            return blockRange
+        }
+        return index...index
     }
 
     private func conditionBlockRange(containing index: Int) -> ClosedRange<Int>? {

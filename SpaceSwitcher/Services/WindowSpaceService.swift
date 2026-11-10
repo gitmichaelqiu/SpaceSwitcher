@@ -25,10 +25,54 @@ struct RuleWindowTarget {
     let applicationPID: Int32
     let accessibilityElement: AXUIElement
     let spaceIDs: Set<String>
+    /// WindowServer's first reported membership. This is a live fallback for
+    /// source matching; RuleManager's remembered hide source takes precedence.
+    let primarySpaceID: String?
     let isMinimized: Bool?
     let isHidden: Bool?
     let isFullscreen: Bool?
     let isFrontmost: Bool
+}
+
+nonisolated struct DockRestartWindowStateSnapshot {
+    nonisolated static let accessibilityScanBudget: TimeInterval = 1.0
+
+    struct Application {
+        struct Window {
+            let wasHidden: Bool
+            let wasMinimized: Bool
+            let accessibilityElement: AXUIElement
+        }
+
+        let processIdentifier: pid_t
+        let wasHidden: Bool
+        let windows: [Window]
+    }
+
+    let accessibilityAvailable: Bool
+    let applications: [Application]
+    let failedApplicationQueries: Int
+    let accessibilityBudgetExhausted: Bool
+
+    nonisolated var minimizedWindowCount: Int {
+        applications.reduce(0) { count, application in
+            count + application.windows.filter(\.wasMinimized).count
+        }
+    }
+
+    nonisolated var hiddenWindowCount: Int {
+        applications.reduce(0) { count, application in
+            count + application.windows.filter(\.wasHidden).count
+        }
+    }
+}
+
+nonisolated struct DockRestartWindowStateRestoreResult {
+    var applicationsRehidden = 0
+    var windowsRehidden = 0
+    var windowsReminimized = 0
+    var failedRestorations = 0
+    var accessibilityBudgetExhausted = false
 }
 
 enum WindowSpaceService {
@@ -53,11 +97,13 @@ enum WindowSpaceService {
                 return nil
             }
 
+            let managedSpaceIDs = orderedCurrentSpaceIDs(for: Int(windowID))
             return RuleWindowTarget(
                 id: Int(windowID),
                 applicationPID: application.processIdentifier,
                 accessibilityElement: window,
-                spaceIDs: currentSpaceIDs(for: Int(windowID)),
+                spaceIDs: Set(managedSpaceIDs),
+                primarySpaceID: managedSpaceIDs.first,
                 isMinimized: minimizedState(for: window),
                 isHidden: hiddenState(for: window),
                 isFullscreen: fullscreenState(for: window),
@@ -66,7 +112,260 @@ enum WindowSpaceService {
         }
     }
 
-    static func currentSpaceIDs(for windowID: Int) -> Set<String> {
+    /// Captures only hidden apps, hidden windows, and minimized windows so a
+    /// Dock restart can restore visibility states that macOS may otherwise clear.
+    nonisolated static func captureDockRestartWindowState() -> DockRestartWindowStateSnapshot {
+        let accessibilityAvailable = isAccessibilityTrusted
+        let accessibilityDeadline = ProcessInfo.processInfo.systemUptime
+            + DockRestartWindowStateSnapshot.accessibilityScanBudget
+        let ownPID = ProcessInfo.processInfo.processIdentifier
+        var failedApplicationQueries = 0
+        var accessibilityBudgetExhausted = false
+        var applications: [DockRestartWindowStateSnapshot.Application] = []
+        for application in NSWorkspace.shared.runningApplications {
+            guard application.processIdentifier != ownPID,
+                  application.bundleIdentifier != "com.apple.dock",
+                  application.activationPolicy != .prohibited else {
+                continue
+            }
+
+            let wasHidden = application.isHidden
+            var windows: [DockRestartWindowStateSnapshot.Application.Window] = []
+            if accessibilityAvailable {
+                if let capturedStates = windowStates(
+                    for: application.processIdentifier,
+                    captureHiddenWindows: !wasHidden,
+                    before: accessibilityDeadline,
+                    budgetExhausted: &accessibilityBudgetExhausted
+                ) {
+                    windows = capturedStates
+                } else if !accessibilityBudgetExhausted {
+                    failedApplicationQueries += 1
+                }
+            }
+
+            if wasHidden || !windows.isEmpty {
+                applications.append(DockRestartWindowStateSnapshot.Application(
+                    processIdentifier: application.processIdentifier,
+                    wasHidden: wasHidden,
+                    windows: windows
+                ))
+            }
+
+            if accessibilityBudgetExhausted {
+                break
+            }
+        }
+
+        return DockRestartWindowStateSnapshot(
+            accessibilityAvailable: accessibilityAvailable,
+            applications: applications,
+            failedApplicationQueries: failedApplicationQueries,
+            accessibilityBudgetExhausted: accessibilityBudgetExhausted
+        )
+    }
+
+    /// Reapplies previously minimized windows before hiding their apps again.
+    /// This intentionally does not unhide apps or windows that were visible in
+    /// the snapshot, so it cannot bring another app to the foreground.
+    nonisolated static func restoreDockRestartWindowState(
+        _ snapshot: DockRestartWindowStateSnapshot
+    ) -> DockRestartWindowStateRestoreResult {
+        var result = DockRestartWindowStateRestoreResult()
+        let canRestoreWindowStates = snapshot.accessibilityAvailable && isAccessibilityTrusted
+        let accessibilityDeadline = ProcessInfo.processInfo.systemUptime
+            + DockRestartWindowStateSnapshot.accessibilityScanBudget
+
+        for applicationState in snapshot.applications {
+            guard let application = NSRunningApplication(
+                processIdentifier: applicationState.processIdentifier
+            ) else {
+                continue
+            }
+
+            if canRestoreWindowStates, !result.accessibilityBudgetExhausted {
+                for windowState in applicationState.windows {
+                    let window = windowState.accessibilityElement
+
+                    if windowState.wasMinimized {
+                        let isMinimized = readState(
+                            for: window,
+                            attribute: kAXMinimizedAttribute as CFString,
+                            before: accessibilityDeadline,
+                            budgetExhausted: &result.accessibilityBudgetExhausted
+                        )
+                        if result.accessibilityBudgetExhausted { break }
+
+                        if isMinimized != true {
+                            guard let success = restoreState(
+                                for: window,
+                                attribute: kAXMinimizedAttribute as CFString,
+                                before: accessibilityDeadline,
+                                budgetExhausted: &result.accessibilityBudgetExhausted
+                            ) else {
+                                break
+                            }
+                            if success {
+                                result.windowsReminimized += 1
+                            } else {
+                                result.failedRestorations += 1
+                            }
+                        }
+                    }
+
+                    if result.accessibilityBudgetExhausted { break }
+
+                    if windowState.wasHidden {
+                        let isHidden = readState(
+                            for: window,
+                            attribute: kAXHiddenAttribute as CFString,
+                            before: accessibilityDeadline,
+                            budgetExhausted: &result.accessibilityBudgetExhausted
+                        )
+                        if result.accessibilityBudgetExhausted { break }
+
+                        if isHidden != true {
+                            guard let success = restoreState(
+                                for: window,
+                                attribute: kAXHiddenAttribute as CFString,
+                                before: accessibilityDeadline,
+                                budgetExhausted: &result.accessibilityBudgetExhausted
+                            ) else {
+                                break
+                            }
+                            if success {
+                                result.windowsRehidden += 1
+                            } else {
+                                result.failedRestorations += 1
+                            }
+                        }
+                    }
+                }
+            }
+
+            if applicationState.wasHidden, !application.isHidden {
+                if application.hide() {
+                    result.applicationsRehidden += 1
+                } else {
+                    result.failedRestorations += 1
+                }
+            }
+        }
+
+        return result
+    }
+
+    nonisolated private static func windowStates(
+        for processIdentifier: pid_t,
+        captureHiddenWindows: Bool,
+        before deadline: TimeInterval,
+        budgetExhausted: inout Bool
+    ) -> [DockRestartWindowStateSnapshot.Application.Window]? {
+        let applicationElement = AXUIElementCreateApplication(processIdentifier)
+        guard setAccessibilityMessagingTimeout(on: applicationElement, before: deadline) else {
+            budgetExhausted = true
+            return nil
+        }
+        var windowsReference: CFTypeRef?
+        let windowsError = AXUIElementCopyAttributeValue(
+            applicationElement,
+            kAXWindowsAttribute as CFString,
+            &windowsReference
+        )
+        if ProcessInfo.processInfo.systemUptime >= deadline {
+            budgetExhausted = true
+        }
+        guard windowsError == .success,
+              let windows = windowsReference as? [AXUIElement] else {
+            return nil
+        }
+
+        var capturedWindows: [DockRestartWindowStateSnapshot.Application.Window] = []
+        for window in windows {
+            let wasMinimized = readState(
+                for: window,
+                attribute: kAXMinimizedAttribute as CFString,
+                before: deadline,
+                budgetExhausted: &budgetExhausted
+            ) == true
+            if budgetExhausted { break }
+
+            let wasHidden = captureHiddenWindows && readState(
+                for: window,
+                attribute: kAXHiddenAttribute as CFString,
+                before: deadline,
+                budgetExhausted: &budgetExhausted
+            ) == true
+            if budgetExhausted { break }
+
+            if wasMinimized || wasHidden {
+                capturedWindows.append(DockRestartWindowStateSnapshot.Application.Window(
+                    wasHidden: wasHidden,
+                    wasMinimized: wasMinimized,
+                    accessibilityElement: window
+                ))
+            }
+        }
+        return capturedWindows
+    }
+
+    nonisolated private static func setAccessibilityMessagingTimeout(
+        on element: AXUIElement,
+        before deadline: TimeInterval
+    ) -> Bool {
+        let remainingTime = deadline - ProcessInfo.processInfo.systemUptime
+        guard remainingTime > 0.001 else { return false }
+        return AXUIElementSetMessagingTimeout(element, Float(min(0.25, remainingTime))) == .success
+    }
+
+    nonisolated private static func readState(
+        for window: AXUIElement,
+        attribute: CFString,
+        before deadline: TimeInterval,
+        budgetExhausted: inout Bool
+    ) -> Bool? {
+        guard setAccessibilityMessagingTimeout(on: window, before: deadline) else {
+            budgetExhausted = true
+            return nil
+        }
+        let value = readBooleanAttribute(for: window, attribute: attribute)
+        if ProcessInfo.processInfo.systemUptime >= deadline {
+            budgetExhausted = true
+        }
+        return value
+    }
+
+    nonisolated private static func restoreState(
+        for window: AXUIElement,
+        attribute: CFString,
+        before deadline: TimeInterval,
+        budgetExhausted: inout Bool
+    ) -> Bool? {
+        guard setAccessibilityMessagingTimeout(on: window, before: deadline) else {
+            budgetExhausted = true
+            return nil
+        }
+        let error = AXUIElementSetAttributeValue(window, attribute, kCFBooleanTrue)
+        if ProcessInfo.processInfo.systemUptime >= deadline {
+            budgetExhausted = true
+        }
+        return error == .success
+    }
+
+    nonisolated private static func readBooleanAttribute(
+        for element: AXUIElement,
+        attribute: CFString
+    ) -> Bool? {
+        var value: CFTypeRef?
+        guard AXUIElementCopyAttributeValue(element, attribute, &value) == .success else {
+            return nil
+        }
+        if let value = value as? Bool { return value }
+        if let value = value as? NSNumber { return value.boolValue }
+        return nil
+    }
+
+    private static func orderedCurrentSpaceIDs(for windowID: Int) -> [String] {
         guard windowID > 0 else { return [] }
 
         let windowArray = [NSNumber(value: windowID)] as CFArray
@@ -79,64 +378,19 @@ enum WindowSpaceService {
             return []
         }
 
-        return Set(spaceIDs.map { String($0.intValue) })
+        return spaceIDs.map { String($0.intValue) }
     }
 
-    private static func minimizedState(for window: AXUIElement) -> Bool? {
-        var value: CFTypeRef?
-        guard AXUIElementCopyAttributeValue(
-            window,
-            kAXMinimizedAttribute as CFString,
-            &value
-        ) == .success else {
-            return nil
-        }
-
-        if let value = value as? Bool {
-            return value
-        }
-        if let value = value as? NSNumber {
-            return value.boolValue
-        }
-        return nil
+    nonisolated private static func minimizedState(for window: AXUIElement) -> Bool? {
+        readBooleanAttribute(for: window, attribute: kAXMinimizedAttribute as CFString)
     }
 
-    private static func hiddenState(for window: AXUIElement) -> Bool? {
-        var value: CFTypeRef?
-        guard AXUIElementCopyAttributeValue(
-            window,
-            kAXHiddenAttribute as CFString,
-            &value
-        ) == .success else {
-            return nil
-        }
-
-        if let value = value as? Bool {
-            return value
-        }
-        if let value = value as? NSNumber {
-            return value.boolValue
-        }
-        return nil
+    nonisolated private static func hiddenState(for window: AXUIElement) -> Bool? {
+        readBooleanAttribute(for: window, attribute: kAXHiddenAttribute as CFString)
     }
 
     private static func fullscreenState(for window: AXUIElement) -> Bool? {
-        var value: CFTypeRef?
-        guard AXUIElementCopyAttributeValue(
-            window,
-            "AXFullScreen" as CFString,
-            &value
-        ) == .success else {
-            return nil
-        }
-
-        if let value = value as? Bool {
-            return value
-        }
-        if let value = value as? NSNumber {
-            return value.boolValue
-        }
-        return nil
+        readBooleanAttribute(for: window, attribute: "AXFullScreen" as CFString)
     }
 
     private static func focusedWindowID() -> Int? {
@@ -198,7 +452,7 @@ enum WindowSpaceService {
         AXUIElementPerformAction(target.accessibilityElement, kAXRaiseAction as CFString) == .success
     }
 
-    private static var isAccessibilityTrusted: Bool {
+    nonisolated private static var isAccessibilityTrusted: Bool {
         AXIsProcessTrustedWithOptions(nil)
     }
 }

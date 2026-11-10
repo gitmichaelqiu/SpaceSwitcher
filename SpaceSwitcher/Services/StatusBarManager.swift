@@ -2,9 +2,29 @@ import Foundation
 import AppKit
 import Combine // Import Combine
 
+@MainActor
+final class MenuBarIconSettings: ObservableObject {
+    static let hideMenuBarIconKey = "hideMenuBarIcon"
+    static let shared = MenuBarIconSettings()
+
+    @Published var isHidden: Bool {
+        didSet {
+            defaults.set(isHidden, forKey: Self.hideMenuBarIconKey)
+        }
+    }
+
+    private let defaults: UserDefaults
+
+    init(defaults: UserDefaults = .standard) {
+        self.defaults = defaults
+        self.isHidden = defaults.bool(forKey: Self.hideMenuBarIconKey)
+    }
+}
+
 class StatusBarManager: NSObject {
     private var statusBarItem: NSStatusItem!
     private weak var appDelegate: AppDelegate?
+    private let menuBarIconSettings = MenuBarIconSettings.shared
     
     // SpaceSwitcher specific dependencies
     private var spaceManager: SpaceManager?
@@ -28,6 +48,7 @@ class StatusBarManager: NSObject {
 
     private func setupStatusBar() {
         statusBarItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
+        statusBarItem.isVisible = !menuBarIconSettings.isHidden
 
         if let button = statusBarItem.button {
             button.image = NSImage(named: "StatusIcon")
@@ -38,6 +59,14 @@ class StatusBarManager: NSObject {
     }
     
     private func setupCombineObservation() {
+        menuBarIconSettings.$isHidden
+            .dropFirst()
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] isHidden in
+                self?.statusBarItem.isVisible = !isHidden
+            }
+            .store(in: &cancellables)
+
         // Monitor connection status
         spaceManager?.$availableSpaces
             .receive(on: DispatchQueue.main)
@@ -94,9 +123,17 @@ class StatusBarManager: NSObject {
         docksItem.image = NSImage(systemSymbolName: "dock.arrow.up.rectangle", accessibilityDescription: nil)
         menu.addItem(docksItem)
 
-        // 2.1 Manual Dock Switching (if automation is disabled)
-        if let dm = dockManager, !dm.config.isAutomationEnabled {
+        // Manual selection is a temporary override while automation remains enabled.
+        if let dm = dockManager, !dm.config.dockSets.isEmpty {
             menu.addItem(NSMenuItem.separator())
+
+            let switchDockHeader = NSMenuItem(
+                title: NSLocalizedString("Switch dock", comment: "Menu section for selecting a Dock set"),
+                action: nil,
+                keyEquivalent: ""
+            )
+            switchDockHeader.isEnabled = false
+            menu.addItem(switchDockHeader)
             
             for set in dm.config.dockSets {
                 let setItem = NSMenuItem(title: set.name,
@@ -110,6 +147,27 @@ class StatusBarManager: NSObject {
                 menu.addItem(setItem)
             }
         }
+
+        #if DEBUG
+        let debugItem = NSMenuItem(
+            title: NSLocalizedString("Debug", comment: "Debug-only menu"),
+            action: nil,
+            keyEquivalent: ""
+        )
+        let debugMenu = NSMenu()
+        let showHUDItem = NSMenuItem(
+            title: NSLocalizedString(
+                "Show HUD with multiple actions",
+                comment: "Debug-only HUD preview"
+            ),
+            action: #selector(showHUDWithMultipleActions),
+            keyEquivalent: ""
+        )
+        showHUDItem.target = self
+        debugMenu.addItem(showHUDItem)
+        debugItem.submenu = debugMenu
+        menu.addItem(debugItem)
+        #endif
 
         menu.addItem(NSMenuItem.separator())
 
@@ -149,6 +207,63 @@ class StatusBarManager: NSObject {
         // Manually apply the selected dock set
         dm.applyDockSetByID(setID)
     }
+
+    #if DEBUG
+    @objc private func showHUDWithMultipleActions() {
+        let hiddenSummary = String(
+            format: NSLocalizedString("%d hidden", comment: "HUD count of apps hidden"),
+            2
+        )
+        let restoredSummary = String(
+            format: NSLocalizedString("%d restored", comment: "HUD count of apps restored"),
+            1
+        )
+        let detailFormat = NSLocalizedString(
+            "%@: %@",
+            comment: "HUD detail with application and confirmed outcome"
+        )
+        let sampleActions = [
+            (
+                appName: "Music",
+                bundleIdentifier: "com.apple.Music",
+                outcome: NSLocalizedString("window hidden", comment: "HUD outcome")
+            ),
+            (
+                appName: "Mail",
+                bundleIdentifier: "com.apple.mail",
+                outcome: NSLocalizedString("2 windows hidden", comment: "HUD outcome")
+            ),
+            (
+                appName: "Calendar",
+                bundleIdentifier: "com.apple.iCal",
+                outcome: NSLocalizedString("window restored", comment: "HUD outcome")
+            )
+        ]
+        let actionDetails = sampleActions.map { action in
+            HUDActionDetail(
+                text: String(format: detailFormat, action.appName, action.outcome),
+                appIcon: installedApplicationIcon(bundleIdentifier: action.bundleIdentifier)
+            )
+        }
+
+        HUDWindowController.shared.show(
+            message: [hiddenSummary, restoredSummary].joined(separator: ", "),
+            style: .info,
+            appIcon: NSApp.applicationIconImage,
+            autoHide: false,
+            actionDetails: actionDetails
+        )
+    }
+
+    private func installedApplicationIcon(bundleIdentifier: String) -> NSImage? {
+        guard let applicationURL = NSWorkspace.shared.urlForApplication(
+            withBundleIdentifier: bundleIdentifier
+        ) else {
+            return nil
+        }
+        return NSWorkspace.shared.icon(forFile: applicationURL.path)
+    }
+    #endif
     
     deinit {
         cancellables.forEach { $0.cancel() }

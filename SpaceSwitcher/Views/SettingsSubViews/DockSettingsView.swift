@@ -82,7 +82,6 @@ struct DockSettingsView: View {
 
                             DockItemsListView(
                                 dockManager: dockManager,
-                                spaceManager: spaceManager,
                                 selectedSetID: selectedID,
                                 tiles: $dockManager.config.dockSets[index].tiles
                             )
@@ -190,7 +189,23 @@ private struct DockSetTabBar: View {
     }
 
     private var tabGroupID: String {
-        dockManager.config.dockSets.map { $0.id.uuidString }.joined(separator: ":")
+        dockManager.config.dockSets.map { $0.id.uuidString }.sorted().joined(separator: ":")
+    }
+
+    private var selectedSetIndex: Int? {
+        guard let selectedSetID else { return nil }
+        return dockManager.config.dockSets.firstIndex { $0.id == selectedSetID }
+    }
+
+    private func moveSelectedSet(by offset: Int) {
+        guard let selectedSet,
+              let selectedSetIndex else {
+            return
+        }
+
+        withAnimation(.easeInOut(duration: 0.22)) {
+            dockManager.moveDockSet(selectedSet.id, to: selectedSetIndex + offset)
+        }
     }
 
     var body: some View {
@@ -247,6 +262,32 @@ private struct DockSetTabBar: View {
             .onPreferenceChange(DockSetViewportWidthKey.self) { width in
                 tabBarViewportWidth = width
                 tabBarOverflows = tabBarContentWidth > width + 0.5
+            }
+
+            if let selectedSetIndex, dockManager.config.dockSets.count > 1 {
+                Button {
+                    moveSelectedSet(by: -1)
+                } label: {
+                    SettingsIconControlLabel(systemName: "chevron.left")
+                }
+                .buttonStyle(.bordered)
+                .controlSize(.regular)
+                .settingsIconControlFrame()
+                .disabled(selectedSetIndex == 0)
+                .help("Move selected Dock set earlier")
+                .accessibilityLabel("Move selected Dock set earlier")
+
+                Button {
+                    moveSelectedSet(by: 1)
+                } label: {
+                    SettingsIconControlLabel(systemName: "chevron.right")
+                }
+                .buttonStyle(.bordered)
+                .controlSize(.regular)
+                .settingsIconControlFrame()
+                .disabled(selectedSetIndex == dockManager.config.dockSets.count - 1)
+                .help("Move selected Dock set later")
+                .accessibilityLabel("Move selected Dock set later")
             }
 
             Button(action: onCreate) {
@@ -471,7 +512,6 @@ private struct DockSpaceCard: View {
 // MARK: - Component 3: Dock Items List
 struct DockItemsListView: View {
     @ObservedObject var dockManager: DockManager
-    @ObservedObject var spaceManager: SpaceManager
     let selectedSetID: UUID
     @Binding var tiles: [DockTile]
 
@@ -483,7 +523,7 @@ struct DockItemsListView: View {
             accessory: {
                 HStack(spacing: 4) {
                     Button {
-                        forceApply()
+                        applySelectedSet()
                     } label: {
                         Text("Apply now")
                     }
@@ -604,9 +644,8 @@ struct DockItemsListView: View {
         }
     }
     
-    private func forceApply() {
-        guard let currentSpace = spaceManager.currentSpaceID else { return }
-        dockManager.applyDockForSpace(currentSpace, force: true)
+    private func applySelectedSet() {
+        dockManager.applyDockSetByID(selectedSetID)
     }
 
     private func removeTile(id: UUID) {
