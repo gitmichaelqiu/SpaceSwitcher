@@ -112,12 +112,12 @@ class DockManager: ObservableObject {
     }
     
     private func setupBindings() {
-        spaceManager?.$currentSpaceID
+        spaceManager?.$mainDisplaySpaceID
             .removeDuplicates()
             .sink { [weak self] spaceID in
                 guard let self = self, let spaceID = spaceID else { return }
                 if self.config.isAutomationEnabled {
-                    self.applyDockForSpace(spaceID)
+                    self.applyDockForMainDisplaySpace(spaceID)
                 }
             }
             .store(in: &cancellables)
@@ -165,9 +165,9 @@ class DockManager: ObservableObject {
     
     // MARK: - Application Logic
 
-    /// Applies the Dock set for a space after space changes have settled.
+    /// Applies the Dock set for the main display's Space after transitions settle.
     @MainActor
-    func applyDockForSpace(_ spaceID: String) {
+    func applyDockForMainDisplaySpace(_ spaceID: String) {
         dockTask?.cancel()
         dockSwitchGeneration &+= 1
         let requestGeneration = dockSwitchGeneration
@@ -221,7 +221,7 @@ class DockManager: ObservableObject {
             }
             guard canStartSwitch else { return }
 
-            logger.info(">>> STARTING SWITCH: '\(setName)' for Space \(spaceID)")
+            logger.info(">>> STARTING SWITCH: '\(setName)' for main display Space \(spaceID)")
             let success = await self.applyDockSetVerified(set, priority: .utility)
 
             let isCurrentRequest = await MainActor.run {
