@@ -976,16 +976,6 @@
         }
       }
     },
-    "Hide menu bar icon" : {
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "隐藏菜单栏图标"
-          }
-        }
-      }
-    },
     "Hide minimized windows outside source space" : {
       "comment" : "Rule preset title",
       "localizations" : {
@@ -1116,6 +1106,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "媒体套件"
+          }
+        }
+      }
+    },
+    "Menu Bar" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "菜单栏"
           }
         }
       }
@@ -1713,6 +1713,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "显示 HUD 提示"
+          }
+        }
+      }
+    },
+    "Show menu bar icon" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "显示菜单栏图标"
           }
         }
       }
