@@ -732,6 +732,16 @@
         }
       }
     },
+    "Dock set" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dock 组"
+          }
+        }
+      }
+    },
     "Dock switch failed: %@" : {
       "comment" : "HUD failure toast showing the requested Dock set",
       "localizations" : {
@@ -749,16 +759,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Dock 切换 HUD 提示"
-          }
-        }
-      }
-    },
-    "Dock set" : {
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Dock 组"
           }
         }
       }
@@ -976,16 +976,6 @@
         }
       }
     },
-    "Hide menu bar icon" : {
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "隐藏菜单栏图标"
-          }
-        }
-      }
-    },
     "Hide minimized windows outside source space" : {
       "comment" : "Rule preset title",
       "localizations" : {
@@ -1120,6 +1110,17 @@
         }
       }
     },
+    "Menu Bar" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "菜单栏"
+          }
+        }
+      }
+    },
     "Minimize" : {
       "comment" : "Action: Minimize Window",
       "localizations" : {
@@ -1158,6 +1159,26 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "更多应用"
+          }
+        }
+      }
+    },
+    "Move selected Dock set earlier" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "将选中的 Dock 组前移"
+          }
+        }
+      }
+    },
+    "Move selected Dock set later" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "将选中的 Dock 组后移"
           }
         }
       }
@@ -1697,6 +1718,16 @@
         }
       }
     },
+    "Show menu bar icon" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "显示菜单栏图标"
+          }
+        }
+      }
+    },
     "Small spacer" : {
       "comment" : "Dock spacer item name",
       "localizations" : {
@@ -1806,6 +1837,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "SpaceSwitcher 的网站"
+          }
+        }
+      }
+    },
+    "Switch dock" : {
+      "comment" : "Menu section for selecting a Dock set",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "切换 Dock"
           }
         }
       }

@@ -13,10 +13,25 @@ struct GeneralSettingsView: View {
             VStack(alignment: .leading, spacing: SettingsComponentMetrics.sectionSpacing) {
                 // 1. General
                 SettingsSection("General") {
-                    SettingsRow("Hide menu bar icon") {
-                        Toggle("", isOn: $menuBarIconSettings.isHidden)
+                    SettingsRow("Launch at login") {
+                        Toggle("", isOn: $launchAtLogin)
                             .labelsHidden()
                             .toggleStyle(.switch)
+                            .onChange(of: launchAtLogin) { value in
+                                LaunchManager.setEnabled(value)
+                            }
+                    }
+                }
+
+                // 2. Menu Bar
+                SettingsSection("Menu Bar") {
+                    SettingsRow("Show menu bar icon") {
+                        Toggle("", isOn: Binding(
+                            get: { !menuBarIconSettings.isHidden },
+                            set: { menuBarIconSettings.isHidden = !$0 }
+                        ))
+                        .labelsHidden()
+                        .toggleStyle(.switch)
                     }
 
                     Divider()
@@ -54,20 +69,9 @@ struct GeneralSettingsView: View {
                         }
                         .transition(.opacity)
                     }
-
-                    Divider()
-
-                    SettingsRow("Launch at login") {
-                        Toggle("", isOn: $launchAtLogin)
-                            .labelsHidden()
-                            .toggleStyle(.switch)
-                            .onChange(of: launchAtLogin) { value in
-                                LaunchManager.setEnabled(value)
-                            }
-                    }
                 }
                 
-                // 2. Updates - Standardized per macOSers bundle
+                // 3. Updates - Standardized per macOSers bundle
                 SettingsSection("Updates") {
                     SettingsRow("Automatically check for updates") {
                         Toggle("", isOn: $autoCheckUpdate)
