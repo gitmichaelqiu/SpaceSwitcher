@@ -114,6 +114,20 @@ class RuleManager: ObservableObject {
         self.applyRules(for: spaceID)
     }
 
+    /// Reapplies only window visibility actions after a Dock restart. This
+    /// keeps restored window state aligned with the current rule without
+    /// repeating shortcuts, activation, or other one-shot actions.
+    func reconcileVisibilityAfterDockRestart() async {
+        guard let spaceID = spaceManager?.ruleEvaluationSpaceID
+                ?? spaceManager?.currentSpaceID else {
+            return
+        }
+
+        debugLog("reconcile window visibility after Dock restart: space=\(spaceID)")
+        let task = applyRules(for: spaceID, visibilityOnly: true)
+        await task.value
+    }
+
     private func scheduleRulesRefresh() {
         rulesRefreshTask?.cancel()
         rulesRefreshTask = Task { [weak self] in
@@ -123,14 +137,19 @@ class RuleManager: ObservableObject {
         }
     }
 
-    private func applyRules(for spaceID: String, settlingDelay: UInt64 = 0) {
-        debugLog("apply start: space=\(spaceID), delay=\(settlingDelay / 1_000_000)ms, enabled=\(isAutomationEnabled)")
+    @discardableResult
+    private func applyRules(
+        for spaceID: String,
+        settlingDelay: UInt64 = 0,
+        visibilityOnly: Bool = false
+    ) -> Task<Void, Never> {
+        debugLog("apply start: space=\(spaceID), delay=\(settlingDelay / 1_000_000)ms, visibilityOnly=\(visibilityOnly), enabled=\(isAutomationEnabled)")
         enforcementTask?.cancel()
 
         // Capture the ordered list for this refresh. A later edit or reorder
         // cancels this task and schedules a new evaluation with the new order.
         let orderedRules = rules
-        enforcementTask = Task { [weak self] in
+        let task = Task { [weak self] in
             guard let self else { return }
             guard isAutomationEnabled else {
                 self.debugLog("apply skipped: automation disabled")
@@ -165,9 +184,12 @@ class RuleManager: ObservableObject {
                 )
                 let targetsByID = Dictionary(uniqueKeysWithValues: liveSnapshot.windows.map { ($0.id, $0) })
                 let plans = evaluationPlans.map { plan in
-                    RuleWindowPlan(
+                    let actions = visibilityOnly
+                        ? plan.actions.filter { self.isWindowVisibilityAction($0) }
+                        : plan.actions
+                    return RuleWindowPlan(
                         ruleID: plan.ruleID,
-                        actions: plan.actions,
+                        actions: actions,
                         windows: plan.windowIDs.compactMap { targetsByID[$0] }
                     )
                 }
@@ -312,6 +334,17 @@ class RuleManager: ObservableObject {
                     actionDetails: actionDetails
                 )
             }
+        }
+        enforcementTask = task
+        return task
+    }
+
+    private func isWindowVisibilityAction(_ action: WindowAction) -> Bool {
+        switch action {
+        case .hide, .show, .restore, .minimize:
+            return true
+        default:
+            return false
         }
     }
 

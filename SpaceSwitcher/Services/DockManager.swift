@@ -70,6 +70,7 @@ class DockManager: ObservableObject {
     private var dockTask: Task<Void, Never>?
     
     weak var spaceManager: SpaceManager? { didSet { setupBindings() } }
+    weak var ruleManager: RuleManager?
     private var cancellables = Set<AnyCancellable>()
     private let configKey = "SpaceSwitcherDockConfig"
     
@@ -331,6 +332,10 @@ class DockManager: ObservableObject {
             await performPhase2RestartDockAndVerify(set)
         }
         let success = await restartTask.value
+        // Dock restarts can change window visibility after the Space-change
+        // rule pass has already run. Reconcile visibility before releasing the
+        // gate so a queued Dock switch cannot race ahead of the rules.
+        await ruleManager?.reconcileVisibilityAfterDockRestart()
         if success {
             lastAppliedDockTiles = set.tiles
         }
@@ -431,10 +436,8 @@ class DockManager: ObservableObject {
             // 3. Re-write the plist and synchronize cfprefsd after the old
             //    Dock's shutdown flush, so the new Dock reads the requested set.
             let recentAppsKey = "recent-apps" as CFString
-            let runningBundleIdentifiers = await DockManager.runningDockAppBundleIdentifiers()
             let recentAppsUpdate = DockManager.removeRepresentedAppsFromRecentApps(
-                persistentApps: newAppData,
-                runningBundleIdentifiers: runningBundleIdentifiers
+                persistentApps: newAppData
             )
             do {
                 try DockManager.writePersistentAppsToDisk(
@@ -593,10 +596,8 @@ class DockManager: ObservableObject {
         attempt: Int,
         checkpoint: String
     ) async {
-        let runningBundleIdentifiers = await DockManager.runningDockAppBundleIdentifiers()
         guard let update = DockManager.removeRepresentedAppsFromRecentApps(
-            persistentApps: persistentApps,
-            runningBundleIdentifiers: runningBundleIdentifiers
+            persistentApps: persistentApps
         ) else {
             return
         }
@@ -662,20 +663,6 @@ class DockManager: ObservableObject {
             .map { $0.processIdentifier })
     }
 
-    @MainActor
-    private static func runningDockAppBundleIdentifiers() -> Set<String> {
-        let ownPID = ProcessInfo.processInfo.processIdentifier
-        return Set(NSWorkspace.shared.runningApplications.compactMap { application in
-            guard application.processIdentifier != ownPID,
-                  application.activationPolicy == .regular,
-                  application.bundleIdentifier != "com.apple.dock",
-                  let bundleIdentifier = application.bundleIdentifier else {
-                return nil
-            }
-            return bundleIdentifier.lowercased()
-        })
-    }
-
     /// Reads persistent-apps directly from the Dock plist file, bypassing cfprefsd.
     /// Used for verification after Dock restart when cfprefsd XPC connections
     /// may be broken (producing "Connection interrupted" errors).
@@ -714,12 +701,10 @@ class DockManager: ObservableObject {
         try newData.write(to: URL(fileURLWithPath: path), options: .atomic)
     }
 
-    /// Removes recent app tiles already represented by pinned or running apps.
-    /// macOS should omit pinned apps; running apps also have live Dock tiles.
+    /// Removes recent app tiles already represented by pinned apps.
     /// A Dock restart can leave stale duplicates in recent-apps.
     nonisolated static private func removeRepresentedAppsFromRecentApps(
-        persistentApps: [Any],
-        runningBundleIdentifiers: Set<String>
+        persistentApps: [Any]
     ) -> (apps: [Any], removedCount: Int)? {
         let path = NSHomeDirectory() + "/Library/Preferences/com.apple.dock.plist"
         guard let data = try? Data(contentsOf: URL(fileURLWithPath: path)),
@@ -738,11 +723,8 @@ class DockManager: ObservableObject {
             return nil
         }
 
-        var pinnedIdentities = Set(
+        let pinnedIdentities = Set(
             persistentApps.flatMap { dockApplicationIdentityKeys(in: $0) }
-        )
-        pinnedIdentities.formUnion(
-            runningBundleIdentifiers.map { "bundle:\($0)" }
         )
         guard !pinnedIdentities.isEmpty else { return nil }
 
