@@ -1110,17 +1110,6 @@
         }
       }
     },
-    "Menu Bar" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "菜单栏"
-          }
-        }
-      }
-    },
     "Minimize" : {
       "comment" : "Action: Minimize Window",
       "localizations" : {
