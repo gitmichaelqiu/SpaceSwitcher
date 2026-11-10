@@ -32,6 +32,7 @@
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				Info.plist,
+				"Resources/Sparkle/SpaceSwitcher10-9.delta",
 			);
 			target = 4626DBF72ECDF2730061E05F /* SpaceSwitcher */;
 		};
