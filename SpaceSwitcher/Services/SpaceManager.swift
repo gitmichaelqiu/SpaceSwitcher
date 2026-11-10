@@ -55,6 +55,56 @@ enum RuleSpaceTransitionDetector {
     }
 }
 
+enum MainDisplaySpaceResolver {
+    static func resolve(
+        spaces: [SpaceInfo],
+        visibleSpaceIDs: Set<String>?,
+        activeSpaceID: String?,
+        mainDisplayID: String?,
+        connectedDisplayCount: Int
+    ) -> String? {
+        if let visibleSpaceIDs,
+           let visibleMainSpace = spaces.first(where: {
+               visibleSpaceIDs.contains($0.id)
+                   && isMainDisplay(
+                       $0.displayID,
+                       mainDisplayID: mainDisplayID,
+                       connectedDisplayCount: connectedDisplayCount
+                   )
+           }) {
+            return visibleMainSpace.id
+        }
+
+        guard let activeSpaceID else { return nil }
+        if let activeSpace = spaces.first(where: { $0.id == activeSpaceID }),
+           isMainDisplay(
+               activeSpace.displayID,
+               mainDisplayID: mainDisplayID,
+               connectedDisplayCount: connectedDisplayCount
+           ) {
+            return activeSpace.id
+        }
+
+        // Older SpaceAPI snapshots may omit display metadata. Falling back to
+        // the active Space is safe only when there is a single connected display.
+        return connectedDisplayCount == 1 ? activeSpaceID : nil
+    }
+
+    private static func isMainDisplay(
+        _ displayID: String,
+        mainDisplayID: String?,
+        connectedDisplayCount: Int
+    ) -> Bool {
+        if let mainDisplayID,
+           displayID.caseInsensitiveCompare(mainDisplayID) == .orderedSame {
+            return true
+        }
+
+        return connectedDisplayCount == 1
+            && displayID.caseInsensitiveCompare("Main") == .orderedSame
+    }
+}
+
 final class SpaceManager: ObservableObject {
     // DesktopRenamer changed its application bundle identifier. Keep the
     // legacy identifier for users who still have the older release installed.
@@ -74,6 +124,8 @@ final class SpaceManager: ObservableObject {
     private let networkQueue = DispatchQueue.main
 
     @Published var currentSpaceID: String?
+    /// The currently visible Space on the primary display, independent of which display has focus.
+    @Published private(set) var mainDisplaySpaceID: String?
     /// The active-display space captured at the last actual visible-space transition.
     /// Unlike `currentSpaceID`, this does not change when focus moves between displays.
     @Published private(set) var ruleEvaluationSpaceID: String?
@@ -768,12 +820,20 @@ final class SpaceManager: ObservableObject {
             from: currentVisibleSpaceIDs,
             to: nextVisibleSpaceIDs
         )
+        let nextMainDisplaySpaceID = MainDisplaySpaceResolver.resolve(
+            spaces: spaces,
+            visibleSpaceIDs: nextVisibleSpaceIDs,
+            activeSpaceID: nextCurrentSpaceID,
+            mainDisplayID: mainDisplayIdentifier(),
+            connectedDisplayCount: NSScreen.screens.count
+        )
 
         currentSpaceID = nextCurrentSpaceID
         currentSpaceName = snapshot["currentSpaceName"] as? String ?? "Unknown"
         availableSpaces = spaces
         isAPIEnabled = true
         apiAvailability = .available
+        mainDisplaySpaceID = nextMainDisplaySpaceID
 
         if visibleSpacesChanged {
             currentVisibleSpaceIDs = nextVisibleSpaceIDs
@@ -827,11 +887,22 @@ final class SpaceManager: ObservableObject {
               !structuredAPIAvailable,
               let info = notification.userInfo else { return }
 
-        currentSpaceID = info["spaceUUID"] as? String
+        let activeSpaceID = info["spaceUUID"] as? String
+        currentSpaceID = activeSpaceID
         ruleEvaluationSpaceID = currentSpaceID
         currentSpaceName = info["spaceName"] as? String ?? "Unknown"
         isAPIEnabled = true
         apiAvailability = .available
+
+        if let mainSpaceID = MainDisplaySpaceResolver.resolve(
+            spaces: availableSpaces,
+            visibleSpaceIDs: nil,
+            activeSpaceID: activeSpaceID,
+            mainDisplayID: mainDisplayIdentifier(),
+            connectedDisplayCount: NSScreen.screens.count
+        ) {
+            mainDisplaySpaceID = mainSpaceID
+        }
     }
 
     private func handleLegacySpaceList(_ notification: Notification) {
@@ -856,6 +927,16 @@ final class SpaceManager: ObservableObject {
                 displayName: displayName(for: displayID)
             )
         }.sorted { $0.number < $1.number }
+
+        if let mainSpaceID = MainDisplaySpaceResolver.resolve(
+            spaces: availableSpaces,
+            visibleSpaceIDs: nil,
+            activeSpaceID: currentSpaceID,
+            mainDisplayID: mainDisplayIdentifier(),
+            connectedDisplayCount: NSScreen.screens.count
+        ) {
+            mainDisplaySpaceID = mainSpaceID
+        }
         isAPIEnabled = true
         apiAvailability = .available
     }
@@ -885,6 +966,23 @@ final class SpaceManager: ObservableObject {
         return displayID
     }
 
+    private func mainDisplayIdentifier() -> String? {
+        let screens = NSScreen.screens
+        let mainScreen = screens.first(where: {
+            $0.frame.origin.x == 0 && $0.frame.origin.y == 0
+        }) ?? screens.first
+
+        guard let screenNumber = mainScreen?.deviceDescription[
+            NSDeviceDescriptionKey("NSScreenNumber")
+        ] as? NSNumber,
+        let uuid = CGDisplayCreateUUIDFromDisplayID(screenNumber.uint32Value)?.takeRetainedValue(),
+        let uuidString = CFUUIDCreateString(nil, uuid) as String? else {
+            return nil
+        }
+
+        return uuidString.uppercased()
+    }
+
     private func setDisconnected(as availability: SpaceAPIAvailability = .unavailable) {
         structuredAPIAvailable = false
         structuredProbeInFlight = false
@@ -899,6 +997,7 @@ final class SpaceManager: ObservableObject {
         availableSpaces.removeAll()
         currentSpaceName = "Disconnected"
         currentSpaceID = nil
+        mainDisplaySpaceID = nil
         ruleEvaluationSpaceID = nil
         currentVisibleSpaceIDs.removeAll()
     }
