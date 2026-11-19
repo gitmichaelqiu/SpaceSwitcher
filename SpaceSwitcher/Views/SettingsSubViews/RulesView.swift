@@ -9,6 +9,7 @@ struct RulesView: View {
     
     @State private var presentedRuleSheet: RuleSheet?
     @State private var rulePendingDeletion: AppRule?
+    @State private var showingImportPicker = false
     @State private var showingTransferError = false
     @State private var transferErrorMessage = ""
 
@@ -202,9 +203,17 @@ struct RulesView: View {
     }
 
     private var importRulesButton: some View {
-        Button("Import", systemImage: "square.and.arrow.down", action: importRules)
+        Button("Import", systemImage: "square.and.arrow.down") {
+            showingImportPicker = true
+        }
             .buttonStyle(.bordered)
             .controlSize(.small)
+            .fileImporter(
+                isPresented: $showingImportPicker,
+                allowedContentTypes: [.json],
+                allowsMultipleSelection: false,
+                onCompletion: handleImportSelection
+            )
     }
 
     private var reorderableRules: [ReorderableRule] {
@@ -269,23 +278,25 @@ struct RulesView: View {
         }
     }
 
-    private func importRules() {
-        let panel = NSOpenPanel()
-        panel.title = NSLocalizedString("Import Rules", comment: "Title of the import rules file panel")
-        panel.allowedContentTypes = [.json]
-        panel.canChooseFiles = true
-        panel.canChooseDirectories = false
-        panel.allowsMultipleSelection = false
-        panel.begin { response in
-            guard response == .OK, let url = panel.url else { return }
+    private func handleImportSelection(_ result: Result<[URL], Error>) {
+        switch result {
+        case .success(let urls):
+            guard let url = urls.first else { return }
+            let didStartAccessing = url.startAccessingSecurityScopedResource()
+            defer {
+                if didStartAccessing {
+                    url.stopAccessingSecurityScopedResource()
+                }
+            }
+
             do {
                 let importedRules = try RuleTransferService.decode(Data(contentsOf: url))
-                DispatchQueue.main.async {
-                    presentedRuleSheet = .importOptions(importedRules)
-                }
+                presentedRuleSheet = .importOptions(importedRules)
             } catch {
                 showTransferError(error)
             }
+        case .failure(let error):
+            showTransferError(error)
         }
     }
 
@@ -346,7 +357,7 @@ private struct ImportRulesOptionsView: View {
                 optionButton(
                     "Add Rules for New Apps",
                     description: "Add rules only for apps that don't already have rules.",
-                    systemImage: "app.badge.plus",
+                    systemImage: "plus.circle",
                     strategy: .addNewApps
                 )
                 optionButton(
