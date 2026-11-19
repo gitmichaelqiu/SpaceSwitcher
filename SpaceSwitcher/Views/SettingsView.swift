@@ -1,7 +1,7 @@
 import SwiftUI
 
 enum SettingsTab: String, CaseIterable, Identifiable, Hashable {
-    case general, rules, dock, permissions, about
+    case general, rules, hotkeys, dock, permissions, about
 
     var id: String { rawValue }
 
@@ -9,6 +9,7 @@ enum SettingsTab: String, CaseIterable, Identifiable, Hashable {
         switch self {
         case .general: "General"
         case .rules: "Rules"
+        case .hotkeys: "Hotkeys"
         case .dock: "Docks"
         case .permissions: "Permissions"
         case .about: "About"
@@ -19,6 +20,7 @@ enum SettingsTab: String, CaseIterable, Identifiable, Hashable {
         switch self {
         case .general: "gearshape"
         case .rules: "list.bullet.below.rectangle"
+        case .hotkeys: "keyboard"
         case .dock: "dock.arrow.up.rectangle"
         case .permissions: "lock.shield"
         case .about: "info.circle"
@@ -36,6 +38,7 @@ let titleHeaderHeight: CGFloat = 48
 struct SettingsView: View {
     @ObservedObject var spaceManager: SpaceManager
     @ObservedObject var ruleManager: RuleManager
+    @ObservedObject var contextualHotkeyManager: ContextualHotkeyManager
     @ObservedObject var dockManager: DockManager
 
     @StateObject private var navigationState = SettingsNavigationState()
@@ -46,11 +49,13 @@ struct SettingsView: View {
     init(
         spaceManager: SpaceManager,
         ruleManager: RuleManager,
+        contextualHotkeyManager: ContextualHotkeyManager,
         dockManager: DockManager,
         selectedTab: SettingsTab = .general
     ) {
         self.spaceManager = spaceManager
         self.ruleManager = ruleManager
+        self.contextualHotkeyManager = contextualHotkeyManager
         self.dockManager = dockManager
         _selectedTab = State(initialValue: selectedTab)
     }
@@ -71,6 +76,11 @@ struct SettingsView: View {
                         .environment(\.settingsTab, .general)
                     RulesView(ruleManager: ruleManager, spaceManager: spaceManager)
                         .environment(\.settingsTab, .rules)
+                    HotkeysView(
+                        hotkeyManager: contextualHotkeyManager,
+                        spaceManager: spaceManager
+                    )
+                    .environment(\.settingsTab, .hotkeys)
                     DockSettingsView(dockManager: dockManager, spaceManager: spaceManager)
                         .environment(\.settingsTab, .dock)
                     PermissionsSettingsView(spaceManager: spaceManager)
@@ -271,6 +281,11 @@ struct SettingsView: View {
                     GeneralSettingsView()
                 case .rules:
                     RulesView(ruleManager: ruleManager, spaceManager: spaceManager)
+                case .hotkeys:
+                    HotkeysView(
+                        hotkeyManager: contextualHotkeyManager,
+                        spaceManager: spaceManager
+                    )
                 case .dock:
                     DockSettingsView(dockManager: dockManager, spaceManager: spaceManager)
                 case .permissions:
@@ -305,12 +320,14 @@ class SettingsHostingController: NSHostingController<SettingsView> {
     init(
         spaceManager: SpaceManager,
         ruleManager: RuleManager,
+        contextualHotkeyManager: ContextualHotkeyManager,
         dockManager: DockManager,
         startTab: SettingsTab? = nil
     ) {
         let rootView = SettingsView(
             spaceManager: spaceManager,
             ruleManager: ruleManager,
+            contextualHotkeyManager: contextualHotkeyManager,
             dockManager: dockManager,
             selectedTab: startTab ?? .general
         )

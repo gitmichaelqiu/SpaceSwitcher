@@ -2210,6 +2210,648 @@
         }
       }
     }
+,
+    "Do nothing" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "不执行操作"
+          }
+        }
+      }
+    },
+    "Open or activate app" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "打开或激活应用"
+          }
+        }
+      }
+    },
+    "Activate only if running" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "仅在运行时激活"
+          }
+        }
+      }
+    },
+    "No shortcut set" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "尚未设置快捷键"
+          }
+        }
+      }
+    },
+    "%@ Copy" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ 副本"
+          }
+        }
+      }
+    },
+    "%@ %d" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ %d"
+          }
+        }
+      }
+    },
+    "Enter a name for this hotkey." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "请输入此快捷键的名称。"
+          }
+        }
+      }
+    },
+    "Record a shortcut before enabling this hotkey." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "请先录制快捷键，再启用此配置。"
+          }
+        }
+      }
+    },
+    "Include at least one modifier key, such as Command or Option." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "请至少使用一个修饰键，例如 Command 或 Option。"
+          }
+        }
+      }
+    },
+    "This shortcut is already used by %@. Choose another." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "此快捷键已由 %@ 使用。请选择其他快捷键。"
+          }
+        }
+      }
+    },
+    "Choose at least one action for a Space or Other Spaces." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "请为某个空间或“其他空间”至少选择一个操作。"
+          }
+        }
+      }
+    },
+    "Choose an application for each app action." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "请为每个应用操作选择一个应用。"
+          }
+        }
+      }
+    },
+    "Assign different actions to the same shortcut in different Spaces." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "为同一个快捷键在不同空间中指定不同操作。"
+          }
+        }
+      }
+    },
+    "Contextual Hotkeys" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "上下文快捷键"
+          }
+        }
+      }
+    },
+    "Enable contextual hotkeys" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "启用上下文快捷键"
+          }
+        }
+      }
+    },
+    "This setting is independent of automatic Rules. Uses the current Space on the active display." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "此设置独立于自动规则，并使用当前活动显示器上的空间。"
+          }
+        }
+      }
+    },
+    "DesktopRenamer SpaceAPI is unavailable. Hotkeys are temporarily inactive." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "DesktopRenamer SpaceAPI 当前不可用。快捷键暂时停用。"
+          }
+        }
+      }
+    },
+    "My Hotkeys" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "我的快捷键"
+          }
+        }
+      }
+    },
+    "Each shortcut runs the action assigned to the current Space." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "每个快捷键都会执行分配给当前空间的操作。"
+          }
+        }
+      }
+    },
+    "Add Hotkey" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "添加快捷键"
+          }
+        }
+      }
+    },
+    "%lld Spaces" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld 个空间"
+          }
+        }
+      }
+    },
+    "No contextual hotkeys yet" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "尚无上下文快捷键"
+          }
+        }
+      }
+    },
+    "For example, use Option–Command–O to open a different app in each Space." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "例如，使用 Option–Command–O 在不同空间中打开不同应用。"
+          }
+        }
+      }
+    },
+    "This shortcut could not be registered. It may be unavailable." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "无法注册此快捷键，它可能不可用。"
+          }
+        }
+      }
+    },
+    "Delete hotkey?" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "删除快捷键？"
+          }
+        }
+      }
+    },
+    "Delete Hotkey" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "删除快捷键"
+          }
+        }
+      }
+    },
+    "This removes the contextual hotkey and all of its Space actions." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "这会删除此上下文快捷键及其所有空间操作。"
+          }
+        }
+      }
+    },
+    "Configure Contextual Hotkey" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "配置上下文快捷键"
+          }
+        }
+      }
+    },
+    "Choose one action for each assigned Space. Your Mac will stay on its current Space while you edit." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "为每个已分配的空间选择一个操作。编辑期间，Mac 会停留在当前空间。"
+          }
+        }
+      }
+    },
+    "Enable this hotkey" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "启用此快捷键"
+          }
+        }
+      }
+    },
+    "Save Hotkey" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "保存快捷键"
+          }
+        }
+      }
+    },
+    "Shortcut" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "快捷键"
+          }
+        }
+      }
+    },
+    "Hotkey name" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "快捷键名称"
+          }
+        }
+      }
+    },
+    "Press Shortcut…" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "按下快捷键…"
+          }
+        }
+      }
+    },
+    "Esc cancels" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "按 Esc 取消"
+          }
+        }
+      }
+    },
+    "Use at least one modifier key, such as Command or Option. Escape cancels recording." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "请至少使用一个修饰键，例如 Command 或 Option。按 Escape 取消录制。"
+          }
+        }
+      }
+    },
+    "Clear" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "清除"
+          }
+        }
+      }
+    },
+    "Space Actions" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "空间操作"
+          }
+        }
+      }
+    },
+    "Uses the current Space on the active display." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "使用当前活动显示器上的空间。"
+          }
+        }
+      }
+    },
+    "Unavailable Spaces" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "不可用的空间"
+          }
+        }
+      }
+    },
+    "Unavailable Space (%@)" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "不可用的空间（%@）"
+          }
+        }
+      }
+    },
+    "This Space is currently unavailable. Its mapping is preserved." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "此空间目前不可用。其映射会保留。"
+          }
+        }
+      }
+    },
+    "Add Spaces" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "添加空间"
+          }
+        }
+      }
+    },
+    "Add Space" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "添加空间"
+          }
+        }
+      }
+    },
+    "Fallback for known Spaces without an assigned action." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "用于未分配操作的已知空间。"
+          }
+        }
+      }
+    },
+    "Runs only when the current Space has no assigned action." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "仅当当前空间没有分配操作时运行。"
+          }
+        }
+      }
+    },
+    "Remove Space mapping" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "移除空间映射"
+          }
+        }
+      }
+    },
+    "Action" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "操作"
+          }
+        }
+      }
+    },
+    "Search Spaces" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "搜索空间"
+          }
+        }
+      }
+    },
+    "No Spaces found" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "未找到空间"
+          }
+        }
+      }
+    },
+    "Try a different search." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "请尝试其他搜索词。"
+          }
+        }
+      }
+    },
+    "No running applications" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "没有正在运行的应用"
+          }
+        }
+      }
+    },
+    "Choose from Applications…" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "从“应用程序”中选取…"
+          }
+        }
+      }
+    },
+    "Choose App…" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "选择应用…"
+          }
+        }
+      }
+    },
+    "Application unavailable — choose a replacement." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "应用不可用，请选择替代应用。"
+          }
+        }
+      }
+    },
+    "Choose an application for this action" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "为此操作选择一个应用"
+          }
+        }
+      }
+    },
+    "Record Shortcut" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "录制快捷键"
+          }
+        }
+      }
+    },
+    "Enable %@" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "启用 %@"
+          }
+        }
+      }
+    },
+    "Hotkey actions" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "快捷键操作"
+          }
+        }
+      }
+    }
+,
+    "Edit Hotkey" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "编辑快捷键"
+          }
+        }
+      }
+    },
+    "Duplicate" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "复制"
+          }
+        }
+      }
+    },
+    "Other Spaces" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "其他空间"
+          }
+        }
+      }
+    },
+    "Hotkeys" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "快捷键"
+          }
+        }
+      }
+    },
+    "Open Workspace App" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "打开工作区应用"
+          }
+        }
+      }
+    }
   },
   "version" : "1.1"
 }
