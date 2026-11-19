@@ -44,4 +44,73 @@ final class RuleTransferServiceTests: XCTestCase {
     func testDecodeRejectsInvalidJSON() {
         XCTAssertThrowsError(try RuleTransferService.decode(Data("not json".utf8)))
     }
+
+    func testReplaceAllUsesOnlyImportedRules() {
+        let current = makeRule(bundleIdentifier: "com.example.current")
+        let imported = makeRule(bundleIdentifier: "com.example.imported")
+
+        let result = RuleTransferService.applying(
+            [imported],
+            to: [current],
+            strategy: .replaceAll
+        )
+
+        XCTAssertEqual(result.map(\.id), [imported.id])
+    }
+
+    func testKeepAllAppendsImportedRulesEvenWhenAppAlreadyExists() {
+        let current = makeRule(bundleIdentifier: "com.example.editor")
+        let imported = makeRule(bundleIdentifier: "com.example.editor")
+
+        let result = RuleTransferService.applying(
+            [imported],
+            to: [current],
+            strategy: .keepAll
+        )
+
+        XCTAssertEqual(result.map(\.appBundleID), [current.appBundleID, imported.appBundleID])
+        XCTAssertNotEqual(result[0].id, result[1].id)
+    }
+
+    func testAddNewAppsSkipsApplicationsThatAlreadyHaveRules() {
+        let current = makeRule(bundleIdentifier: "com.example.editor")
+        let duplicateApp = makeRule(bundleIdentifier: "COM.EXAMPLE.EDITOR")
+        let newApp = makeRule(bundleIdentifier: "com.example.browser")
+
+        let result = RuleTransferService.applying(
+            [duplicateApp, newApp],
+            to: [current],
+            strategy: .addNewApps
+        )
+
+        XCTAssertEqual(result.map(\.appBundleID), [current.appBundleID, newApp.appBundleID])
+    }
+
+    func testReplaceMatchingAppsReplacesTheirRulesAndPreservesOtherOrder() {
+        let currentEditor = makeRule(bundleIdentifier: "com.example.editor")
+        let currentBrowser = makeRule(bundleIdentifier: "com.example.browser")
+        let secondCurrentEditor = makeRule(bundleIdentifier: "com.example.editor")
+        let importedEditor = makeRule(bundleIdentifier: "com.example.editor")
+        let secondImportedEditor = makeRule(bundleIdentifier: "com.example.editor")
+
+        let result = RuleTransferService.applying(
+            [importedEditor, secondImportedEditor],
+            to: [currentEditor, currentBrowser, secondCurrentEditor],
+            strategy: .replaceMatchingApps
+        )
+
+        XCTAssertEqual(
+            result.map(\.id),
+            [importedEditor.id, secondImportedEditor.id, currentBrowser.id]
+        )
+    }
+
+    private func makeRule(bundleIdentifier: String) -> AppRule {
+        AppRule(
+            appBundleID: bundleIdentifier,
+            appName: bundleIdentifier,
+            groups: [],
+            elseActions: []
+        )
+    }
 }

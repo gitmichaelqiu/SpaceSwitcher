@@ -285,6 +285,16 @@
         }
       }
     },
+    "Add New Apps" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "仅添加新应用"
+          }
+        }
+      }
+    },
     "Add new rule" : {
       "localizations" : {
         "zh-Hans" : {
@@ -558,6 +568,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "从应用程序中选择…"
+          }
+        }
+      }
+    },
+    "Choose how to import rules" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "选择导入规则的方式"
           }
         }
       }
@@ -915,6 +935,27 @@
         }
       }
     },
+    "Export" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "导出"
+          }
+        }
+      }
+    },
+    "Export Rules" : {
+      "comment" : "Title of the export rules file panel",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "导出规则"
+          }
+        }
+      }
+    },
     "Forcefully unhide and unminimize the application, regardless of its previous state." : {
       "localizations" : {
         "zh-Hans" : {
@@ -1025,6 +1066,27 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "如果 %@"
+          }
+        }
+      }
+    },
+    "Import" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "导入"
+          }
+        }
+      }
+    },
+    "Import Rules" : {
+      "comment" : "Title of the import rules file panel",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "导入规则"
           }
         }
       }
@@ -1308,6 +1370,26 @@
         }
       }
     },
+    "Keep All Rules" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "保留所有规则"
+          }
+        }
+      }
+    },
+    "Keep All Rules appends every imported rule, including rules for apps that already have rules. Add New Apps skips apps with existing rules. Replace Rules for Matching Apps replaces rules for imported apps. Replace All Rules replaces everything." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "保留所有规则会追加每一条导入规则，包括已有规则的应用。仅添加新应用会跳过已有规则的应用。替换匹配应用的规则会替换导入文件中这些应用的规则。替换所有规则会替换全部现有规则。"
+          }
+        }
+      }
+    },
     "Quit" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -1421,6 +1503,26 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "移除工作流组？"
+          }
+        }
+      }
+    },
+    "Replace All Rules" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "替换所有规则"
+          }
+        }
+      }
+    },
+    "Replace Rules for Matching Apps" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "替换匹配应用的规则"
           }
         }
       }
@@ -1544,6 +1646,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "规则 HUD 提示"
+          }
+        }
+      }
+    },
+    "Rule transfer failed" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "规则传输失败"
           }
         }
       }
@@ -1890,6 +2002,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "命名和组织桌面空间的必备工具。"
+          }
+        }
+      }
+    },
+    "The selected JSON file does not contain any rules." : {
+      "comment" : "Error shown when importing an empty rules file",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "所选 JSON 文件不包含任何规则。"
           }
         }
       }

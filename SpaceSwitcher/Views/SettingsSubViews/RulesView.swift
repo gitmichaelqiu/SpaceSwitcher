@@ -10,7 +10,7 @@ struct RulesView: View {
     @State private var presentedRuleSheet: RuleSheet?
     @State private var rulePendingDeletion: AppRule?
     @State private var pendingImportedRules: [AppRule]?
-    @State private var showingImportConfirmation = false
+    @State private var showingImportOptions = false
     @State private var showingTransferError = false
     @State private var transferErrorMessage = ""
 
@@ -199,24 +199,27 @@ struct RulesView: View {
             .buttonStyle(.bordered)
             .controlSize(.small)
             .confirmationDialog(
-                "Replace current rules?",
-                isPresented: $showingImportConfirmation,
+                "Choose how to import rules",
+                isPresented: $showingImportOptions,
                 titleVisibility: .visible
             ) {
-                Button("Replace Rules", role: .destructive) {
-                    guard let pendingImportedRules else { return }
-                    withAnimation {
-                        ruleManager.rules = pendingImportedRules
-                    }
-                    self.pendingImportedRules = nil
+                Button("Replace All Rules", role: .destructive) {
+                    applyImportedRules(using: .replaceAll)
+                }
+                Button("Keep All Rules") {
+                    applyImportedRules(using: .keepAll)
+                }
+                Button("Add New Apps") {
+                    applyImportedRules(using: .addNewApps)
+                }
+                Button("Replace Rules for Matching Apps", role: .destructive) {
+                    applyImportedRules(using: .replaceMatchingApps)
                 }
                 Button("Cancel", role: .cancel) {
-                    pendingImportedRules = nil
+                    cancelImport()
                 }
             } message: {
-                if let pendingImportedRules {
-                    Text("Importing \(pendingImportedRules.count) rules will replace all \(ruleManager.rules.count) current rules.")
-                }
+                Text("Keep All Rules appends every imported rule, including rules for apps that already have rules. Add New Apps skips apps with existing rules. Replace Rules for Matching Apps replaces rules for imported apps. Replace All Rules replaces everything.")
             }
     }
 
@@ -295,12 +298,28 @@ struct RulesView: View {
                 let importedRules = try RuleTransferService.decode(Data(contentsOf: url))
                 DispatchQueue.main.async {
                     pendingImportedRules = importedRules
-                    showingImportConfirmation = true
+                    showingImportOptions = true
                 }
             } catch {
                 showTransferError(error)
             }
         }
+    }
+
+    private func applyImportedRules(using strategy: RuleImportStrategy) {
+        guard let pendingImportedRules else { return }
+        withAnimation {
+            ruleManager.rules = RuleTransferService.applying(
+                pendingImportedRules,
+                to: ruleManager.rules,
+                strategy: strategy
+            )
+        }
+        self.pendingImportedRules = nil
+    }
+
+    private func cancelImport() {
+        pendingImportedRules = nil
     }
 
     private func showTransferError(_ error: Error) {
