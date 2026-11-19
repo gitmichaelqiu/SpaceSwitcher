@@ -10,6 +10,7 @@ struct RuleEditor: View {
     @State private var runningApps: [(name: String, id: String, icon: NSImage)] = []
     @State private var showingLegend = false
     @State private var showingApplicationPicker = false
+    @State private var isApplicationPickerHovered = false
     @State private var groupPendingDeletion: UUID?
     @State private var presetPendingApplication: RulePreset?
     @State private var showingPresetConfirmation = false
@@ -88,10 +89,10 @@ struct RuleEditor: View {
     // MARK: - Components
     
     private var appSelectorHeader: some View {
-        HStack(alignment: .center, spacing: 16) {
+        HStack(alignment: .center, spacing: 12) {
             applicationPicker
 
-            Spacer()
+            Spacer(minLength: 16)
 
             Menu {
                 ForEach(RulePreset.allCases) { preset in
@@ -103,6 +104,9 @@ struct RuleEditor: View {
                 }
             } label: {
                 Label("Presets", systemImage: "wand.and.stars")
+                    .padding(.horizontal, 10)
+                    .frame(height: 32)
+                    .background(.quaternary.opacity(0.35), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
             }
             .menuStyle(.borderlessButton)
             .help("Presets")
@@ -115,11 +119,17 @@ struct RuleEditor: View {
                     systemImage: "info.circle"
                 )
             }
-            .buttonStyle(.bordered)
+            .buttonStyle(.plain)
             .labelStyle(.iconOnly)
-            .controlSize(.small)
+            .foregroundStyle(.secondary)
+            .frame(width: 32, height: 32)
+            .background(.quaternary.opacity(0.35), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
             .help("Definitions")
-            .popover(isPresented: $showingLegend, arrowEdge: .top) {
+            .popover(
+                isPresented: $showingLegend,
+                attachmentAnchor: .point(.bottom),
+                arrowEdge: .top
+            ) {
                 actionDefinitionsPopover
             }
         }
@@ -136,9 +146,27 @@ struct RuleEditor: View {
         }
         .buttonStyle(.plain)
         .foregroundStyle(.primary)
-        .frame(width: 300, alignment: .leading)
-        .fixedSize(horizontal: false, vertical: true)
-        .popover(isPresented: $showingApplicationPicker, arrowEdge: .top) {
+        .padding(.horizontal, 8)
+        .padding(.vertical, 6)
+        .background(
+            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                .fill(
+                    isApplicationPickerHovered || showingApplicationPicker
+                        ? Color(nsColor: .selectedContentBackgroundColor).opacity(0.16)
+                        : Color(nsColor: .controlBackgroundColor)
+                )
+        )
+        .overlay {
+            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                .strokeBorder(Color(nsColor: .separatorColor).opacity(0.25), lineWidth: 1)
+        }
+        .contentShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+        .onHover { isApplicationPickerHovered = $0 }
+        .popover(
+            isPresented: $showingApplicationPicker,
+            attachmentAnchor: .point(.bottom),
+            arrowEdge: .top
+        ) {
             runningApplicationsPopover
         }
         .onChange(of: showingApplicationPicker) { isPresented in
@@ -171,6 +199,12 @@ struct RuleEditor: View {
                                 .lineLimit(1)
 
                             Spacer(minLength: 0)
+
+                            if workingRule.appliesToAllApps {
+                                Image(systemName: "checkmark")
+                                    .font(.caption.weight(.semibold))
+                                    .foregroundStyle(.tint)
+                            }
                         }
                     }
 
@@ -203,6 +237,12 @@ struct RuleEditor: View {
                                     .lineLimit(1)
 
                                 Spacer(minLength: 0)
+
+                                if !workingRule.appliesToAllApps && workingRule.appBundleID == app.id {
+                                    Image(systemName: "checkmark")
+                                        .font(.caption.weight(.semibold))
+                                        .foregroundStyle(.tint)
+                                }
                             }
                         }
                     }
@@ -234,6 +274,8 @@ struct RuleEditor: View {
                     .font(.headline)
                     .foregroundStyle(.primary)
                     .lineLimit(1)
+                    .truncationMode(.middle)
+                    .frame(maxWidth: 220, alignment: .leading)
                 if workingRule.appliesToAllApps {
                     Text("Every application")
                         .font(.caption)
@@ -242,8 +284,8 @@ struct RuleEditor: View {
             }
 
             Image(systemName: "chevron.down")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(.secondary)
         }
         .contentShape(Rectangle())
         .accessibilityElement(children: .combine)
@@ -287,7 +329,7 @@ struct RuleEditor: View {
     
     private var editorContent: some View {
         ScrollView(.vertical) {
-            VStack(alignment: .leading, spacing: SettingsComponentMetrics.sectionSpacing) {
+            VStack(alignment: .leading, spacing: 16) {
                 ForEach($workingRule.groups) { $group in
                     let index = workingRule.groups.firstIndex(where: { $0.id == group.id }) ?? 0
                     SettingsSection(
@@ -367,20 +409,34 @@ struct RuleEditor: View {
     }
     
     private var footerView: some View {
-        HStack(spacing: 12) {
-            Button("Cancel", action: onCancel)
-                .controlSize(.large)
-                .keyboardShortcut(.escape, modifiers: [])
-            
-            Spacer()
-            
-            Button("Save rule") {
-                onSave(workingRule)
+        VStack(spacing: 8) {
+            if let validationMessage {
+                Label {
+                    Text(validationMessage)
+                        .fixedSize(horizontal: false, vertical: true)
+                } icon: {
+                    Image(systemName: "exclamationmark.triangle.fill")
+                }
+                .font(.caption)
+                .foregroundStyle(.orange)
+                .frame(maxWidth: .infinity, alignment: .leading)
             }
-            .buttonStyle(.borderedProminent)
-            .controlSize(.large)
-            .disabled(validationMessage != nil)
-            .keyboardShortcut(.return, modifiers: [])
+
+            HStack(spacing: 12) {
+                Button("Cancel", action: onCancel)
+                    .controlSize(.large)
+                    .keyboardShortcut(.escape, modifiers: [])
+
+                Spacer()
+
+                Button("Save rule") {
+                    onSave(workingRule)
+                }
+                .buttonStyle(.borderedProminent)
+                .controlSize(.large)
+                .disabled(validationMessage != nil)
+                .keyboardShortcut(.return, modifiers: [])
+            }
         }
         .padding(.horizontal, 20)
         .padding(.vertical, 12)
@@ -1106,7 +1162,7 @@ struct ActionRowContent: View {
                 case .globalHotkey(let code, let mods):
                     HStack(spacing: 8) {
                         Label("System shortcut", systemImage: "globe")
-                            .font(.subheadline)
+                            .font(.body)
 
                         ModifierMenu(modifiers: mods) { newModifiers in
                             item.value = .globalHotkey(keyCode: code, modifiers: newModifiers)
@@ -1120,7 +1176,7 @@ struct ActionRowContent: View {
                 case .hotkey(let code, let mods, _, _):
                     HStack(spacing: 8) {
                         Label("App shortcut", systemImage: "app")
-                            .font(.subheadline)
+                            .font(.body)
                         
                         Button(action: startRecording) {
                             if isRecording {
