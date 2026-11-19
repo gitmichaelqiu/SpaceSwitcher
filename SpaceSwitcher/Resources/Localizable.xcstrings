@@ -975,17 +975,6 @@
         }
       }
     },
-    "Export Rules" : {
-      "comment" : "Title of the export rules file panel",
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "导出规则"
-          }
-        }
-      }
-    },
     "Forcefully unhide and unminimize the application, regardless of its previous state." : {
       "localizations" : {
         "zh-Hans" : {
@@ -1106,17 +1095,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "导入"
-          }
-        }
-      }
-    },
-    "Import Rules" : {
-      "comment" : "Title of the import rules file panel",
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "导入规则"
           }
         }
       }

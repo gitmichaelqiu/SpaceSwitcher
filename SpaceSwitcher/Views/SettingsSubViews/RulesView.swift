@@ -10,6 +10,8 @@ struct RulesView: View {
     @State private var presentedRuleSheet: RuleSheet?
     @State private var rulePendingDeletion: AppRule?
     @State private var showingImportPicker = false
+    @State private var showingExportPicker = false
+    @State private var exportDocument: RuleExportDocument?
     @State private var showingTransferError = false
     @State private var transferErrorMessage = ""
 
@@ -148,6 +150,13 @@ struct RulesView: View {
                     .buttonStyle(.bordered)
                     .controlSize(.small)
                     .disabled(ruleManager.rules.isEmpty)
+                    .fileExporter(
+                        isPresented: $showingExportPicker,
+                        document: exportDocument,
+                        contentType: .json,
+                        defaultFilename: "SpaceSwitcher-Rules.json",
+                        onCompletion: handleExportCompletion
+                    )
             }
 
             if ruleManager.rules.isEmpty {
@@ -260,20 +269,19 @@ struct RulesView: View {
     private func exportRules() {
         do {
             let data = try RuleTransferService.encode(ruleManager.rules)
-            let panel = NSSavePanel()
-            panel.title = NSLocalizedString("Export Rules", comment: "Title of the export rules file panel")
-            panel.nameFieldStringValue = "SpaceSwitcher-Rules.json"
-            panel.allowedContentTypes = [.json]
-            panel.canCreateDirectories = true
-            panel.begin { response in
-                guard response == .OK, let url = panel.url else { return }
-                do {
-                    try data.write(to: url, options: .atomic)
-                } catch {
-                    showTransferError(error)
-                }
-            }
+            exportDocument = RuleExportDocument(data: data)
+            showingExportPicker = true
         } catch {
+            showTransferError(error)
+        }
+    }
+
+    private func handleExportCompletion(_ result: Result<URL, Error>) {
+        if case .failure(let error) = result {
+            let nsError = error as NSError
+            guard !(error is CancellationError)
+                    && !(nsError.domain == NSCocoaErrorDomain && nsError.code == NSUserCancelledError)
+            else { return }
             showTransferError(error)
         }
     }
@@ -329,6 +337,27 @@ struct RulesView: View {
             bundleIdentifier: rule.appBundleID,
             storedName: rule.appName
         )
+    }
+}
+
+private struct RuleExportDocument: FileDocument {
+    static var readableContentTypes: [UTType] { [.json] }
+
+    let data: Data
+
+    init(data: Data) {
+        self.data = data
+    }
+
+    init(configuration: ReadConfiguration) throws {
+        guard let data = configuration.file.regularFileContents else {
+            throw CocoaError(.fileReadCorruptFile)
+        }
+        self.data = data
+    }
+
+    func fileWrapper(configuration: WriteConfiguration) throws -> FileWrapper {
+        FileWrapper(regularFileWithContents: data)
     }
 }
 
