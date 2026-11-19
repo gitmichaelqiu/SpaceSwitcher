@@ -295,6 +295,26 @@
         }
       }
     },
+    "Add Rules for New Apps" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "仅为新应用添加规则"
+          }
+        }
+      }
+    },
+    "Add rules only for apps that don't already have rules." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "仅为尚未配置规则的应用添加规则。"
+          }
+        }
+      }
+    },
     "Add small spacer" : {
       "localizations" : {
         "zh-Hans" : {
@@ -397,6 +417,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "应用已显示"
+          }
+        }
+      }
+    },
+    "Append every imported rule, even for apps that already have rules." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "追加每一条导入规则，即使应用已有规则。"
           }
         }
       }
@@ -558,6 +588,26 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "从应用程序中选择…"
+          }
+        }
+      }
+    },
+    "Choose how to import rules" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "选择导入规则的方式"
+          }
+        }
+      }
+    },
+    "Choose how imported rules should interact with your current rules." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "选择导入规则与现有规则的处理方式。"
           }
         }
       }
@@ -915,6 +965,16 @@
         }
       }
     },
+    "Export" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "导出"
+          }
+        }
+      }
+    },
     "Forcefully unhide and unminimize the application, regardless of its previous state." : {
       "localizations" : {
         "zh-Hans" : {
@@ -1029,6 +1089,16 @@
         }
       }
     },
+    "Import" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "导入"
+          }
+        }
+      }
+    },
     "Install DesktopRenamer" : {
       "localizations" : {
         "zh-Hans" : {
@@ -1045,6 +1115,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "智能反转。只有当 SpaceSwitcher 之前隐藏了该应用程序时，才会取消隐藏/取消最小化。"
+          }
+        }
+      }
+    },
+    "Keep All Rules" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "保留所有规则"
           }
         }
       }
@@ -1425,6 +1505,46 @@
         }
       }
     },
+    "Replace all current rules with the imported rules." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "用导入的规则替换所有现有规则。"
+          }
+        }
+      }
+    },
+    "Replace All Rules" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "替换所有规则"
+          }
+        }
+      }
+    },
+    "Replace Rules for Matching Apps" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "替换匹配应用的规则"
+          }
+        }
+      }
+    },
+    "Replace rules for imported apps and keep rules for other apps." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "替换导入文件中应用的规则，并保留其他应用的规则。"
+          }
+        }
+      }
+    },
     "Replace with current Dock items" : {
       "localizations" : {
         "zh-Hans" : {
@@ -1544,6 +1664,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "规则 HUD 提示"
+          }
+        }
+      }
+    },
+    "Rule transfer failed" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "规则传输失败"
           }
         }
       }
@@ -1890,6 +2020,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "命名和组织桌面空间的必备工具。"
+          }
+        }
+      }
+    },
+    "The selected JSON file does not contain any rules." : {
+      "comment" : "Error shown when importing an empty rules file",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "所选 JSON 文件不包含任何规则。"
           }
         }
       }

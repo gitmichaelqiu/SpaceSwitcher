@@ -1,4 +1,6 @@
 import SwiftUI
+import AppKit
+import UniformTypeIdentifiers
 
 struct RulesView: View {
     @ObservedObject var ruleManager: RuleManager
@@ -7,15 +9,22 @@ struct RulesView: View {
     
     @State private var presentedRuleSheet: RuleSheet?
     @State private var rulePendingDeletion: AppRule?
+    @State private var showingImportPicker = false
+    @State private var showingExportPicker = false
+    @State private var exportDocument: RuleExportDocument?
+    @State private var showingTransferError = false
+    @State private var transferErrorMessage = ""
 
     private enum RuleSheet: Identifiable {
         case add(AppRule)
         case edit(AppRule)
+        case importOptions([AppRule])
 
         var id: String {
             switch self {
             case .add(let rule): return "add-\(rule.id.uuidString)"
             case .edit(let rule): return "edit-\(rule.id.uuidString)"
+            case .importOptions: return "import-options"
             }
         }
     }
@@ -69,6 +78,13 @@ struct RulesView: View {
                     },
                     onCancel: { presentedRuleSheet = nil }
                 )
+            case .importOptions(let importedRules):
+                ImportRulesOptionsView(
+                    onImport: { strategy in
+                        applyImportedRules(importedRules, using: strategy)
+                    },
+                    onCancel: { presentedRuleSheet = nil }
+                )
             }
         }
         .confirmationDialog(
@@ -94,6 +110,11 @@ struct RulesView: View {
         } message: {
             Text("This removes the rule for \(pendingDeletionApplicationName).")
         }
+        .alert("Rule transfer failed", isPresented: $showingTransferError) {
+            Button("OK", role: .cancel) { }
+        } message: {
+            Text(transferErrorMessage)
+        }
     }
 
     private var automationSection: some View {
@@ -115,10 +136,28 @@ struct RulesView: View {
 
     private var perAppAutomationSection: some View {
         VStack(alignment: .leading, spacing: SettingsComponentMetrics.sectionSpacing) {
-            SettingsSectionTitle(
-                "Per-App Automation",
-                helperText: "Rules are evaluated from top to bottom. The first matching rule wins."
-            )
+            HStack(spacing: 8) {
+                SettingsSectionTitle(
+                    "Per-App Automation",
+                    helperText: "Rules are evaluated from top to bottom. The first matching rule wins."
+                )
+
+                Spacer(minLength: 12)
+
+                importRulesButton
+
+                Button("Export", systemImage: "square.and.arrow.up", action: exportRules)
+                    .buttonStyle(.bordered)
+                    .controlSize(.small)
+                    .disabled(ruleManager.rules.isEmpty)
+                    .fileExporter(
+                        isPresented: $showingExportPicker,
+                        document: exportDocument,
+                        contentType: .json,
+                        defaultFilename: "SpaceSwitcher-Rules.json",
+                        onCompletion: handleExportCompletion
+                    )
+            }
 
             if ruleManager.rules.isEmpty {
                 SettingsSection {
@@ -172,6 +211,20 @@ struct RulesView: View {
         }
     }
 
+    private var importRulesButton: some View {
+        Button("Import", systemImage: "square.and.arrow.down") {
+            showingImportPicker = true
+        }
+            .buttonStyle(.bordered)
+            .controlSize(.small)
+            .fileImporter(
+                isPresented: $showingImportPicker,
+                allowedContentTypes: [.json],
+                allowsMultipleSelection: false,
+                onCompletion: handleImportSelection
+            )
+    }
+
     private var reorderableRules: [ReorderableRule] {
         ruleManager.rules.map(ReorderableRule.init)
     }
@@ -213,6 +266,67 @@ struct RulesView: View {
         )
     }
 
+    private func exportRules() {
+        do {
+            let data = try RuleTransferService.encode(ruleManager.rules)
+            exportDocument = RuleExportDocument(data: data)
+            showingExportPicker = true
+        } catch {
+            showTransferError(error)
+        }
+    }
+
+    private func handleExportCompletion(_ result: Result<URL, Error>) {
+        if case .failure(let error) = result {
+            let nsError = error as NSError
+            guard !(error is CancellationError)
+                    && !(nsError.domain == NSCocoaErrorDomain && nsError.code == NSUserCancelledError)
+            else { return }
+            showTransferError(error)
+        }
+    }
+
+    private func handleImportSelection(_ result: Result<[URL], Error>) {
+        switch result {
+        case .success(let urls):
+            guard let url = urls.first else { return }
+            let didStartAccessing = url.startAccessingSecurityScopedResource()
+            defer {
+                if didStartAccessing {
+                    url.stopAccessingSecurityScopedResource()
+                }
+            }
+
+            do {
+                let importedRules = try RuleTransferService.decode(Data(contentsOf: url))
+                presentedRuleSheet = .importOptions(importedRules)
+            } catch {
+                showTransferError(error)
+            }
+        case .failure(let error):
+            showTransferError(error)
+        }
+    }
+
+    private func applyImportedRules(_ importedRules: [AppRule], using strategy: RuleImportStrategy) {
+        withAnimation {
+            ruleManager.rules = RuleTransferService.applying(
+                importedRules,
+                to: ruleManager.rules,
+                strategy: strategy
+            )
+        }
+        presentedRuleSheet = nil
+    }
+
+    private func showTransferError(_ error: Error) {
+        let message = error.localizedDescription
+        DispatchQueue.main.async {
+            transferErrorMessage = message
+            showingTransferError = true
+        }
+    }
+
     private var pendingDeletionApplicationName: String {
         guard let rule = rulePendingDeletion else { return "this application" }
         if rule.appliesToAllApps {
@@ -223,6 +337,123 @@ struct RulesView: View {
             bundleIdentifier: rule.appBundleID,
             storedName: rule.appName
         )
+    }
+}
+
+private struct RuleExportDocument: FileDocument {
+    static var readableContentTypes: [UTType] { [.json] }
+
+    let data: Data
+
+    init(data: Data) {
+        self.data = data
+    }
+
+    init(configuration: ReadConfiguration) throws {
+        guard let data = configuration.file.regularFileContents else {
+            throw CocoaError(.fileReadCorruptFile)
+        }
+        self.data = data
+    }
+
+    func fileWrapper(configuration: WriteConfiguration) throws -> FileWrapper {
+        FileWrapper(regularFileWithContents: data)
+    }
+}
+
+private struct ImportRulesOptionsView: View {
+    let onImport: (RuleImportStrategy) -> Void
+    let onCancel: () -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 18) {
+            VStack(alignment: .leading, spacing: 6) {
+                Text("Choose how to import rules")
+                    .font(.title2.weight(.semibold))
+
+                Text("Choose how imported rules should interact with your current rules.")
+                    .font(.body)
+                    .foregroundStyle(.secondary)
+            }
+
+            VStack(spacing: 8) {
+                optionButton(
+                    "Keep All Rules",
+                    description: "Append every imported rule, even for apps that already have rules.",
+                    systemImage: "plus.square.on.square",
+                    strategy: .keepAll
+                )
+                optionButton(
+                    "Add Rules for New Apps",
+                    description: "Add rules only for apps that don't already have rules.",
+                    systemImage: "plus.circle",
+                    strategy: .addNewApps
+                )
+                optionButton(
+                    "Replace Rules for Matching Apps",
+                    description: "Replace rules for imported apps and keep rules for other apps.",
+                    systemImage: "arrow.triangle.2.circlepath",
+                    strategy: .replaceMatchingApps,
+                    isDestructive: true
+                )
+                optionButton(
+                    "Replace All Rules",
+                    description: "Replace all current rules with the imported rules.",
+                    systemImage: "trash",
+                    strategy: .replaceAll,
+                    isDestructive: true
+                )
+            }
+
+            HStack {
+                Spacer()
+                Button("Cancel", action: onCancel)
+                    .keyboardShortcut(.cancelAction)
+            }
+        }
+        .padding(24)
+        .frame(width: 500)
+    }
+
+    private func optionButton(
+        _ title: LocalizedStringKey,
+        description: LocalizedStringKey,
+        systemImage: String,
+        strategy: RuleImportStrategy,
+        isDestructive: Bool = false
+    ) -> some View {
+        Button {
+            onImport(strategy)
+        } label: {
+            HStack(alignment: .top, spacing: 12) {
+                Image(systemName: systemImage)
+                    .font(.body)
+                    .foregroundStyle(isDestructive ? Color.red : Color.accentColor)
+                    .frame(width: 22, alignment: .center)
+                    .padding(.top, 2)
+
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(title)
+                        .font(.body.weight(.semibold))
+                        .foregroundStyle(isDestructive ? Color.red : Color.primary)
+
+                    Text(description)
+                        .font(.callout)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+
+                Spacer(minLength: 0)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(12)
+            .background(
+                Color.primary.opacity(0.045),
+                in: RoundedRectangle(cornerRadius: 10, style: .continuous)
+            )
+            .contentShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+        }
+        .buttonStyle(.plain)
     }
 }
 
