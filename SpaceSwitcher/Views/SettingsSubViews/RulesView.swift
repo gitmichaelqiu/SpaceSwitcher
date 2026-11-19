@@ -1,4 +1,6 @@
 import SwiftUI
+import AppKit
+import UniformTypeIdentifiers
 
 struct RulesView: View {
     @ObservedObject var ruleManager: RuleManager
@@ -7,6 +9,10 @@ struct RulesView: View {
     
     @State private var presentedRuleSheet: RuleSheet?
     @State private var rulePendingDeletion: AppRule?
+    @State private var pendingImportedRules: [AppRule]?
+    @State private var showingImportConfirmation = false
+    @State private var showingTransferError = false
+    @State private var transferErrorMessage = ""
 
     private enum RuleSheet: Identifiable {
         case add(AppRule)
@@ -94,6 +100,11 @@ struct RulesView: View {
         } message: {
             Text("This removes the rule for \(pendingDeletionApplicationName).")
         }
+        .alert("Rule transfer failed", isPresented: $showingTransferError) {
+            Button("OK", role: .cancel) { }
+        } message: {
+            Text(transferErrorMessage)
+        }
     }
 
     private var automationSection: some View {
@@ -115,10 +126,21 @@ struct RulesView: View {
 
     private var perAppAutomationSection: some View {
         VStack(alignment: .leading, spacing: SettingsComponentMetrics.sectionSpacing) {
-            SettingsSectionTitle(
-                "Per-App Automation",
-                helperText: "Rules are evaluated from top to bottom. The first matching rule wins."
-            )
+            HStack(spacing: 8) {
+                SettingsSectionTitle(
+                    "Per-App Automation",
+                    helperText: "Rules are evaluated from top to bottom. The first matching rule wins."
+                )
+
+                Spacer(minLength: 12)
+
+                importRulesButton
+
+                Button("Export", systemImage: "square.and.arrow.up", action: exportRules)
+                    .buttonStyle(.bordered)
+                    .controlSize(.small)
+                    .disabled(ruleManager.rules.isEmpty)
+            }
 
             if ruleManager.rules.isEmpty {
                 SettingsSection {
@@ -172,6 +194,32 @@ struct RulesView: View {
         }
     }
 
+    private var importRulesButton: some View {
+        Button("Import", systemImage: "square.and.arrow.down", action: importRules)
+            .buttonStyle(.bordered)
+            .controlSize(.small)
+            .confirmationDialog(
+                "Replace current rules?",
+                isPresented: $showingImportConfirmation,
+                titleVisibility: .visible
+            ) {
+                Button("Replace Rules", role: .destructive) {
+                    guard let pendingImportedRules else { return }
+                    withAnimation {
+                        ruleManager.rules = pendingImportedRules
+                    }
+                    self.pendingImportedRules = nil
+                }
+                Button("Cancel", role: .cancel) {
+                    pendingImportedRules = nil
+                }
+            } message: {
+                if let pendingImportedRules {
+                    Text("Importing \(pendingImportedRules.count) rules will replace all \(ruleManager.rules.count) current rules.")
+                }
+            }
+    }
+
     private var reorderableRules: [ReorderableRule] {
         ruleManager.rules.map(ReorderableRule.init)
     }
@@ -211,6 +259,56 @@ struct RulesView: View {
         presentedRuleSheet = .add(
             AppRule(appBundleID: "", appName: "", groups: [], elseActions: [])
         )
+    }
+
+    private func exportRules() {
+        do {
+            let data = try RuleTransferService.encode(ruleManager.rules)
+            let panel = NSSavePanel()
+            panel.title = NSLocalizedString("Export Rules", comment: "Title of the export rules file panel")
+            panel.nameFieldStringValue = "SpaceSwitcher-Rules.json"
+            panel.allowedContentTypes = [.json]
+            panel.canCreateDirectories = true
+            panel.begin { response in
+                guard response == .OK, let url = panel.url else { return }
+                do {
+                    try data.write(to: url, options: .atomic)
+                } catch {
+                    showTransferError(error)
+                }
+            }
+        } catch {
+            showTransferError(error)
+        }
+    }
+
+    private func importRules() {
+        let panel = NSOpenPanel()
+        panel.title = NSLocalizedString("Import Rules", comment: "Title of the import rules file panel")
+        panel.allowedContentTypes = [.json]
+        panel.canChooseFiles = true
+        panel.canChooseDirectories = false
+        panel.allowsMultipleSelection = false
+        panel.begin { response in
+            guard response == .OK, let url = panel.url else { return }
+            do {
+                let importedRules = try RuleTransferService.decode(Data(contentsOf: url))
+                DispatchQueue.main.async {
+                    pendingImportedRules = importedRules
+                    showingImportConfirmation = true
+                }
+            } catch {
+                showTransferError(error)
+            }
+        }
+    }
+
+    private func showTransferError(_ error: Error) {
+        let message = error.localizedDescription
+        DispatchQueue.main.async {
+            transferErrorMessage = message
+            showingTransferError = true
+        }
     }
 
     private var pendingDeletionApplicationName: String {
