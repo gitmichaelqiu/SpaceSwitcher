@@ -10,7 +10,6 @@ struct RuleEditor: View {
     @State private var runningApps: [(name: String, id: String, icon: NSImage)] = []
     @State private var showingLegend = false
     @State private var showingApplicationPicker = false
-    @State private var isApplicationPickerHovered = false
     @State private var groupPendingDeletion: UUID?
     @State private var presetPendingApplication: RulePreset?
     @State private var showingPresetConfirmation = false
@@ -103,8 +102,8 @@ struct RuleEditor: View {
                     }
                 }
             } label: {
-                Label("Presets", systemImage: "wand.and.stars")
-                    .padding(.horizontal, 10)
+                Text("Presets")
+                    .padding(.horizontal, 12)
                     .frame(height: 32)
                     .background(.quaternary.opacity(0.35), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
             }
@@ -146,22 +145,7 @@ struct RuleEditor: View {
         }
         .buttonStyle(.plain)
         .foregroundStyle(.primary)
-        .padding(.horizontal, 8)
-        .padding(.vertical, 6)
-        .background(
-            RoundedRectangle(cornerRadius: 10, style: .continuous)
-                .fill(
-                    isApplicationPickerHovered || showingApplicationPicker
-                        ? Color(nsColor: .selectedContentBackgroundColor).opacity(0.16)
-                        : Color(nsColor: .controlBackgroundColor)
-                )
-        )
-        .overlay {
-            RoundedRectangle(cornerRadius: 10, style: .continuous)
-                .strokeBorder(Color(nsColor: .separatorColor).opacity(0.25), lineWidth: 1)
-        }
-        .contentShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
-        .onHover { isApplicationPickerHovered = $0 }
+        .contentShape(Rectangle())
         .popover(
             isPresented: $showingApplicationPicker,
             attachmentAnchor: .point(.bottom),
@@ -180,7 +164,7 @@ struct RuleEditor: View {
         VStack(alignment: .leading, spacing: 0) {
             Text("Target Application")
                 .font(.headline)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(.primary)
                 .padding(.horizontal, 8)
                 .padding(.vertical, 6)
 
@@ -215,7 +199,7 @@ struct RuleEditor: View {
 
                         Text("Running Applications")
                             .font(.headline)
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(.primary)
                             .frame(maxWidth: .infinity, alignment: .leading)
                             .padding(.horizontal, 8)
                             .padding(.vertical, 4)
@@ -262,12 +246,13 @@ struct RuleEditor: View {
         }
         .padding(8)
         .frame(width: 300)
+        .foregroundStyle(.primary)
     }
 
     private var applicationPickerLabel: some View {
         HStack(spacing: 12) {
             selectedAppIcon
-                .frame(width: 40, height: 40)
+                .frame(width: 32, height: 32)
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(selectedApplicationName)
@@ -275,7 +260,6 @@ struct RuleEditor: View {
                     .foregroundStyle(.primary)
                     .lineLimit(1)
                     .truncationMode(.middle)
-                    .frame(maxWidth: 220, alignment: .leading)
                 if workingRule.appliesToAllApps {
                     Text("Every application")
                         .font(.caption)
