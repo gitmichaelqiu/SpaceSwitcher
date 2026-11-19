@@ -285,22 +285,32 @@
         }
       }
     },
-    "Add New Apps" : {
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "仅添加新应用"
-          }
-        }
-      }
-    },
     "Add new rule" : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "添加新规则"
+          }
+        }
+      }
+    },
+    "Add Rules for New Apps" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "仅为新应用添加规则"
+          }
+        }
+      }
+    },
+    "Add rules only for apps that don't already have rules." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "仅为尚未配置规则的应用添加规则。"
           }
         }
       }
@@ -407,6 +417,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "应用已显示"
+          }
+        }
+      }
+    },
+    "Append every imported rule, even for apps that already have rules." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "追加每一条导入规则，即使应用已有规则。"
           }
         }
       }
@@ -578,6 +598,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "选择导入规则的方式"
+          }
+        }
+      }
+    },
+    "Choose how imported rules should interact with your current rules." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "选择导入规则与现有规则的处理方式。"
           }
         }
       }
@@ -1111,6 +1141,16 @@
         }
       }
     },
+    "Keep All Rules" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "保留所有规则"
+          }
+        }
+      }
+    },
     "Large spacer" : {
       "comment" : "Dock spacer item name",
       "localizations" : {
@@ -1370,26 +1410,6 @@
         }
       }
     },
-    "Keep All Rules" : {
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "保留所有规则"
-          }
-        }
-      }
-    },
-    "Keep All Rules appends every imported rule, including rules for apps that already have rules. Add New Apps skips apps with existing rules. Replace Rules for Matching Apps replaces rules for imported apps. Replace All Rules replaces everything." : {
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "保留所有规则会追加每一条导入规则，包括已有规则的应用。仅添加新应用会跳过已有规则的应用。替换匹配应用的规则会替换导入文件中这些应用的规则。替换所有规则会替换全部现有规则。"
-          }
-        }
-      }
-    },
     "Quit" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -1507,6 +1527,16 @@
         }
       }
     },
+    "Replace all current rules with the imported rules." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "用导入的规则替换所有现有规则。"
+          }
+        }
+      }
+    },
     "Replace All Rules" : {
       "localizations" : {
         "zh-Hans" : {
@@ -1523,6 +1553,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "替换匹配应用的规则"
+          }
+        }
+      }
+    },
+    "Replace rules for imported apps and keep rules for other apps." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "替换导入文件中应用的规则，并保留其他应用的规则。"
           }
         }
       }

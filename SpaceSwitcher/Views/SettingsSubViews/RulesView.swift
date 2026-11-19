@@ -9,19 +9,19 @@ struct RulesView: View {
     
     @State private var presentedRuleSheet: RuleSheet?
     @State private var rulePendingDeletion: AppRule?
-    @State private var pendingImportedRules: [AppRule]?
-    @State private var showingImportOptions = false
     @State private var showingTransferError = false
     @State private var transferErrorMessage = ""
 
     private enum RuleSheet: Identifiable {
         case add(AppRule)
         case edit(AppRule)
+        case importOptions([AppRule])
 
         var id: String {
             switch self {
             case .add(let rule): return "add-\(rule.id.uuidString)"
             case .edit(let rule): return "edit-\(rule.id.uuidString)"
+            case .importOptions: return "import-options"
             }
         }
     }
@@ -72,6 +72,13 @@ struct RulesView: View {
                             ruleManager.updateRule(updatedRule)
                             presentedRuleSheet = nil
                         }
+                    },
+                    onCancel: { presentedRuleSheet = nil }
+                )
+            case .importOptions(let importedRules):
+                ImportRulesOptionsView(
+                    onImport: { strategy in
+                        applyImportedRules(importedRules, using: strategy)
                     },
                     onCancel: { presentedRuleSheet = nil }
                 )
@@ -198,29 +205,6 @@ struct RulesView: View {
         Button("Import", systemImage: "square.and.arrow.down", action: importRules)
             .buttonStyle(.bordered)
             .controlSize(.small)
-            .confirmationDialog(
-                "Choose how to import rules",
-                isPresented: $showingImportOptions,
-                titleVisibility: .visible
-            ) {
-                Button("Replace All Rules", role: .destructive) {
-                    applyImportedRules(using: .replaceAll)
-                }
-                Button("Keep All Rules") {
-                    applyImportedRules(using: .keepAll)
-                }
-                Button("Add New Apps") {
-                    applyImportedRules(using: .addNewApps)
-                }
-                Button("Replace Rules for Matching Apps", role: .destructive) {
-                    applyImportedRules(using: .replaceMatchingApps)
-                }
-                Button("Cancel", role: .cancel) {
-                    cancelImport()
-                }
-            } message: {
-                Text("Keep All Rules appends every imported rule, including rules for apps that already have rules. Add New Apps skips apps with existing rules. Replace Rules for Matching Apps replaces rules for imported apps. Replace All Rules replaces everything.")
-            }
     }
 
     private var reorderableRules: [ReorderableRule] {
@@ -297,8 +281,7 @@ struct RulesView: View {
             do {
                 let importedRules = try RuleTransferService.decode(Data(contentsOf: url))
                 DispatchQueue.main.async {
-                    pendingImportedRules = importedRules
-                    showingImportOptions = true
+                    presentedRuleSheet = .importOptions(importedRules)
                 }
             } catch {
                 showTransferError(error)
@@ -306,20 +289,15 @@ struct RulesView: View {
         }
     }
 
-    private func applyImportedRules(using strategy: RuleImportStrategy) {
-        guard let pendingImportedRules else { return }
+    private func applyImportedRules(_ importedRules: [AppRule], using strategy: RuleImportStrategy) {
         withAnimation {
             ruleManager.rules = RuleTransferService.applying(
-                pendingImportedRules,
+                importedRules,
                 to: ruleManager.rules,
                 strategy: strategy
             )
         }
-        self.pendingImportedRules = nil
-    }
-
-    private func cancelImport() {
-        pendingImportedRules = nil
+        presentedRuleSheet = nil
     }
 
     private func showTransferError(_ error: Error) {
@@ -340,6 +318,102 @@ struct RulesView: View {
             bundleIdentifier: rule.appBundleID,
             storedName: rule.appName
         )
+    }
+}
+
+private struct ImportRulesOptionsView: View {
+    let onImport: (RuleImportStrategy) -> Void
+    let onCancel: () -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 18) {
+            VStack(alignment: .leading, spacing: 6) {
+                Text("Choose how to import rules")
+                    .font(.title2.weight(.semibold))
+
+                Text("Choose how imported rules should interact with your current rules.")
+                    .font(.body)
+                    .foregroundStyle(.secondary)
+            }
+
+            VStack(spacing: 8) {
+                optionButton(
+                    "Keep All Rules",
+                    description: "Append every imported rule, even for apps that already have rules.",
+                    systemImage: "plus.square.on.square",
+                    strategy: .keepAll
+                )
+                optionButton(
+                    "Add Rules for New Apps",
+                    description: "Add rules only for apps that don't already have rules.",
+                    systemImage: "app.badge.plus",
+                    strategy: .addNewApps
+                )
+                optionButton(
+                    "Replace Rules for Matching Apps",
+                    description: "Replace rules for imported apps and keep rules for other apps.",
+                    systemImage: "arrow.triangle.2.circlepath",
+                    strategy: .replaceMatchingApps,
+                    isDestructive: true
+                )
+                optionButton(
+                    "Replace All Rules",
+                    description: "Replace all current rules with the imported rules.",
+                    systemImage: "trash",
+                    strategy: .replaceAll,
+                    isDestructive: true
+                )
+            }
+
+            HStack {
+                Spacer()
+                Button("Cancel", action: onCancel)
+                    .keyboardShortcut(.cancelAction)
+            }
+        }
+        .padding(24)
+        .frame(width: 500)
+    }
+
+    private func optionButton(
+        _ title: LocalizedStringKey,
+        description: LocalizedStringKey,
+        systemImage: String,
+        strategy: RuleImportStrategy,
+        isDestructive: Bool = false
+    ) -> some View {
+        Button {
+            onImport(strategy)
+        } label: {
+            HStack(alignment: .top, spacing: 12) {
+                Image(systemName: systemImage)
+                    .font(.body)
+                    .foregroundStyle(isDestructive ? Color.red : Color.accentColor)
+                    .frame(width: 22, alignment: .center)
+                    .padding(.top, 2)
+
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(title)
+                        .font(.body.weight(.semibold))
+                        .foregroundStyle(isDestructive ? Color.red : Color.primary)
+
+                    Text(description)
+                        .font(.callout)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+
+                Spacer(minLength: 0)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(12)
+            .background(
+                Color.primary.opacity(0.045),
+                in: RoundedRectangle(cornerRadius: 10, style: .continuous)
+            )
+            .contentShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+        }
+        .buttonStyle(.plain)
     }
 }
 
