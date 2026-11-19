@@ -148,7 +148,7 @@ struct RuleEditor: View {
         .contentShape(Rectangle())
         .popover(
             isPresented: $showingApplicationPicker,
-            attachmentAnchor: .point(.bottom),
+            attachmentAnchor: .point(UnitPoint(x: 1, y: 0.5)),
             arrowEdge: .top
         ) {
             runningApplicationsPopover
