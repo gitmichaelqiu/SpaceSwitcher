@@ -2701,6 +2701,16 @@
         }
       }
     },
+    "No Spaces assigned" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "尚未分配空间"
+          }
+        }
+      }
+    },
     "No Spaces found" : {
       "localizations" : {
         "zh-Hans" : {

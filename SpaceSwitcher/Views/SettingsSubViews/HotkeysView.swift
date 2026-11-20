@@ -13,11 +13,6 @@ struct HotkeysView: View {
     var body: some View {
         SettingsContainer(.hotkeys) {
             VStack(alignment: .leading, spacing: SettingsComponentMetrics.sectionSpacing) {
-                Text("Assign different actions to the same shortcut in different Spaces.")
-                    .font(.system(size: 13))
-                    .foregroundStyle(.secondary)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-
                 automationSection
                 hotkeysSection
             }
@@ -58,57 +53,43 @@ struct HotkeysView: View {
         SettingsSection("Contextual Hotkeys") {
             SettingsRow(
                 "Enable contextual hotkeys",
-                helperText: "This setting is independent of automatic Rules. Uses the current Space on the active display."
+                helperText: "This setting is independent of automatic Rules and uses the current Space on the active display.",
+                requirements: [
+                    .spaceAPI(isAvailable: spaceManager.apiAvailability == .available)
+                ]
             ) {
-                Toggle("Enable contextual hotkeys", isOn: $hotkeyManager.isEnabled)
+                Toggle("", isOn: $hotkeyManager.isEnabled)
                     .labelsHidden()
                     .toggleStyle(.switch)
-            }
-
-            if spaceManager.apiAvailability != .available {
-                HStack(alignment: .top, spacing: 8) {
-                    Image(systemName: "exclamationmark.triangle.fill")
-                        .foregroundStyle(.orange)
-                    Text("DesktopRenamer SpaceAPI is unavailable. Hotkeys are temporarily inactive.")
-                        .font(.system(size: 12))
-                        .foregroundStyle(.secondary)
-                    Spacer(minLength: 0)
-                }
-                .padding(.horizontal, SettingsComponentMetrics.rowHorizontalPadding)
-                .padding(.bottom, 10)
             }
         }
     }
 
     private var hotkeysSection: some View {
-        VStack(alignment: .leading, spacing: SettingsComponentMetrics.sectionContentSpacing) {
-            HStack(alignment: .firstTextBaseline) {
-                SettingsSectionTitle(
-                    "My Hotkeys",
-                    helperText: "Each shortcut runs the action assigned to the current Space."
-                )
-                Spacer()
+        SettingsSection(
+            "Shortcuts",
+            helperText: "Each shortcut runs the action assigned to the current Space.",
+            accessory: {
                 Button {
-                    presentedEditor = hotkeyManager.newHotkey(
-                        currentSpaceID: spaceManager.currentSpaceID,
-                        availableSpaces: spaceManager.availableSpaces
-                    )
+                    addHotkey()
                 } label: {
                     Label("Add Hotkey", systemImage: "plus")
                 }
-                .buttonStyle(.borderedProminent)
+                .buttonStyle(.bordered)
                 .controlSize(.small)
             }
-
+        ) {
             if hotkeyManager.hotkeys.isEmpty {
-                SettingsSection {
-                    emptyState
-                        .frame(maxWidth: .infinity, minHeight: 230)
-                }
+                emptyState
+                    .frame(maxWidth: .infinity, minHeight: 190)
             } else {
-                VStack(spacing: SettingsComponentMetrics.sectionSpacing) {
-                    ForEach(hotkeyManager.hotkeys) { hotkey in
+                VStack(spacing: 0) {
+                    ForEach(Array(hotkeyManager.hotkeys.enumerated()), id: \.element.id) { index, hotkey in
                         hotkeyRow(hotkey)
+                        if index < hotkeyManager.hotkeys.count - 1 {
+                            Divider()
+                                .padding(.leading, SettingsComponentMetrics.rowHorizontalPadding)
+                        }
                     }
                 }
             }
@@ -118,102 +99,99 @@ struct HotkeysView: View {
     private var emptyState: some View {
         VStack(spacing: 12) {
             Image(systemName: "keyboard")
-                .font(.system(size: 30))
+                .font(.system(size: 28))
                 .foregroundStyle(.secondary)
             Text("No contextual hotkeys yet")
                 .font(.headline)
             Text("For example, use Option–Command–O to open a different app in each Space.")
-                .font(.system(size: 13))
+                .font(.callout)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
                 .frame(maxWidth: 380)
-            Button("Add Hotkey", systemImage: "plus") {
-                presentedEditor = hotkeyManager.newHotkey(
-                    currentSpaceID: spaceManager.currentSpaceID,
-                    availableSpaces: spaceManager.availableSpaces
-                )
-            }
-            .buttonStyle(.borderedProminent)
         }
-        .padding(24)
+        .padding(20)
     }
 
     private func hotkeyRow(_ hotkey: ContextualHotkey) -> some View {
-        SettingsSection {
-            HStack(spacing: 14) {
-                Button {
-                    presentedEditor = hotkey
-                } label: {
-                    VStack(alignment: .leading, spacing: 5) {
-                        Text(hotkey.name)
-                            .font(.system(size: 14, weight: .semibold))
-                            .foregroundStyle(.primary)
-                        HStack(spacing: 10) {
-                            Text(hotkey.shortcutDescription)
-                                .font(.system(size: 13, weight: .medium, design: .monospaced))
-                                .foregroundStyle(.secondary)
-                            Label(
-                                String.localizedStringWithFormat(
-                                    NSLocalizedString("%lld Spaces", comment: "Number of Space mappings for a hotkey"),
-                                    Int64(hotkey.configuredSpaceCount)
-                                ),
-                                systemImage: "square.grid.2x2"
-                            )
-                            .font(.system(size: 12))
+        HStack(spacing: 12) {
+            Button {
+                presentedEditor = hotkey
+            } label: {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(hotkey.name)
+                        .font(.body.weight(.semibold))
+                        .foregroundStyle(.primary)
+                    HStack(spacing: 10) {
+                        Text(hotkey.shortcutDescription)
+                            .font(.system(size: 12, weight: .medium, design: .monospaced))
                             .foregroundStyle(.secondary)
-                        }
-                        if hotkeyManager.unavailableShortcutIDs.contains(hotkey.id) {
-                            Label(
-                                "This shortcut could not be registered. It may be unavailable.",
-                                systemImage: "exclamationmark.triangle"
-                            )
-                            .font(.system(size: 11))
-                            .foregroundStyle(.orange)
-                        }
+                        Text(String.localizedStringWithFormat(
+                            NSLocalizedString("%lld Spaces", comment: "Number of Space mappings for a hotkey"),
+                            Int64(hotkey.configuredSpaceCount)
+                        ))
+                        .font(.system(size: 12))
+                        .foregroundStyle(.secondary)
                     }
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .contentShape(Rectangle())
+                    if hotkeyManager.unavailableShortcutIDs.contains(hotkey.id) {
+                        Label(
+                            "This shortcut could not be registered. It may be unavailable.",
+                            systemImage: "exclamationmark.triangle"
+                        )
+                        .font(.system(size: 11))
+                        .foregroundStyle(.orange)
+                    }
                 }
-                .buttonStyle(.plain)
-
-                Toggle(
-                    "Enable \(hotkey.name)",
-                    isOn: Binding(
-                        get: { hotkeyManager.hotkeys.first(where: { $0.id == hotkey.id })?.isEnabled ?? false },
-                        set: { isEnabled in
-                            var updated = hotkey
-                            updated.isEnabled = isEnabled
-                            hotkeyManager.update(updated)
-                        }
-                    )
-                )
-                .labelsHidden()
-                .toggleStyle(.switch)
-                .disabled(hotkey.keyCode == nil)
-
-                Menu {
-                    Button("Edit Hotkey", systemImage: "pencil") {
-                        presentedEditor = hotkey
-                    }
-                    Button("Duplicate", systemImage: "plus.square.on.square") {
-                        presentedEditor = hotkeyManager.duplicate(hotkey)
-                    }
-                    Divider()
-                    Button("Delete Hotkey", systemImage: "trash", role: .destructive) {
-                        hotkeyPendingDeletion = hotkey
-                    }
-                } label: {
-                    Image(systemName: "ellipsis")
-                        .font(.system(size: 13, weight: .semibold))
-                        .frame(width: 28, height: 28)
-                        .contentShape(Rectangle())
-                }
-                .menuStyle(.borderlessButton)
-                .help("Hotkey actions")
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .contentShape(Rectangle())
             }
-            .padding(.horizontal, SettingsComponentMetrics.rowHorizontalPadding + 2)
-            .padding(.vertical, 12)
+            .buttonStyle(.plain)
+
+            Toggle(
+                "Enable \(hotkey.name)",
+                isOn: Binding(
+                    get: { hotkeyManager.hotkeys.first(where: { $0.id == hotkey.id })?.isEnabled ?? false },
+                    set: { isEnabled in
+                        var updated = hotkey
+                        updated.isEnabled = isEnabled
+                        hotkeyManager.update(updated)
+                    }
+                )
+            )
+            .labelsHidden()
+            .toggleStyle(.switch)
+            .controlSize(.small)
+            .disabled(hotkey.keyCode == nil)
+
+            Menu {
+                Button("Edit Hotkey", systemImage: "pencil") {
+                    presentedEditor = hotkey
+                }
+                Button("Duplicate", systemImage: "plus.square.on.square") {
+                    presentedEditor = hotkeyManager.duplicate(hotkey)
+                }
+                Divider()
+                Button("Delete Hotkey", systemImage: "trash", role: .destructive) {
+                    hotkeyPendingDeletion = hotkey
+                }
+            } label: {
+                Image(systemName: "ellipsis")
+                    .font(.system(size: 13, weight: .semibold))
+                    .frame(width: 28, height: 28)
+                    .contentShape(Rectangle())
+            }
+            .menuStyle(.borderlessButton)
+            .help("Hotkey actions")
         }
+        .padding(.horizontal, SettingsComponentMetrics.rowHorizontalPadding)
+        .padding(.vertical, SettingsComponentMetrics.rowVerticalPadding)
+        .frame(minHeight: SettingsComponentMetrics.listRowHeight)
+    }
+
+    private func addHotkey() {
+        presentedEditor = hotkeyManager.newHotkey(
+            currentSpaceID: spaceManager.currentSpaceID,
+            availableSpaces: spaceManager.availableSpaces
+        )
     }
 
     private func save(_ hotkey: ContextualHotkey) {
@@ -279,9 +257,8 @@ private struct HotkeyEditorView: View {
                 VStack(alignment: .leading, spacing: SettingsComponentMetrics.sectionSpacing) {
                     VStack(alignment: .leading, spacing: 6) {
                         Text("Configure Contextual Hotkey")
-                            .font(.system(size: 21, weight: .semibold))
+                            .font(.title2.weight(.semibold))
                         Text("Choose one action for each assigned Space. Your Mac will stay on its current Space while you edit.")
-                            .font(.system(size: 13))
                             .foregroundStyle(.secondary)
                     }
 
@@ -296,7 +273,7 @@ private struct HotkeyEditorView: View {
                             .fixedSize(horizontal: false, vertical: true)
                     }
                 }
-                .padding(20)
+                .padding(SettingsComponentMetrics.containerPadding)
             }
 
             Divider()
@@ -314,7 +291,8 @@ private struct HotkeyEditorView: View {
                 .keyboardShortcut(.defaultAction)
                 .disabled(validationError != nil)
             }
-            .padding(16)
+            .padding(.horizontal, SettingsComponentMetrics.containerPadding)
+            .padding(.vertical, 12)
         }
         .frame(minWidth: 620, idealWidth: 680, minHeight: 560, idealHeight: 640)
         .sheet(isPresented: $showingSpacePicker) {
@@ -333,11 +311,19 @@ private struct HotkeyEditorView: View {
 
     private var identitySection: some View {
         SettingsSection("Shortcut") {
-            VStack(alignment: .leading, spacing: 12) {
+            SettingsRow("Name") {
                 TextField("Name", text: $draft.name)
                     .textFieldStyle(.roundedBorder)
+                    .frame(maxWidth: 280)
                     .accessibilityLabel("Hotkey name")
+            }
 
+            Divider()
+
+            SettingsRow(
+                "Keyboard shortcut",
+                helperText: "Use at least one modifier key, such as Command or Option. Escape cancels recording."
+            ) {
                 HStack(spacing: 12) {
                     HotkeyRecorderButton(
                         keyCode: $draft.keyCode,
@@ -352,54 +338,80 @@ private struct HotkeyEditorView: View {
                     }
                     Spacer()
                 }
-
-                Text("Use at least one modifier key, such as Command or Option. Escape cancels recording.")
-                    .font(.system(size: 12))
-                    .foregroundStyle(.secondary)
             }
-            .padding(12)
         }
     }
 
     private var spaceActionsSection: some View {
-        SettingsSection("Space Actions", helperText: "Uses the current Space on the active display.") {
-            VStack(alignment: .leading, spacing: 10) {
-                ForEach(assignedDisplayGroups) { group in
-                    if assignedDisplayGroups.count > 1 {
-                        Text(group.name)
-                            .font(.system(size: 12, weight: .semibold))
-                            .foregroundStyle(.secondary)
-                            .padding(.top, 4)
-                    }
-                    ForEach(group.spaces) { space in
-                        actionRow(
-                            title: spaceDisplayName(space),
-                            detail: group.name,
-                            action: actionBinding(for: space.id),
-                            onRemove: { removeSpace(space.id) }
-                        )
-                    }
+        SettingsSection(
+            "Space Actions",
+            helperText: "Uses the current Space on the active display.",
+            accessory: {
+                Button("Add Space", systemImage: "plus") {
+                    showingSpacePicker = true
                 }
-
-                if !unavailableMappings.isEmpty {
-                    Text("Unavailable Spaces")
-                        .font(.system(size: 12, weight: .semibold))
-                        .foregroundStyle(.secondary)
-                        .padding(.top, assignedDisplayGroups.isEmpty ? 0 : 6)
-                    ForEach(unavailableMappings) { mapping in
-                        actionRow(
-                            title: "Unavailable Space (\(mapping.spaceID.prefix(8)))",
-                            detail: "This Space is currently unavailable. Its mapping is preserved.",
-                            action: actionBinding(for: mapping.spaceID),
-                            onRemove: { removeSpace(mapping.spaceID) }
-                        )
-                    }
-                }
-
-                addSpaceMenu
-                    .padding(.top, 2)
+                .buttonStyle(.bordered)
+                .controlSize(.small)
+                .disabled(!availableSpaces.contains(where: { !assignedSpaceIDs.contains($0.id) }))
             }
-            .padding(12)
+        ) {
+            if assignedDisplayGroups.isEmpty && unavailableMappings.isEmpty {
+                Text("No Spaces assigned")
+                    .font(.callout)
+                    .foregroundStyle(.secondary)
+                    .padding(.horizontal, SettingsComponentMetrics.rowHorizontalPadding)
+                    .padding(.vertical, SettingsComponentMetrics.rowVerticalPadding + 4)
+            }
+
+            ForEach(assignedDisplayGroups) { group in
+                if assignedDisplayGroups.count > 1 {
+                    Text(group.name)
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(.secondary)
+                        .padding(.horizontal, SettingsComponentMetrics.rowHorizontalPadding)
+                        .padding(.top, SettingsComponentMetrics.rowVerticalPadding + 2)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
+
+                ForEach(Array(group.spaces.enumerated()), id: \.element.id) { index, space in
+                    actionRow(
+                        title: spaceDisplayName(space),
+                        detail: group.name,
+                        action: actionBinding(for: space.id),
+                        onRemove: { removeSpace(space.id) }
+                    )
+
+                    if index < group.spaces.count - 1
+                        || group.id != assignedDisplayGroups.last?.id
+                        || !unavailableMappings.isEmpty {
+                        Divider()
+                            .padding(.leading, SettingsComponentMetrics.rowHorizontalPadding)
+                    }
+                }
+            }
+
+            if !unavailableMappings.isEmpty {
+                Text("Unavailable Spaces")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(.secondary)
+                    .padding(.horizontal, SettingsComponentMetrics.rowHorizontalPadding)
+                    .padding(.top, SettingsComponentMetrics.rowVerticalPadding + 2)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+
+                ForEach(Array(unavailableMappings.enumerated()), id: \.element.id) { index, mapping in
+                    actionRow(
+                        title: "Unavailable Space (\(mapping.spaceID.prefix(8)))",
+                        detail: "This Space is currently unavailable. Its mapping is preserved.",
+                        action: actionBinding(for: mapping.spaceID),
+                        onRemove: { removeSpace(mapping.spaceID) }
+                    )
+
+                    if index < unavailableMappings.count - 1 {
+                        Divider()
+                            .padding(.leading, SettingsComponentMetrics.rowHorizontalPadding)
+                    }
+                }
+            }
         }
     }
 
@@ -414,18 +426,7 @@ private struct HotkeyEditorView: View {
                 action: $draft.otherSpacesAction,
                 onRemove: nil
             )
-            .padding(12)
         }
-    }
-
-    private var addSpaceMenu: some View {
-        Button {
-            showingSpacePicker = true
-        } label: {
-            Label("Add Space", systemImage: "plus")
-        }
-        .buttonStyle(.borderless)
-        .disabled(!availableSpaces.contains(where: { !assignedSpaceIDs.contains($0.id) }))
     }
 
     private func actionRow(
@@ -434,44 +435,45 @@ private struct HotkeyEditorView: View {
         action: Binding<ContextualHotkeyAction>,
         onRemove: (() -> Void)?
     ) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack(alignment: .firstTextBaseline) {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(title)
-                        .font(.system(size: 13, weight: .medium))
-                    Text(detail)
-                        .font(.system(size: 11))
-                        .foregroundStyle(.secondary)
-                }
-                Spacer()
-                if let onRemove {
-                    Button(role: .destructive, action: onRemove) {
-                        Image(systemName: "minus.circle")
-                    }
-                    .buttonStyle(.borderless)
-                    .help("Remove Space mapping")
+        HStack(spacing: 12) {
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title)
+                    .font(.body)
+                Text(detail)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+
+            Picker("Action", selection: action.kind) {
+                ForEach(ContextualHotkeyActionKind.allCases) { kind in
+                    Label(kind.title, systemImage: kind.symbolName)
+                        .tag(kind)
                 }
             }
+            .labelsHidden()
+            .pickerStyle(.menu)
+            .controlSize(.small)
+            .fixedSize()
 
-            HStack(spacing: 10) {
-                Picker("Action", selection: action.kind) {
-                    ForEach(ContextualHotkeyActionKind.allCases) { kind in
-                        Label(kind.title, systemImage: kind.symbolName)
-                            .tag(kind)
-                    }
-                }
-                .labelsHidden()
-                .pickerStyle(.menu)
-                .frame(maxWidth: 230, alignment: .leading)
+            if action.wrappedValue.kind != .doNothing {
+                ApplicationSelectionMenu(action: action)
+                    .frame(maxWidth: 200, alignment: .leading)
+            }
 
-                if action.wrappedValue.kind != .doNothing {
-                    ApplicationSelectionMenu(action: action)
+            if let onRemove {
+                Button(role: .destructive, action: onRemove) {
+                    SettingsDestructiveIconLabel(systemName: "minus.circle")
                 }
-                Spacer(minLength: 0)
+                .buttonStyle(.borderless)
+                .controlSize(.small)
+                .help("Remove Space mapping")
             }
         }
-        .padding(10)
-        .background(Color.secondary.opacity(0.08), in: RoundedRectangle(cornerRadius: 9))
+        .padding(.horizontal, SettingsComponentMetrics.rowHorizontalPadding)
+        .padding(.vertical, SettingsComponentMetrics.rowVerticalPadding)
+        .frame(minHeight: SettingsComponentMetrics.listRowHeight)
     }
 
     private func actionBinding(for spaceID: String) -> Binding<ContextualHotkeyAction> {
