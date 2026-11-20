@@ -375,8 +375,7 @@ private struct HotkeyEditorView: View {
 
                 ForEach(Array(group.spaces.enumerated()), id: \.element.id) { index, space in
                     actionRow(
-                        title: spaceDisplayName(space),
-                        detail: group.name,
+                        title: LocalizedStringResource(stringLiteral: spaceDisplayName(space)),
                         action: actionBinding(for: space.id),
                         onRemove: { removeSpace(space.id) }
                     )
@@ -400,8 +399,8 @@ private struct HotkeyEditorView: View {
 
                 ForEach(Array(unavailableMappings.enumerated()), id: \.element.id) { index, mapping in
                     actionRow(
-                        title: "Unavailable Space (\(mapping.spaceID.prefix(8)))",
-                        detail: "This Space is currently unavailable. Its mapping is preserved.",
+                        title: "Unavailable Space (\(String(mapping.spaceID.prefix(8))))",
+                        warningText: "This Space is currently unavailable. Its mapping is preserved.",
                         action: actionBinding(for: mapping.spaceID),
                         onRemove: { removeSpace(mapping.spaceID) }
                     )
@@ -421,8 +420,7 @@ private struct HotkeyEditorView: View {
             helperText: "Runs only when the current Space has no assigned action."
         ) {
             actionRow(
-                title: "Other Spaces",
-                detail: "Fallback for known Spaces without an assigned action.",
+                title: "Action",
                 action: $draft.otherSpacesAction,
                 onRemove: nil
             )
@@ -430,50 +428,39 @@ private struct HotkeyEditorView: View {
     }
 
     private func actionRow(
-        title: String,
-        detail: String,
+        title: LocalizedStringResource,
+        warningText: LocalizedStringKey? = nil,
         action: Binding<ContextualHotkeyAction>,
         onRemove: (() -> Void)?
     ) -> some View {
-        HStack(spacing: 12) {
-            VStack(alignment: .leading, spacing: 2) {
-                Text(title)
-                    .font(.body)
-                Text(detail)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .lineLimit(1)
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
-
-            Picker("Action", selection: action.kind) {
-                ForEach(ContextualHotkeyActionKind.allCases) { kind in
-                    Label(kind.title, systemImage: kind.symbolName)
-                        .tag(kind)
+        SettingsRow(title, warningText: warningText) {
+            HStack(spacing: 8) {
+                Picker("Action", selection: action.kind) {
+                    ForEach(ContextualHotkeyActionKind.allCases) { kind in
+                        Label(kind.title, systemImage: kind.symbolName)
+                            .tag(kind)
+                    }
                 }
-            }
-            .labelsHidden()
-            .pickerStyle(.menu)
-            .controlSize(.small)
-            .fixedSize()
-
-            if action.wrappedValue.kind != .doNothing {
-                ApplicationSelectionMenu(action: action)
-                    .frame(maxWidth: 200, alignment: .leading)
-            }
-
-            if let onRemove {
-                Button(role: .destructive, action: onRemove) {
-                    SettingsDestructiveIconLabel(systemName: "minus.circle")
-                }
-                .buttonStyle(.borderless)
+                .labelsHidden()
+                .pickerStyle(.menu)
                 .controlSize(.small)
-                .help("Remove Space mapping")
+                .fixedSize()
+
+                if action.wrappedValue.kind != .doNothing {
+                    ApplicationSelectionMenu(action: action)
+                        .frame(maxWidth: 200, alignment: .leading)
+                }
+
+                if let onRemove {
+                    Button(role: .destructive, action: onRemove) {
+                        SettingsDestructiveIconLabel(systemName: "minus.circle")
+                    }
+                    .buttonStyle(.borderless)
+                    .controlSize(.small)
+                    .help("Remove Space mapping")
+                }
             }
         }
-        .padding(.horizontal, SettingsComponentMetrics.rowHorizontalPadding)
-        .padding(.vertical, SettingsComponentMetrics.rowVerticalPadding)
-        .frame(minHeight: SettingsComponentMetrics.listRowHeight)
     }
 
     private func actionBinding(for spaceID: String) -> Binding<ContextualHotkeyAction> {
