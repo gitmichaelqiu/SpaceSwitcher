@@ -91,7 +91,7 @@ final class ContextualHotkeyManager: ObservableObject {
         } else {
             spaceActions = []
         }
-        return ContextualHotkey(spaceActions: spaceActions)
+        return ContextualHotkey(isEnabled: false, spaceActions: spaceActions)
     }
 
     private func persistHotkeys() {
