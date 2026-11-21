@@ -123,13 +123,12 @@ struct HotkeysView: View {
                         .foregroundStyle(.primary)
                     HStack(spacing: 10) {
                         Text(hotkey.shortcutDescription)
-                            .font(.system(size: 12, weight: .medium, design: .monospaced))
                             .foregroundStyle(.secondary)
                         Text(String.localizedStringWithFormat(
                             NSLocalizedString("%lld Spaces", comment: "Number of Space mappings for a hotkey"),
                             Int64(hotkey.configuredSpaceCount)
                         ))
-                        .font(.system(size: 12))
+                        .font(.caption)
                         .foregroundStyle(.secondary)
                     }
                     if hotkeyManager.unavailableShortcutIDs.contains(hotkey.id) {
@@ -137,7 +136,7 @@ struct HotkeysView: View {
                             "This shortcut could not be registered. It may be unavailable.",
                             systemImage: "exclamationmark.triangle"
                         )
-                        .font(.system(size: 11))
+                        .font(.caption)
                         .foregroundStyle(.orange)
                     }
                 }
@@ -310,7 +309,7 @@ private struct HotkeyEditorView: View {
             SettingsRow("Name", warningText: nameWarningText) {
                 TextField("Name", text: $draft.name)
                     .textFieldStyle(.roundedBorder)
-                    .frame(maxWidth: 280)
+                    .frame(maxWidth: .infinity)
                     .accessibilityLabel("Hotkey name")
             }
 
@@ -354,7 +353,6 @@ private struct HotkeyEditorView: View {
                     Button("Add Space", systemImage: "plus") {
                         showingSpacePicker = true
                     }
-                    .buttonStyle(.bordered)
                     .disabled(!availableSpaces.contains(where: { !assignedSpaceIDs.contains($0.id) }))
                 }
             }
@@ -447,14 +445,14 @@ private struct HotkeyEditorView: View {
         action: Binding<ContextualHotkeyAction>,
         onRemove: (() -> Void)?
     ) -> some View {
-        let applicationMenu = ApplicationSelectionMenu(action: action)
+        let applicationPicker = ApplicationSelectionPicker(action: action)
         let applicationNeedsSelection = action.wrappedValue.isAction && !action.wrappedValue.isConfigured
         var rowWarningText = warningText
         if rowWarningText == nil {
             if applicationNeedsSelection {
                 rowWarningText = "Choose an application for this action."
             } else {
-                rowWarningText = applicationMenu.unavailableApplicationWarningText
+                rowWarningText = applicationPicker.unavailableApplicationWarningText
             }
         }
 
@@ -471,8 +469,8 @@ private struct HotkeyEditorView: View {
                 .fixedSize()
 
                 if action.wrappedValue.kind != .doNothing {
-                    applicationMenu
-                        .frame(maxWidth: 200, alignment: .leading)
+                    applicationPicker
+                        .frame(minWidth: 180, maxWidth: 280, alignment: .trailing)
                 }
 
                 if let onRemove {
@@ -520,26 +518,20 @@ private struct HotkeyRecorderControls: View {
     var body: some View {
         HStack(spacing: 8) {
             Text(isRecording ? "Press Shortcut…" : displayedShortcut)
-                .foregroundStyle(.secondary)
+                .foregroundColor(.secondary)
                 .padding(.trailing, 8)
 
-            Button {
+            Button("◉") {
                 isRecording = true
-            } label: {
-                Image(systemName: isRecording ? "record.circle.fill" : "record.circle")
-                    .foregroundStyle(isRecording ? Color.red : Color.primary)
             }
             .disabled(isRecording)
             .help("Record shortcut. Press Escape to cancel.")
             .accessibilityLabel(isRecording ? "Recording shortcut" : "Record shortcut")
 
-            if keyCode != nil {
-                Button(action: onClear) {
-                    Image(systemName: "xmark.circle")
-                }
+            Button("↺", action: onClear)
+                .disabled(keyCode == nil)
                 .help("Clear shortcut")
                 .accessibilityLabel("Clear shortcut")
-            }
         }
         .onChange(of: isRecording) { recording in
             if recording {
@@ -604,7 +596,7 @@ private struct SpacePickerSheet: View {
         VStack(spacing: 0) {
             VStack(alignment: .leading, spacing: 10) {
                 Text("Add Spaces")
-                    .font(.system(size: 18, weight: .semibold))
+                    .font(.title2.weight(.bold))
                 TextField("Search Spaces", text: $searchText)
                     .textFieldStyle(.roundedBorder)
             }
@@ -616,27 +608,25 @@ private struct SpacePickerSheet: View {
                     ForEach(filteredGroups) { group in
                         VStack(alignment: .leading, spacing: 4) {
                             Text(group.name)
-                                .font(.system(size: 12, weight: .semibold))
+                                .font(.caption.weight(.semibold))
                                 .foregroundStyle(.secondary)
+                                .lineLimit(1)
                                 .padding(.horizontal, 8)
 
                             ForEach(group.spaces) { space in
-                                Button {
+                                ApplicationPickerRow {
                                     onSelect(space)
                                 } label: {
-                                    HStack {
+                                    HStack(spacing: 10) {
                                         Image(systemName: "square")
                                             .foregroundStyle(.secondary)
                                         Text(spaceDisplayName(space))
+                                            .lineLimit(1)
                                         Spacer()
                                         Image(systemName: "plus")
                                             .foregroundStyle(.secondary)
                                     }
-                                    .padding(.horizontal, 8)
-                                    .padding(.vertical, 7)
-                                    .contentShape(Rectangle())
                                 }
-                                .buttonStyle(.plain)
                             }
                         }
                     }
@@ -649,7 +639,7 @@ private struct SpacePickerSheet: View {
                             Text("No Spaces found")
                                 .font(.headline)
                             Text("Try a different search.")
-                                .font(.system(size: 12))
+                                .font(.body)
                                 .foregroundStyle(.secondary)
                         }
                         .frame(maxWidth: .infinity, minHeight: 150)
@@ -670,26 +660,10 @@ private struct SpacePickerSheet: View {
     }
 }
 
-private struct ApplicationSelectionMenu: View {
+private struct ApplicationSelectionPicker: View {
     @Binding var action: ContextualHotkeyAction
-
-    private var runningApplications: [RunningApplicationChoice] {
-        let ownBundleIdentifier = Bundle.main.bundleIdentifier
-        return NSWorkspace.shared.runningApplications
-            .filter {
-                $0.activationPolicy == .regular
-                    && $0.bundleIdentifier != ownBundleIdentifier
-                    && !($0.bundleIdentifier ?? "").isEmpty
-            }
-            .compactMap { application in
-                guard let bundleIdentifier = application.bundleIdentifier else { return nil }
-                return RunningApplicationChoice(
-                    bundleIdentifier: bundleIdentifier,
-                    name: application.localizedName ?? bundleIdentifier
-                )
-            }
-            .sorted { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
-    }
+    @State private var isPresented = false
+    @State private var runningApplications: [RunningApplicationChoice] = []
 
     private var selectedAppIsAvailable: Bool {
         guard let bundleIdentifier = action.appBundleIdentifier else { return false }
@@ -703,40 +677,135 @@ private struct ApplicationSelectionMenu: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 3) {
-            Menu {
-                if runningApplications.isEmpty {
-                    Text("No running applications")
-                } else {
-                    Section("Running Applications") {
-                        ForEach(runningApplications) { app in
-                            Button(app.name) {
-                                select(app.name, bundleIdentifier: app.bundleIdentifier)
+        Button {
+            loadRunningApplications()
+            isPresented = true
+        } label: {
+            HStack(spacing: 10) {
+                Image(nsImage: selectedApplicationIcon)
+                    .resizable()
+                    .aspectRatio(contentMode: .fit)
+                    .frame(width: 20, height: 20)
+                    .clipShape(RoundedRectangle(cornerRadius: 4, style: .continuous))
+
+                Text(action.appName ?? NSLocalizedString("Choose App…", comment: "Choose an app for a contextual hotkey"))
+                    .lineLimit(1)
+                    .truncationMode(.middle)
+
+                Image(systemName: "chevron.down")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .buttonStyle(.plain)
+        .foregroundStyle(.primary)
+        .contentShape(Rectangle())
+        .help("Choose an application for this action")
+        .accessibilityLabel(action.appName ?? "Choose an application")
+        .popover(
+            isPresented: $isPresented,
+            attachmentAnchor: .point(UnitPoint(x: 1, y: 0.5)),
+            arrowEdge: .bottom
+        ) {
+            VStack(alignment: .leading, spacing: 0) {
+                Text("Target Application")
+                    .font(.headline)
+                    .foregroundStyle(.primary)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 6)
+
+                ScrollView(.vertical) {
+                    VStack(spacing: 2) {
+                        if runningApplications.isEmpty {
+                            Text("No running applications")
+                                .foregroundStyle(.secondary)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .padding(.horizontal, 8)
+                                .padding(.vertical, 6)
+                        } else {
+                            Text("Running Applications")
+                                .font(.headline)
+                                .foregroundStyle(.primary)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .padding(.horizontal, 8)
+                                .padding(.vertical, 4)
+
+                            ForEach(runningApplications) { app in
+                                ApplicationPickerRow {
+                                    select(app.name, bundleIdentifier: app.bundleIdentifier)
+                                    isPresented = false
+                                } label: {
+                                    HStack(spacing: 10) {
+                                        Image(nsImage: app.icon)
+                                            .resizable()
+                                            .aspectRatio(contentMode: .fit)
+                                            .frame(width: 20, height: 20)
+                                            .clipShape(RoundedRectangle(cornerRadius: 4, style: .continuous))
+
+                                        Text(app.name)
+                                            .lineLimit(1)
+
+                                        Spacer(minLength: 0)
+
+                                        if action.appBundleIdentifier == app.bundleIdentifier {
+                                            Image(systemName: "checkmark")
+                                                .font(.caption.weight(.semibold))
+                                                .foregroundStyle(.tint)
+                                        }
+                                    }
+                                }
                             }
                         }
                     }
                 }
+                .frame(maxHeight: 300)
+
                 Divider()
-                Button("Choose from Applications…", systemImage: "plus.square") {
-                    chooseApplication()
-                }
-            } label: {
-                HStack(spacing: 6) {
-                    Image(systemName: "app")
-                    Text(action.appName ?? NSLocalizedString("Choose App…", comment: "Choose an app for a contextual hotkey"))
-                        .lineLimit(1)
-                    Image(systemName: "chevron.down")
-                        .font(.system(size: 9, weight: .semibold))
+                    .padding(.vertical, 4)
+
+                ApplicationPickerRow(action: chooseApplication) {
+                    Label("Choose from Applications…", systemImage: "plus.app")
                 }
             }
-            .menuStyle(.borderlessButton)
-            .help("Choose an application for this action")
+            .padding(8)
+            .frame(width: 300)
+            .foregroundStyle(.primary)
         }
+    }
+
+    private var selectedApplicationIcon: NSImage {
+        guard let bundleIdentifier = action.appBundleIdentifier else {
+            return NSWorkspace.shared.icon(for: .applicationBundle)
+        }
+        if let applicationURL = NSWorkspace.shared.urlForApplication(withBundleIdentifier: bundleIdentifier) {
+            return NSWorkspace.shared.icon(forFile: applicationURL.path)
+        }
+        return NSRunningApplication.runningApplications(withBundleIdentifier: bundleIdentifier).first?.icon
+            ?? NSWorkspace.shared.icon(for: .applicationBundle)
     }
 
     private func select(_ name: String, bundleIdentifier: String) {
         action.appName = name
         action.appBundleIdentifier = bundleIdentifier
+    }
+
+    private func loadRunningApplications() {
+        let ownBundleIdentifier = Bundle.main.bundleIdentifier
+        runningApplications = NSWorkspace.shared.runningApplications
+            .filter {
+                $0.activationPolicy == .regular
+                    && $0.bundleIdentifier != ownBundleIdentifier
+                    && !($0.bundleIdentifier ?? "").isEmpty
+            }
+            .compactMap { application in
+                guard let bundleIdentifier = application.bundleIdentifier else { return nil }
+                return RunningApplicationChoice(
+                    bundleIdentifier: bundleIdentifier,
+                    name: application.localizedName ?? bundleIdentifier,
+                    icon: application.icon ?? NSWorkspace.shared.icon(for: .applicationBundle)
+                )
+            }
+            .sorted { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
     }
 
     private func chooseApplication() {
@@ -769,6 +838,7 @@ private struct ApplicationSelectionMenu: View {
 private struct RunningApplicationChoice: Identifiable {
     let bundleIdentifier: String
     let name: String
+    let icon: NSImage
 
     var id: String { bundleIdentifier }
 }

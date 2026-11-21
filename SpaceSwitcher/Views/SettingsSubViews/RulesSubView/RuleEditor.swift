@@ -707,7 +707,7 @@ struct RuleEditor: View {
     }
 }
 
-private struct ApplicationPickerRow<LabelContent: View>: View {
+struct ApplicationPickerRow<LabelContent: View>: View {
     private let action: () -> Void
     private let label: LabelContent
     @State private var isHovered = false
