@@ -256,7 +256,7 @@ private struct HotkeyEditorView: View {
     }
 
     var body: some View {
-        VStack(spacing: 0) {
+        VStack(alignment: .leading, spacing: 16) {
             VStack(alignment: .leading, spacing: 6) {
                 Text("Configure Contextual Hotkey")
                     .font(.title2.weight(.semibold))
@@ -265,8 +265,6 @@ private struct HotkeyEditorView: View {
                     .foregroundStyle(.secondary)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(.horizontal, SettingsComponentMetrics.containerPadding)
-            .padding(.top, SettingsComponentMetrics.containerPadding)
 
             ScrollView {
                 VStack(alignment: .leading, spacing: SettingsComponentMetrics.sectionSpacing) {
@@ -274,15 +272,15 @@ private struct HotkeyEditorView: View {
                     spaceActionsSection
                     fallbackSection
                 }
-                .padding(SettingsComponentMetrics.containerPadding)
-                .padding(.bottom, SettingsComponentMetrics.containerPadding)
             }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
 
-            Divider()
             HStack {
-                Spacer()
                 Button("Cancel", action: onCancel)
                     .keyboardShortcut(.cancelAction)
+
+                Spacer()
+
                 Button("Save Hotkey") {
                     onSave(draft)
                 }
@@ -290,10 +288,9 @@ private struct HotkeyEditorView: View {
                 .keyboardShortcut(.defaultAction)
                 .disabled(validationError != nil)
             }
-            .padding(.horizontal, SettingsComponentMetrics.containerPadding)
-            .padding(.vertical, 12)
         }
-        .frame(minWidth: 620, idealWidth: 680, minHeight: 560, idealHeight: 640)
+        .padding()
+        .frame(minWidth: 620, idealWidth: 680, minHeight: 500, idealHeight: 560)
         .sheet(isPresented: $showingSpacePicker) {
             SpacePickerSheet(
                 spaces: availableSpaces.filter { !assignedSpaceIDs.contains($0.id) },
@@ -324,21 +321,11 @@ private struct HotkeyEditorView: View {
                 helperText: "Use at least one modifier key, such as Command or Option. Escape cancels recording.",
                 warningText: shortcutWarningText
             ) {
-                HStack(spacing: 12) {
-                    HotkeyRecorderButton(
-                        keyCode: $draft.keyCode,
-                        modifiers: $draft.modifiers
-                    )
-                    if draft.keyCode != nil {
-                        Button("Clear") {
-                            draft.keyCode = nil
-                            draft.modifiers = 0
-                            draft.isEnabled = false
-                        }
-                        .buttonStyle(.borderless)
-                    }
-                    Spacer()
-                }
+                HotkeyRecorderControls(
+                    keyCode: $draft.keyCode,
+                    modifiers: $draft.modifiers,
+                    onClear: clearShortcut
+                )
             }
 
             Divider()
@@ -368,7 +355,6 @@ private struct HotkeyEditorView: View {
                         showingSpacePicker = true
                     }
                     .buttonStyle(.bordered)
-                    .controlSize(.small)
                     .disabled(!availableSpaces.contains(where: { !assignedSpaceIDs.contains($0.id) }))
                 }
             }
@@ -482,7 +468,6 @@ private struct HotkeyEditorView: View {
                 }
                 .labelsHidden()
                 .pickerStyle(.menu)
-                .controlSize(.small)
                 .fixedSize()
 
                 if action.wrappedValue.kind != .doNothing {
@@ -495,7 +480,6 @@ private struct HotkeyEditorView: View {
                         SettingsDestructiveIconLabel(systemName: "minus.circle")
                     }
                     .buttonStyle(.borderless)
-                    .controlSize(.small)
                     .help("Remove Space mapping")
                 }
             }
@@ -517,32 +501,46 @@ private struct HotkeyEditorView: View {
     private func removeSpace(_ spaceID: String) {
         draft.spaceActions.removeAll { $0.spaceID == spaceID }
     }
+
+    private func clearShortcut() {
+        draft.keyCode = nil
+        draft.modifiers = 0
+        draft.isEnabled = false
+    }
 }
 
-private struct HotkeyRecorderButton: View {
+private struct HotkeyRecorderControls: View {
     @Binding var keyCode: Int?
     @Binding var modifiers: UInt
+    let onClear: () -> Void
 
     @State private var isRecording = false
     @State private var eventMonitor: Any?
 
     var body: some View {
-        Button {
-            isRecording = true
-        } label: {
-            HStack(spacing: 8) {
-                Image(systemName: "keyboard")
-                Text(isRecording ? "Press Shortcut…" : displayedShortcut)
-                    .font(.system(size: 13, weight: .medium, design: .monospaced))
-                if isRecording {
-                    Text("Esc cancels")
-                        .font(.system(size: 11))
-                        .foregroundStyle(.secondary)
-                }
+        HStack(spacing: 8) {
+            Text(isRecording ? "Press Shortcut…" : displayedShortcut)
+                .foregroundStyle(.secondary)
+                .padding(.trailing, 8)
+
+            Button {
+                isRecording = true
+            } label: {
+                Image(systemName: isRecording ? "record.circle.fill" : "record.circle")
+                    .foregroundStyle(isRecording ? Color.red : Color.primary)
             }
-            .frame(minWidth: 200, minHeight: 32)
+            .disabled(isRecording)
+            .help("Record shortcut. Press Escape to cancel.")
+            .accessibilityLabel(isRecording ? "Recording shortcut" : "Record shortcut")
+
+            if keyCode != nil {
+                Button(action: onClear) {
+                    Image(systemName: "xmark.circle")
+                }
+                .help("Clear shortcut")
+                .accessibilityLabel("Clear shortcut")
+            }
         }
-        .buttonStyle(.bordered)
         .onChange(of: isRecording) { recording in
             if recording {
                 startMonitoringKeys()
@@ -557,7 +555,7 @@ private struct HotkeyRecorderButton: View {
     }
 
     private var displayedShortcut: String {
-        guard let keyCode else { return NSLocalizedString("Record Shortcut", comment: "Button to record a contextual hotkey") }
+        guard let keyCode else { return NSLocalizedString("No shortcut set", comment: "Contextual hotkey without a recorded shortcut") }
         return ShortcutHelper.format(code: keyCode, modifiers: modifiers)
     }
 
