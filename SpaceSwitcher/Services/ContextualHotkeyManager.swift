@@ -84,14 +84,16 @@ final class ContextualHotkeyManager: ObservableObject {
     }
 
     func newHotkey(currentSpaceID: String?, availableSpaces: [SpaceInfo]) -> ContextualHotkey {
-        let spaceActions: [ContextualHotkeySpaceAction]
+        let spaceActionGroups: [ContextualHotkeySpaceActionGroup]
         if let currentSpaceID,
            availableSpaces.contains(where: { $0.id == currentSpaceID }) {
-            spaceActions = [ContextualHotkeySpaceAction(spaceID: currentSpaceID, action: .doNothing)]
+            spaceActionGroups = [
+                ContextualHotkeySpaceActionGroup(spaceIDs: [currentSpaceID], action: .doNothing)
+            ]
         } else {
-            spaceActions = []
+            spaceActionGroups = []
         }
-        return ContextualHotkey(isEnabled: false, spaceActions: spaceActions)
+        return ContextualHotkey(isEnabled: false, spaceActionGroups: spaceActionGroups)
     }
 
     private func persistHotkeys() {

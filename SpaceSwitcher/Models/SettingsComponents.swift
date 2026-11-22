@@ -190,6 +190,7 @@ struct SettingsRow<Content: View>: View {
 struct SettingsSpacePickerToggleRow: View {
     let title: String
     @Binding var isOn: Bool
+    var isEnabled = true
     @State private var isHovered = false
 
     var body: some View {
@@ -212,6 +213,7 @@ struct SettingsSpacePickerToggleRow: View {
         )
         .contentShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
         .onHover { isHovered = $0 }
+        .disabled(!isEnabled)
     }
 }
 

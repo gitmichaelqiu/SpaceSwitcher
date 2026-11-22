@@ -195,7 +195,8 @@ struct HotkeysView: View {
 
 private struct HotkeyEditorView: View {
     @State private var draft: ContextualHotkey
-    @State private var isSpacePickerPresented = false
+    @State private var spacePickerGroupID: UUID?
+    @State private var groupPendingDeletion: UUID?
 
     let existingHotkeys: [ContextualHotkey]
     let availableSpaces: [SpaceInfo]
@@ -232,33 +233,8 @@ private struct HotkeyEditorView: View {
         Set(availableSpaces.map(\.id))
     }
 
-    private var assignedSpaceIDs: Set<String> {
-        Set(draft.spaceActions.map(\.spaceID))
-    }
-
-    private var selectedAvailableSpaceIDs: Set<String> {
-        assignedSpaceIDs.intersection(availableSpaceIDs)
-    }
-
-    private var selectedSpacesTitle: String {
-        let titles = availableSpaces
-            .filter { selectedAvailableSpaceIDs.contains($0.id) }
-            .map(spaceDisplayName)
-        return titles.isEmpty
-            ? String(localized: "Choose spaces", comment: "Empty contextual hotkey space picker label")
-            : titles.joined(separator: ", ")
-    }
-
-    private var assignedDisplayGroups: [SpaceDisplayGroup] {
-        SpaceDisplayGroup.make(
-            from: availableSpaces.filter { assignedSpaceIDs.contains($0.id) }
-        )
-    }
-
-    private var unavailableMappings: [ContextualHotkeySpaceAction] {
-        draft.spaceActions
-            .filter { !availableSpaceIDs.contains($0.spaceID) }
-            .sorted { $0.spaceID.localizedStandardCompare($1.spaceID) == .orderedAscending }
+    private var availableDisplayGroups: [SpaceDisplayGroup] {
+        SpaceDisplayGroup.make(from: availableSpaces)
     }
 
     var body: some View {
@@ -297,6 +273,25 @@ private struct HotkeyEditorView: View {
         }
         .padding()
         .frame(minWidth: 620, idealWidth: 680, minHeight: 400, idealHeight: 460)
+        .confirmationDialog(
+            "Remove workflow group?",
+            isPresented: Binding(
+                get: { groupPendingDeletion != nil },
+                set: { if !$0 { groupPendingDeletion = nil } }
+            )
+        ) {
+            Button("Remove group", role: .destructive) {
+                if let groupPendingDeletion {
+                    removeSpaceGroup(groupPendingDeletion)
+                }
+                groupPendingDeletion = nil
+            }
+            Button("Cancel", role: .cancel) {
+                groupPendingDeletion = nil
+            }
+        } message: {
+            Text("The spaces and actions in this group will be removed.")
+        }
     }
 
     private var identitySection: some View {
@@ -321,88 +316,84 @@ private struct HotkeyEditorView: View {
     }
 
     private var spaceActionsSection: some View {
-        SettingsSection("Space Actions") {
-            SettingsRow("Spaces") {
-                if availableSpaces.isEmpty {
-                    Text("No spaces detected")
-                        .foregroundStyle(.secondary)
-                } else {
-                    Button {
-                        isSpacePickerPresented = true
-                    } label: {
-                        HStack(spacing: 4) {
-                            Text(selectedSpacesTitle)
-                                .lineLimit(1)
-
-                            Image(systemName: "chevron.down")
-                                .font(.caption2.weight(.semibold))
+        VStack(alignment: .leading, spacing: 16) {
+            ForEach(Array(draft.spaceActionGroups.enumerated()), id: \.element.id) { index, group in
+                SettingsSection(
+                    String(format: NSLocalizedString("Workflow Group %lld", comment: "Contextual hotkey workflow group title"), index + 1),
+                    accessory: {
+                        Button(role: .destructive) {
+                            groupPendingDeletion = group.id
+                        } label: {
+                            SettingsDestructiveIconLabel(systemName: "trash")
                         }
+                        .buttonStyle(.borderless)
+                        .controlSize(.regular)
+                        .help("Remove workflow group")
+                        .accessibilityLabel("Remove workflow group")
                     }
-                    .buttonStyle(.borderless)
-                    .frame(minWidth: 180, maxWidth: 280, alignment: .trailing)
-                    .popover(
-                        isPresented: $isSpacePickerPresented,
-                        attachmentAnchor: .point(UnitPoint(x: 1, y: 0.5)),
-                        arrowEdge: .bottom
-                    ) {
-                        spacePickerPopover
-                    }
-                }
-            }
-
-            Divider()
-
-            ForEach(Array(assignedDisplayGroups.enumerated()), id: \.element.id) { groupIndex, group in
-                if groupIndex > 0 {
+                ) {
+                    spaceSelectionRow(for: group.id)
                     Divider()
-                }
-
-                if assignedDisplayGroups.count > 1 {
-                    Text(group.name)
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(.secondary)
-                        .padding(.leading, SettingsComponentMetrics.rowHorizontalPadding)
-                        .padding(.vertical, 4)
-                }
-
-                ForEach(Array(group.spaces.enumerated()), id: \.element.id) { index, space in
-                    if index > 0 {
-                        Divider()
-                    }
                     actionRow(
-                        title: LocalizedStringResource(stringLiteral: spaceDisplayName(space)),
-                        action: actionBinding(for: space.id)
+                        title: "Action",
+                        action: actionBinding(forGroupID: group.id)
                     )
                 }
             }
 
-            if !unavailableMappings.isEmpty {
-                if !assignedDisplayGroups.isEmpty {
-                    Divider()
-                }
-
-                ForEach(Array(unavailableMappings.enumerated()), id: \.element.id) { index, mapping in
-                    if index > 0 {
-                        Divider()
-                    }
-                    actionRow(
-                        title: "Unavailable Space (\(String(mapping.spaceID.prefix(8))))",
-                        action: actionBinding(for: mapping.spaceID),
-                        onRemove: { removeSpace(mapping.spaceID) }
+            Button {
+                withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                    draft.spaceActionGroups.append(
+                        ContextualHotkeySpaceActionGroup(spaceIDs: [], action: .doNothing)
                     )
                 }
+            } label: {
+                Label("Add workflow group", systemImage: "plus")
             }
+            .buttonStyle(.bordered)
+            .frame(maxWidth: .infinity, alignment: .center)
 
-            Divider()
-            actionRow(
-                title: "Other Spaces",
-                action: $draft.otherSpacesAction,
-                onRemove: nil
-            )
+            SettingsSection("Fallback Behavior") {
+                actionRow(
+                    title: "Other Spaces",
+                    action: $draft.otherSpacesAction
+                )
+            }
+        }
+        .animation(.easeInOut(duration: 0.25), value: draft.spaceActionGroups)
+    }
+
+    private func spaceSelectionRow(for groupID: UUID) -> some View {
+        SettingsRow("Spaces") {
+            if availableSpaces.isEmpty {
+                Text("No spaces detected")
+                    .foregroundStyle(.secondary)
+            } else {
+                Button {
+                    spacePickerGroupID = groupID
+                } label: {
+                    HStack(spacing: 4) {
+                        Text(selectedSpacesTitle(for: groupID))
+                            .lineLimit(1)
+
+                        Image(systemName: "chevron.down")
+                            .font(.caption2.weight(.semibold))
+                    }
+                }
+                .buttonStyle(.borderless)
+                .frame(minWidth: 180, maxWidth: 280, alignment: .trailing)
+                .popover(
+                    isPresented: spacePickerIsPresented(for: groupID),
+                    attachmentAnchor: .point(UnitPoint(x: 1, y: 0.5)),
+                    arrowEdge: .bottom
+                ) {
+                    spacePickerPopover(for: groupID)
+                }
+            }
         }
     }
 
-    private var spacePickerPopover: some View {
+    private func spacePickerPopover(for groupID: UUID) -> some View {
         VStack(alignment: .leading, spacing: 0) {
             ScrollView(.vertical) {
                 VStack(alignment: .leading, spacing: 0) {
@@ -418,14 +409,37 @@ private struct HotkeyEditorView: View {
                             }
 
                             ForEach(displayGroup.spaces) { space in
+                                let isSelectedHere = groupSpaceIDs(for: groupID).contains(space.id)
+                                let assignedToOtherGroup = draft.spaceActionGroups.contains {
+                                    $0.id != groupID && $0.spaceIDs.contains(space.id)
+                                }
                                 SettingsSpacePickerToggleRow(
                                     title: spaceDisplayName(space),
                                     isOn: Binding(
-                                        get: { selectedAvailableSpaceIDs.contains(space.id) },
-                                        set: { setSpace(space.id, isSelected: $0) }
-                                    )
+                                        get: { groupSpaceIDs(for: groupID).contains(space.id) },
+                                        set: { setSpace(space.id, inGroup: groupID, isSelected: $0) }
+                                    ),
+                                    isEnabled: !assignedToOtherGroup || isSelectedHere
                                 )
                             }
+                        }
+                    }
+
+                    let unavailableSpaceIDs = groupSpaceIDs(for: groupID)
+                        .subtracting(availableSpaceIDs)
+                        .sorted()
+                    if !unavailableSpaceIDs.isEmpty {
+                        Divider()
+                            .padding(.vertical, 4)
+
+                        ForEach(unavailableSpaceIDs, id: \.self) { spaceID in
+                            SettingsSpacePickerToggleRow(
+                                title: "Unavailable Space (\(String(spaceID.prefix(8))))",
+                                isOn: Binding(
+                                    get: { groupSpaceIDs(for: groupID).contains(spaceID) },
+                                    set: { setSpace(spaceID, inGroup: groupID, isSelected: $0) }
+                                )
+                            )
                         }
                     }
                 }
@@ -437,27 +451,53 @@ private struct HotkeyEditorView: View {
         .frame(width: 220)
     }
 
-    private var availableDisplayGroups: [SpaceDisplayGroup] {
-        SpaceDisplayGroup.make(from: availableSpaces)
+    private func spacePickerIsPresented(for groupID: UUID) -> Binding<Bool> {
+        Binding(
+            get: { spacePickerGroupID == groupID },
+            set: { isPresented in
+                if !isPresented, spacePickerGroupID == groupID {
+                    spacePickerGroupID = nil
+                }
+            }
+        )
     }
 
-    private func setSpace(_ spaceID: String, isSelected: Bool) {
-        let isAlreadySelected = draft.spaceActions.contains { $0.spaceID == spaceID }
+    private func groupSpaceIDs(for groupID: UUID) -> Set<String> {
+        draft.spaceActionGroups.first(where: { $0.id == groupID })?.spaceIDs ?? []
+    }
+
+    private func selectedSpacesTitle(for groupID: UUID) -> String {
+        let spaceIDs = groupSpaceIDs(for: groupID)
+        var titles = availableSpaces
+            .filter { spaceIDs.contains($0.id) }
+            .map(spaceDisplayName)
+        titles.append(contentsOf: spaceIDs.subtracting(availableSpaceIDs).sorted().map {
+            "Unavailable Space (\(String($0.prefix(8))))"
+        })
+        return titles.isEmpty
+            ? String(localized: "Choose spaces", comment: "Empty contextual hotkey space picker label")
+            : titles.joined(separator: ", ")
+    }
+
+    private func setSpace(_ spaceID: String, inGroup groupID: UUID, isSelected: Bool) {
+        guard let groupIndex = draft.spaceActionGroups.firstIndex(where: { $0.id == groupID }) else { return }
+        let isAlreadySelected = draft.spaceActionGroups[groupIndex].spaceIDs.contains(spaceID)
         guard isSelected != isAlreadySelected else { return }
 
         if isSelected {
-            draft.spaceActions.append(
-                ContextualHotkeySpaceAction(spaceID: spaceID, action: .doNothing)
-            )
+            let assignedElsewhere = draft.spaceActionGroups.enumerated().contains {
+                $0.offset != groupIndex && $0.element.spaceIDs.contains(spaceID)
+            }
+            guard !assignedElsewhere else { return }
+            draft.spaceActionGroups[groupIndex].spaceIDs.insert(spaceID)
         } else {
-            draft.spaceActions.removeAll { $0.spaceID == spaceID }
+            draft.spaceActionGroups[groupIndex].spaceIDs.remove(spaceID)
         }
     }
 
     private func actionRow(
         title: LocalizedStringResource,
-        action: Binding<ContextualHotkeyAction>,
-        onRemove: (() -> Void)? = nil
+        action: Binding<ContextualHotkeyAction>
     ) -> some View {
         VStack(alignment: .trailing, spacing: 0) {
             HStack {
@@ -475,15 +515,6 @@ private struct HotkeyEditorView: View {
                 .labelsHidden()
                 .pickerStyle(.menu)
                 .fixedSize()
-
-                if let onRemove {
-                    Button(role: .destructive, action: onRemove) {
-                        SettingsDestructiveIconLabel(systemName: "trash")
-                    }
-                    .buttonStyle(.borderless)
-                    .help("Remove Space mapping")
-                    .accessibilityLabel("Remove Space mapping")
-                }
             }
             .frame(height: SettingsComponentMetrics.compactControlHeight)
 
@@ -498,20 +529,25 @@ private struct HotkeyEditorView: View {
         .padding(.horizontal, SettingsComponentMetrics.rowHorizontalPadding)
     }
 
-    private func actionBinding(for spaceID: String) -> Binding<ContextualHotkeyAction> {
+    private func actionBinding(forGroupID groupID: UUID) -> Binding<ContextualHotkeyAction> {
         Binding(
             get: {
-                draft.spaceActions.first(where: { $0.spaceID == spaceID })?.action ?? .doNothing
+                draft.spaceActionGroups.first(where: { $0.id == groupID })?.action ?? .doNothing
             },
             set: { newAction in
-                guard let index = draft.spaceActions.firstIndex(where: { $0.spaceID == spaceID }) else { return }
-                draft.spaceActions[index].action = newAction
+                guard let index = draft.spaceActionGroups.firstIndex(where: { $0.id == groupID }) else { return }
+                draft.spaceActionGroups[index].action = newAction
             }
         )
     }
 
-    private func removeSpace(_ spaceID: String) {
-        draft.spaceActions.removeAll { $0.spaceID == spaceID }
+    private func removeSpaceGroup(_ groupID: UUID) {
+        withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+            draft.spaceActionGroups.removeAll { $0.id == groupID }
+        }
+        if spacePickerGroupID == groupID {
+            spacePickerGroupID = nil
+        }
     }
 
     private func clearShortcut() {
