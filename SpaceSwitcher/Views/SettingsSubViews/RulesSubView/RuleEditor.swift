@@ -810,7 +810,7 @@ struct SpaceConditionRow: View {
 
     private var spacePickerPopover: some View {
         VStack(alignment: .leading, spacing: 0) {
-            SpacePickerToggleRow(
+            SettingsSpacePickerToggleRow(
                 title: String(localized: "Source space", comment: "Special rule condition matching a window's current desktop"),
                 isOn: Binding(
                     get: { group.usesSourceSpace },
@@ -835,7 +835,7 @@ struct SpaceConditionRow: View {
                             }
 
                             ForEach(displayGroup.spaces) { space in
-                                SpacePickerToggleRow(
+                                SettingsSpacePickerToggleRow(
                                     title: spaceDisplayName(space),
                                     isOn: Binding(
                                         get: { group.targetSpaceIDs.contains(space.id) },
@@ -862,34 +862,6 @@ struct SpaceConditionRow: View {
 
     private var displayGroups: [SpaceDisplayGroup] {
         SpaceDisplayGroup.make(from: availableSpaces)
-    }
-}
-
-private struct SpacePickerToggleRow: View {
-    let title: String
-    @Binding var isOn: Bool
-    @State private var isHovered = false
-
-    var body: some View {
-        Toggle(isOn: $isOn) {
-            Text(verbatim: title)
-                .font(.body)
-                .lineLimit(1)
-        }
-            .toggleStyle(.checkbox)
-            .controlSize(.small)
-            .padding(.horizontal, 4)
-            .frame(maxWidth: .infinity, minHeight: 28, alignment: .leading)
-            .background(
-                RoundedRectangle(cornerRadius: 6, style: .continuous)
-                    .fill(
-                        isHovered
-                            ? Color(nsColor: .selectedContentBackgroundColor).opacity(0.22)
-                            : .clear
-                    )
-            )
-            .contentShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
-            .onHover { isHovered = $0 }
     }
 }
 

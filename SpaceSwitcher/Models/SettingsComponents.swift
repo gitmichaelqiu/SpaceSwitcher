@@ -187,6 +187,34 @@ struct SettingsRow<Content: View>: View {
     }
 }
 
+struct SettingsSpacePickerToggleRow: View {
+    let title: String
+    @Binding var isOn: Bool
+    @State private var isHovered = false
+
+    var body: some View {
+        Toggle(isOn: $isOn) {
+            Text(verbatim: title)
+                .font(.body)
+                .lineLimit(1)
+        }
+        .toggleStyle(.checkbox)
+        .controlSize(.small)
+        .padding(.horizontal, 4)
+        .frame(maxWidth: .infinity, minHeight: 28, alignment: .leading)
+        .background(
+            RoundedRectangle(cornerRadius: 6, style: .continuous)
+                .fill(
+                    isHovered
+                        ? Color(nsColor: .selectedContentBackgroundColor).opacity(0.22)
+                        : .clear
+                )
+        )
+        .contentShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
+        .onHover { isHovered = $0 }
+    }
+}
+
 struct SettingsRequirement: Identifiable {
     let name: String
     let isSatisfied: Bool

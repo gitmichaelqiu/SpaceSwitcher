@@ -195,6 +195,7 @@ struct HotkeysView: View {
 
 private struct HotkeyEditorView: View {
     @State private var draft: ContextualHotkey
+    @State private var isSpacePickerPresented = false
 
     let existingHotkeys: [ContextualHotkey]
     let availableSpaces: [SpaceInfo]
@@ -235,15 +236,22 @@ private struct HotkeyEditorView: View {
         Set(draft.spaceActions.map(\.spaceID))
     }
 
+    private var selectedAvailableSpaceIDs: Set<String> {
+        assignedSpaceIDs.intersection(availableSpaceIDs)
+    }
+
+    private var selectedSpacesTitle: String {
+        let titles = availableSpaces
+            .filter { selectedAvailableSpaceIDs.contains($0.id) }
+            .map(spaceDisplayName)
+        return titles.isEmpty
+            ? String(localized: "Choose spaces", comment: "Empty contextual hotkey space picker label")
+            : titles.joined(separator: ", ")
+    }
+
     private var assignedDisplayGroups: [SpaceDisplayGroup] {
         SpaceDisplayGroup.make(
             from: availableSpaces.filter { assignedSpaceIDs.contains($0.id) }
-        )
-    }
-
-    private var unassignedDisplayGroups: [SpaceDisplayGroup] {
-        SpaceDisplayGroup.make(
-            from: availableSpaces.filter { !assignedSpaceIDs.contains($0.id) }
         )
     }
 
@@ -313,17 +321,36 @@ private struct HotkeyEditorView: View {
     }
 
     private var spaceActionsSection: some View {
-        SettingsSection("Space Actions", accessory: {
-            addSpaceMenu
-        }) {
-            if assignedDisplayGroups.isEmpty && unavailableMappings.isEmpty {
-                Text("No Spaces assigned")
-                    .foregroundStyle(.secondary)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.horizontal, SettingsComponentMetrics.rowHorizontalPadding)
-                    .padding(.vertical, SettingsComponentMetrics.rowVerticalPadding)
-                    .frame(minHeight: SettingsComponentMetrics.listRowHeight)
+        SettingsSection("Space Actions") {
+            SettingsRow("Spaces") {
+                if availableSpaces.isEmpty {
+                    Text("No spaces detected")
+                        .foregroundStyle(.secondary)
+                } else {
+                    Button {
+                        isSpacePickerPresented = true
+                    } label: {
+                        HStack(spacing: 4) {
+                            Text(selectedSpacesTitle)
+                                .lineLimit(1)
+
+                            Image(systemName: "chevron.down")
+                                .font(.caption2.weight(.semibold))
+                        }
+                    }
+                    .buttonStyle(.borderless)
+                    .frame(minWidth: 180, maxWidth: 280, alignment: .trailing)
+                    .popover(
+                        isPresented: $isSpacePickerPresented,
+                        attachmentAnchor: .point(UnitPoint(x: 1, y: 0.5)),
+                        arrowEdge: .bottom
+                    ) {
+                        spacePickerPopover
+                    }
+                }
             }
+
+            Divider()
 
             ForEach(Array(assignedDisplayGroups.enumerated()), id: \.element.id) { groupIndex, group in
                 if groupIndex > 0 {
@@ -344,8 +371,7 @@ private struct HotkeyEditorView: View {
                     }
                     actionRow(
                         title: LocalizedStringResource(stringLiteral: spaceDisplayName(space)),
-                        action: actionBinding(for: space.id),
-                        onRemove: { removeSpace(space.id) }
+                        action: actionBinding(for: space.id)
                     )
                 }
             }
@@ -376,52 +402,62 @@ private struct HotkeyEditorView: View {
         }
     }
 
-    @ViewBuilder
-    private var addSpaceMenu: some View {
-        Menu {
-            if unassignedDisplayGroups.count > 1 {
-                ForEach(unassignedDisplayGroups) { group in
-                    Section(group.name) {
-                        spaceMenuItems(group.spaces)
+    private var spacePickerPopover: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            ScrollView(.vertical) {
+                VStack(alignment: .leading, spacing: 0) {
+                    ForEach(availableDisplayGroups) { displayGroup in
+                        VStack(alignment: .leading, spacing: 0) {
+                            if availableDisplayGroups.count > 1 {
+                                Text(verbatim: displayGroup.name)
+                                    .font(.caption.weight(.semibold))
+                                    .foregroundStyle(.secondary)
+                                    .lineLimit(1)
+                                    .padding(.horizontal, 8)
+                                    .padding(.vertical, 5)
+                            }
+
+                            ForEach(displayGroup.spaces) { space in
+                                SettingsSpacePickerToggleRow(
+                                    title: spaceDisplayName(space),
+                                    isOn: Binding(
+                                        get: { selectedAvailableSpaceIDs.contains(space.id) },
+                                        set: { setSpace(space.id, isSelected: $0) }
+                                    )
+                                )
+                            }
+                        }
                     }
                 }
-            } else {
-                spaceMenuItems(unassignedDisplayGroups.first?.spaces ?? [])
             }
-        } label: {
-            SettingsIconControlLabel(systemName: "plus")
-                .frame(
-                    width: SettingsComponentMetrics.compactControlHeight,
-                    height: SettingsComponentMetrics.compactControlHeight
-                )
-                .background {
-                    RoundedRectangle(cornerRadius: 7, style: .continuous)
-                        .fill(Color(nsColor: .controlBackgroundColor))
-                }
-                .contentShape(RoundedRectangle(cornerRadius: 7, style: .continuous))
+            .frame(maxHeight: 252)
         }
-        .menuStyle(.borderlessButton)
-        .menuIndicator(.hidden)
-        .help("Add a Space action")
-        .accessibilityLabel("Add Space action")
-        .disabled(unassignedDisplayGroups.isEmpty)
+        .padding(.vertical, 6)
+        .padding(.horizontal, 8)
+        .frame(width: 220)
     }
 
-    @ViewBuilder
-    private func spaceMenuItems(_ spaces: [SpaceInfo]) -> some View {
-        ForEach(spaces) { space in
-            Button(spaceDisplayName(space)) {
-                draft.spaceActions.append(
-                    ContextualHotkeySpaceAction(spaceID: space.id, action: .doNothing)
-                )
-            }
+    private var availableDisplayGroups: [SpaceDisplayGroup] {
+        SpaceDisplayGroup.make(from: availableSpaces)
+    }
+
+    private func setSpace(_ spaceID: String, isSelected: Bool) {
+        let isAlreadySelected = draft.spaceActions.contains { $0.spaceID == spaceID }
+        guard isSelected != isAlreadySelected else { return }
+
+        if isSelected {
+            draft.spaceActions.append(
+                ContextualHotkeySpaceAction(spaceID: spaceID, action: .doNothing)
+            )
+        } else {
+            draft.spaceActions.removeAll { $0.spaceID == spaceID }
         }
     }
 
     private func actionRow(
         title: LocalizedStringResource,
         action: Binding<ContextualHotkeyAction>,
-        onRemove: (() -> Void)?
+        onRemove: (() -> Void)? = nil
     ) -> some View {
         VStack(alignment: .trailing, spacing: 0) {
             HStack {
