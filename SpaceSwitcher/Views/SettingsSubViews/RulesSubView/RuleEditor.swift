@@ -483,15 +483,25 @@ struct RuleEditor: View {
         Button { addAction(.hide) } label: {
             Label("Hide", systemImage: "eye.slash")
         }
+        Button { addAction(.unhide) } label: {
+            Label("Unhide", systemImage: "eye")
+        }
         Button { addAction(.minimize) } label: {
             Label("Minimize", systemImage: "arrow.down.right.and.arrow.up.left")
+        }
+        Button { addAction(.unminimize) } label: {
+            Label("Unminimize", systemImage: "arrow.up.left.and.arrow.down.right")
         }
         Button { addAction(.bringToFront) } label: {
             Label("Bring to front", systemImage: "arrow.up.forward.app")
         }
         Divider()
-        Button {
-            addCondition(.windowMinimized)
+        Menu {
+            ForEach(RuleCondition.allCases) { condition in
+                Button(condition.localizedString) {
+                    addCondition(condition)
+                }
+            }
         } label: {
             Label("If", systemImage: "arrow.triangle.branch")
         }
@@ -1054,7 +1064,9 @@ struct ActionListRows: View {
         case .show: return "eye"
         case .restore: return "arrow.uturn.backward"
         case .hide: return "eye.slash"
+        case .unhide: return "eye"
         case .minimize: return "arrow.down.right.and.arrow.up.left"
+        case .unminimize: return "arrow.up.left.and.arrow.down.right"
         case .bringToFront: return "arrow.up.forward.app"
         case .ifCondition(_): return "arrow.triangle.branch"
         case .endIf: return "arrow.turn.down.right"
@@ -1240,7 +1252,9 @@ struct ActionRowContent: View {
         case .show: return "eye"
         case .restore: return "arrow.uturn.backward"
         case .hide: return "eye.slash"
+        case .unhide: return "eye"
         case .minimize: return "arrow.down.right.and.arrow.up.left"
+        case .unminimize: return "arrow.up.left.and.arrow.down.right"
         case .bringToFront: return "arrow.up.forward.app"
         case .ifCondition(_): return "arrow.triangle.branch"
         case .endIf: return "arrow.turn.down.right"

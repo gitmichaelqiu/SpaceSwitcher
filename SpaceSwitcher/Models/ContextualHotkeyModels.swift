@@ -6,6 +6,12 @@ enum ContextualHotkeyActionKind: String, CaseIterable, Codable, Hashable, Identi
     case doNothing
     case openOrActivate
     case activateIfRunning
+    case hideApp
+    case unhideApp
+    case toggleAppVisibility
+    case minimizeWindows
+    case unminimizeWindows
+    case toggleWindowMinimization
 
     var id: String { rawValue }
 
@@ -14,6 +20,21 @@ enum ContextualHotkeyActionKind: String, CaseIterable, Codable, Hashable, Identi
         case .doNothing: NSLocalizedString("Do nothing", comment: "Contextual hotkey action")
         case .openOrActivate: NSLocalizedString("Open or activate app", comment: "Contextual hotkey action")
         case .activateIfRunning: NSLocalizedString("Activate only if running", comment: "Contextual hotkey action")
+        case .hideApp: NSLocalizedString("Hide app", comment: "Contextual hotkey action")
+        case .unhideApp: NSLocalizedString("Unhide app", comment: "Contextual hotkey action")
+        case .toggleAppVisibility: NSLocalizedString("Toggle app visibility", comment: "Contextual hotkey action")
+        case .minimizeWindows: NSLocalizedString("Minimize windows", comment: "Contextual hotkey action")
+        case .unminimizeWindows: NSLocalizedString("Unminimize windows", comment: "Contextual hotkey action")
+        case .toggleWindowMinimization: NSLocalizedString("Toggle window minimization", comment: "Contextual hotkey action")
+        }
+    }
+
+    var requiresAccessibility: Bool {
+        switch self {
+        case .minimizeWindows, .unminimizeWindows, .toggleWindowMinimization:
+            true
+        default:
+            false
         }
     }
 }
@@ -42,6 +63,7 @@ struct ContextualHotkeyAction: Codable, Equatable, Hashable {
     var isAction: Bool {
         kind != .doNothing
     }
+
 }
 
 struct ContextualHotkeySpaceAction: Codable, Equatable, Hashable, Identifiable {
@@ -80,6 +102,11 @@ struct ContextualHotkey: Codable, Equatable, Hashable, Identifiable {
 
     func action(for spaceID: String) -> ContextualHotkeyAction {
         spaceActions.first(where: { $0.spaceID == spaceID })?.action ?? otherSpacesAction
+    }
+
+    var requiresAccessibility: Bool {
+        (spaceActions.map(\.action) + [otherSpacesAction])
+            .contains { $0.kind.requiresAccessibility }
     }
 
     var shortcutDescription: String {

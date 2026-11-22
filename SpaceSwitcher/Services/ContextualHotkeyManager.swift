@@ -182,7 +182,7 @@ final class ContextualHotkeyManager: ObservableObject {
             apiIsAvailable: spaceManager.apiAvailability == .available,
             hotkeysAreEnabled: isEnabled
         )
-        guard let action, action.kind != .doNothing,
+        guard let action,
               let bundleIdentifier = action.appBundleIdentifier,
               !bundleIdentifier.isEmpty else {
             return
@@ -211,6 +211,44 @@ final class ContextualHotkeyManager: ObservableObject {
                     completionHandler: nil
                 )
             }
+        case .hideApp:
+            _ = runningApplication?.hide()
+        case .unhideApp:
+            _ = runningApplication?.unhide()
+        case .toggleAppVisibility:
+            guard let runningApplication else { return }
+            if runningApplication.isHidden {
+                _ = runningApplication.unhide()
+            } else {
+                _ = runningApplication.hide()
+            }
+        case .minimizeWindows:
+            guard let runningApplication else { return }
+            setMinimized(true, for: runningApplication)
+        case .unminimizeWindows:
+            guard let runningApplication else { return }
+            setMinimized(false, for: runningApplication)
+        case .toggleWindowMinimization:
+            guard let runningApplication else { return }
+            toggleWindowMinimization(for: runningApplication)
+        }
+    }
+
+    private func setMinimized(_ isMinimized: Bool, for application: NSRunningApplication) {
+        let windows = WindowSpaceService.windows(for: application)
+        for window in windows {
+            guard WindowSpaceService.isMinimized(window) != isMinimized else { continue }
+            _ = WindowSpaceService.setMinimized(window, isMinimized: isMinimized)
+        }
+    }
+
+    private func toggleWindowMinimization(for application: NSRunningApplication) {
+        let windows = WindowSpaceService.windows(for: application)
+        guard !windows.isEmpty else { return }
+
+        let shouldMinimize = !windows.allSatisfy { WindowSpaceService.isMinimized($0) == true }
+        for window in windows {
+            _ = WindowSpaceService.setMinimized(window, isMinimized: shouldMinimize)
         }
     }
 

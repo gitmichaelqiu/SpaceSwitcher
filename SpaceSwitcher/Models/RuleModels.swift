@@ -51,6 +51,8 @@ enum WindowAction: Identifiable, Codable, Equatable, Hashable {
     case restore
     case hide
     case minimize
+    case unhide
+    case unminimize
     case bringToFront
     case ifCondition(RuleCondition)
     case endIf
@@ -65,6 +67,8 @@ enum WindowAction: Identifiable, Codable, Equatable, Hashable {
         case .restore: return "restore"
         case .hide: return "hide"
         case .minimize: return "minimize"
+        case .unhide: return "unhide"
+        case .unminimize: return "unminimize"
         case .bringToFront: return "bringToFront"
         case .ifCondition(let condition): return "if-\(condition.rawValue)"
         case .endIf: return "endIf"
@@ -79,6 +83,8 @@ enum WindowAction: Identifiable, Codable, Equatable, Hashable {
         case .restore: return NSLocalizedString("Restore", comment: "")
         case .hide: return NSLocalizedString("Hide", comment: "")
         case .minimize: return NSLocalizedString("Minimize", comment: "")
+        case .unhide: return NSLocalizedString("Unhide", comment: "")
+        case .unminimize: return NSLocalizedString("Unminimize", comment: "")
         case .bringToFront: return NSLocalizedString("Bring to front", comment: "")
         case .ifCondition(let condition):
             return String(
@@ -106,6 +112,8 @@ enum WindowAction: Identifiable, Codable, Equatable, Hashable {
         case "restore": self = .restore
         case "hide": self = .hide
         case "minimize": self = .minimize
+        case "unhide": self = .unhide
+        case "unminimize": self = .unminimize
         case "bringToFront": self = .bringToFront
         case "if":
             let condition = try container.decode(RuleCondition.self, forKey: .condition)
@@ -132,6 +140,8 @@ enum WindowAction: Identifiable, Codable, Equatable, Hashable {
         case .restore: try container.encode("restore", forKey: .type)
         case .hide: try container.encode("hide", forKey: .type)
         case .minimize: try container.encode("minimize", forKey: .type)
+        case .unhide: try container.encode("unhide", forKey: .type)
+        case .unminimize: try container.encode("unminimize", forKey: .type)
         case .bringToFront: try container.encode("bringToFront", forKey: .type)
         case .ifCondition(let condition):
             try container.encode("if", forKey: .type)

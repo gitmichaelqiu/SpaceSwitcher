@@ -6,6 +6,7 @@ import UniformTypeIdentifiers
 struct HotkeysView: View {
     @ObservedObject var hotkeyManager: ContextualHotkeyManager
     @ObservedObject var spaceManager: SpaceManager
+    @StateObject private var permissionManager = PermissionManager.shared
 
     @State private var presentedEditor: ContextualHotkey?
     @State private var hotkeyPendingDeletion: ContextualHotkey?
@@ -51,15 +52,23 @@ struct HotkeysView: View {
         SettingsSection("Automation") {
             SettingsRow(
                 "Enable contextual hotkeys",
-                requirements: [
-                    .spaceAPI(isAvailable: spaceManager.apiAvailability == .available)
-                ]
+                requirements: automationRequirements
             ) {
                 Toggle("", isOn: $hotkeyManager.isEnabled)
                     .labelsHidden()
                     .toggleStyle(.switch)
             }
         }
+    }
+
+    private var automationRequirements: [SettingsRequirement] {
+        var requirements: [SettingsRequirement] = [
+            .spaceAPI(isAvailable: spaceManager.apiAvailability == .available)
+        ]
+        if hotkeyManager.hotkeys.contains(where: \.requiresAccessibility) {
+            requirements.append(.accessibility(isGranted: permissionManager.isAccessibilityGranted))
+        }
+        return requirements
     }
 
     private var hotkeysSection: some View {
@@ -414,7 +423,7 @@ private struct HotkeyEditorView: View {
         action: Binding<ContextualHotkeyAction>,
         onRemove: (() -> Void)?
     ) -> some View {
-        VStack(spacing: 6) {
+        VStack(alignment: .trailing, spacing: 0) {
             HStack {
                 Text(title)
                     .lineLimit(1)
@@ -440,14 +449,16 @@ private struct HotkeyEditorView: View {
                     .accessibilityLabel("Remove Space mapping")
                 }
             }
+            .frame(height: SettingsComponentMetrics.compactControlHeight)
 
             if action.wrappedValue.kind != .doNothing {
                 ApplicationSelectionPicker(action: action)
-                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .frame(maxWidth: .infinity, alignment: .trailing)
+                    .frame(height: SettingsComponentMetrics.compactControlHeight)
             }
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(.vertical, 8)
+        .frame(maxWidth: .infinity, alignment: .trailing)
+        .padding(.vertical, 4)
         .padding(.horizontal, SettingsComponentMetrics.rowHorizontalPadding)
     }
 
@@ -609,6 +620,8 @@ private struct ApplicationSelectionPicker: View {
             }
         } label: {
             HStack(spacing: 8) {
+                Spacer(minLength: 0)
+
                 Image(nsImage: selectedApplicationIcon)
                     .resizable()
                     .aspectRatio(contentMode: .fit)
@@ -618,8 +631,6 @@ private struct ApplicationSelectionPicker: View {
                 Text(applicationLabel)
                     .lineLimit(1)
                     .truncationMode(.middle)
-
-                Spacer(minLength: 4)
 
                 Image(systemName: "chevron.down")
                     .font(.caption2.weight(.semibold))
