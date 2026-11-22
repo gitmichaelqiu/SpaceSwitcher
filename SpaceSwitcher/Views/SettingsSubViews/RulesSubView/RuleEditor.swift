@@ -117,13 +117,15 @@ struct RuleEditor: View {
                     "Definitions",
                     systemImage: "info.circle"
                 )
+                .labelStyle(.iconOnly)
+                .frame(width: 32, height: 32)
+                .background(.quaternary.opacity(0.35), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+                .contentShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
             }
             .buttonStyle(.plain)
-            .labelStyle(.iconOnly)
             .foregroundStyle(.secondary)
-            .frame(width: 32, height: 32)
-            .background(.quaternary.opacity(0.35), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
             .help("Definitions")
+            .accessibilityLabel("Definitions")
             .popover(
                 isPresented: $showingLegend,
                 attachmentAnchor: .point(.bottom),

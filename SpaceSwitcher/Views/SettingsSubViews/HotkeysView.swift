@@ -285,7 +285,7 @@ private struct HotkeyEditorView: View {
     private var identitySection: some View {
         SettingsSection("Shortcut") {
             SettingsRow("Name") {
-                TextField("Name", text: $draft.name)
+                TextField("", text: $draft.name)
                     .textFieldStyle(.roundedBorder)
                     .frame(maxWidth: .infinity)
                     .accessibilityLabel("Hotkey name")
@@ -414,13 +414,16 @@ private struct HotkeyEditorView: View {
         action: Binding<ContextualHotkeyAction>,
         onRemove: (() -> Void)?
     ) -> some View {
-        let applicationPicker = ApplicationSelectionPicker(action: action)
+        VStack(spacing: 6) {
+            HStack {
+                Text(title)
+                    .lineLimit(1)
 
-        return SettingsRow(title) {
-            HStack(spacing: 8) {
+                Spacer(minLength: 12)
+
                 Picker("Action", selection: action.kind) {
                     ForEach(ContextualHotkeyActionKind.allCases) { kind in
-                        Label(kind.title, systemImage: kind.symbolName)
+                        Text(kind.title)
                             .tag(kind)
                     }
                 }
@@ -428,19 +431,24 @@ private struct HotkeyEditorView: View {
                 .pickerStyle(.menu)
                 .fixedSize()
 
-                if action.wrappedValue.kind != .doNothing {
-                    applicationPicker
-                }
-
                 if let onRemove {
                     Button(role: .destructive, action: onRemove) {
-                        SettingsDestructiveIconLabel(systemName: "minus.circle")
+                        SettingsDestructiveIconLabel(systemName: "trash")
                     }
                     .buttonStyle(.borderless)
                     .help("Remove Space mapping")
+                    .accessibilityLabel("Remove Space mapping")
                 }
             }
+
+            if action.wrappedValue.kind != .doNothing {
+                ApplicationSelectionPicker(action: action)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.vertical, 8)
+        .padding(.horizontal, SettingsComponentMetrics.rowHorizontalPadding)
     }
 
     private func actionBinding(for spaceID: String) -> Binding<ContextualHotkeyAction> {
@@ -555,7 +563,8 @@ private struct ApplicationSelectionPicker: View {
                 guard let bundleIdentifier = application.bundleIdentifier else { return nil }
                 return RunningApplicationChoice(
                     bundleIdentifier: bundleIdentifier,
-                    name: application.localizedName ?? bundleIdentifier
+                    name: application.localizedName ?? bundleIdentifier,
+                    icon: application.icon ?? NSWorkspace.shared.icon(for: .applicationBundle)
                 )
             }
             .sorted { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
@@ -568,8 +577,26 @@ private struct ApplicationSelectionPicker: View {
             } else {
                 Section("Running Applications") {
                     ForEach(runningApplications) { application in
-                        Button(application.name) {
+                        Button {
                             select(application.name, bundleIdentifier: application.bundleIdentifier)
+                        } label: {
+                            HStack(spacing: 8) {
+                                Image(nsImage: application.icon)
+                                    .resizable()
+                                    .aspectRatio(contentMode: .fit)
+                                    .frame(width: 18, height: 18)
+                                    .clipShape(RoundedRectangle(cornerRadius: 4, style: .continuous))
+
+                                Text(application.name)
+                                    .lineLimit(1)
+
+                                Spacer(minLength: 12)
+
+                                if action.appBundleIdentifier == application.bundleIdentifier {
+                                    Image(systemName: "checkmark")
+                                        .foregroundStyle(.tint)
+                                }
+                            }
                         }
                     }
                 }
@@ -581,12 +608,42 @@ private struct ApplicationSelectionPicker: View {
                 chooseApplication()
             }
         } label: {
-            Text(applicationLabel)
-                .lineLimit(1)
+            HStack(spacing: 8) {
+                Image(nsImage: selectedApplicationIcon)
+                    .resizable()
+                    .aspectRatio(contentMode: .fit)
+                    .frame(width: 20, height: 20)
+                    .clipShape(RoundedRectangle(cornerRadius: 4, style: .continuous))
+
+                Text(applicationLabel)
+                    .lineLimit(1)
+                    .truncationMode(.middle)
+
+                Spacer(minLength: 4)
+
+                Image(systemName: "chevron.down")
+                    .font(.caption2.weight(.semibold))
+                    .foregroundStyle(.secondary)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .contentShape(Rectangle())
         }
         .menuStyle(.borderlessButton)
+        .menuIndicator(.hidden)
+        .foregroundStyle(.primary)
         .help("Choose an application for this action")
         .accessibilityLabel("Choose application: \(applicationLabel)")
+    }
+
+    private var selectedApplicationIcon: NSImage {
+        guard let bundleIdentifier = action.appBundleIdentifier else {
+            return NSWorkspace.shared.icon(for: .applicationBundle)
+        }
+        if let applicationURL = NSWorkspace.shared.urlForApplication(withBundleIdentifier: bundleIdentifier) {
+            return NSWorkspace.shared.icon(forFile: applicationURL.path)
+        }
+        return NSRunningApplication.runningApplications(withBundleIdentifier: bundleIdentifier).first?.icon
+            ?? NSWorkspace.shared.icon(for: .applicationBundle)
     }
 
     private var applicationLabel: String {
@@ -633,6 +690,7 @@ private struct ApplicationSelectionPicker: View {
 private struct RunningApplicationChoice: Identifiable {
     let bundleIdentifier: String
     let name: String
+    let icon: NSImage
 
     var id: String { bundleIdentifier }
 }

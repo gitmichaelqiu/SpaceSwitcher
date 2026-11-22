@@ -16,14 +16,6 @@ enum ContextualHotkeyActionKind: String, CaseIterable, Codable, Hashable, Identi
         case .activateIfRunning: NSLocalizedString("Activate only if running", comment: "Contextual hotkey action")
         }
     }
-
-    var symbolName: String {
-        switch self {
-        case .doNothing: "minus.circle"
-        case .openOrActivate: "arrow.up.forward.app"
-        case .activateIfRunning: "macwindow.on.rectangle"
-        }
-    }
 }
 
 struct ContextualHotkeyAction: Codable, Equatable, Hashable {
@@ -70,7 +62,7 @@ struct ContextualHotkey: Codable, Equatable, Hashable, Identifiable {
 
     init(
         id: UUID = UUID(),
-        name: String = "Open Workspace App",
+        name: String = "",
         keyCode: Int? = nil,
         modifiers: UInt = 0,
         isEnabled: Bool = true,
@@ -95,10 +87,6 @@ struct ContextualHotkey: Codable, Equatable, Hashable, Identifiable {
             return NSLocalizedString("No shortcut set", comment: "Contextual hotkey without a recorded shortcut")
         }
         return ShortcutHelper.format(code: keyCode, modifiers: modifiers)
-    }
-
-    var configuredSpaceCount: Int {
-        spaceActions.count
     }
 
     func duplicate(named name: String? = nil) -> Self {
