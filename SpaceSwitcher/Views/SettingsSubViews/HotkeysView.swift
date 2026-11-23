@@ -196,6 +196,7 @@ struct HotkeysView: View {
 private struct HotkeyEditorView: View {
     @State private var draft: ContextualHotkey
     @State private var spacePickerGroupID: UUID?
+    @State private var actionPickerID: String?
     @State private var groupPendingDeletion: UUID?
 
     let existingHotkeys: [ContextualHotkey]
@@ -238,9 +239,10 @@ private struct HotkeyEditorView: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
+        VStack(alignment: .leading, spacing: 0) {
             Text(editorTitle)
                 .font(.title2.weight(.semibold))
+                .padding(.bottom, 16)
 
             ScrollView {
                 VStack(alignment: .leading, spacing: SettingsComponentMetrics.sectionSpacing) {
@@ -249,27 +251,33 @@ private struct HotkeyEditorView: View {
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .padding(.bottom, 16)
 
-            if let validationError {
-                Text(validationError.message)
-                    .font(.callout)
-                    .foregroundStyle(.red)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
+            Divider()
 
-            HStack {
-                Button("Cancel", action: onCancel)
-                    .keyboardShortcut(.cancelAction)
-
-                Spacer()
-
-                Button("Save") {
-                    onSave(draft)
+            VStack(alignment: .leading, spacing: 12) {
+                if let validationError {
+                    Text(validationError.message)
+                        .font(.callout)
+                        .foregroundStyle(.red)
+                        .fixedSize(horizontal: false, vertical: true)
                 }
-                .buttonStyle(.borderedProminent)
-                .keyboardShortcut(.defaultAction)
-                .disabled(validationError != nil)
+
+                HStack {
+                    Button("Cancel", action: onCancel)
+                        .keyboardShortcut(.cancelAction)
+
+                    Spacer()
+
+                    Button("Save") {
+                        onSave(draft)
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .keyboardShortcut(.defaultAction)
+                    .disabled(validationError != nil)
+                }
             }
+            .padding(.top, 12)
         }
         .padding()
         .frame(minWidth: 700, idealWidth: 820, minHeight: 500, idealHeight: 620)
@@ -336,7 +344,8 @@ private struct HotkeyEditorView: View {
                     Divider()
                     actionRow(
                         title: "Action",
-                        action: actionBinding(forGroupID: group.id)
+                        action: actionBinding(forGroupID: group.id),
+                        pickerID: "group-\(group.id.uuidString)"
                     )
                 }
             }
@@ -356,7 +365,8 @@ private struct HotkeyEditorView: View {
             SettingsSection("Fallback Behavior") {
                 actionRow(
                     title: "Other Spaces",
-                    action: $draft.otherSpacesAction
+                    action: $draft.otherSpacesAction,
+                    pickerID: "fallback"
                 )
             }
         }
@@ -381,6 +391,7 @@ private struct HotkeyEditorView: View {
                     }
                 }
                 .buttonStyle(.borderless)
+                .foregroundStyle(.secondary)
                 .frame(minWidth: 180, maxWidth: 280, alignment: .trailing)
                 .popover(
                     isPresented: spacePickerIsPresented(for: groupID),
@@ -497,7 +508,8 @@ private struct HotkeyEditorView: View {
 
     private func actionRow(
         title: LocalizedStringResource,
-        action: Binding<ContextualHotkeyAction>
+        action: Binding<ContextualHotkeyAction>,
+        pickerID: String
     ) -> some View {
         VStack(alignment: .trailing, spacing: 0) {
             HStack {
@@ -506,38 +518,32 @@ private struct HotkeyEditorView: View {
 
                 Spacer(minLength: 12)
 
-                Menu {
-                    Button(ContextualHotkeyActionKind.doNothing.title) {
-                        action.kind.wrappedValue = .doNothing
-                    }
-
-                    Divider()
-
-                    ForEach(ContextualHotkeyActionCategory.allCases) { category in
-                        Menu(category.title) {
-                            ForEach(category.actions) { kind in
-                                Button(kind.title) {
-                                    action.kind.wrappedValue = kind
-                                }
-                            }
-                        }
-                    }
+                Button {
+                    actionPickerID = pickerID
                 } label: {
                     HStack(spacing: 5) {
                         Text(action.wrappedValue.kind.title)
                             .lineLimit(1)
 
+                        Spacer(minLength: 6)
+
                         Image(systemName: "chevron.down")
                             .font(.caption2.weight(.semibold))
-                            .foregroundStyle(.secondary)
                     }
+                    .frame(minWidth: 180, maxWidth: 240, alignment: .trailing)
                     .contentShape(Rectangle())
                 }
-                .menuStyle(.borderlessButton)
-                .menuIndicator(.hidden)
+                .buttonStyle(.plain)
+                .foregroundStyle(.secondary)
                 .help("Choose an action")
                 .accessibilityLabel("Action: \(action.wrappedValue.kind.title)")
-                .fixedSize()
+                .popover(
+                    isPresented: actionPickerIsPresented(for: pickerID),
+                    attachmentAnchor: .point(.bottom),
+                    arrowEdge: .top
+                ) {
+                    actionPickerPopover(for: pickerID, action: action)
+                }
             }
             .frame(height: SettingsComponentMetrics.compactControlHeight)
 
@@ -550,6 +556,69 @@ private struct HotkeyEditorView: View {
         .frame(maxWidth: .infinity, alignment: .trailing)
         .padding(.vertical, 4)
         .padding(.horizontal, SettingsComponentMetrics.rowHorizontalPadding)
+    }
+
+    private func actionPickerPopover(
+        for pickerID: String,
+        action: Binding<ContextualHotkeyAction>
+    ) -> some View {
+        VStack(alignment: .leading, spacing: 4) {
+            actionPickerOption(.doNothing, pickerID: pickerID, action: action)
+
+            Divider()
+                .padding(.vertical, 4)
+
+            ForEach(ContextualHotkeyActionCategory.allCases) { category in
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(category.title)
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(.secondary)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 4)
+
+                    ForEach(category.actions) { kind in
+                        actionPickerOption(kind, pickerID: pickerID, action: action)
+                    }
+                }
+            }
+        }
+        .padding(8)
+        .frame(width: 260)
+    }
+
+    private func actionPickerOption(
+        _ kind: ContextualHotkeyActionKind,
+        pickerID: String,
+        action: Binding<ContextualHotkeyAction>
+    ) -> some View {
+        let isSelected = action.wrappedValue.kind == kind
+
+        return Button {
+            action.kind.wrappedValue = kind
+            if actionPickerID == pickerID {
+                actionPickerID = nil
+            }
+        } label: {
+            Text(kind.title)
+                .font(.body.weight(isSelected ? .semibold : .regular))
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.horizontal, 8)
+                .padding(.vertical, 5)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .foregroundStyle(.primary)
+    }
+
+    private func actionPickerIsPresented(for pickerID: String) -> Binding<Bool> {
+        Binding(
+            get: { actionPickerID == pickerID },
+            set: { isPresented in
+                if !isPresented, actionPickerID == pickerID {
+                    actionPickerID = nil
+                }
+            }
+        )
     }
 
     private func actionBinding(forGroupID groupID: UUID) -> Binding<ContextualHotkeyAction> {
@@ -570,6 +639,9 @@ private struct HotkeyEditorView: View {
         }
         if spacePickerGroupID == groupID {
             spacePickerGroupID = nil
+        }
+        if actionPickerID == "group-\(groupID.uuidString)" {
+            actionPickerID = nil
         }
     }
 
@@ -736,7 +808,7 @@ private struct ApplicationSelectionPicker: View {
         }
         .menuStyle(.borderlessButton)
         .menuIndicator(.hidden)
-        .foregroundStyle(.primary)
+        .foregroundStyle(.secondary)
         .help("Choose an application for this action")
         .accessibilityLabel("Choose application: \(applicationLabel)")
     }
