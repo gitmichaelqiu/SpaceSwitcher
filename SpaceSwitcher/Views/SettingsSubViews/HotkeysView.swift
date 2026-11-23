@@ -119,6 +119,11 @@ struct HotkeysView: View {
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
+            .contextMenu {
+                Button("Duplicate", systemImage: "plus.square.on.square") {
+                    presentedEditor = hotkeyManager.duplicate(hotkey)
+                }
+            }
 
             Toggle(
                 "Enable hotkey",
