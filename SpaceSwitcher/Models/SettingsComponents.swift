@@ -446,6 +446,22 @@ struct SettingsDestructiveIconLabel: View {
     }
 }
 
+struct SettingsValidationMessage: View {
+    let message: Text
+
+    var body: some View {
+        Label {
+            message
+                .fixedSize(horizontal: false, vertical: true)
+        } icon: {
+            Image(systemName: "exclamationmark.triangle.fill")
+        }
+        .font(.caption)
+        .foregroundStyle(.orange)
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+}
+
 extension View {
     func settingsIconControlFrame(size: CGFloat = SettingsComponentMetrics.iconButtonSize) -> some View {
         frame(width: size, height: size)

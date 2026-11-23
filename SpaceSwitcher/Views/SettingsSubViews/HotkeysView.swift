@@ -289,15 +289,14 @@ private struct HotkeyEditorView: View {
     private var footerView: some View {
         VStack(spacing: 8) {
             if let validationError {
-                Text(validationError.message)
-                    .font(.callout)
-                    .foregroundStyle(.red)
-                    .fixedSize(horizontal: false, vertical: true)
+                SettingsValidationMessage(message: Text(validationError.message))
             }
 
             HStack(spacing: 12) {
                 Button("Cancel", action: onCancel)
-                    .controlSize(.large)
+                    .buttonStyle(.bordered)
+                    .buttonBorderShape(.roundedRectangle)
+                    .controlSize(.regular)
                     .keyboardShortcut(.cancelAction)
 
                 Spacer()
@@ -306,7 +305,8 @@ private struct HotkeyEditorView: View {
                     onSave(draft)
                 }
                 .buttonStyle(.borderedProminent)
-                .controlSize(.large)
+                .buttonBorderShape(.roundedRectangle)
+                .controlSize(.regular)
                 .keyboardShortcut(.defaultAction)
                 .disabled(validationError != nil)
             }

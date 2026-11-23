@@ -397,21 +397,15 @@ struct RuleEditor: View {
     private var footerView: some View {
         VStack(spacing: 8) {
             if let validationMessage {
-                Label {
-                    Text(validationMessage)
-                        .fixedSize(horizontal: false, vertical: true)
-                } icon: {
-                    Image(systemName: "exclamationmark.triangle.fill")
-                }
-                .font(.caption)
-                .foregroundStyle(.orange)
-                .frame(maxWidth: .infinity, alignment: .leading)
+                SettingsValidationMessage(message: Text(validationMessage))
             }
 
             HStack(spacing: 12) {
                 Button("Cancel", action: onCancel)
-                    .controlSize(.large)
-                    .keyboardShortcut(.escape, modifiers: [])
+                    .buttonStyle(.bordered)
+                    .buttonBorderShape(.roundedRectangle)
+                    .controlSize(.regular)
+                    .keyboardShortcut(.cancelAction)
 
                 Spacer()
 
@@ -419,9 +413,10 @@ struct RuleEditor: View {
                     onSave(workingRule)
                 }
                 .buttonStyle(.borderedProminent)
-                .controlSize(.large)
+                .buttonBorderShape(.roundedRectangle)
+                .controlSize(.regular)
                 .disabled(validationMessage != nil)
-                .keyboardShortcut(.return, modifiers: [])
+                .keyboardShortcut(.defaultAction)
             }
         }
         .padding(.horizontal, 20)
