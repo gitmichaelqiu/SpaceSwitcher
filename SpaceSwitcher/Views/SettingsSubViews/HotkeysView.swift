@@ -196,7 +196,6 @@ struct HotkeysView: View {
 private struct HotkeyEditorView: View {
     @State private var draft: ContextualHotkey
     @State private var spacePickerGroupID: UUID?
-    @State private var actionPickerID: String?
     @State private var groupPendingDeletion: UUID?
 
     let existingHotkeys: [ContextualHotkey]
@@ -240,46 +239,12 @@ private struct HotkeyEditorView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            Text(editorTitle)
-                .font(.title2.weight(.semibold))
-                .padding(.bottom, 16)
-
-            ScrollView {
-                VStack(alignment: .leading, spacing: SettingsComponentMetrics.sectionSpacing) {
-                    identitySection
-                    spaceActionsSection
-                }
-            }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .padding(.bottom, 16)
+            editorContent
 
             Divider()
 
-            VStack(alignment: .leading, spacing: 12) {
-                if let validationError {
-                    Text(validationError.message)
-                        .font(.callout)
-                        .foregroundStyle(.red)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-
-                HStack {
-                    Button("Cancel", action: onCancel)
-                        .keyboardShortcut(.cancelAction)
-
-                    Spacer()
-
-                    Button("Save") {
-                        onSave(draft)
-                    }
-                    .buttonStyle(.borderedProminent)
-                    .keyboardShortcut(.defaultAction)
-                    .disabled(validationError != nil)
-                }
-            }
-            .padding(.top, 12)
+            footerView
         }
-        .padding()
         .frame(minWidth: 700, idealWidth: 820, minHeight: 500, idealHeight: 620)
         .confirmationDialog(
             "Remove workflow group?",
@@ -300,6 +265,55 @@ private struct HotkeyEditorView: View {
         } message: {
             Text("The spaces and actions in this group will be removed.")
         }
+    }
+
+    private var editorContent: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            Text(editorTitle)
+                .font(.title2.weight(.semibold))
+
+            ScrollView {
+                VStack(alignment: .leading, spacing: SettingsComponentMetrics.sectionSpacing) {
+                    identitySection
+                    spaceActionsSection
+                }
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+        }
+        .padding(.horizontal, 20)
+        .padding(.vertical, 16)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        .background(Color(nsColor: .windowBackgroundColor))
+    }
+
+    private var footerView: some View {
+        VStack(spacing: 8) {
+            if let validationError {
+                Text(validationError.message)
+                    .font(.callout)
+                    .foregroundStyle(.red)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+
+            HStack(spacing: 12) {
+                Button("Cancel", action: onCancel)
+                    .controlSize(.large)
+                    .keyboardShortcut(.cancelAction)
+
+                Spacer()
+
+                Button("Save") {
+                    onSave(draft)
+                }
+                .buttonStyle(.borderedProminent)
+                .controlSize(.large)
+                .keyboardShortcut(.defaultAction)
+                .disabled(validationError != nil)
+            }
+        }
+        .padding(.horizontal, 20)
+        .padding(.vertical, 12)
+        .background(Color(nsColor: .windowBackgroundColor))
     }
 
     private var identitySection: some View {
@@ -344,8 +358,7 @@ private struct HotkeyEditorView: View {
                     Divider()
                     actionRow(
                         title: "Action",
-                        action: actionBinding(forGroupID: group.id),
-                        pickerID: "group-\(group.id.uuidString)"
+                        action: actionBinding(forGroupID: group.id)
                     )
                 }
             }
@@ -365,8 +378,7 @@ private struct HotkeyEditorView: View {
             SettingsSection("Fallback Behavior") {
                 actionRow(
                     title: "Other Spaces",
-                    action: $draft.otherSpacesAction,
-                    pickerID: "fallback"
+                    action: $draft.otherSpacesAction
                 )
             }
         }
@@ -508,117 +520,37 @@ private struct HotkeyEditorView: View {
 
     private func actionRow(
         title: LocalizedStringResource,
-        action: Binding<ContextualHotkeyAction>,
-        pickerID: String
+        action: Binding<ContextualHotkeyAction>
     ) -> some View {
-        VStack(alignment: .trailing, spacing: 0) {
-            HStack {
-                Text(title)
-                    .lineLimit(1)
+        SettingsRow(title) {
+            VStack(alignment: .trailing, spacing: 6) {
+                Picker("Action", selection: action.kind) {
+                    Text(ContextualHotkeyActionKind.doNothing.title)
+                        .tag(ContextualHotkeyActionKind.doNothing)
 
-                Spacer(minLength: 12)
-
-                Button {
-                    actionPickerID = pickerID
-                } label: {
-                    HStack(spacing: 5) {
-                        Text(action.wrappedValue.kind.title)
-                            .lineLimit(1)
-
-                        Spacer(minLength: 6)
-
-                        Image(systemName: "chevron.down")
-                            .font(.caption2.weight(.semibold))
+                    ForEach(ContextualHotkeyActionCategory.allCases) { category in
+                        Section {
+                            ForEach(category.actions) { kind in
+                                Text(kind.title)
+                                    .tag(kind)
+                            }
+                        } header: {
+                            Text(verbatim: category.title)
+                        }
                     }
-                    .frame(minWidth: 180, maxWidth: 240, alignment: .trailing)
-                    .contentShape(Rectangle())
                 }
-                .buttonStyle(.plain)
+                .labelsHidden()
+                .pickerStyle(.menu)
+                .fixedSize()
                 .foregroundStyle(.secondary)
                 .help("Choose an action")
-                .accessibilityLabel("Action: \(action.wrappedValue.kind.title)")
-                .popover(
-                    isPresented: actionPickerIsPresented(for: pickerID),
-                    attachmentAnchor: .point(.bottom),
-                    arrowEdge: .top
-                ) {
-                    actionPickerPopover(for: pickerID, action: action)
-                }
-            }
-            .frame(height: SettingsComponentMetrics.compactControlHeight)
 
-            if action.wrappedValue.kind != .doNothing {
-                ApplicationSelectionPicker(action: action)
-                    .frame(maxWidth: .infinity, alignment: .trailing)
-                    .frame(height: SettingsComponentMetrics.compactControlHeight)
-            }
-        }
-        .frame(maxWidth: .infinity, alignment: .trailing)
-        .padding(.vertical, 4)
-        .padding(.horizontal, SettingsComponentMetrics.rowHorizontalPadding)
-    }
-
-    private func actionPickerPopover(
-        for pickerID: String,
-        action: Binding<ContextualHotkeyAction>
-    ) -> some View {
-        VStack(alignment: .leading, spacing: 4) {
-            actionPickerOption(.doNothing, pickerID: pickerID, action: action)
-
-            Divider()
-                .padding(.vertical, 4)
-
-            ForEach(ContextualHotkeyActionCategory.allCases) { category in
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(category.title)
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(.secondary)
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 4)
-
-                    ForEach(category.actions) { kind in
-                        actionPickerOption(kind, pickerID: pickerID, action: action)
-                    }
+                if action.wrappedValue.kind != .doNothing {
+                    ApplicationSelectionPicker(action: action)
+                        .frame(minWidth: 220, maxWidth: 280, alignment: .trailing)
                 }
             }
         }
-        .padding(8)
-        .frame(width: 260)
-    }
-
-    private func actionPickerOption(
-        _ kind: ContextualHotkeyActionKind,
-        pickerID: String,
-        action: Binding<ContextualHotkeyAction>
-    ) -> some View {
-        let isSelected = action.wrappedValue.kind == kind
-
-        return Button {
-            action.kind.wrappedValue = kind
-            if actionPickerID == pickerID {
-                actionPickerID = nil
-            }
-        } label: {
-            Text(kind.title)
-                .font(.body.weight(isSelected ? .semibold : .regular))
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.horizontal, 8)
-                .padding(.vertical, 5)
-                .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
-        .foregroundStyle(.primary)
-    }
-
-    private func actionPickerIsPresented(for pickerID: String) -> Binding<Bool> {
-        Binding(
-            get: { actionPickerID == pickerID },
-            set: { isPresented in
-                if !isPresented, actionPickerID == pickerID {
-                    actionPickerID = nil
-                }
-            }
-        )
     }
 
     private func actionBinding(forGroupID groupID: UUID) -> Binding<ContextualHotkeyAction> {
@@ -639,9 +571,6 @@ private struct HotkeyEditorView: View {
         }
         if spacePickerGroupID == groupID {
             spacePickerGroupID = nil
-        }
-        if actionPickerID == "group-\(groupID.uuidString)" {
-            actionPickerID = nil
         }
     }
 
