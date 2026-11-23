@@ -446,6 +446,43 @@ struct SettingsDestructiveIconLabel: View {
     }
 }
 
+struct SettingsListItemActions: View {
+    @Binding var isEnabled: Bool
+    let toggleLabel: LocalizedStringKey
+    let editHelp: LocalizedStringKey
+    let deleteHelp: LocalizedStringKey
+    var isToggleEnabled = true
+    let onEdit: () -> Void
+    let onDelete: () -> Void
+
+    var body: some View {
+        HStack(spacing: 8) {
+            Toggle(toggleLabel, isOn: $isEnabled)
+                .labelsHidden()
+                .toggleStyle(.switch)
+                .controlSize(.small)
+                .fixedSize()
+                .disabled(!isToggleEnabled)
+
+            Button("Edit", action: onEdit)
+                .buttonStyle(.bordered)
+                .controlSize(.small)
+                .frame(minWidth: 46)
+                .help(editHelp)
+
+            Button(role: .destructive, action: onDelete) {
+                SettingsDestructiveIconLabel(systemName: "trash")
+                    .frame(width: 24, height: 20)
+            }
+            .buttonStyle(.bordered)
+            .controlSize(.small)
+            .help(deleteHelp)
+            .accessibilityLabel(deleteHelp)
+        }
+        .fixedSize(horizontal: true, vertical: false)
+    }
+}
+
 struct SettingsIconControlButton: View {
     let label: String
     let systemName: String

@@ -158,7 +158,7 @@ struct GeneralSettingsView: View {
     }
 
     private var importButton: some View {
-        Button("Import", systemImage: "square.and.arrow.down") {
+        Button("Import") {
             showingImportPicker = true
         }
         .buttonStyle(.bordered)
@@ -171,7 +171,7 @@ struct GeneralSettingsView: View {
     }
 
     private var exportButton: some View {
-        Button("Export", systemImage: "square.and.arrow.up", action: exportSettings)
+        Button("Export", action: exportSettings)
             .buttonStyle(.bordered)
             .disabled(ruleManager.rules.isEmpty && contextualHotkeyManager.hotkeys.isEmpty)
             .fileExporter(

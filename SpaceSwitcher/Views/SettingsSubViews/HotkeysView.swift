@@ -125,37 +125,22 @@ struct HotkeysView: View {
                 }
             }
 
-            Toggle(
-                "Enable hotkey",
-                isOn: Binding(
+            SettingsListItemActions(
+                isEnabled: Binding(
                     get: { hotkeyManager.hotkeys.first(where: { $0.id == hotkey.id })?.isEnabled ?? false },
                     set: { isEnabled in
                         var updated = hotkey
                         updated.isEnabled = isEnabled
                         hotkeyManager.update(updated)
                     }
-                )
+                ),
+                toggleLabel: "Enable hotkey",
+                editHelp: "Edit hotkey",
+                deleteHelp: "Delete hotkey",
+                isToggleEnabled: hotkey.keyCode != nil,
+                onEdit: { presentedEditor = hotkey },
+                onDelete: { hotkeyPendingDeletion = hotkey }
             )
-            .labelsHidden()
-            .toggleStyle(.switch)
-            .disabled(hotkey.keyCode == nil)
-
-            Button("Edit") {
-                presentedEditor = hotkey
-            }
-            .buttonStyle(.bordered)
-            .controlSize(.small)
-            .help("Edit hotkey")
-
-            Button(role: .destructive) {
-                hotkeyPendingDeletion = hotkey
-            } label: {
-                SettingsDestructiveIconLabel(systemName: "trash")
-            }
-            .buttonStyle(.borderless)
-            .controlSize(.small)
-            .help("Delete hotkey")
-            .accessibilityLabel("Delete hotkey")
         }
         .padding(.horizontal, SettingsComponentMetrics.rowHorizontalPadding)
         .padding(.vertical, SettingsComponentMetrics.rowVerticalPadding)
@@ -637,6 +622,7 @@ private struct HotkeyRecorderControls: View {
 
 private struct ApplicationSelectionPicker: View {
     @Binding var action: ContextualHotkeyAction
+    @State private var showingApplicationPicker = false
 
     private var selectedAppIsAvailable: Bool {
         guard let bundleIdentifier = action.appBundleIdentifier else { return false }
@@ -644,66 +630,11 @@ private struct ApplicationSelectionPicker: View {
             || !NSRunningApplication.runningApplications(withBundleIdentifier: bundleIdentifier).isEmpty
     }
 
-    private var runningApplications: [RunningApplicationChoice] {
-        let ownBundleIdentifier = Bundle.main.bundleIdentifier
-        return NSWorkspace.shared.runningApplications
-            .filter {
-                $0.activationPolicy == .regular
-                    && $0.bundleIdentifier != ownBundleIdentifier
-                    && !($0.bundleIdentifier ?? "").isEmpty
-            }
-            .compactMap { application in
-                guard let bundleIdentifier = application.bundleIdentifier else { return nil }
-                return RunningApplicationChoice(
-                    bundleIdentifier: bundleIdentifier,
-                    name: application.localizedName ?? bundleIdentifier,
-                    icon: application.icon ?? NSWorkspace.shared.icon(for: .applicationBundle)
-                )
-            }
-            .sorted { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
-    }
-
     var body: some View {
-        Menu {
-            if runningApplications.isEmpty {
-                Text("No running applications")
-            } else {
-                Section("Running Applications") {
-                    ForEach(runningApplications) { application in
-                        Button {
-                            select(application.name, bundleIdentifier: application.bundleIdentifier)
-                        } label: {
-                            HStack(spacing: 8) {
-                                Image(nsImage: application.icon)
-                                    .resizable()
-                                    .aspectRatio(contentMode: .fit)
-                                    .frame(width: 18, height: 18)
-                                    .clipShape(RoundedRectangle(cornerRadius: 4, style: .continuous))
-
-                                Text(application.name)
-                                    .lineLimit(1)
-
-                                Spacer(minLength: 12)
-
-                                if action.appBundleIdentifier == application.bundleIdentifier {
-                                    Image(systemName: "checkmark")
-                                        .foregroundStyle(.tint)
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-
-            Divider()
-
-            Button("Choose from Applications…", systemImage: "plus.square") {
-                chooseApplication()
-            }
+        Button {
+            showingApplicationPicker.toggle()
         } label: {
             HStack(spacing: 8) {
-                Spacer(minLength: 0)
-
                 Image(nsImage: selectedApplicationIcon)
                     .resizable()
                     .aspectRatio(contentMode: .fit)
@@ -718,14 +649,27 @@ private struct ApplicationSelectionPicker: View {
                     .font(.caption2.weight(.semibold))
                     .foregroundStyle(.secondary)
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
+            .frame(maxWidth: .infinity, alignment: .trailing)
             .contentShape(Rectangle())
         }
-        .menuStyle(.borderlessButton)
-        .menuIndicator(.hidden)
+        .buttonStyle(.borderless)
         .foregroundStyle(.secondary)
         .help("Choose an application for this action")
         .accessibilityLabel("Choose application: \(applicationLabel)")
+        .popover(
+            isPresented: $showingApplicationPicker,
+            attachmentAnchor: .point(UnitPoint(x: 1, y: 0.5)),
+            arrowEdge: .top
+        ) {
+            RunningApplicationPickerPopover(
+                selectedBundleIdentifier: action.appBundleIdentifier,
+                includesAllAppsOption: false,
+                isAllAppsSelected: false,
+                onSelectAllApps: {},
+                onSelectApplication: select,
+                onChooseApplication: chooseApplication
+            )
+        }
     }
 
     private var selectedApplicationIcon: NSImage {
@@ -751,9 +695,11 @@ private struct ApplicationSelectionPicker: View {
     private func select(_ name: String, bundleIdentifier: String) {
         action.appName = name
         action.appBundleIdentifier = bundleIdentifier
+        showingApplicationPicker = false
     }
 
     private func chooseApplication() {
+        showingApplicationPicker = false
         guard let window = NSApp.keyWindow else { return }
         let panel = NSOpenPanel()
         panel.allowedContentTypes = [.application]
@@ -778,12 +724,4 @@ private struct ApplicationSelectionPicker: View {
             }
         }
     }
-}
-
-private struct RunningApplicationChoice: Identifiable {
-    let bundleIdentifier: String
-    let name: String
-    let icon: NSImage
-
-    var id: String { bundleIdentifier }
 }

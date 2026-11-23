@@ -7,7 +7,6 @@ struct RuleEditor: View {
     let availableSpaces: [SpaceInfo]
     let onSave: (AppRule) -> Void
     let onCancel: () -> Void
-    @State private var runningApps: [(name: String, id: String, icon: NSImage)] = []
     @State private var showingLegend = false
     @State private var showingApplicationPicker = false
     @State private var groupPendingDeletion: UUID?
@@ -40,7 +39,6 @@ struct RuleEditor: View {
             // Sheets can reuse their content between presentations. Always start
             // from the rule that was selected for this presentation.
             workingRule = initialRule
-            loadRunningApps()
         }
         .confirmationDialog(
             "Remove workflow group?",
@@ -153,102 +151,24 @@ struct RuleEditor: View {
             attachmentAnchor: .point(UnitPoint(x: 1, y: 0.5)),
             arrowEdge: .top
         ) {
-            runningApplicationsPopover
-        }
-        .onChange(of: showingApplicationPicker) { isPresented in
-            if isPresented {
-                loadRunningApps()
-            }
-        }
-    }
-
-    private var runningApplicationsPopover: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            Text("Target Application")
-                .font(.headline)
-                .foregroundStyle(.primary)
-                .padding(.horizontal, 8)
-                .padding(.vertical, 6)
-
-            ScrollView(.vertical) {
-                VStack(spacing: 2) {
-                    ApplicationPickerRow {
-                        selectAllApps()
-                        showingApplicationPicker = false
-                    } label: {
-                        HStack(spacing: 10) {
-                            Image(systemName: "square.grid.2x2")
-                                .font(.body)
-                                .frame(width: 20, height: 20)
-
-                            Text("All apps")
-                                .lineLimit(1)
-
-                            Spacer(minLength: 0)
-
-                            if workingRule.appliesToAllApps {
-                                Image(systemName: "checkmark")
-                                    .font(.caption.weight(.semibold))
-                                    .foregroundStyle(.tint)
-                            }
-                        }
-                    }
-
-                    if !runningApps.isEmpty {
-                        Divider()
-                            .padding(.horizontal, 8)
-                            .padding(.vertical, 4)
-
-                        Text("Running Applications")
-                            .font(.headline)
-                            .foregroundStyle(.primary)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .padding(.horizontal, 8)
-                            .padding(.vertical, 4)
-                    }
-
-                    ForEach(runningApps, id: \.id) { app in
-                        ApplicationPickerRow {
-                            selectApp(name: app.name, id: app.id)
-                            showingApplicationPicker = false
-                        } label: {
-                            HStack(spacing: 10) {
-                                Image(nsImage: app.icon)
-                                    .resizable()
-                                    .aspectRatio(contentMode: .fit)
-                                    .frame(width: 20, height: 20)
-                                    .cornerRadius(4)
-
-                                Text(app.name)
-                                    .lineLimit(1)
-
-                                Spacer(minLength: 0)
-
-                                if !workingRule.appliesToAllApps && workingRule.appBundleID == app.id {
-                                    Image(systemName: "checkmark")
-                                        .font(.caption.weight(.semibold))
-                                        .foregroundStyle(.tint)
-                                }
-                            }
-                        }
-                    }
+            RunningApplicationPickerPopover(
+                selectedBundleIdentifier: workingRule.appBundleID,
+                includesAllAppsOption: true,
+                isAllAppsSelected: workingRule.appliesToAllApps,
+                onSelectAllApps: {
+                    selectAllApps()
+                    showingApplicationPicker = false
+                },
+                onSelectApplication: { name, bundleIdentifier in
+                    selectApp(name: name, id: bundleIdentifier)
+                    showingApplicationPicker = false
+                },
+                onChooseApplication: {
+                    showingApplicationPicker = false
+                    pickOtherApp()
                 }
-            }
-            .frame(maxHeight: 300)
-
-            Divider()
-                .padding(.vertical, 6)
-
-            ApplicationPickerRow {
-                showingApplicationPicker = false
-                pickOtherApp()
-            } label: {
-                Label("Choose from Applications...", systemImage: "plus.app")
-            }
+            )
         }
-        .padding(8)
-        .frame(width: 300)
-        .foregroundStyle(.primary)
     }
 
     private var applicationPickerLabel: some View {
@@ -665,20 +585,6 @@ struct RuleEditor: View {
             ?? fallback
     }
     
-    private func loadRunningApps() {
-        let ownBundleID = Bundle.main.bundleIdentifier
-        let apps = NSWorkspace.shared.runningApplications.filter {
-            $0.activationPolicy == .regular && $0.bundleIdentifier != ownBundleID
-        }
-        self.runningApps = apps.map { (
-            name: $0.localizedName ?? "Unknown",
-            id: $0.bundleIdentifier ?? "",
-            icon: $0.icon ?? NSImage()
-        ) }
-        .filter { !$0.id.isEmpty }
-        .sorted { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
-    }
-    
     private var actionDefinitionsPopover: some View {
         ScrollView(.vertical) {
             VStack(alignment: .leading, spacing: 16) {
@@ -711,40 +617,6 @@ struct RuleEditor: View {
                 .foregroundStyle(.secondary)
                 .lineSpacing(2)
         }
-    }
-}
-
-struct ApplicationPickerRow<LabelContent: View>: View {
-    private let action: () -> Void
-    private let label: LabelContent
-    @State private var isHovered = false
-
-    init(
-        action: @escaping () -> Void,
-        @ViewBuilder label: () -> LabelContent
-    ) {
-        self.action = action
-        self.label = label()
-    }
-
-    var body: some View {
-        Button(action: action) {
-            label
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.horizontal, 8)
-                .padding(.vertical, 6)
-        }
-        .buttonStyle(.borderless)
-        .background(
-            RoundedRectangle(cornerRadius: 6, style: .continuous)
-                .fill(
-                    isHovered
-                        ? Color(nsColor: .selectedContentBackgroundColor)
-                        : Color.clear
-                )
-        )
-        .contentShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
-        .onHover { isHovered = $0 }
     }
 }
 
