@@ -75,23 +75,11 @@ struct HotkeysView: View {
         SettingsSection(
             "Shortcuts",
             accessory: {
-                Button {
-                    addHotkey()
-                } label: {
-                    SettingsIconControlLabel(systemName: "plus")
-                        .frame(
-                            width: SettingsComponentMetrics.compactControlHeight,
-                            height: SettingsComponentMetrics.compactControlHeight
-                        )
-                        .background {
-                            RoundedRectangle(cornerRadius: 7, style: .continuous)
-                                .fill(Color(nsColor: .controlBackgroundColor))
-                        }
-                        .contentShape(RoundedRectangle(cornerRadius: 7, style: .continuous))
-                }
-                .buttonStyle(.borderless)
-                .help("Add hotkey")
-                .accessibilityLabel("Add hotkey")
+                SettingsIconControlButton(
+                    label: "Add hotkey",
+                    systemName: "plus",
+                    action: addHotkey
+                )
             }
         ) {
             if hotkeyManager.hotkeys.isEmpty {
@@ -114,32 +102,26 @@ struct HotkeysView: View {
 
     private func hotkeyRow(_ hotkey: ContextualHotkey) -> some View {
         HStack(spacing: 12) {
-            Button {
-                presentedEditor = hotkey
-            } label: {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(hotkey.name)
-                        .font(.body.weight(.semibold))
-                        .foregroundStyle(.primary)
-                    HStack(spacing: 6) {
-                        Text(hotkey.shortcutDescription)
-                            .foregroundStyle(.secondary)
-                        if hotkeyManager.unavailableShortcutIDs.contains(hotkey.id) {
-                            Image(systemName: "exclamationmark.triangle.fill")
-                                .font(.caption)
-                                .foregroundStyle(.orange)
-                                .help("This shortcut could not be registered. It may already be in use.")
-                                .accessibilityLabel("Shortcut unavailable")
-                        }
+            VStack(alignment: .leading, spacing: 4) {
+                Text(hotkey.name)
+                    .font(.body.weight(.semibold))
+                    .foregroundStyle(.primary)
+                HStack(spacing: 6) {
+                    Text(hotkey.shortcutDescription)
+                        .foregroundStyle(.secondary)
+                    if hotkeyManager.unavailableShortcutIDs.contains(hotkey.id) {
+                        Image(systemName: "exclamationmark.triangle.fill")
+                            .font(.caption)
+                            .foregroundStyle(.orange)
+                            .help("This shortcut could not be registered. It may already be in use.")
+                            .accessibilityLabel("Shortcut unavailable")
                     }
                 }
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .contentShape(Rectangle())
             }
-            .buttonStyle(.plain)
+            .frame(maxWidth: .infinity, alignment: .leading)
 
             Toggle(
-                "Enable \(hotkey.name)",
+                "Enable hotkey",
                 isOn: Binding(
                     get: { hotkeyManager.hotkeys.first(where: { $0.id == hotkey.id })?.isEnabled ?? false },
                     set: { isEnabled in
@@ -153,23 +135,22 @@ struct HotkeysView: View {
             .toggleStyle(.switch)
             .disabled(hotkey.keyCode == nil)
 
-            Menu {
-                Button("Duplicate", systemImage: "plus.square.on.square") {
-                    presentedEditor = hotkeyManager.duplicate(hotkey)
-                }
-                Divider()
-                Button("Delete Hotkey", systemImage: "trash", role: .destructive) {
-                    hotkeyPendingDeletion = hotkey
-                }
-            } label: {
-                Image(systemName: "ellipsis")
-                    .font(.system(size: 13, weight: .semibold))
-                    .frame(width: 28, height: 28)
-                    .contentShape(Rectangle())
+            Button("Edit") {
+                presentedEditor = hotkey
             }
-            .menuStyle(.borderlessButton)
-            .menuIndicator(.hidden)
-            .help("Hotkey actions")
+            .buttonStyle(.bordered)
+            .controlSize(.small)
+            .help("Edit hotkey")
+
+            Button(role: .destructive) {
+                hotkeyPendingDeletion = hotkey
+            } label: {
+                SettingsDestructiveIconLabel(systemName: "trash")
+            }
+            .buttonStyle(.borderless)
+            .controlSize(.small)
+            .help("Delete hotkey")
+            .accessibilityLabel("Delete hotkey")
         }
         .padding(.horizontal, SettingsComponentMetrics.rowHorizontalPadding)
         .padding(.vertical, SettingsComponentMetrics.rowVerticalPadding)

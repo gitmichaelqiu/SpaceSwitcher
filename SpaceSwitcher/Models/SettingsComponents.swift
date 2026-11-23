@@ -446,6 +446,30 @@ struct SettingsDestructiveIconLabel: View {
     }
 }
 
+struct SettingsIconControlButton: View {
+    let label: String
+    let systemName: String
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            SettingsIconControlLabel(systemName: systemName)
+                .frame(
+                    width: SettingsComponentMetrics.compactControlHeight,
+                    height: SettingsComponentMetrics.compactControlHeight
+                )
+                .background {
+                    RoundedRectangle(cornerRadius: 7, style: .continuous)
+                        .fill(Color(nsColor: .controlBackgroundColor))
+                }
+                .contentShape(RoundedRectangle(cornerRadius: 7, style: .continuous))
+        }
+        .buttonStyle(.borderless)
+        .help(label)
+        .accessibilityLabel(label)
+    }
+}
+
 struct SettingsValidationMessage: View {
     let message: Text
 

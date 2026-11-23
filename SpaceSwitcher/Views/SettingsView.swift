@@ -72,7 +72,10 @@ struct SettingsView: View {
                 // Pre-render settings so search can index every tab, while
                 // keeping the hidden hierarchy inert and non-interactive.
                 ZStack {
-                    GeneralSettingsView()
+                    GeneralSettingsView(
+                        ruleManager: ruleManager,
+                        contextualHotkeyManager: contextualHotkeyManager
+                    )
                         .environment(\.settingsTab, .general)
                     RulesView(ruleManager: ruleManager, spaceManager: spaceManager)
                         .environment(\.settingsTab, .rules)
@@ -278,7 +281,10 @@ struct SettingsView: View {
             ZStack(alignment: .topLeading) {
                 switch activeTab {
                 case .general:
-                    GeneralSettingsView()
+                    GeneralSettingsView(
+                        ruleManager: ruleManager,
+                        contextualHotkeyManager: contextualHotkeyManager
+                    )
                 case .rules:
                     RulesView(ruleManager: ruleManager, spaceManager: spaceManager)
                 case .hotkeys:
