@@ -472,7 +472,6 @@ struct SettingsListItemActions: View {
 
             Button(role: .destructive, action: onDelete) {
                 SettingsDestructiveIconLabel(systemName: "trash")
-                    .frame(width: 24, height: 20)
             }
             .buttonStyle(.bordered)
             .controlSize(.small)
