@@ -272,7 +272,7 @@ private struct HotkeyEditorView: View {
             }
         }
         .padding()
-        .frame(minWidth: 620, idealWidth: 680, minHeight: 400, idealHeight: 460)
+        .frame(minWidth: 700, idealWidth: 820, minHeight: 500, idealHeight: 620)
         .confirmationDialog(
             "Remove workflow group?",
             isPresented: Binding(
@@ -506,14 +506,37 @@ private struct HotkeyEditorView: View {
 
                 Spacer(minLength: 12)
 
-                Picker("Action", selection: action.kind) {
-                    ForEach(ContextualHotkeyActionKind.allCases) { kind in
-                        Text(kind.title)
-                            .tag(kind)
+                Menu {
+                    Button(ContextualHotkeyActionKind.doNothing.title) {
+                        action.kind.wrappedValue = .doNothing
                     }
+
+                    Divider()
+
+                    ForEach(ContextualHotkeyActionCategory.allCases) { category in
+                        Menu(category.title) {
+                            ForEach(category.actions) { kind in
+                                Button(kind.title) {
+                                    action.kind.wrappedValue = kind
+                                }
+                            }
+                        }
+                    }
+                } label: {
+                    HStack(spacing: 5) {
+                        Text(action.wrappedValue.kind.title)
+                            .lineLimit(1)
+
+                        Image(systemName: "chevron.down")
+                            .font(.caption2.weight(.semibold))
+                            .foregroundStyle(.secondary)
+                    }
+                    .contentShape(Rectangle())
                 }
-                .labelsHidden()
-                .pickerStyle(.menu)
+                .menuStyle(.borderlessButton)
+                .menuIndicator(.hidden)
+                .help("Choose an action")
+                .accessibilityLabel("Action: \(action.wrappedValue.kind.title)")
                 .fixedSize()
             }
             .frame(height: SettingsComponentMetrics.compactControlHeight)

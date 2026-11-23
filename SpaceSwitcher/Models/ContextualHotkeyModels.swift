@@ -39,6 +39,30 @@ enum ContextualHotkeyActionKind: String, CaseIterable, Codable, Hashable, Identi
     }
 }
 
+enum ContextualHotkeyActionCategory: String, CaseIterable, Identifiable {
+    case appLaunch
+    case appVisibility
+    case windowState
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .appLaunch: NSLocalizedString("App launch", comment: "Contextual hotkey action category")
+        case .appVisibility: NSLocalizedString("App visibility", comment: "Contextual hotkey action category")
+        case .windowState: NSLocalizedString("Window state", comment: "Contextual hotkey action category")
+        }
+    }
+
+    var actions: [ContextualHotkeyActionKind] {
+        switch self {
+        case .appLaunch: [.openOrActivate, .activateIfRunning]
+        case .appVisibility: [.hideApp, .unhideApp, .toggleAppVisibility]
+        case .windowState: [.minimizeWindows, .unminimizeWindows, .toggleWindowMinimization]
+        }
+    }
+}
+
 struct ContextualHotkeyAction: Codable, Equatable, Hashable {
     var kind: ContextualHotkeyActionKind
     var appBundleIdentifier: String?
