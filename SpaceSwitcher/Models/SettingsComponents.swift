@@ -420,6 +420,7 @@ enum SettingsComponentMetrics {
     static let rowHorizontalPadding: CGFloat = 10
     static let listRowHorizontalPadding: CGFloat = 12
     static let listRowHeight: CGFloat = 36
+    static let listActionButtonHeight: CGFloat = 26
     static let untitledSectionTopAdjustment: CGFloat = -10
     static let iconButtonSize: CGFloat = 32
     static let compactControlHeight: CGFloat = 28
@@ -468,6 +469,7 @@ struct SettingsListItemActions: View {
                 .buttonStyle(.bordered)
                 .controlSize(.small)
                 .frame(minWidth: 46)
+                .frame(height: SettingsComponentMetrics.listActionButtonHeight)
                 .help(editHelp)
 
             Button(role: .destructive, action: onDelete) {
@@ -475,6 +477,10 @@ struct SettingsListItemActions: View {
             }
             .buttonStyle(.bordered)
             .controlSize(.small)
+            .frame(
+                width: SettingsComponentMetrics.listActionButtonHeight,
+                height: SettingsComponentMetrics.listActionButtonHeight
+            )
             .help(deleteHelp)
             .accessibilityLabel(deleteHelp)
         }
