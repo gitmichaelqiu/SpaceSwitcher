@@ -11,6 +11,17 @@ enum SpaceAPIAvailability: Equatable {
     case unavailable
 }
 
+enum SpaceAPISocketReconnectPolicy {
+    static func shouldRetry(after state: NWConnection.State) -> Bool {
+        switch state {
+        case .waiting, .failed, .cancelled:
+            return true
+        default:
+            return false
+        }
+    }
+}
+
 private struct SpaceAPIContractVersion: Comparable {
     let major: Int
     let minor: Int
@@ -316,11 +327,15 @@ final class SpaceManager: ObservableObject {
             case .ready:
                 self.handleSocketReady(connection)
             case .failed(let error):
+                guard SpaceAPISocketReconnectPolicy.shouldRetry(after: state) else { return }
                 self.handleSocketFailure(connection, error: error)
             case .cancelled:
+                guard SpaceAPISocketReconnectPolicy.shouldRetry(after: state) else { return }
                 self.handleSocketFailure(connection, error: nil)
             case .waiting(let error):
                 print("SpaceSwitcher: Waiting for DesktopRenamer SpaceAPI socket: \(error)")
+                guard SpaceAPISocketReconnectPolicy.shouldRetry(after: state) else { return }
+                self.handleSocketFailure(connection, error: error)
             default:
                 break
             }

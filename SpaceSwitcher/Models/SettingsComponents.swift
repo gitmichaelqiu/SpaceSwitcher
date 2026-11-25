@@ -1,3 +1,4 @@
+import AppKit
 import SwiftUI
 import Combine
 
@@ -184,6 +185,36 @@ struct SettingsRow<Content: View>: View {
                 navigationState.unregister(title: title.key, tab: currentTab)
             }
         }
+    }
+}
+
+struct SettingsSpacePickerToggleRow: View {
+    let title: String
+    @Binding var isOn: Bool
+    var isEnabled = true
+    @State private var isHovered = false
+
+    var body: some View {
+        Toggle(isOn: $isOn) {
+            Text(verbatim: title)
+                .font(.body)
+                .lineLimit(1)
+        }
+        .toggleStyle(.checkbox)
+        .controlSize(.small)
+        .padding(.horizontal, 4)
+        .frame(maxWidth: .infinity, minHeight: 28, alignment: .leading)
+        .background(
+            RoundedRectangle(cornerRadius: 6, style: .continuous)
+                .fill(
+                    isHovered
+                        ? Color(nsColor: .selectedContentBackgroundColor).opacity(0.22)
+                        : .clear
+                )
+        )
+        .contentShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
+        .onHover { isHovered = $0 }
+        .disabled(!isEnabled)
     }
 }
 
@@ -413,6 +444,128 @@ struct SettingsDestructiveIconLabel: View {
         Image(systemName: systemName)
             .font(.system(size: 12, weight: .bold))
             .frame(width: 16, height: 16)
+    }
+}
+
+struct SettingsListItemActions: View {
+    @Binding var isEnabled: Bool
+    let toggleLabel: LocalizedStringKey
+    let editHelp: LocalizedStringKey
+    let deleteHelp: LocalizedStringKey
+    var isToggleEnabled = true
+    let onEdit: () -> Void
+    let onDelete: () -> Void
+
+    var body: some View {
+        HStack(spacing: 8) {
+            Toggle(toggleLabel, isOn: $isEnabled)
+                .labelsHidden()
+                .toggleStyle(.switch)
+                .controlSize(.small)
+                .fixedSize()
+                .disabled(!isToggleEnabled)
+
+            Button(action: onEdit) {
+                Text("Edit")
+            }
+            .buttonStyle(.bordered)
+            .controlSize(.small)
+            .help(editHelp)
+
+            Button(role: .destructive, action: onDelete) {
+                SettingsDestructiveIconLabel(systemName: "trash")
+            }
+            .buttonStyle(.borderless)
+            .controlSize(.small)
+            .help(deleteHelp)
+            .accessibilityLabel(deleteHelp)
+        }
+        .fixedSize(horizontal: true, vertical: false)
+    }
+}
+
+struct SettingsPreviewRow: View {
+    let icon: String
+    let title: String
+    let details: String
+    var applicationBundleIdentifier: String? = nil
+
+    var body: some View {
+        HStack(alignment: .center, spacing: 10) {
+            Image(systemName: icon)
+                .foregroundStyle(.secondary)
+                .frame(width: 18, height: 18)
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title)
+                    .font(.body)
+                HStack(spacing: 5) {
+                    if let applicationIcon {
+                        Image(nsImage: applicationIcon)
+                            .resizable()
+                            .aspectRatio(contentMode: .fit)
+                            .frame(width: 14, height: 14)
+                            .clipShape(RoundedRectangle(cornerRadius: 3, style: .continuous))
+                    }
+
+                    Text(details)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+
+            Spacer(minLength: 0)
+        }
+        .padding(.vertical, 10)
+    }
+
+    private var applicationIcon: NSImage? {
+        guard let applicationBundleIdentifier, !applicationBundleIdentifier.isEmpty else { return nil }
+        if let applicationURL = NSWorkspace.shared.urlForApplication(withBundleIdentifier: applicationBundleIdentifier) {
+            return NSWorkspace.shared.icon(forFile: applicationURL.path)
+        }
+        return NSRunningApplication.runningApplications(withBundleIdentifier: applicationBundleIdentifier).first?.icon
+    }
+}
+
+struct SettingsIconControlButton: View {
+    let label: String
+    let systemName: String
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            SettingsIconControlLabel(systemName: systemName)
+                .frame(
+                    width: SettingsComponentMetrics.compactControlHeight,
+                    height: SettingsComponentMetrics.compactControlHeight
+                )
+                .background {
+                    RoundedRectangle(cornerRadius: 7, style: .continuous)
+                        .fill(Color(nsColor: .controlBackgroundColor))
+                }
+                .contentShape(RoundedRectangle(cornerRadius: 7, style: .continuous))
+        }
+        .buttonStyle(.borderless)
+        .help(label)
+        .accessibilityLabel(label)
+    }
+}
+
+struct SettingsValidationMessage: View {
+    let message: Text
+
+    var body: some View {
+        Label {
+            message
+                .fixedSize(horizontal: false, vertical: true)
+        } icon: {
+            Image(systemName: "exclamationmark.triangle.fill")
+        }
+        .font(.caption)
+        .foregroundStyle(.orange)
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 }
 

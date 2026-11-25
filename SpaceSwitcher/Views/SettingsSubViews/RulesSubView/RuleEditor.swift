@@ -7,7 +7,6 @@ struct RuleEditor: View {
     let availableSpaces: [SpaceInfo]
     let onSave: (AppRule) -> Void
     let onCancel: () -> Void
-    @State private var runningApps: [(name: String, id: String, icon: NSImage)] = []
     @State private var showingLegend = false
     @State private var showingApplicationPicker = false
     @State private var groupPendingDeletion: UUID?
@@ -40,7 +39,6 @@ struct RuleEditor: View {
             // Sheets can reuse their content between presentations. Always start
             // from the rule that was selected for this presentation.
             workingRule = initialRule
-            loadRunningApps()
         }
         .confirmationDialog(
             "Remove workflow group?",
@@ -88,10 +86,10 @@ struct RuleEditor: View {
     // MARK: - Components
     
     private var appSelectorHeader: some View {
-        HStack(alignment: .center, spacing: 16) {
+        HStack(alignment: .center, spacing: 12) {
             applicationPicker
 
-            Spacer()
+            Spacer(minLength: 16)
 
             Menu {
                 ForEach(RulePreset.allCases) { preset in
@@ -102,7 +100,10 @@ struct RuleEditor: View {
                     }
                 }
             } label: {
-                Label("Presets", systemImage: "wand.and.stars")
+                Text("Presets")
+                    .padding(.horizontal, 12)
+                    .frame(height: 32)
+                    .background(.quaternary.opacity(0.35), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
             }
             .menuStyle(.borderlessButton)
             .help("Presets")
@@ -114,12 +115,20 @@ struct RuleEditor: View {
                     "Definitions",
                     systemImage: "info.circle"
                 )
+                .labelStyle(.iconOnly)
+                .frame(width: 32, height: 32)
+                .background(.quaternary.opacity(0.35), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+                .contentShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
             }
-            .buttonStyle(.bordered)
-            .labelStyle(.iconOnly)
-            .controlSize(.small)
+            .buttonStyle(.plain)
+            .foregroundStyle(.secondary)
             .help("Definitions")
-            .popover(isPresented: $showingLegend, arrowEdge: .top) {
+            .accessibilityLabel("Definitions")
+            .popover(
+                isPresented: $showingLegend,
+                attachmentAnchor: .point(.bottom),
+                arrowEdge: .top
+            ) {
                 actionDefinitionsPopover
             }
         }
@@ -136,104 +145,43 @@ struct RuleEditor: View {
         }
         .buttonStyle(.plain)
         .foregroundStyle(.primary)
-        .frame(width: 300, alignment: .leading)
-        .fixedSize(horizontal: false, vertical: true)
-        .popover(isPresented: $showingApplicationPicker, arrowEdge: .top) {
-            runningApplicationsPopover
-        }
-        .onChange(of: showingApplicationPicker) { isPresented in
-            if isPresented {
-                loadRunningApps()
-            }
-        }
-    }
-
-    private var runningApplicationsPopover: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            Text("Target Application")
-                .font(.headline)
-                .foregroundStyle(.secondary)
-                .padding(.horizontal, 8)
-                .padding(.vertical, 6)
-
-            ScrollView(.vertical) {
-                VStack(spacing: 2) {
-                    ApplicationPickerRow {
-                        selectAllApps()
-                        showingApplicationPicker = false
-                    } label: {
-                        HStack(spacing: 10) {
-                            Image(systemName: "square.grid.2x2")
-                                .font(.body)
-                                .frame(width: 20, height: 20)
-
-                            Text("All apps")
-                                .lineLimit(1)
-
-                            Spacer(minLength: 0)
-                        }
-                    }
-
-                    if !runningApps.isEmpty {
-                        Divider()
-                            .padding(.horizontal, 8)
-                            .padding(.vertical, 4)
-
-                        Text("Running Applications")
-                            .font(.headline)
-                            .foregroundStyle(.secondary)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .padding(.horizontal, 8)
-                            .padding(.vertical, 4)
-                    }
-
-                    ForEach(runningApps, id: \.id) { app in
-                        ApplicationPickerRow {
-                            selectApp(name: app.name, id: app.id)
-                            showingApplicationPicker = false
-                        } label: {
-                            HStack(spacing: 10) {
-                                Image(nsImage: app.icon)
-                                    .resizable()
-                                    .aspectRatio(contentMode: .fit)
-                                    .frame(width: 20, height: 20)
-                                    .cornerRadius(4)
-
-                                Text(app.name)
-                                    .lineLimit(1)
-
-                                Spacer(minLength: 0)
-                            }
-                        }
-                    }
+        .contentShape(Rectangle())
+        .popover(
+            isPresented: $showingApplicationPicker,
+            attachmentAnchor: .point(UnitPoint(x: 1, y: 0.5)),
+            arrowEdge: .top
+        ) {
+            RunningApplicationPickerPopover(
+                selectedBundleIdentifier: workingRule.appBundleID,
+                includesAllAppsOption: true,
+                isAllAppsSelected: workingRule.appliesToAllApps,
+                onSelectAllApps: {
+                    selectAllApps()
+                    showingApplicationPicker = false
+                },
+                onSelectApplication: { name, bundleIdentifier in
+                    selectApp(name: name, id: bundleIdentifier)
+                    showingApplicationPicker = false
+                },
+                onChooseApplication: {
+                    showingApplicationPicker = false
+                    pickOtherApp()
                 }
-            }
-            .frame(maxHeight: 300)
-
-            Divider()
-                .padding(.vertical, 6)
-
-            ApplicationPickerRow {
-                showingApplicationPicker = false
-                pickOtherApp()
-            } label: {
-                Label("Choose from Applications...", systemImage: "plus.app")
-            }
+            )
         }
-        .padding(8)
-        .frame(width: 300)
     }
 
     private var applicationPickerLabel: some View {
         HStack(spacing: 12) {
             selectedAppIcon
-                .frame(width: 40, height: 40)
+                .frame(width: 32, height: 32)
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(selectedApplicationName)
                     .font(.headline)
                     .foregroundStyle(.primary)
                     .lineLimit(1)
+                    .truncationMode(.middle)
                 if workingRule.appliesToAllApps {
                     Text("Every application")
                         .font(.caption)
@@ -242,8 +190,8 @@ struct RuleEditor: View {
             }
 
             Image(systemName: "chevron.down")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(.secondary)
         }
         .contentShape(Rectangle())
         .accessibilityElement(children: .combine)
@@ -287,7 +235,7 @@ struct RuleEditor: View {
     
     private var editorContent: some View {
         ScrollView(.vertical) {
-            VStack(alignment: .leading, spacing: SettingsComponentMetrics.sectionSpacing) {
+            VStack(alignment: .leading, spacing: 16) {
                 ForEach($workingRule.groups) { $group in
                     let index = workingRule.groups.firstIndex(where: { $0.id == group.id }) ?? 0
                     SettingsSection(
@@ -367,20 +315,29 @@ struct RuleEditor: View {
     }
     
     private var footerView: some View {
-        HStack(spacing: 12) {
-            Button("Cancel", action: onCancel)
-                .controlSize(.large)
-                .keyboardShortcut(.escape, modifiers: [])
-            
-            Spacer()
-            
-            Button("Save rule") {
-                onSave(workingRule)
+        VStack(spacing: 8) {
+            if let validationMessage {
+                SettingsValidationMessage(message: Text(validationMessage))
             }
-            .buttonStyle(.borderedProminent)
-            .controlSize(.large)
-            .disabled(validationMessage != nil)
-            .keyboardShortcut(.return, modifiers: [])
+
+            HStack(spacing: 12) {
+                Button("Cancel", action: onCancel)
+                    .buttonStyle(.bordered)
+                    .buttonBorderShape(.roundedRectangle)
+                    .controlSize(.regular)
+                    .keyboardShortcut(.cancelAction)
+
+                Spacer()
+
+                Button("Save rule") {
+                    onSave(workingRule)
+                }
+                .buttonStyle(.borderedProminent)
+                .buttonBorderShape(.roundedRectangle)
+                .controlSize(.regular)
+                .disabled(validationMessage != nil)
+                .keyboardShortcut(.defaultAction)
+            }
         }
         .padding(.horizontal, 20)
         .padding(.vertical, 12)
@@ -441,15 +398,25 @@ struct RuleEditor: View {
         Button { addAction(.hide) } label: {
             Label("Hide", systemImage: "eye.slash")
         }
+        Button { addAction(.unhide) } label: {
+            Label("Unhide", systemImage: "eye")
+        }
         Button { addAction(.minimize) } label: {
             Label("Minimize", systemImage: "arrow.down.right.and.arrow.up.left")
+        }
+        Button { addAction(.unminimize) } label: {
+            Label("Unminimize", systemImage: "arrow.up.left.and.arrow.down.right")
         }
         Button { addAction(.bringToFront) } label: {
             Label("Bring to front", systemImage: "arrow.up.forward.app")
         }
         Divider()
-        Button {
-            addCondition(.windowMinimized)
+        Menu {
+            ForEach(RuleCondition.allCases) { condition in
+                Button(condition.localizedString) {
+                    addCondition(condition)
+                }
+            }
         } label: {
             Label("If", systemImage: "arrow.triangle.branch")
         }
@@ -618,20 +585,6 @@ struct RuleEditor: View {
             ?? fallback
     }
     
-    private func loadRunningApps() {
-        let ownBundleID = Bundle.main.bundleIdentifier
-        let apps = NSWorkspace.shared.runningApplications.filter {
-            $0.activationPolicy == .regular && $0.bundleIdentifier != ownBundleID
-        }
-        self.runningApps = apps.map { (
-            name: $0.localizedName ?? "Unknown",
-            id: $0.bundleIdentifier ?? "",
-            icon: $0.icon ?? NSImage()
-        ) }
-        .filter { !$0.id.isEmpty }
-        .sorted { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
-    }
-    
     private var actionDefinitionsPopover: some View {
         ScrollView(.vertical) {
             VStack(alignment: .leading, spacing: 16) {
@@ -664,40 +617,6 @@ struct RuleEditor: View {
                 .foregroundStyle(.secondary)
                 .lineSpacing(2)
         }
-    }
-}
-
-private struct ApplicationPickerRow<LabelContent: View>: View {
-    private let action: () -> Void
-    private let label: LabelContent
-    @State private var isHovered = false
-
-    init(
-        action: @escaping () -> Void,
-        @ViewBuilder label: () -> LabelContent
-    ) {
-        self.action = action
-        self.label = label()
-    }
-
-    var body: some View {
-        Button(action: action) {
-            label
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.horizontal, 8)
-                .padding(.vertical, 6)
-        }
-        .buttonStyle(.borderless)
-        .background(
-            RoundedRectangle(cornerRadius: 6, style: .continuous)
-                .fill(
-                    isHovered
-                        ? Color(nsColor: .selectedContentBackgroundColor)
-                        : Color.clear
-                )
-        )
-        .contentShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
-        .onHover { isHovered = $0 }
     }
 }
 
@@ -758,7 +677,7 @@ struct SpaceConditionRow: View {
 
     private var spacePickerPopover: some View {
         VStack(alignment: .leading, spacing: 0) {
-            SpacePickerToggleRow(
+            SettingsSpacePickerToggleRow(
                 title: String(localized: "Source space", comment: "Special rule condition matching a window's current desktop"),
                 isOn: Binding(
                     get: { group.usesSourceSpace },
@@ -783,7 +702,7 @@ struct SpaceConditionRow: View {
                             }
 
                             ForEach(displayGroup.spaces) { space in
-                                SpacePickerToggleRow(
+                                SettingsSpacePickerToggleRow(
                                     title: spaceDisplayName(space),
                                     isOn: Binding(
                                         get: { group.targetSpaceIDs.contains(space.id) },
@@ -810,34 +729,6 @@ struct SpaceConditionRow: View {
 
     private var displayGroups: [SpaceDisplayGroup] {
         SpaceDisplayGroup.make(from: availableSpaces)
-    }
-}
-
-private struct SpacePickerToggleRow: View {
-    let title: String
-    @Binding var isOn: Bool
-    @State private var isHovered = false
-
-    var body: some View {
-        Toggle(isOn: $isOn) {
-            Text(verbatim: title)
-                .font(.body)
-                .lineLimit(1)
-        }
-            .toggleStyle(.checkbox)
-            .controlSize(.small)
-            .padding(.horizontal, 4)
-            .frame(maxWidth: .infinity, minHeight: 28, alignment: .leading)
-            .background(
-                RoundedRectangle(cornerRadius: 6, style: .continuous)
-                    .fill(
-                        isHovered
-                            ? Color(nsColor: .selectedContentBackgroundColor).opacity(0.22)
-                            : .clear
-                    )
-            )
-            .contentShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
-            .onHover { isHovered = $0 }
     }
 }
 
@@ -1012,7 +903,9 @@ struct ActionListRows: View {
         case .show: return "eye"
         case .restore: return "arrow.uturn.backward"
         case .hide: return "eye.slash"
+        case .unhide: return "eye"
         case .minimize: return "arrow.down.right.and.arrow.up.left"
+        case .unminimize: return "arrow.up.left.and.arrow.down.right"
         case .bringToFront: return "arrow.up.forward.app"
         case .ifCondition(_): return "arrow.triangle.branch"
         case .endIf: return "arrow.turn.down.right"
@@ -1106,7 +999,7 @@ struct ActionRowContent: View {
                 case .globalHotkey(let code, let mods):
                     HStack(spacing: 8) {
                         Label("System shortcut", systemImage: "globe")
-                            .font(.subheadline)
+                            .font(.body)
 
                         ModifierMenu(modifiers: mods) { newModifiers in
                             item.value = .globalHotkey(keyCode: code, modifiers: newModifiers)
@@ -1120,7 +1013,7 @@ struct ActionRowContent: View {
                 case .hotkey(let code, let mods, _, _):
                     HStack(spacing: 8) {
                         Label("App shortcut", systemImage: "app")
-                            .font(.subheadline)
+                            .font(.body)
                         
                         Button(action: startRecording) {
                             if isRecording {
@@ -1198,7 +1091,9 @@ struct ActionRowContent: View {
         case .show: return "eye"
         case .restore: return "arrow.uturn.backward"
         case .hide: return "eye.slash"
+        case .unhide: return "eye"
         case .minimize: return "arrow.down.right.and.arrow.up.left"
+        case .unminimize: return "arrow.up.left.and.arrow.down.right"
         case .bringToFront: return "arrow.up.forward.app"
         case .ifCondition(_): return "arrow.triangle.branch"
         case .endIf: return "arrow.turn.down.right"

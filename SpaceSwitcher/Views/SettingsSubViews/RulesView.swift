@@ -1,4 +1,5 @@
 import SwiftUI
+import AppKit
 
 struct RulesView: View {
     @ObservedObject var ruleManager: RuleManager
@@ -25,16 +26,6 @@ struct RulesView: View {
             VStack(spacing: SettingsComponentMetrics.sectionSpacing) {
                 automationSection
                 perAppAutomationSection
-
-                if !ruleManager.rules.isEmpty {
-                    Button {
-                        presentNewRuleEditor()
-                    } label: {
-                        Label("Add new rule", systemImage: "plus")
-                    }
-                    .buttonStyle(.borderedProminent)
-                    .frame(maxWidth: .infinity, alignment: .center)
-                }
             }
             .animation(.easeInOut(duration: 0.2), value: ruleManager.rules)
             .frame(maxWidth: .infinity, alignment: .topLeading)
@@ -114,47 +105,54 @@ struct RulesView: View {
     }
 
     private var perAppAutomationSection: some View {
-        VStack(alignment: .leading, spacing: SettingsComponentMetrics.sectionSpacing) {
+        VStack(alignment: .leading, spacing: SettingsComponentMetrics.sectionContentSpacing) {
             SettingsSectionTitle(
                 "Per-App Automation",
                 helperText: "Rules are evaluated from top to bottom. The first matching rule wins."
             )
+            .overlay(alignment: .trailing) {
+                SettingsIconControlButton(
+                    label: "Add rule",
+                    systemName: "plus",
+                    action: presentNewRuleEditor
+                )
+            }
 
             if ruleManager.rules.isEmpty {
                 SettingsSection {
-                    emptyState
-                        .frame(maxWidth: .infinity, minHeight: 280)
+                    Text("No automation rules yet.")
+                        .foregroundStyle(.secondary)
+                        .frame(maxWidth: .infinity, minHeight: 96)
                 }
+                .padding(.top, -SettingsComponentMetrics.untitledSectionTopAdjustment)
             } else {
                 ReorderableSettingsList(
                     items: reorderableRules,
                     rowContent: { item, context in
-                        SettingsSection {
-                            RuleRow(
-                                rule: item.rule,
-                                availableSpaces: spaceManager.availableSpaces,
-                                onEdit: { presentedRuleSheet = .edit(item.rule) },
-                                onDelete: { rulePendingDeletion = item.rule },
-                                onToggle: { updatedRule in
-                                    ruleManager.updateRule(updatedRule)
-                                }
-                            )
-                        }
+                        ruleCard(
+                            item.rule,
+                            onEdit: { presentedRuleSheet = .edit(item.rule) },
+                            onDelete: { rulePendingDeletion = item.rule },
+                            onToggle: { ruleManager.updateRule($0) }
+                        )
+                        .padding(
+                            .top,
+                            context.index == 0
+                                ? -SettingsComponentMetrics.untitledSectionTopAdjustment
+                                : 0
+                        )
                         .padding(
                             .bottom,
                             context.isLast ? 0 : SettingsComponentMetrics.sectionSpacing
                         )
                     },
                     dragPreview: { item in
-                        SettingsSection {
-                            RuleRow(
-                                rule: item.rule,
-                                availableSpaces: spaceManager.availableSpaces,
-                                onEdit: {},
-                                onDelete: {},
-                                onToggle: { _ in }
-                            )
-                        }
+                        ruleCard(
+                            item.rule,
+                            onEdit: {},
+                            onDelete: {},
+                            onToggle: { _ in }
+                        )
                         .frame(minWidth: 420)
                     },
                     moveBefore: { sourceID, targetID in
@@ -175,36 +173,22 @@ struct RulesView: View {
     private var reorderableRules: [ReorderableRule] {
         ruleManager.rules.map(ReorderableRule.init)
     }
-    
-    private var emptyState: some View {
-        Group {
-            if #available(macOS 14.0, *) {
-                ContentUnavailableView {
-                    Label("No automation rules yet.", systemImage: "list.bullet.rectangle.portrait")
-                } description: {
-                    Text("Create a rule to control applications by desktop space.")
-                } actions: {
-                    Button("Create first rule") {
-                        presentNewRuleEditor()
-                    }
-                    .buttonStyle(.borderedProminent)
-                }
-            } else {
-                VStack(spacing: 16) {
-                    Image(systemName: "list.bullet.rectangle.portrait")
-                        .font(.title)
-                        .foregroundStyle(.secondary)
-                    Text("No automation rules yet.")
-                        .foregroundStyle(.secondary)
-                    Button("Create first rule") {
-                        presentNewRuleEditor()
-                    }
-                    .buttonStyle(.borderedProminent)
-                }
-            }
+
+    private func ruleCard(
+        _ rule: AppRule,
+        onEdit: @escaping () -> Void,
+        onDelete: @escaping () -> Void,
+        onToggle: @escaping (AppRule) -> Void
+    ) -> some View {
+        SettingsSection {
+            RuleRow(
+                rule: rule,
+                availableSpaces: spaceManager.availableSpaces,
+                onEdit: onEdit,
+                onDelete: onDelete,
+                onToggle: onToggle
+            )
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .padding(.top, 40)
     }
 
     private func presentNewRuleEditor() {
@@ -291,32 +275,21 @@ struct RuleRow: View {
 
                 Spacer()
 
-                Toggle("", isOn: Binding(
-                    get: { rule.isEnabled },
-                    set: { value in
-                        var updatedRule = rule
-                        updatedRule.isEnabled = value
-                        onToggle(updatedRule)
-                    }
-                ))
-                .labelsHidden()
-                .toggleStyle(.switch)
-                .controlSize(.small)
-                .help("Enable or disable this rule.")
-                .accessibilityLabel("Enable rule")
-
-                Button("Edit", systemImage: "pencil", action: onEdit)
-                .buttonStyle(.bordered)
-                .controlSize(.small)
-                .help("Edit rule")
-
-                Button(role: .destructive, action: onDelete) {
-                    SettingsDestructiveIconLabel(systemName: "trash")
-                }
-                .buttonStyle(.borderless)
-                .controlSize(.small)
-                .help("Delete rule")
-                .accessibilityLabel("Delete rule")
+                SettingsListItemActions(
+                    isEnabled: Binding(
+                        get: { rule.isEnabled },
+                        set: { value in
+                            var updatedRule = rule
+                            updatedRule.isEnabled = value
+                            onToggle(updatedRule)
+                        }
+                    ),
+                    toggleLabel: "Enable rule",
+                    editHelp: "Edit rule",
+                    deleteHelp: "Delete rule",
+                    onEdit: onEdit,
+                    onDelete: onDelete
+                )
             }
             .padding(.horizontal, SettingsComponentMetrics.rowHorizontalPadding)
             .padding(.vertical, SettingsComponentMetrics.rowVerticalPadding)
@@ -327,7 +300,7 @@ struct RuleRow: View {
 
                 VStack(alignment: .leading, spacing: 0) {
                     ForEach(rule.groups) { group in
-                        ruleSummary(
+                        SettingsPreviewRow(
                             icon: "arrow.up.forward.app",
                             title: spacesString(for: group),
                             details: actionSummary(group.actions)
@@ -339,7 +312,7 @@ struct RuleRow: View {
                     }
 
                     if !rule.elseActions.isEmpty {
-                        ruleSummary(
+                        SettingsPreviewRow(
                             icon: "ellipsis.circle",
                             title: "Otherwise",
                             details: actionSummary(rule.elseActions)
@@ -371,25 +344,5 @@ struct RuleRow: View {
 
     private func actionSummary(_ actions: [ActionItem]) -> String {
         actions.isEmpty ? "No actions" : actions.map { $0.value.localizedString }.joined(separator: ", ")
-    }
-
-    private func ruleSummary(icon: String, title: String, details: String) -> some View {
-        HStack(alignment: .center, spacing: 10) {
-            Image(systemName: icon)
-                .foregroundStyle(.secondary)
-                .frame(width: 18, height: 18)
-
-            VStack(alignment: .leading, spacing: 2) {
-                Text(title)
-                    .font(.body)
-                Text(details)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-
-            Spacer(minLength: 0)
-        }
-        .padding(.vertical, 10)
     }
 }
