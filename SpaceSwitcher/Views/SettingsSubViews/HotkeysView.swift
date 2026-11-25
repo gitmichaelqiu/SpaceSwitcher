@@ -90,46 +90,75 @@ struct HotkeysView: View {
                 }
                 .padding(.top, -SettingsComponentMetrics.untitledSectionTopAdjustment)
             } else {
-                VStack(spacing: 0) {
-                    ForEach(Array(hotkeyManager.hotkeys.enumerated()), id: \.element.id) { index, hotkey in
-                        SettingsSection {
-                            hotkeyRow(hotkey)
+                ReorderableSettingsList(
+                    items: reorderableHotkeys,
+                    rowContent: { item, context in
+                        hotkeyCard(item.hotkey)
+                            .padding(
+                                .top,
+                                context.index == 0
+                                    ? -SettingsComponentMetrics.untitledSectionTopAdjustment
+                                    : 0
+                            )
+                            .padding(
+                                .bottom,
+                                context.isLast ? 0 : SettingsComponentMetrics.sectionSpacing
+                            )
+                    },
+                    dragPreview: { item in
+                        hotkeyCard(item.hotkey)
+                            .frame(minWidth: 420)
+                    },
+                    moveBefore: { sourceID, targetID in
+                        withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                            hotkeyManager.moveHotkey(sourceID: sourceID, before: targetID)
                         }
-                        .padding(
-                            .top,
-                            index == 0
-                                ? -SettingsComponentMetrics.untitledSectionTopAdjustment
-                                : 0
-                        )
-                        .padding(
-                            .bottom,
-                            index == hotkeyManager.hotkeys.count - 1
-                                ? 0
-                                : SettingsComponentMetrics.sectionSpacing
-                        )
+                    },
+                    moveToEnd: { sourceID in
+                        withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                            _ = hotkeyManager.moveHotkeyToEnd(sourceID: sourceID)
+                        }
                     }
-                }
+                )
             }
+        }
+    }
+
+    private var reorderableHotkeys: [ReorderableHotkey] {
+        hotkeyManager.hotkeys.map(ReorderableHotkey.init)
+    }
+
+    private func hotkeyCard(_ hotkey: ContextualHotkey) -> some View {
+        SettingsSection {
+            hotkeyRow(hotkey)
         }
     }
 
     private func hotkeyRow(_ hotkey: ContextualHotkey) -> some View {
         VStack(alignment: .leading, spacing: 0) {
-            HStack(spacing: 12) {
-                VStack(alignment: .leading, spacing: 4) {
+            HStack(spacing: 10) {
+                Image(systemName: "line.3.horizontal")
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundStyle(.secondary)
+                    .frame(width: 16)
+                    .accessibilityHidden(true)
+
+                HStack(spacing: 8) {
                     Text(hotkey.name)
                         .font(.body.weight(.semibold))
                         .foregroundStyle(.primary)
-                    HStack(spacing: 6) {
-                        Text(hotkey.shortcutDescription)
-                            .foregroundStyle(.secondary)
-                        if hotkeyManager.unavailableShortcutIDs.contains(hotkey.id) {
-                            Image(systemName: "exclamationmark.triangle.fill")
-                                .font(.caption)
-                                .foregroundStyle(.orange)
-                                .help("This shortcut could not be registered. It may already be in use.")
-                                .accessibilityLabel("Shortcut unavailable")
-                        }
+                        .lineLimit(1)
+
+                    Text(hotkey.shortcutDescription)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+
+                    if hotkeyManager.unavailableShortcutIDs.contains(hotkey.id) {
+                        Image(systemName: "exclamationmark.triangle.fill")
+                            .font(.caption)
+                            .foregroundStyle(.orange)
+                            .help("This shortcut could not be registered. It may already be in use.")
+                            .accessibilityLabel("Shortcut unavailable")
                     }
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -168,7 +197,8 @@ struct HotkeysView: View {
                         SettingsPreviewRow(
                             icon: "arrow.up.forward.app",
                             title: spacesTitle(for: group),
-                            details: actionSummary(group.action)
+                            details: actionSummary(group.action),
+                            applicationBundleIdentifier: group.action.appBundleIdentifier
                         )
 
                         if hotkey.spaceActionGroups.last?.id != group.id
@@ -181,7 +211,8 @@ struct HotkeysView: View {
                         SettingsPreviewRow(
                             icon: "ellipsis.circle",
                             title: "Other Spaces",
-                            details: actionSummary(hotkey.otherSpacesAction)
+                            details: actionSummary(hotkey.otherSpacesAction),
+                            applicationBundleIdentifier: hotkey.otherSpacesAction.appBundleIdentifier
                         )
                     }
                 }
@@ -230,6 +261,12 @@ struct HotkeysView: View {
         }
         presentedEditor = nil
     }
+}
+
+private struct ReorderableHotkey: Identifiable {
+    let hotkey: ContextualHotkey
+
+    var id: String { hotkey.id.uuidString }
 }
 
 private struct HotkeyEditorView: View {

@@ -58,6 +58,38 @@ final class ContextualHotkeyManager: ObservableObject {
         hotkeys.append(hotkey)
     }
 
+    @discardableResult
+    func moveHotkey(sourceID: String, before targetID: String) -> Bool {
+        guard let sourceUUID = UUID(uuidString: sourceID),
+              let targetUUID = UUID(uuidString: targetID),
+              sourceUUID != targetUUID,
+              let sourceIndex = hotkeys.firstIndex(where: { $0.id == sourceUUID }),
+              hotkeys.contains(where: { $0.id == targetUUID }) else {
+            return false
+        }
+
+        var reordered = hotkeys
+        let movedHotkey = reordered.remove(at: sourceIndex)
+        guard let targetIndex = reordered.firstIndex(where: { $0.id == targetUUID }) else { return false }
+        reordered.insert(movedHotkey, at: targetIndex)
+        hotkeys = reordered
+        return true
+    }
+
+    @discardableResult
+    func moveHotkeyToEnd(sourceID: String) -> Bool {
+        guard let sourceUUID = UUID(uuidString: sourceID),
+              let sourceIndex = hotkeys.firstIndex(where: { $0.id == sourceUUID }),
+              sourceIndex < hotkeys.count - 1 else {
+            return false
+        }
+
+        var reordered = hotkeys
+        reordered.append(reordered.remove(at: sourceIndex))
+        hotkeys = reordered
+        return true
+    }
+
     func update(_ hotkey: ContextualHotkey) {
         guard let index = hotkeys.firstIndex(where: { $0.id == hotkey.id }) else { return }
         hotkeys[index] = hotkey

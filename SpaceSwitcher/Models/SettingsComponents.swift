@@ -1,3 +1,4 @@
+import AppKit
 import SwiftUI
 import Combine
 
@@ -420,8 +421,6 @@ enum SettingsComponentMetrics {
     static let rowHorizontalPadding: CGFloat = 10
     static let listRowHorizontalPadding: CGFloat = 12
     static let listRowHeight: CGFloat = 36
-    static let listActionButtonWidth: CGFloat = 52
-    static let listActionButtonHeight: CGFloat = 26
     static let untitledSectionTopAdjustment: CGFloat = -10
     static let iconButtonSize: CGFloat = 32
     static let compactControlHeight: CGFloat = 28
@@ -468,22 +467,16 @@ struct SettingsListItemActions: View {
 
             Button(action: onEdit) {
                 Text("Edit")
-                    .frame(
-                        width: SettingsComponentMetrics.listActionButtonWidth,
-                        height: SettingsComponentMetrics.listActionButtonHeight
-                    )
             }
-            .buttonStyle(SettingsListActionButtonStyle())
+            .buttonStyle(.bordered)
+            .controlSize(.small)
             .help(editHelp)
 
             Button(role: .destructive, action: onDelete) {
                 SettingsDestructiveIconLabel(systemName: "trash")
-                    .frame(
-                        width: SettingsComponentMetrics.listActionButtonHeight,
-                        height: SettingsComponentMetrics.listActionButtonHeight
-                    )
             }
-            .buttonStyle(SettingsListActionButtonStyle())
+            .buttonStyle(.borderless)
+            .controlSize(.small)
             .help(deleteHelp)
             .accessibilityLabel(deleteHelp)
         }
@@ -491,22 +484,11 @@ struct SettingsListItemActions: View {
     }
 }
 
-struct SettingsListActionButtonStyle: ButtonStyle {
-    func makeBody(configuration: Configuration) -> some View {
-        configuration.label
-            .foregroundStyle(.primary)
-            .background(
-                RoundedRectangle(cornerRadius: 7, style: .continuous)
-                    .fill(Color(nsColor: .controlBackgroundColor))
-            )
-            .opacity(configuration.isPressed ? 0.7 : 1)
-    }
-}
-
 struct SettingsPreviewRow: View {
     let icon: String
     let title: String
     let details: String
+    var applicationBundleIdentifier: String? = nil
 
     var body: some View {
         HStack(alignment: .center, spacing: 10) {
@@ -517,15 +499,33 @@ struct SettingsPreviewRow: View {
             VStack(alignment: .leading, spacing: 2) {
                 Text(title)
                     .font(.body)
-                Text(details)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
+                HStack(spacing: 5) {
+                    if let applicationIcon {
+                        Image(nsImage: applicationIcon)
+                            .resizable()
+                            .aspectRatio(contentMode: .fit)
+                            .frame(width: 14, height: 14)
+                            .clipShape(RoundedRectangle(cornerRadius: 3, style: .continuous))
+                    }
+
+                    Text(details)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
             }
 
             Spacer(minLength: 0)
         }
         .padding(.vertical, 10)
+    }
+
+    private var applicationIcon: NSImage? {
+        guard let applicationBundleIdentifier, !applicationBundleIdentifier.isEmpty else { return nil }
+        if let applicationURL = NSWorkspace.shared.urlForApplication(withBundleIdentifier: applicationBundleIdentifier) {
+            return NSWorkspace.shared.icon(forFile: applicationURL.path)
+        }
+        return NSRunningApplication.runningApplications(withBundleIdentifier: applicationBundleIdentifier).first?.icon
     }
 }
 
