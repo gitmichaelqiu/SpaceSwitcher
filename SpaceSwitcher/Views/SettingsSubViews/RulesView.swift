@@ -106,14 +106,11 @@ struct RulesView: View {
 
     private var perAppAutomationSection: some View {
         VStack(alignment: .leading, spacing: SettingsComponentMetrics.sectionContentSpacing) {
-            HStack(spacing: 8) {
-                SettingsSectionTitle(
-                    "Per-App Automation",
-                    helperText: "Rules are evaluated from top to bottom. The first matching rule wins."
-                )
-
-                Spacer(minLength: 12)
-
+            SettingsSectionTitle(
+                "Per-App Automation",
+                helperText: "Rules are evaluated from top to bottom. The first matching rule wins."
+            )
+            .overlay(alignment: .trailing) {
                 SettingsIconControlButton(
                     label: "Add rule",
                     systemName: "plus",
@@ -303,7 +300,7 @@ struct RuleRow: View {
 
                 VStack(alignment: .leading, spacing: 0) {
                     ForEach(rule.groups) { group in
-                        RulePreviewRow(
+                        SettingsPreviewRow(
                             icon: "arrow.up.forward.app",
                             title: spacesString(for: group),
                             details: actionSummary(group.actions)
@@ -315,7 +312,7 @@ struct RuleRow: View {
                     }
 
                     if !rule.elseActions.isEmpty {
-                        RulePreviewRow(
+                        SettingsPreviewRow(
                             icon: "ellipsis.circle",
                             title: "Otherwise",
                             details: actionSummary(rule.elseActions)
@@ -347,31 +344,5 @@ struct RuleRow: View {
 
     private func actionSummary(_ actions: [ActionItem]) -> String {
         actions.isEmpty ? "No actions" : actions.map { $0.value.localizedString }.joined(separator: ", ")
-    }
-}
-
-private struct RulePreviewRow: View {
-    let icon: String
-    let title: String
-    let details: String
-
-    var body: some View {
-        HStack(alignment: .center, spacing: 10) {
-            Image(systemName: icon)
-                .foregroundStyle(.secondary)
-                .frame(width: 18, height: 18)
-
-            VStack(alignment: .leading, spacing: 2) {
-                Text(title)
-                    .font(.body)
-                Text(details)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-
-            Spacer(minLength: 0)
-        }
-        .padding(.vertical, 10)
     }
 }

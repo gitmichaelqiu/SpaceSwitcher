@@ -420,6 +420,7 @@ enum SettingsComponentMetrics {
     static let rowHorizontalPadding: CGFloat = 10
     static let listRowHorizontalPadding: CGFloat = 12
     static let listRowHeight: CGFloat = 36
+    static let listActionButtonWidth: CGFloat = 52
     static let listActionButtonHeight: CGFloat = 26
     static let untitledSectionTopAdjustment: CGFloat = -10
     static let iconButtonSize: CGFloat = 32
@@ -465,26 +466,66 @@ struct SettingsListItemActions: View {
                 .fixedSize()
                 .disabled(!isToggleEnabled)
 
-            Button("Edit", action: onEdit)
-                .buttonStyle(.bordered)
-                .controlSize(.small)
-                .frame(minWidth: 46)
-                .frame(height: SettingsComponentMetrics.listActionButtonHeight)
-                .help(editHelp)
+            Button(action: onEdit) {
+                Text("Edit")
+                    .frame(
+                        width: SettingsComponentMetrics.listActionButtonWidth,
+                        height: SettingsComponentMetrics.listActionButtonHeight
+                    )
+            }
+            .buttonStyle(SettingsListActionButtonStyle())
+            .help(editHelp)
 
             Button(role: .destructive, action: onDelete) {
                 SettingsDestructiveIconLabel(systemName: "trash")
+                    .frame(
+                        width: SettingsComponentMetrics.listActionButtonHeight,
+                        height: SettingsComponentMetrics.listActionButtonHeight
+                    )
             }
-            .buttonStyle(.bordered)
-            .controlSize(.small)
-            .frame(
-                width: SettingsComponentMetrics.listActionButtonHeight,
-                height: SettingsComponentMetrics.listActionButtonHeight
-            )
+            .buttonStyle(SettingsListActionButtonStyle())
             .help(deleteHelp)
             .accessibilityLabel(deleteHelp)
         }
         .fixedSize(horizontal: true, vertical: false)
+    }
+}
+
+struct SettingsListActionButtonStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .foregroundStyle(.primary)
+            .background(
+                RoundedRectangle(cornerRadius: 7, style: .continuous)
+                    .fill(Color(nsColor: .controlBackgroundColor))
+            )
+            .opacity(configuration.isPressed ? 0.7 : 1)
+    }
+}
+
+struct SettingsPreviewRow: View {
+    let icon: String
+    let title: String
+    let details: String
+
+    var body: some View {
+        HStack(alignment: .center, spacing: 10) {
+            Image(systemName: icon)
+                .foregroundStyle(.secondary)
+                .frame(width: 18, height: 18)
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title)
+                    .font(.body)
+                Text(details)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+
+            Spacer(minLength: 0)
+        }
+        .padding(.vertical, 10)
     }
 }
 

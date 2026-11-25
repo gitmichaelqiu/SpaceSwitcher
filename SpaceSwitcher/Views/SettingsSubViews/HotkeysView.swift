@@ -72,28 +72,41 @@ struct HotkeysView: View {
     }
 
     private var hotkeysSection: some View {
-        SettingsSection(
-            "Shortcuts",
-            accessory: {
-                SettingsIconControlButton(
-                    label: "Add hotkey",
-                    systemName: "plus",
-                    action: addHotkey
-                )
-            }
-        ) {
+        VStack(alignment: .leading, spacing: SettingsComponentMetrics.sectionContentSpacing) {
+            SettingsSectionTitle("Shortcuts")
+                .overlay(alignment: .trailing) {
+                    SettingsIconControlButton(
+                        label: "Add hotkey",
+                        systemName: "plus",
+                        action: addHotkey
+                    )
+                }
+
             if hotkeyManager.hotkeys.isEmpty {
-                Text("No shortcuts")
-                    .foregroundStyle(.secondary)
-                    .frame(maxWidth: .infinity, minHeight: 96)
+                SettingsSection {
+                    Text("No shortcuts")
+                        .foregroundStyle(.secondary)
+                        .frame(maxWidth: .infinity, minHeight: 96)
+                }
+                .padding(.top, -SettingsComponentMetrics.untitledSectionTopAdjustment)
             } else {
                 VStack(spacing: 0) {
                     ForEach(Array(hotkeyManager.hotkeys.enumerated()), id: \.element.id) { index, hotkey in
-                        hotkeyRow(hotkey)
-                        if index < hotkeyManager.hotkeys.count - 1 {
-                            Divider()
-                                .padding(.leading, SettingsComponentMetrics.rowHorizontalPadding)
+                        SettingsSection {
+                            hotkeyRow(hotkey)
                         }
+                        .padding(
+                            .top,
+                            index == 0
+                                ? -SettingsComponentMetrics.untitledSectionTopAdjustment
+                                : 0
+                        )
+                        .padding(
+                            .bottom,
+                            index == hotkeyManager.hotkeys.count - 1
+                                ? 0
+                                : SettingsComponentMetrics.sectionSpacing
+                        )
                     }
                 }
             }
@@ -101,50 +114,105 @@ struct HotkeysView: View {
     }
 
     private func hotkeyRow(_ hotkey: ContextualHotkey) -> some View {
-        HStack(spacing: 12) {
-            VStack(alignment: .leading, spacing: 4) {
-                Text(hotkey.name)
-                    .font(.body.weight(.semibold))
-                    .foregroundStyle(.primary)
-                HStack(spacing: 6) {
-                    Text(hotkey.shortcutDescription)
-                        .foregroundStyle(.secondary)
-                    if hotkeyManager.unavailableShortcutIDs.contains(hotkey.id) {
-                        Image(systemName: "exclamationmark.triangle.fill")
-                            .font(.caption)
-                            .foregroundStyle(.orange)
-                            .help("This shortcut could not be registered. It may already be in use.")
-                            .accessibilityLabel("Shortcut unavailable")
+        VStack(alignment: .leading, spacing: 0) {
+            HStack(spacing: 12) {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(hotkey.name)
+                        .font(.body.weight(.semibold))
+                        .foregroundStyle(.primary)
+                    HStack(spacing: 6) {
+                        Text(hotkey.shortcutDescription)
+                            .foregroundStyle(.secondary)
+                        if hotkeyManager.unavailableShortcutIDs.contains(hotkey.id) {
+                            Image(systemName: "exclamationmark.triangle.fill")
+                                .font(.caption)
+                                .foregroundStyle(.orange)
+                                .help("This shortcut could not be registered. It may already be in use.")
+                                .accessibilityLabel("Shortcut unavailable")
+                        }
                     }
                 }
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .contextMenu {
-                Button("Duplicate", systemImage: "plus.square.on.square") {
-                    presentedEditor = hotkeyManager.duplicate(hotkey)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .contextMenu {
+                    Button("Duplicate", systemImage: "plus.square.on.square") {
+                        presentedEditor = hotkeyManager.duplicate(hotkey)
+                    }
                 }
-            }
 
-            SettingsListItemActions(
-                isEnabled: Binding(
-                    get: { hotkeyManager.hotkeys.first(where: { $0.id == hotkey.id })?.isEnabled ?? false },
-                    set: { isEnabled in
-                        var updated = hotkey
-                        updated.isEnabled = isEnabled
-                        hotkeyManager.update(updated)
+                SettingsListItemActions(
+                    isEnabled: Binding(
+                        get: { hotkeyManager.hotkeys.first(where: { $0.id == hotkey.id })?.isEnabled ?? false },
+                        set: { isEnabled in
+                            var updated = hotkey
+                            updated.isEnabled = isEnabled
+                            hotkeyManager.update(updated)
+                        }
+                    ),
+                    toggleLabel: "Enable hotkey",
+                    editHelp: "Edit hotkey",
+                    deleteHelp: "Delete hotkey",
+                    isToggleEnabled: hotkey.keyCode != nil,
+                    onEdit: { presentedEditor = hotkey },
+                    onDelete: { hotkeyPendingDeletion = hotkey }
+                )
+            }
+            .padding(.horizontal, SettingsComponentMetrics.rowHorizontalPadding)
+            .padding(.vertical, SettingsComponentMetrics.rowVerticalPadding)
+            .frame(minHeight: SettingsComponentMetrics.listRowHeight)
+
+            if !hotkey.spaceActionGroups.isEmpty || hotkey.otherSpacesAction.kind != .doNothing {
+                Divider()
+
+                VStack(alignment: .leading, spacing: 0) {
+                    ForEach(hotkey.spaceActionGroups) { group in
+                        SettingsPreviewRow(
+                            icon: "arrow.up.forward.app",
+                            title: spacesTitle(for: group),
+                            details: actionSummary(group.action)
+                        )
+
+                        if hotkey.spaceActionGroups.last?.id != group.id
+                            || hotkey.otherSpacesAction.kind != .doNothing {
+                            Divider()
+                        }
                     }
-                ),
-                toggleLabel: "Enable hotkey",
-                editHelp: "Edit hotkey",
-                deleteHelp: "Delete hotkey",
-                isToggleEnabled: hotkey.keyCode != nil,
-                onEdit: { presentedEditor = hotkey },
-                onDelete: { hotkeyPendingDeletion = hotkey }
-            )
+
+                    if hotkey.otherSpacesAction.kind != .doNothing {
+                        SettingsPreviewRow(
+                            icon: "ellipsis.circle",
+                            title: "Other Spaces",
+                            details: actionSummary(hotkey.otherSpacesAction)
+                        )
+                    }
+                }
+                .padding(.horizontal, 12)
+            }
         }
-        .padding(.horizontal, SettingsComponentMetrics.rowHorizontalPadding)
-        .padding(.vertical, SettingsComponentMetrics.rowVerticalPadding)
-        .frame(minHeight: SettingsComponentMetrics.listRowHeight)
+    }
+
+    private func spacesTitle(for group: ContextualHotkeySpaceActionGroup) -> String {
+        let knownSpaces = spaceManager.availableSpaces.filter { group.spaceIDs.contains($0.id) }
+        let availableSpaceIDs = Set(spaceManager.availableSpaces.map(\.id))
+        let unavailableNames = group.spaceIDs
+            .subtracting(availableSpaceIDs)
+            .map {
+                String.localizedStringWithFormat(
+                    NSLocalizedString("Unavailable Space (%@)", comment: "A hotkey group refers to a Space that no longer exists"),
+                    String($0.prefix(8))
+                )
+            }
+        let names = (knownSpaces.map(spaceDisplayName) + unavailableNames).sorted()
+        guard !names.isEmpty else {
+            return NSLocalizedString("Unassigned", comment: "Hotkey group without spaces")
+        }
+        return names.joined(separator: ", ")
+    }
+
+    private func actionSummary(_ action: ContextualHotkeyAction) -> String {
+        guard action.kind != .doNothing else { return action.kind.title }
+        let target = action.appName ?? action.appBundleIdentifier
+        guard let target, !target.isEmpty else { return action.kind.title }
+        return "\(action.kind.title): \(target)"
     }
 
     private func addHotkey() {
