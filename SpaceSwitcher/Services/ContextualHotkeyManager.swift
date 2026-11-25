@@ -22,6 +22,7 @@ final class ContextualHotkeyManager: ObservableObject {
 
     weak var spaceManager: SpaceManager?
 
+    private var cancellables = Set<AnyCancellable>()
     private static let hotkeysKey = "SpaceSwitcherContextualHotkeys"
     private static let enabledKey = "SpaceSwitcherContextualHotkeysEnabled"
     private static let hotKeySignature: OSType = 0x5350484B // SPHK
@@ -43,6 +44,7 @@ final class ContextualHotkeyManager: ObservableObject {
         }
         isEnabled = defaults.object(forKey: Self.enabledKey) as? Bool ?? true
 
+        setupSpaceBindings()
         installEventHandler()
         refreshRegistrations()
     }
@@ -131,6 +133,40 @@ final class ContextualHotkeyManager: ObservableObject {
     private func persistHotkeys() {
         guard let data = try? JSONEncoder().encode(hotkeys) else { return }
         defaults.set(data, forKey: Self.hotkeysKey)
+    }
+
+    private func setupSpaceBindings() {
+        spaceManager?.$availableSpaces
+            .sink { [weak self] spaces in
+                self?.migrateManagedSpaceReferences(using: spaces)
+            }
+            .store(in: &cancellables)
+    }
+
+    private func migrateManagedSpaceReferences(using spaces: [SpaceInfo]) {
+        var managedToStableIDs: [String: String] = [:]
+        for space in spaces {
+            if let managedSpaceID = space.managedSpaceID, managedSpaceID != space.id {
+                managedToStableIDs[managedSpaceID] = space.id
+            }
+        }
+        guard !managedToStableIDs.isEmpty else { return }
+
+        var updatedHotkeys = hotkeys
+        var didUpdate = false
+        for hotkeyIndex in updatedHotkeys.indices {
+            for groupIndex in updatedHotkeys[hotkeyIndex].spaceActionGroups.indices {
+                let originalIDs = updatedHotkeys[hotkeyIndex].spaceActionGroups[groupIndex].spaceIDs
+                let stableIDs = Set(originalIDs.map { managedToStableIDs[$0] ?? $0 })
+                guard stableIDs != originalIDs else { continue }
+                updatedHotkeys[hotkeyIndex].spaceActionGroups[groupIndex].spaceIDs = stableIDs
+                didUpdate = true
+            }
+        }
+
+        if didUpdate {
+            hotkeys = updatedHotkeys
+        }
     }
 
     private func installEventHandler() {
