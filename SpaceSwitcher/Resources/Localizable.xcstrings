@@ -285,6 +285,26 @@
         }
       }
     },
+    "Add New" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "添加新项"
+          }
+        }
+      }
+    },
+    "Add new rules and hotkey entries; skip ones already present." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "添加新规则和快捷键条目；跳过已存在的项目。"
+          }
+        }
+      }
+    },
     "Add new rule" : {
       "localizations" : {
         "zh-Hans" : {
@@ -368,6 +388,17 @@
         }
       }
     },
+    "App launch" : {
+      "comment" : "Contextual hotkey action category",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "应用启动"
+          }
+        }
+      }
+    },
     "app minimized" : {
       "comment" : "HUD outcome",
       "localizations" : {
@@ -417,6 +448,27 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "应用已显示"
+          }
+        }
+      }
+    },
+    "App visibility" : {
+      "comment" : "Contextual hotkey action category",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "应用可见性"
+          }
+        }
+      }
+    },
+    "Append every imported rule and hotkey, including duplicates." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "追加所有导入的规则和快捷键，包括重复项。"
           }
         }
       }
@@ -552,12 +604,32 @@
         }
       }
     },
+    "Check" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "检查"
+          }
+        }
+      }
+    },
     "Check for updates" : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "检查更新"
+          }
+        }
+      }
+    },
+    "Choose an action" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "选择操作"
           }
         }
       }
@@ -629,6 +701,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "选择桌面"
+          }
+        }
+      }
+    },
+    "Clear shortcut" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "清除快捷键"
           }
         }
       }
@@ -735,6 +817,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "删除 Dock 组"
+          }
+        }
+      }
+    },
+    "Delete hotkey" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "删除快捷键"
           }
         }
       }
@@ -864,6 +956,16 @@
         }
       }
     },
+    "Edit hotkey" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "编辑快捷键"
+          }
+        }
+      }
+    },
     "Edit rule" : {
       "localizations" : {
         "zh-Hans" : {
@@ -941,6 +1043,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "每个 If 区块都必须包含一个操作。"
+          }
+        }
+      }
+    },
+    "Every space group must include at least one Space." : {
+      "comment" : "Contextual hotkey validation",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "每个桌面组至少要包含一个桌面。"
           }
         }
       }
@@ -1036,6 +1149,17 @@
         }
       }
     },
+    "Hide app" : {
+      "comment" : "Contextual hotkey action",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "隐藏应用"
+          }
+        }
+      }
+    },
     "Hide minimized windows outside source space" : {
       "comment" : "Rule preset title",
       "localizations" : {
@@ -1115,6 +1239,26 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "智能反转。只有当 SpaceSwitcher 之前隐藏了该应用程序时，才会取消隐藏/取消最小化。"
+          }
+        }
+      }
+    },
+    "Keep All" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "全部保留"
+          }
+        }
+      }
+    },
+    "Keyboard shortcut" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "键盘快捷键"
           }
         }
       }
@@ -1207,6 +1351,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "最小化所有窗口。"
+          }
+        }
+      }
+    },
+    "Minimize windows" : {
+      "comment" : "Contextual hotkey action",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "最小化窗口"
           }
         }
       }
@@ -1435,6 +1590,26 @@
         }
       }
     },
+    "Record shortcut. Press Escape to cancel." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "按下快捷键开始录制。按 Escape 键取消。"
+          }
+        }
+      }
+    },
+    "Recording shortcut" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "正在录制快捷键"
+          }
+        }
+      }
+    },
     "Recording..." : {
       "localizations" : {
         "zh-Hans" : {
@@ -1501,6 +1676,46 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "移除工作流组？"
+          }
+        }
+      }
+    },
+    "Replace All" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "全部替换"
+          }
+        }
+      }
+    },
+    "Replace current rules and hotkeys included in this file." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "替换为此文件中的规则和快捷键。"
+          }
+        }
+      }
+    },
+    "Replace Matching" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "替换匹配项"
+          }
+        }
+      }
+    },
+    "Replace rules for matching apps and hotkey entries; keep the rest." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "替换匹配应用的规则和快捷键条目，并保留其余内容。"
           }
         }
       }
@@ -1688,6 +1903,16 @@
         }
       }
     },
+    "Rules and hotkeys" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "规则和快捷键"
+          }
+        }
+      }
+    },
     "Rules are evaluated from top to bottom. The first matching rule wins." : {
       "localizations" : {
         "zh-Hans" : {
@@ -1704,6 +1929,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "正在运行的应用程序"
+          }
+        }
+      }
+    },
+    "Save" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "保存"
           }
         }
       }
@@ -1775,6 +2010,16 @@
         }
       }
     },
+    "Settings transfer failed" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "设置传输失败"
+          }
+        }
+      }
+    },
     "Shift (⇧)" : {
       "shouldTranslate" : false
     },
@@ -1795,6 +2040,26 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "已触发快捷键"
+          }
+        }
+      }
+    },
+    "Shortcut unavailable" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "快捷键不可用"
+          }
+        }
+      }
+    },
+    "Shortcuts" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "快捷键"
           }
         }
       }
@@ -2024,6 +2289,17 @@
         }
       }
     },
+    "The selected file does not contain any rules or hotkeys." : {
+      "comment" : "Error shown when importing an empty settings file",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "所选文件不包含任何规则或快捷键。"
+          }
+        }
+      }
+    },
     "The selected JSON file does not contain any rules." : {
       "comment" : "Error shown when importing an empty rules file",
       "localizations" : {
@@ -2031,6 +2307,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "所选 JSON 文件不包含任何规则。"
+          }
+        }
+      }
+    },
+    "The spaces and actions in this group will be removed." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "此组中的桌面和操作将被移除。"
           }
         }
       }
@@ -2061,6 +2347,27 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "这将移除 %@ 的规则。"
+          }
+        }
+      }
+    },
+    "This settings file uses an unsupported format version (%d)." : {
+      "comment" : "Error shown when importing a newer settings file",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "此设置文件使用了不受支持的格式版本（%d）。"
+          }
+        }
+      }
+    },
+    "This shortcut could not be registered. It may already be in use." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "无法注册此快捷键。它可能已被占用。"
           }
         }
       }
@@ -2190,6 +2497,17 @@
         }
       }
     },
+    "Window state" : {
+      "comment" : "Contextual hotkey action category",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "窗口状态"
+          }
+        }
+      }
+    },
     "Workflow Group %lld" : {
       "localizations" : {
         "zh-Hans" : {
@@ -2247,6 +2565,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "尚未设置快捷键"
+          }
+        }
+      }
+    },
+    "No shortcuts" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "没有快捷键"
           }
         }
       }
@@ -2311,6 +2639,39 @@
         }
       }
     },
+    "Toggle app visibility" : {
+      "comment" : "Contextual hotkey action",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "切换应用可见性"
+          }
+        }
+      }
+    },
+    "Toggle window minimization" : {
+      "comment" : "Contextual hotkey action",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "切换窗口最小化状态"
+          }
+        }
+      }
+    },
+    "Unassigned" : {
+      "comment" : "Hotkey group without spaces",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "未分配"
+          }
+        }
+      }
+    },
     "Choose at least one action for a Space or Other Spaces." : {
       "localizations" : {
         "zh-Hans" : {
@@ -2357,6 +2718,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "启用上下文快捷键"
+          }
+        }
+      }
+    },
+    "Enable hotkey" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "启用快捷键"
           }
         }
       }
@@ -2621,6 +2992,48 @@
         }
       }
     },
+    "Unhide" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "取消隐藏"
+          }
+        }
+      }
+    },
+    "Unhide app" : {
+      "comment" : "Contextual hotkey action",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "取消隐藏应用"
+          }
+        }
+      }
+    },
+    "Unminimize" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "取消最小化"
+          }
+        }
+      }
+    },
+    "Unminimize windows" : {
+      "comment" : "Contextual hotkey action",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "取消最小化窗口"
+          }
+        }
+      }
+    },
     "This Space is currently unavailable. Its mapping is preserved." : {
       "localizations" : {
         "zh-Hans" : {
@@ -2751,12 +3164,32 @@
         }
       }
     },
+    "Choose how to import settings" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "选择导入设置的方式"
+          }
+        }
+      }
+    },
     "Choose App…" : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "选择应用…"
+          }
+        }
+      }
+    },
+    "Choose application: %@" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "选择应用程序：%@"
           }
         }
       }
@@ -2828,6 +3261,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "复制"
+          }
+        }
+      }
+    },
+    "Each Space can belong to only one group." : {
+      "comment" : "Contextual hotkey validation",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "每个桌面只能属于一个组。"
           }
         }
       }
