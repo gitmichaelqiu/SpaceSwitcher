@@ -273,6 +273,7 @@ private struct HotkeyEditorView: View {
     @State private var draft: ContextualHotkey
     @State private var spacePickerGroupID: UUID?
     @State private var groupPendingDeletion: UUID?
+    @FocusState private var isNameFieldFocused: Bool
 
     let existingHotkeys: [ContextualHotkey]
     let availableSpaces: [SpaceInfo]
@@ -398,6 +399,7 @@ private struct HotkeyEditorView: View {
                 TextField("", text: $draft.name)
                     .textFieldStyle(.roundedBorder)
                     .frame(maxWidth: .infinity)
+                    .focused($isNameFieldFocused)
                     .accessibilityLabel("Hotkey name")
             }
 
