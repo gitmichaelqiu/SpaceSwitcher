@@ -114,7 +114,7 @@ struct GeneralSettingsView: View {
                     }
                     
                     SettingsRow("Check for updates") {
-                        Button("Check now") {
+                        Button("Check") {
                             UpdateManager.shared.updaterController.checkForUpdates(nil)
                         }
                     }
