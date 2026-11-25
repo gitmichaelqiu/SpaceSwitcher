@@ -341,7 +341,7 @@ class RuleManager: ObservableObject {
 
     private func isWindowVisibilityAction(_ action: WindowAction) -> Bool {
         switch action {
-        case .hide, .show, .restore, .minimize:
+        case .hide, .show, .restore, .minimize, .unhide, .unminimize:
             return true
         default:
             return false
@@ -627,6 +627,37 @@ class RuleManager: ObservableObject {
                     }
                 }
                 if wasHidden { try? await Task.sleep(nanoseconds: 200_000_000) }
+
+            case .unhide:
+                let canApplyAppVisibility = targetWindows.count == allWindows.count
+                let appWasHidden = app.isHidden
+                if canApplyAppVisibility, appWasHidden, unhideAppWithoutActivation(app) {
+                    managedAppHides.removeValue(forKey: app.processIdentifier)
+                    changeSummary.record(.shown, windowIDs: allWindows.map(\.id))
+                }
+
+                for window in targetWindows {
+                    let wasHidden = isWindowHidden(window)
+                    let wasManagedHide = managedHides[window.id] != nil
+                    guard await setHiddenWithRetry(window, isHidden: false) else { continue }
+
+                    managedHides.removeValue(forKey: window.id)
+                    let observedAfter = await waitForWindowState(
+                        window,
+                        targetValue: false,
+                        readState: WindowSpaceService.isHidden
+                    )
+                    let didUnhide = RuleActionStateChange.isConfirmed(
+                        from: wasHidden,
+                        to: false,
+                        updateSucceeded: true,
+                        observedAfter: observedAfter
+                    ) || (wasManagedHide && wasHidden == nil && observedAfter == false)
+                    if didUnhide {
+                        changeSummary.record(.shown, windowIDs: [window.id])
+                    }
+                }
+                if appWasHidden { try? await Task.sleep(nanoseconds: 200_000_000) }
                 
             case .restore:
                 let canApplyAppVisibility = targetWindows.count == allWindows.count
@@ -737,6 +768,50 @@ class RuleManager: ObservableObject {
                         )
                         if didMinimize {
                             changeSummary.record(.minimized, windowIDs: [window.id])
+                        }
+                    }
+                }
+
+            case .unminimize:
+                let canApplyAppVisibility = targetWindows.count == allWindows.count
+                var didUnminimizeAppWindows = false
+                if canApplyAppVisibility,
+                   managedAppMinimizes.contains(app.processIdentifier) {
+                    didUnminimizeAppWindows = unminimizeAppWindows(app)
+                    managedAppMinimizes.remove(app.processIdentifier)
+                    if didUnminimizeAppWindows {
+                        changeSummary.record(.restored, windowIDs: allWindows.map(\.id))
+                    }
+                }
+
+                if targetWindows.isEmpty {
+                    if !didUnminimizeAppWindows, unminimizeAppWindows(app) {
+                        changeSummary.record(.restored, windowIDs: allWindows.map(\.id))
+                    }
+                    managedAppMinimizes.remove(app.processIdentifier)
+                    continue
+                }
+
+                if !didUnminimizeAppWindows {
+                    for window in targetWindows {
+                        let wasMinimized = isWindowMinimized(window)
+                        let wasManagedMinimize = managedMinimizes.contains(window.id)
+                        guard WindowSpaceService.setMinimized(window, isMinimized: false) else { continue }
+
+                        managedMinimizes.remove(window.id)
+                        let observedAfter = await waitForWindowState(
+                            window,
+                            targetValue: false,
+                            readState: WindowSpaceService.isMinimized
+                        )
+                        let didUnminimize = RuleActionStateChange.isConfirmed(
+                            from: wasMinimized,
+                            to: false,
+                            updateSucceeded: true,
+                            observedAfter: observedAfter
+                        ) || (wasManagedMinimize && wasMinimized == nil && observedAfter == false)
+                        if didUnminimize {
+                            changeSummary.record(.restored, windowIDs: [window.id])
                         }
                     }
                 }

@@ -8,15 +8,18 @@ import ServiceManagement
 class AppState: ObservableObject {
     dynamic let spaceManager: SpaceManager
     let ruleManager: RuleManager
+    let contextualHotkeyManager: ContextualHotkeyManager
     let dockManager: DockManager
     
     init() {
         print("APP: Launching Services...")
-        self.spaceManager = SpaceManager()
+        let spaceManager = SpaceManager()
+        self.spaceManager = spaceManager
+        self.contextualHotkeyManager = ContextualHotkeyManager(spaceManager: spaceManager)
         self.ruleManager = RuleManager()
-        self.ruleManager.spaceManager = self.spaceManager
+        self.ruleManager.spaceManager = spaceManager
         self.dockManager = DockManager()
-        self.dockManager.spaceManager = self.spaceManager
+        self.dockManager.spaceManager = spaceManager
         self.dockManager.ruleManager = self.ruleManager
         print("APP: Services Linked and Running.")
     }
@@ -36,6 +39,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCenterDele
         SettingsWindowController.shared.open(
             spaceManager: appState.spaceManager,
             ruleManager: appState.ruleManager,
+            contextualHotkeyManager: appState.contextualHotkeyManager,
             dockManager: appState.dockManager
         )
     }
@@ -44,6 +48,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCenterDele
         SettingsWindowController.shared.open(
             spaceManager: appState.spaceManager,
             ruleManager: appState.ruleManager,
+            contextualHotkeyManager: appState.contextualHotkeyManager,
             dockManager: appState.dockManager,
             targetTab: .about
         )

@@ -14,7 +14,13 @@ class SettingsWindowController: NSObject, NSWindowDelegate {
         super.init()
     }
 
-    func open(spaceManager: SpaceManager, ruleManager: RuleManager, dockManager: DockManager, targetTab: SettingsTab? = nil) {
+    func open(
+        spaceManager: SpaceManager,
+        ruleManager: RuleManager,
+        contextualHotkeyManager: ContextualHotkeyManager,
+        dockManager: DockManager,
+        targetTab: SettingsTab? = nil
+    ) {
         NSApp.setActivationPolicy(.regular)
 
         // UPDATED: Store reference
@@ -27,10 +33,22 @@ class SettingsWindowController: NSObject, NSWindowDelegate {
             return
         }
 
-        createWindow(spaceManager: spaceManager, ruleManager: ruleManager, dockManager: dockManager, startTab: targetTab)
+        createWindow(
+            spaceManager: spaceManager,
+            ruleManager: ruleManager,
+            contextualHotkeyManager: contextualHotkeyManager,
+            dockManager: dockManager,
+            startTab: targetTab
+        )
     }
 
-    private func createWindow(spaceManager: SpaceManager, ruleManager: RuleManager, dockManager: DockManager, startTab: SettingsTab?) {
+    private func createWindow(
+        spaceManager: SpaceManager,
+        ruleManager: RuleManager,
+        contextualHotkeyManager: ContextualHotkeyManager,
+        dockManager: DockManager,
+        startTab: SettingsTab?
+    ) {
         // 1. STYLE: .fullSizeContentView is critical for the "Ice" style (content goes behind title bar)
         let styleMask: NSWindow.StyleMask = [.titled, .closable, .miniaturizable, .resizable, .fullSizeContentView]
         
@@ -60,6 +78,7 @@ class SettingsWindowController: NSObject, NSWindowDelegate {
         let settingsVC = SettingsHostingController(
             spaceManager: spaceManager,
             ruleManager: ruleManager,
+            contextualHotkeyManager: contextualHotkeyManager,
             dockManager: dockManager,
             startTab: startTab
         )
